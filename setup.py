@@ -9,16 +9,7 @@ import os
 import site
 import sys
 
-packages = ['vmd']
-
-package_data = {
-        'vmd' : ['vmd.so',]}
-#                'scripts/python/*', 'scripts/vmd/*',
-#                 'plugins/LINUXAMD64/molfile/*', 
-#                 'plugins/LINUXAMD64/tcl/psfgen1.6/*',
-#                 'LICENSE']
-#        }
-
+packages = ['vmd-python']
 
 ###############################################################################
 
@@ -109,7 +100,7 @@ setup(name='vmd',
       url='http://github.com/Eigenstate/vmd-python',
       license='VMD License',
       packages=packages,
-      package_data=package_data,
+      package_data = { 'vmd' : ['vmd.so']},
       cmdclass={
           'build': VMDBuild,
           'install': VMDInstall,
