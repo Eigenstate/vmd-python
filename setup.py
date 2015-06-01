@@ -114,6 +114,7 @@ setup(name='vmd',
           'build': VMDBuild,
           'install': VMDInstall,
       }
+      test_suite="tests"
 )
 
 

@@ -1,29 +1,32 @@
 package:
     name: vmd
     version: "1.9.2"
-    source:
-        git_url: https://github.com/Eigenstate/vmd-python.git
-        git_tag: master
 
+source:
+    git_url: https://github.com/Eigenstate/vmd-python.git
+    git_tag: master
+
+build:
     features:
-        - python module
+        - it doesn't crash
+        - it imports
 
     script: python setup.py install
 
-    requirements:
-        build:
-            - python
-            - libnetcdf >=4.3.2
-            - expat >=2.1.0
-            - numpy
-        run:
-            - imp
-            - pkg_resources
-            - numpy
-            - libnetcdf >=4.3.2
+requirements:
+    build:
+        - python
+        - libnetcdf >=4.3.2
+        - expat >=2.1.0
+        - numpy
+    run:
+        - imp
+        - pkg_resources
+        - numpy
+        - libnetcdf >=4.3.2
 
-    about:
-        home: https://github.com/Eigenstate/vmd-python
-        license: VMD license
-        summary: Loadable python module for VMD functions
+about:
+    home: https://github.com/Eigenstate/vmd-python
+    license: VMD license
+    summary: Loadable python module for VMD functions
 
