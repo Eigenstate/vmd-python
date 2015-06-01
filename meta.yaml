@@ -1,5 +1,5 @@
 package:
-    name: vmd
+    name: vmd-python
     version: "1.9.2"
 
 source:
