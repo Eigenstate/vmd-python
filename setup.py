@@ -10,7 +10,7 @@ import os
 import site
 import sys
 
-packages = ['vmd-python']
+packages = ['vmd']
 
 ###############################################################################
 
@@ -32,7 +32,7 @@ class VMDBuild(DistutilsBuild):
         srcdir = convert_path(os.path.dirname(os.path.abspath(__file__)))
         builddir = convert_path(os.path.abspath(self.build_lib))
         pydir = convert_path(sys.executable.replace("/bin/python",""))
-        instdir = convert_path(site.getsitepackages()[0] + "/vmd")
+        instdir = convert_path(site.getsitepackages()[0] + "/vmd-python")
 
         # Execute the build
         cmd = [
@@ -87,7 +87,7 @@ class VMDInstall(DistutilsInstall):
 
         # Copy all built files
         print("Copying %s to %s" % (self.build_lib, self.install_lib))
-        instdir = convert_path(self.install_lib+ "/vmd")
+        instdir = convert_path(self.install_lib+ "/vmd-python")
         self.copy_tree(self.build_lib, instdir)
 
 
