@@ -1,0 +1,61 @@
+<!--#set var="TITLE" value="VASP Plugins, Version 0.6"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>
+<a href="http://www.uni-ulm.de/~ssakong/vmdplugins">VASP plugins</a>
+are developed to read 
+<a href="http://cms.mpi.univie.ac.at/vasp/">VASP input/output files</a>
+and display atomic/charge configurations/trajectories in VMD.
+
+<p>
+What can I do with VASP plugins?
+
+<p>
+If you are VASP user and tired to use converting scripts output data 
+to pdb and xyz format to visualize it, then VASP plugins for VMD 
+natively handles following file formats:
+<ul>
+<li>vasprun.xml/OUTCAR : Plot trajectory of each ionic steps.
+<li>POSCAR/CONTCAR : Display atomic configuration.
+<li>XDATCAR : Plot trajectory of each ionic step.
+<li>CHGCAR/LOCPOT/ELFCAR/PARCHG : Display isosurfaces of charge density 
+    and electron localization function (ELF).
+</ul>
+
+<p>
+For further information, visit Sung Sakong's 
+<a href="http://www.uni-ulm.de/~ssakong/vmdplugins">VASP plugin home page</a>
+
+<p>
+<h3>Known bugs</h3>
+<ul>
+<li>Occassionally OUTCAR read plugin has problems recognizing atom types.
+I am using atomic mass to recognize the type of atom, but POTCAR files 
+contain POMASS values which is somewhat different from widely used
+atomic mass. I cannot match each atom type between periodic_table.h
+and POTCARs. Thus, I set a margin of 0.01 for atomic mass recognition 
+routine. It works for most of atoms, however in several POTCARs the 
+margin is not sufficient.
+<li>I found that file structure of vasprun.xml is frequently changed. I am 
+not so sure whether xml read plugin will work with next version VASP, 
+or not.
+</ul>
+
+<p>
+<h3>Fixed bugs</h3>
+<ul>
+<li>Memory leak is fixed. Common data structure for VASP data is designed 
+    by Rob Lahaye. (June 29, 2006)
+<li>CHGCAR plugin reads spin polarized charge again. (May 18, 2006)
+<li>VMD can save the coordinates in POSCAR. (May 17, 2006)
+<li>Plugins for VMD 1.8.4 are ready. I thank Rob Lahaye <lahaye at skku.edu> 
+    for many debugging and good advices. (May 15, 2006)
+<li>CHGCAR plugin reads 3d-mesh properly. (April 27, 2006)
+</ul>
+
+<p>                                       
+<h3>Bug report</h3>
+Sung Sakong (sung.sakong at uni-ulm.de)
+
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

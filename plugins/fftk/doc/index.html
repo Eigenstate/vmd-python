@@ -1,0 +1,605 @@
+<!--#set var="TITLE" value="Force Field Toolkit Plugin, Version 1.1"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<!--
+    <h2 class='navinfo'>Force Field ToolKit (<font style=font-family:"Gabriola"> &#xfb00</font>TK), Version 1.1</h2>
+-->
+ 
+    <!-- CONTENT BEGINS HERE -->
+    <!-- I will need a picture here -->
+    <div style="clear: right; float: left; width: 99%; margin: 0.5em 0;">
+        <div style="float: right; margin: 0 1em;">
+            <img src="ffTK-sample-med.png" alt="Sample Images of ffTK GUI">
+            <div>
+            <b><font style=font-family:"Gabriola">ff</font>TK GUI</b>
+        </div>
+    </div>
+    
+    <div>
+    <h3><u>Overview</u></h3>
+    <p>The Force Field Toolkit is comprised of a set of tools that aid users in the development
+    of CHARMM-compatible forcefield parameters, including charges, bonds, angles, and dihedrals.
+    These tools are accessed through the provided GUI, which greatly simplifies the setup and
+    analysis of the underlying calculations.  Currently, the toolkit assumes that all QM target
+    data is generated using Gaussian; however, we plan to expand functionality to include alternatives.
+    For a full description of ffTK, please see:
+    <br /><br />
+    C.G. Mayne, J. Saam, K. Schulten, E. Tajkhorshid, J.C. Gumbart.
+    <i>J. Comput. Chem.</i>
+    <b>2013</b>, 34, 2757-2770.
+    <a href="http://dx.doi.org/10.1002/jcc.23422">DOI: 10.1002/jcc.23422.</a>
+    </p>
+    
+    <p>
+    To get the most out of the ffTK, a reasonable understanding of the CHARMM and CGenFF force fields
+    is required.  For additional information on these topics and the underlying principles of
+    parameterization, users are urged to also visit
+    Alex MacKerell's website for
+    <a href="http://mackerell.umaryland.edu/CHARMM_ff_params.html">CHARMM FF Parameters</a>
+    and the
+    <a href="http://www.charmm.org/ubbthreads/">CHARMM user forums</a>,
+    specifically the
+    <a href="http://www.charmm.org/ubbthreads-7-5-5/ubbthreads.php?ubb=postlist&Board=12&page=1">parameterization section</a>.
+    </p>
+
+    <p>
+    The ffTK plugin relies on a number of other VMD plugins, described in more detail here:
+    <a href="/Research/vmd/plugins/multiplot/">Multiplot</a>
+    <a href="/Research/vmd/plugins/namdenergy/">NAMD Energy</a>
+    <a href="/Research/vmd/plugins/optimization/">Optimization</a>
+    <a href="/Research/vmd/plugins/qmtool/">QM Tool</a>
+    <a href="/Research/vmd/plugins/topotools/">Topo Tools</a>
+    </p>
+    
+    <p>
+    <font style=color:red>** Update Notice **</font>
+    <br />
+    ffTK has been significantly updated for version 1.1 to include bug fixes, faster optimization routines, and several new features.
+    We strongly recommend using the latest available version of ffTK, which is distributed as part of 
+    <a href="http://www.ks.uiuc.edu/Research/vmd/vmd-1.9.2/"> VMD 1.9.2</a>.
+    <!--
+    In the meantime, we strongly recommend using the latest available version of ffTK, which is distributed as part of the
+    <a href="http://www.ks.uiuc.edu/research/vmd/alpha/"> VMD 1.9.2 alpha release</a>.
+    -->
+    </p>     
+
+    </div>
+
+    <div>
+    <div style=background-color:#ECECEC>
+    <h3><u>Screencasts</u></h3>
+        <p>
+        We have developed a series of screencasts to guide users through the entire
+        parameterization process for a small organic molecule, pyrrolidine.  Each
+        screencast covers a particular step of the parameterization, with a specific
+        focus on the technical aspects of using ffTK.  Additional information pertaining
+        to theory behind pyrrolidine parameterization can be found elsewhere
+        (<a href="http://onlinelibrary.wiley.com/doi/10.1002/jcc.21367/abstract">Vanommeslaeghe, K. <i>et al.</i> <i>J. Comput. Chem.</i> 2010, <b>31</b>, 671-690</a>).
+        </p>
+        
+        <ol style=padding-left:5.5em>
+            <li><a href="http://www.ks.uiuc.edu/Research/vmd/minitutorials/fftk/screencast/1-sysprep-1-molefacture.mov">System Preparation I: Generating PSF & PDB Files Using Molefacture</a></li>
+            <li><a href="http://www.ks.uiuc.edu/Research/vmd/minitutorials/fftk/screencast/2-sysprep-2-initPAR.mov">System Preparation II: Setting NONBONDED Parameters By Analogy</a></li>
+            <li><a href="http://www.ks.uiuc.edu/Research/vmd/minitutorials/fftk/screencast/3-sysprep-3-geometry.mov">System Preparation III: Geometry Optimization at the QM Level of Theory</a></li>
+            <li><a href="http://www.ks.uiuc.edu/Research/vmd/minitutorials/fftk/screencast/4-charges-1-targetData.mov">Charges I: Generating Water Interaction Target Data</a></li>
+            <li><a href="http://www.ks.uiuc.edu/Research/vmd/minitutorials/fftk/screencast/5-charges-2-optimization.mov">Charges II: Charge Optimization</a></li>
+            <li><a href="http://www.ks.uiuc.edu/Research/vmd/minitutorials/fftk/screencast/6-bonded.mov">Bonded: Calculating Bond and Angle Parameters</a></li>
+            <li><a href="http://www.ks.uiuc.edu/Research/vmd/minitutorials/fftk/screencast/7-dihedrals-1-targetData.mov">Dihedrals I: Generating Dihedral Scan Target Data</a></li>
+            <li><a href="http://www.ks.uiuc.edu/Research/vmd/minitutorials/fftk/screencast/8-dihedrals-2-fitting.mov">Dihedrals II: Iterative Fitting of Dihedral Parameters</a></li>
+        </ol>
+    </div>
+
+    <div>
+    <h3><u>BuildPar</u></h3>
+        <p>BuildPar is a collection of three tools for identifying missing parameters,
+        building an initial parameter file, and updating the new parameter file based
+        on ffTK output.</p>
+        <ul style=list-style-type:none;padding-left:1em;margin:0>
+            <li>&#9658 Identify Missing Parameters</li>
+                <dl style=padding-left:1em;padding-bottom:1em>
+                    <dt style=padding-top:0.5em><i>Description</i>:</dt>
+                        <dd>The Identify Missing Parameters tool determines all of the parameters
+                        necessary to describe the given molecule, cross-checks the required parameters
+                        against established parameter files, and constructs a new CHARMM-compatible parameter
+                        file containing only the missing parameters, for which all values are set to zero.</dd>
+                    
+                    <dt style=padding-top:0.5em><i>Usage</i>:</dt>
+                        <dd>Set the inputs appropriately.  Run the tool using the <tt>Write Initial Parameter File</tt> button.</dd>
+                    <dt style=padding-top:0.5em><i>Input</i>:</dt>
+                        <dd><ul style=list-style-type:none;padding-left:0em; margin:0>
+                            <li><b>Input PSF File:</b> A PSF file for the molecule of interest; atoms must be appropriately typed.</li>
+                            <li><b>Associated Parameter Files:</b> CHARMM-formatted parameter file(s) that will be searched against.</li>
+                            <li><b>Output PAR File:</b> A filename for the output zeroed parameter file.</li>
+                        </ul></dd>
+                    <dt style=padding-top:0.5em><i>Output</i>:</dt>
+                        <dd>A CHARMM-compatible parameter file containing any missing parameters (bonds, angles, dihedrals, non-bonded).  All values are set to zero.</dd>
+                </dl>
+
+            <li>&#9658 Assign Missing VDW/LJ Parameters by Analogy</li>
+                <dl style=padding-left:1em;padding-bottom:1em>
+                    <dt style=padding-top:0.5em><i>Description</i>:</dt>
+                    <dd>ffTK does not currently support the optimization of non-bonded parameters; however,
+                    new atom types will require such parameters.  The Assign Missing VDW/LJ Parameters
+                    by Analogy tool is designed to aid the user in assigning missing non-bonded
+                    parameters by analogy from established parameter sets.  The tool is divided into two
+                    panes: the top pane is for loading the initial parameter file that the user is developing,
+                    and the bottom pane is for browsing non-bonded parameters read in from established parameter
+                    files. 
+                    <br><br>           
+                    <font style=color:red>Important Note:</font> The parameter browser requires that the user load BOTH the topology AND
+                    parameter files for a given parameter set.  This is because the topology file often contains
+                    information in the comments that helps identify properties of a given atom type.</dd>
+                    
+                    <dt style=padding-top:0.5em><i>Usage</i>:</dt>
+                    <dd>Enter the location/file name of the initial parameter file.  Read in any missing non-bonded
+                    parameters using the <tt>Load</tt> button.  After the parameters are properly set, the values are
+                    updated in the parameter file using the <tt>Update File</tt> button.
+                    <p>Reference parameter sets are loaded from the <tt>Load Topology + Parameter Set</tt> button, which
+                    launches a dialog requesting the location and filename of a topology and parameter file pair.
+                    Any non-bonded parameters found within the file pair are loaded into the browser box, providing
+                    the element, atom type, parameter values, and the file name from which they came.  Multiple
+                    parameter sets can be loaded sequentially.  Parameters can be restricted to certain elements
+                    or parent files using the drop down menus.</p>
+                    To assign the parameters in the input parameter file, select both the target entry from the
+                    top pane, and desired reference entry from the bottom pane.  The <tt>Set from Reference</tt> button
+                    will copy the reference parameter values to the target entry.</dd>
+                    
+                    <dt style=padding-top:0.5em><i>Input</i>:</dt>
+                    <dd>
+                        <ul style=list-style-type:none;padding-left:0em;margin:0>
+                            <li><b>Incomplete PAR File:</b> The parameter file containing the missing VDW/LJ parameters (<i>e.g.,</i> the output PAR file from Identify Missing Parameters tool).</li>
+                            <li><b>Topology + Parameter Set:</b> The matching topology and parameter files from which VDW/LJ parameters will be chosen.</li>
+                        </ul>
+                    </dd>
+                    
+                    <dt style=padding-top:0.5em><i>Output</i>:</dt>
+                    <dd>The <tt>Update File</tt> button overwrites the Incomplete PAR File.  No new files are generated.</dd>
+                </dl>
+
+            <li>&#9658 Prepare Parameterization from CGenFF Program Output</li>
+                <dl style=padding-left:1em;padding-bottom:1em>
+                    <dt style=padding-top:0.5em><i>Description</i>:</dt>
+                    <dd>Entry into the ffTK workflow minimally requires a PSF/PDB file pair, which can be used to generate
+                    an initialized (zero-filled) parameter file, as described above (see Identify Missing Parameters). 
+                    An externally developed resource named the <a href="http://cgenff.paramchem.org">CGenFF Program</a>
+                    can provide a CHARMM stream file containing topology information and initial parameters assigned by
+                    analogy to small molecules present in the standard CGenFF (the force field) distribution.  The 
+                    tool described here aides users in processing output from the CGenFF Program to
+                    write a properly formatted PSF/PDB file pair, write an initial parameter file based on analogy
+                    rather than zero-filling, and provides ability to inspect penalty terms associated with each
+                    parameter and where each term is found in the molecule.</dd>
+
+                    <dt style=padding-top:0.5em><i>Usage</i>:</dt>
+                    <dd>Set the inputs appropriately.  The first step is to analyze the input data, which will load the
+                    molecule into VMD and populate the parameter data.  After analysis, the data can be used
+                    to write a PSF/PDB file pair and/or an initial parameter (PAR) file that serve as input to the ffTK workflow.
+                    Selecting a parameter entry, or multiple entries, will draw graphic objects that identify each occurrence
+                    of the selected parameter within the molecule in the VMD OpenGL window.</dd>
+                    
+                    <dt style=padding-top:0.5em><i>Input</i>:</dt>
+                    <dd>
+                        <ul style=list-style-type:none;padding-left:0em;margin:0>
+                            <li><b>Input PDB/MOL2:</b> The structure file submitted to the CGenFF Program.</li>
+                            <li><b>CGenFF STR File:</b> The CHARMM stream file returned by the CGenFF Program.</li>
+                            <li><b>Output Folder:</b> The folder where output data will be written.</li>
+                            <li><b>Resname:</b> Residue name for the molecule.  All atoms in the input PDB/MOL2 will be assigned to this
+                            resname.  The resname will also serve as the basename for all output (<i>i.e.,</i> PSF/PDB, PAR).</li>
+                            <li><b>Chain:</b> Chain identifier used when writing PSF/PDB output.  Defaults to L.</li>
+                            <li><b>Segment:</b> Segment identifier used when writing PSF/PDB output.  Defaults to L.</li>
+                        </ul>
+                    </dd>
+
+                    <dt style=padding-top:0.5em><i>Output</i>:</dt>
+                    <dd>The <tt>Write PSF/PDB</tt> button will write the structure to PSF and PDB files.
+                    The <tt>Write PAR</tt> button will write out a parameter file.  If the CGenFF stream file contains <i>all</i>
+                    parameters required to describe the molecule (an option available when submitting input to the CGenFF Program),
+                    the parameters are split into two files denoted as "existing" and "missing".  In subsequent ffTK steps, the "existing"
+                    file would be characterized as an "associated parameter file."  All output is written to the specified output folder
+                    and will use the provided resname as the basename for each file.</dd>
+
+                </dl> 
+
+            <li>&#9658 Update Parameter File with Optimized Parameters</li>
+                <dl style=padding-left:1em;padding-bottom:1em>
+                    <dt style=padding-top:0.5em><i>Description</i>:</dt>
+                    <dd>The Update Parameter File with Optimized Parameters tool serves as the primary mechanism for
+                    assigning optimized parameter values in the developing parameter file from ffTK output files (LOG).</dd>
+                    
+                    <dt style=padding-top:0.5em><i>Usage</i>:</dt>
+                    <dd>The user provides an input parameter file for updating, the ffTK LOG file containing the relevant output,
+                    and a file name for the new (updated) parameter file.  The tool is run via the <tt>Write Updated Parameter File</tt>
+                    button.</dd>
+
+                    <dt style=padding-top:0.5em><i>Input</i>:</dt>
+                    <dd><ul style=list-style-type:none;padding-left:0em;margin:0>
+                            <li><b>Input Parameter File:</b> The parameter file currently under development.</li>
+                            <li><b>Optimization LOG File:</b> ffTK output file (LOG) from the calculation or optimization.</li>
+                            <li><b>Output Parameter File:</b> A location and file name for the resulting output parameter file.</li>
+                        </ul></dd>
+                        
+                    <dt style=padding-top:0.5em><i>Output</i>:</dt>
+                    <dd>A parameter file containing updated values based on the input.</dd>
+                </dl>
+        </ul>
+    </div>
+
+    <div style=background-color:#ECECEC>
+    <h3><u>Opt. Geometry</u></h3>
+        <dl style=padding-left:1em>
+        <dt style=padding-top:0.5em><i>Description</i>:</dt>
+        <dd>The Opt. Geometry tab is designed to simplify the process of obtaining a QM-optimized structure for a given molecule.</dd>
+
+        <dt style=padding-top:0.5em><i>Usage</i>:</dt>
+        <dd>The top section of the tool serves to write the Gaussian input file (GAU), while the bottom section allows the user to visualize
+        the optimization steps and write out a final structure to a PDB file.</dd>
+
+        <dt style=padding-top:0.5em><i>Input</i>:</dt>
+        <dd><ul style=list-style-type:none;padding-left:0em;margin:0>
+              <li><b>Input PDB File:</b> The location and filename of PDB file containing the initial coordinates.</li>
+              <li><b>Output GAU File:</b> A location and filename for the generated Gaussian input file.</li>
+              <li><b>Gaussian Settings:</b> The default Gaussian settings are for a geometry optimization at the MP2/6-31G* level of theory for a neutral molecule, and should be suitable for most cases.</li>
+              <li style=list-style-type:none;background-color:black;height:1px;margin:4px></li>
+              <li><b>Original PDB File:</b> The location and filename of the PDB file used as the Input PDB File above.</li>
+              <li><b>Gaussian LOG File:</b> The location and filename of the LOG file generated from the Gaussian calculation.</li>
+              <li><b>Output PDB File:</b> A location and filename for the output PDB file containing the QM-optimized atomic coordinates (geometry).</li>
+        </ul></dd>
+        
+        <dt style=padding-top:0.5em><i>Output</i>:</dt>
+        <dd><ul style=list-style-type:none;padding-left:0em;margin:0>
+            <li>A Gaussian input file (GAU) for running the Gaussian calculation.</li>
+            <li>A PDB file containing the QM-optimized atomic coordinates (geometry).</li>
+        </ul></dd>
+        </dl>
+    </div>
+    
+    <h3><u>Water Int.</u></h3>
+        <dl style=padding-left:1em>
+            <dt style=padding-top:0.5em><i>Description</i>:</dt>
+            <dd>The Water Int. tab is designed to aid the user in generating the QM water interaction target data used in charge optimization.</dd>
+
+            <dt style=padding-top:0.5em><i>Usage</i>:</dt>
+            <dd>The user provides the requested input information regarding the molecule, followed by loading the molecule into VMD (<tt>Load PSF/PDB</tt> button).
+            The Hydrogen Bonding Atoms box provides several tools for assigning donor and acceptor indices.  These tools include, atom labeling, colored
+            spheres for each listed index, and a routine that autofills the donor/acceptor lists based on a relatively simple algorithm.  Default settings for the
+            Gaussian calculation are provided in the Gaussian Settings box.  The <tt>Write Gaussian Input Files</tt> button generates a Gaussian input file (GAU) that
+            optimizes the interaction of a water molecule with a specific atom, provided in the donor/acceptor lists.  The resulting GAU file(s) should be checked
+            visually by loading them into VMD via the <tt>Load GAU Files</tt> button.  After the Gaussian calculations have completed, the user can visualize the optimization
+            steps by loading the LOG file(s) generated from each Gaussian calculation via the <tt>Load LOG Files</tt> button.</dd>
+
+            <dt style=padding-top:0.5em><i>Input</i>:</dt>
+            <dd><ul style=list-style-type:none;padding-left:0em;margin:0>
+                <li><b>PSF File:</b> The location and filename of the PSF file describing the molecule.</li>
+                <li><b>PDB File:</b> The location and filename of the PDB file containing the QM-optimized geometry.</li>
+                <li><b>Output Path:</b> The location where GAU files will be written.</li>
+                <li><b>Basename:</b> A short abbreviation used for naming GAU files; generally the residue name.</li>
+                <li><b>Donor Indices:</b> The index for each atom that will positively interact with the oxygen atom of a water molecule.</li>
+                <li><b>Acceptor Indices:</b> The index for each atom that will positively interact with the hydrogen atom of a water molecule.</li>
+                <li><b>Gaussian Settings:</b> The default Gaussian settings optimize the distance and orientation of the water molecule with respect to a given atom in the molecule at the RHF/6-31G* level of theory.  These settings should be suitable for most cases.</li>
+            </ul></dd>
+            
+            <dt style=padding-top:0.5em><i>Output</i>:</dt>
+            <dd>A Gaussian input file (GAU) for each index provided in the donors/acceptors lists.</dd>
+        </dl>
+    
+    <div style=background-color:#ECECEC>    
+    <h3><u>Opt.Charges</u></h3>
+        <dl style=padding-left:1em>
+            <dt style=padding-top:0.5em><i>Description</i>:</dt>
+            <dd>The Opt. Charges tab is used to setup and run a calculation that optimizes atomic partial charges
+            to reproduce water interaction QM target data using MM calculations.  The optimization requires a number of
+            settings, which are broken down into sections that will be described separately.</dd>
+            
+            <dt style=padding-top:0.5em><i>Usage</i>:</dt>
+            <dd>Appropriate data are assigned for Input, Charge Constraints, and QM Target Data sections.  The optimization
+            is launched by the <tt>Run Optimization</tt> button, whereby the status label will update periodically
+            during the calculation.  Upon completion, the status returns to <q>IDLE</q> and the optimized charge data is
+            loaded into the Results section.  A new PSF file containing the optimized charges can be written by specifying
+            a location and filename in the <q>Update PSF with new charges</q> box, and clicking the <tt>Write</tt> button.
+            Note that writing a new PSF requires that the PSF and PDB entries are set in the Input section.  The results from
+            previous charge optimizations can be reloaded by specifying the ffTK output log file into <q>Load output file from
+            a previous optimization</q> and selecting the <tt>Load</tt> button.</dd>
+            
+            <dt style=padding-top:0.5em><i>Input/Settings</i>:</dt>
+            <dd><ul style=list-style-type:none;padding-left:1em;padding-left:0em;margin:0>
+                    <li style=padding-top:0.5em>&#9658 Input</li>
+                        <ul style=list-style-type:none;padding-left:0em;padding-left:2em;margin:0>
+                            <li><b>PSF File:</b> The location and filename of the PSF file describing the molecule.</li>
+                            <li><b>PDB File:</b> The location and filename of the PDB file containing the QM-optimized geometry.</li>
+                            <li><b>Residue Name:</b> The VMD <q>resname</q> abbreviation for the molecule.</li>
+                            <li><b>Parameter Files:</b> Any parameter files that are required for simulation of the molecule.  This includes associated parameter files, as well as the initial parameter file that is under development.</li>
+                            <li><b>NAMD binary:</b> The location of NAMD binary file, or simply the filename if the location is included in the PATH.</li>
+                            <li><b>Output LOG:</b> A location and filename for ffTK output log file (LOG).</li>
+                        </ul>
+                        
+                    <li style=padding-top:0.5em>&#9658 Charge Constraints</li>
+                        <ul style=list-style-type:none;padding-left:0em;padding-left:2em;margin:0>
+                            <li><b>Charge Group:</b> A list of atom names that will be forced to have the same charge.</li>
+                            <li><b>Initial Charge:</b> An initial charge assigned to the charge group.  Cannot be zero.</li>
+                            <li><b>Low Bound:</b> The lowest charge that can be assigned to the charge group.</li>
+                            <li><b>High Bound:</b> The highest charge that can be assigned to the charge group.</li>
+                            <li><b>Net Charge:</b> Integer charge for the entire molecule, <i>e.g.,</i> 0 for a neutral molecule.</li>
+                            <br />
+                            Charge groups should only contain atoms for which charges will be optimized.  Each group can be added manually,
+                            or <q>guessed</q> using an algorithm that assigns charge groups based on chemical equivalency if the PSF/PDB has been
+                            loaded into VMD as the TOP molecule (see Input section).  The Input section also has a tool to show a variety of
+                            labels for each atom to aid in assigning charge groups.  The <tt>Calculate from PSF</tt> button calculates the
+                            <q>Optimized Sum</q> using atomic charges excluded from the optimization found in the PSF, and/or charges that are manually specified via the "Override ReChargeFromPSF" box under Advanced Settings.
+                        </ul>
+                        
+                    <li style=padding-top:0.5em>&#9658 QM Target Data</li>
+                        <ul style=list-style-type:none;padding-left:0em;padding-left:2em;margin:0>
+                            <li><b>Cmpd LOG (HF):</b> The location and filename of the Gaussian log file containing the single point energy calculated for the molecule at the same level as the water interaction (<i>e.g.,</i> RHF/6-31G*).</li>
+                            <li><b>Cmpd LOG (MP2):</b> The location and filename of the Gaussian log file containing the single point energy calculated for the molecule at a high level of theory (<i>e.g.,</i> MP2/6-31G*) to obtain an accurate dipole moment.</li>
+                            <li><b>Water LOG:</b> The location and filename of the Gaussian log file containing the single point energy calculated for a TIP3 water molecule calculated at the same level as the water interaction (<i>e.g.,</i> RHF/6-31G*).</li>
+                            <li><b>LOG File:</b> Log file for each QM-calculated water interaction.</li>
+                            <li><b>Atom Name:</b> The atom name for the atom specified in the water interaction calculation.</li>
+                            <li><b>Weight:</b> A weighting factor for the associated water interaction data.</li>
+                            <br /><br />
+                            The geometry optimization is typically calculated at MP2/6-31G*, and therefore, a separate single point energy
+                            calculation of the optimized geometry at RHF/6-31G* is required for the Cmpd LOG.  The Water Interaction
+                            Energy Data are loaded via the <tt>add</tt> button.  If the water interaction energy data were generated using
+                            the Water Int. tab, then the Atom Name will be automatically parsed from the filename and set accordingly.
+                            One exception to this is for water interaction files probing a carbonyl, which will need to be modified to give the
+                            appropriate atom name due to a difference in the default GAU file naming scheme.
+                        </ul>
+                        
+                    <li style=padding-top:0.5em>&#9658 Advanced Settings</li>
+                        <ul style=list-style-type:none;padding-left:0em;padding-left:2em;margin:0>
+                            <li><b>Start, End, Delta:</b> Control how the water molecule is moved with respect to the specified atom during the MM calculation.  Values are relative to the QM-optimized water interaction.</li>
+                            <li><b>Offset:</b> Adjustment applied to distance of the water molecule at the QM energy minimum to account for differences between gas-phase and bulk-phase calculations</li>.
+                            <li><b>Scale:</b> Scaling factor applied to the QM minimum energy to account for the difference between gas-phase and bulk-phase calculations.</li>
+                            <li><b>Tolerance:</b> Tolerance used to determine the termination criertia for the optimization function.</li>
+                            <li><b>Dist. Weight:</b> Weighting factor of QM Distance relative to QM energy.  Default is 1.0.  Values &lt 1.0 weight energy more heavily and are reasonable, if not desired.</li>
+                            <li><b>Mode:</b> Defines how the optimizer runs; downhill and simulated annealing are supported (see <a href="/Research/vmd/plugins/optimization/">Optimization</a> for details).</li>
+                            <li><b>Override ReChargeFromPSF:</b> If checked, replaces charges from PSF with those provided for the specified atom name during the optimization.  Note, that <q> Optimized Sum</q> will need to be recalculated via the <tt>Calculate from PSF</tt> button after modifying this setting.  The syntax is: {atom_name charge} for each atom specified.</li>
+                            <li><b>Write debugging log:</b> If checked, output also includes a .debug.log file that contains detailed information about the setup and calculation.</li>
+                            <li><b>Build Run Script:</b> If checked, instead of running the optimization immediately, ffTK generates a Tcl script with all of the commands necessary to setup and run the optimization.  This is especially useful for running the optimization with VMD in text mode.  Note that input files are assigned with absolute paths, and may need to be adjusted if the script is launched from a machine with a different filesystem.</li>
+                        </ul>
+                        
+                    <li style=padding-top:0.5em>&#9658 Results</li>
+                        <ul style=list-style-type:none;padding-left:0em;padding-left:2em;margin:0>The results provide the optimized charge for each charge group.
+                        The <q>Charge Total</q> should match the <q>Optimized Sum</q> as calculated in Charge Constraints section; however, rounding errors can occur.  In such cases, select a charge group
+                        entry and adjust the charge as necessary, taking the number of atoms in the charge group into account.  Updating the PSF and loading other outputs are discussed in <q>Usage</q> above.  It is strongly suggested that users employ the Charge Optimization Log Plotter (COLP) utility to assess optimization convergence and the performance of the resulting charges in the ability to reproduce the QM target data.</ul>
+                </ul></dd>
+                
+            <dt style=padding-top:0.5em><i>Output</i>:</dt>
+            <dd>A ffTK log file for use in updating charges via the <tt>Update PSF with new charges</tt> in the Results section.</dd>
+
+        </dl>
+    </div>
+
+    <div>
+    <h3><u>Calc. Bonded</u></h3>
+        <dl style=padding-left:1em>
+            <dt style=padding-top:0.5em><i>Description</i>:</dt>
+            <dd>The Calc. Bonded tab is used to setup the Gaussian calculation of the hessian used to optimize bonds and angles.</dd>
+            
+            <dt style=padding-top:0.5em><i>Usage</i>:</dt>
+            <dd>The user provides the location and filename of the Gaussian checkpoint (CHK) file generated during the geometry
+            optimization (Opt. Geometry), and a filename for a Gaussian input file to calculate the hessian, which is
+            written using the <tt>Write Gaussian Input File</tt> button.</dd>
+            
+            <dt style=padding-top:0.5em><i>Input</i>:</dt>
+            <dd><ul style=list-style-type:none;padding-left:0em;margin:0>
+                <li><b>Gaussian Settings:</b> Default settings are provided for calculation of the hessian at MP2/6-31G* level of theory.</li>
+                <li><b>Geometry Optimization CHK File:</b> The location and filename of the Gaussian checkpoint file generated during the geometry optimization.  Note: Calc. Bonded makes a copy of this file, preventing an overwrite of the original by Gaussian.</li>
+                <li><b>Output GAU File:</b> A location and filename for the generated Gaussian input file.</li>
+            </ul></dd>
+
+            <dt style=padding-top:0.5em><i>Output</i>:</dt>
+            <dd><ul style=list-style-type:none;padding-left:0em;margin:0>
+                <li>A Gaussian input file for running the hessian calculation.</li>
+                <li>A Gaussian checkpoint file used during the hessian calculation.</li>
+            </ul></dd>
+        </dl>
+    </div>
+    
+    <div style=background-color:#ECECEC>
+    <h3><u>Opt. Bonded</u></h3>
+        <dl style=padding-left:1em>
+            <dt style=padding-top:0.5em><i>Description</i>:</dt>
+            <dd>The Opt. Bonded tab is used to setup and run a series of calculations that optimize bonded force constants and 
+            equilibrium values against QM target data using MM calculations.  The optimization requires a number of settings,
+            which are broken down into sections that will be described separately.</dd>
+
+            <dt style=padding-top:0.5em><i>Usage</i>:<dt>
+            <dd>Appropriate data are assigned for Input and Parameters to Optimize sections.  The optimization is launched by the <tt>Run Optimization button</tt>,
+            whereby the status label will update periodically during the calculation.  Upon completion, the status returns to <q>IDLE</q> and the optimized
+            bonded parameters are loaded into the Results section, along with a final objective value reached by the optimizer.  The optimization can be
+            run iteratively, and upon satisfactory results, the in-progress parameter file is updated using the BuildPar tab described above.</dd>
+
+            <dt style=padding-top:0.5em><i>&#9658 Input</i>:<dt>
+            <dd><ul style=list-style-type:none;padding-left:0em;margin:0>
+                    <li><b>PSF File:</b> The location and filename for the PSF file describing the molecule.</li>
+                    <li><b>PDB File:</b> The location and filename for the PDB file describing the optimized geometry of the molecule.</li>
+                    <li><b>Hess LOG File:</b> The location and filename for the LOG file generated from the Gaussian calculations.</li>
+                    <li><b>In-Progress PAR File:</b> The location and filename for the parameter file containing unparameterize bonds and angles. </li>
+                    <li style=list-style-type:none;background-color:black;height:1px;margin:4px></li>
+                    <li><b>Additional Associated Parameter Files:</b> The location and filenames for any PAR files, other than the in-progress file, that contains parameters required to describe the molecule.</li>
+                    <li><b>NAMD Bin:</b> The location of the NAMD executable, or simply its name if the location is included in the PATH</li>
+                    <li><b>Output LOG:</b> The location and filename for writing an ffTK output log file (LOG).</li>
+                </ul>
+            </dd>
+
+            <dt style=padding-top:0.5em><i>&#9658 Parameters to Optimize</i>:<dt>
+            <dd><ul style=list-style-type:none;padding-left:0em;margin:0>
+                    <li><b>Bond/Angle:</b> Type of parameter, bond or angle.</li>
+                    <li><b>Atom Type Def.:</b> The parameter definition using atom types; space delimited.</li>
+                    <li><b>Force Constant:</b> An initial guess for the force constant.</li>
+                    <li><b>b<sub>0</sub>/&#952:</b> An initial guess for the equilibrium value (&#8491 or degrees).</li>
+                </ul>
+            </dd>
+
+            <dt style=padding-top:0.5em><i>&#9658 Advanced Settings</i>:<dt>
+            <dd><ul style=list-style-type:none;padding-left:0em;margin:0>
+                    <li><b>Tolerance:</b> Tolerance used to determine the termination criteria for the optimization function.</li>
+                    <li><b>Geom. Weight, Energy Weight:</b> Weighting factors for tuning the relative contribution of geometry and energy terms to the objective function.  Defaults are 1.0.</li>
+                    <li><b>Mode:</b> Defines how the optimizer runs; downhill and simulated annealing are supported (see <a href="/Research/vmd/plugins/optimization/">Optimization</a> for details).</li>
+                    <li style=list-style-type:none;background-color:black;height:1px;margin:4px></li>
+                    <li><b>Eq. Deviation:</b> Threshold for nonpenalized deviation from the target equilibrium value.</li>
+                    <li><b>K Lower Bound, K Upper Bound:</b> Bounds applied to each force constant.  Bonds and angles have separate bounds.</li>
+                    <li style=list-style-type:none;background-color:black;height:1px;margin:4px></li>
+                    <li><b>Write debugging log:</b> If checked, output also includes a .debug.log file that contains detailed information about the setup and calculation.</li>
+                    <li><b>Build run script:</b> If checked, instead of running the optimization immediately, ffTK generates a Tcl script with all of the commands necessary to setup and run the optimization.  This is specifically useful for running the optimization with VMD in text mode.  Note that input files are assigned with absolute paths and may need to be adjusted if the script is launched from a machine wiht a different filesystem.</li>
+                </ul>
+            </dd>
+
+            <dt style=padding-top:0.5em><i>&#9658 Results</i>:<dt>
+            <dd><ul style=list-style-type:none;padding-left:0em;margin:0>
+                    <li>The results provide the optimized force constant and equilibrium value for each bond/angle parameter entry, along with the final objective value reached by the optimizer.</li>
+                </ul>
+            </dd>
+
+            <dt style=padding-top:0.5em><i>Output</i>:</dt>
+            <dd>An ffTK log file for use in updating bond and angle parameters in the parameter file under development using BuildPar.</dd>
+
+        </dl>
+    </div>
+
+    <div>               
+    <h3><u>Scan Torsions</u></h3>
+        <dl style=padding-left:1em>
+            <dt style=padding-top:0.5em><i>Description</i>:</dt>
+            <dd>The Scan Torsions tab is designed to aid the user in generating the QM target data used to optimize dihedral parameters from torsion scans.</dd>
+            
+            <dt style=padding-top:0.5em><i>Usage</i>:</dt>
+            <dd>The user provides required input/output information.  Loading the PSF/PDB allows the user access to several tools for selecting dihedral angles to be scanned.
+            The preferred method for adding entries to the Dihedrals to Scan box is via the <tt>Read from PAR</tt> button.  This button uses a dialog to identify the parameter
+            file under development, from which dihedrals missing parameters are read, and non-redundant torsions are added to the box.  Each dihedral can be visualized in VMD
+            by selecting the entry.  Dihedrals can also be added manually via the <tt>add</tt> button. The <tt>Generate Dihedral Scan Input Files</tt> button generates two
+            Gaussian input files per scan, one in the positive direction and one in the negative direction.</dd>
+            
+            <dt style=padding-top:0.5em><i>Input</i>:</dt>
+            <dd><ul style=list-style-type:none;padding-left:0em;margin:0>
+                    <li><b>PSF File:</b> The location and filename for the PSF file describing the molecule.</li>
+                    <li><b>PDB File:</b> The location and filename for the PDB file describing the QM-optimized molecular geometry.</li>
+                    <li><b>Output Path:</b> The location where Gaussian input files are written.</li>
+                    <li><b>Basename:</b> A short abbreviation used for naming GAU files; generally the residue name.</li>
+                    <li style=list-style-type:none;background-color:black;height:1px;margin:4px></li>
+                    <li><b>Dihedral Atoms:</b> Indices describing torsion to scan.</li>
+                    <li><b>Scan +/-:</b> Range to scan from Equilibrium Value in either direction (degrees).</li>
+                    <li><b>Step Size:</b> Distance between scan steps (degrees).</li>
+                    <li style=list-style-type:none;background-color:black;height:1px;margin:4px></li>
+                    <li><b>Gaussian Settings:</b> The default Gaussian settings perform a relaxed potential energy scan at the MP2/6-31G* level of theory.  These settings should be suitable for most cases.</li>
+                </ul>
+            </dd>
+            
+            <dt style=padding-top:0.5em><i>Output</i>:</dt>
+            <dd>Two Gaussian input files for each entry of the Dihedrals to Scan box.</dd>
+        </dl>
+    </div>
+    
+    <div style=background-color:#ECECEC>        
+    <h3><u>Opt. Torsions</u></h3>
+        <dl style=padding-left:1em>
+            <dt style=padding-top:0.5em><i>Description</i>:</dt>
+            <dd>The Opt. Torsions tab provides the tools to setup and run calculations that optimize dihedral angle parameters to reproduce
+            QM relaxed potential energy scans.  The optimization requires a number of settings, which are broken down into sections that will
+            be described separately.</dd>
+            
+            <dt style=padding-top:0.5em><i>Usage</i>:</dt>
+            <dd>Appropriate data are assigned for Input, QM Target Data, and Dihedral Parameter Settings sections.  The initial optimization
+            is launched by the <tt>Run Optimization</tt> button, whereby the status label will update periodically during the calculation.
+            Upon completion, the status returns to <q>IDLE</q> and optimization data is loaded into the Visualize Results section.  Here, the data
+            can be plotted against the QM target data (QME) and the initial MM data that excludes energy contributions from the dihedrals being
+            fit (MMEi).  The initial optimization usually requires refinement through the use of the Refine section.  Initial optimization
+            is copied to the Refine section by selecting the entry in the <tt>Visualize Results</tt> box and clicking the <tt>Set As Refit Input</tt>
+            button.  Within the Refine box, various attributes of the optimization can be changed, including dihedral parameter descriptions
+            and optimization settings.  The <tt>Run Refitting/Refinement</tt> button launches the refinement protocol, which is often substantially
+            faster than the original optimization routine.  This is because the initial optimization protocol requires a restrained minimization performed
+            on each target datapoint prior to optimization.  The relevant dihedral information is stored in <q>dihAll</q> (see <q>Reference Data</q> in Visualize
+            Results section), greatly speeding subsequent optimizations/refinements.  The user can iteratively adjust dihedral and optimization settings
+            until arriving at an appropriate torsion PES and root-mean-square error (RMSE).</dd>
+            
+            <dt style=padding-top:0.5em><i>Input/Settings</i>:</dt>
+            <dd><ul style=list-style-type:none;padding-left:0em;margin:0>
+                <li style=padding-top:0.5em>&#9658 Input</li>
+                    <ul style=list-style-type:none;padding-left:2em;margin:0>
+                        <li><b>PSF File:</b> The location and filename of the PSF file describing the molecule.</li>
+                        <li><b>PDB File:</b> The location and filename of the PDB file containing the QM-optimized molecular geometry.</li>
+                        <li style=list-style-type:none;background-color:black;height:1px;margin:4px></li>
+                        <li><b>Parameter Files:</b> Any parameter files that are required for simulation of the molecule.  This includes associated parameter files, as well as the initial parameter file that is under development.</li>
+                        <li style=list-style-type:none;background-color:black;height:1px;margin:4px></li>
+                        <li><b>NAMD binary:</b> The location of the NAMD executable, or simply its name if the location is included in the PATH.</li>
+                        <li><b>Output LOG:</b> A location and filename for ffTK output log file (LOG).</li>
+                    </ul>
+                    
+                <li style=padding-top:0.5em>&#9658 QM Target Data</li>
+                    <ul style=list-style-type:none;padding-left:2em;margin:0>
+                    <li>Location and filenames for Gaussian log files of relaxed potential energy scans.</li>
+                    </ul>
+                    
+                <li style=padding-top:0.5em>&#9658 Dihedral Parameter Settings</li>
+                    <ul style=list-style-type:none;padding-left:2em;margin:0>
+                    <li>The preferred method for setting the dihedral parameters is via the <tt>Read from PAR</tt>
+                    button, which reads in the missing dihedral parameters from the parameter file under development.  The user should modify the periodicity
+                    based on knowledge of the type definitions and the bonding geometries and hybridization states of the atoms involved (<i>e.g.,</i>
+                    for central atoms with sp2 hybridization, n=2).  The optimization supports multiplicities, although the user should exercise
+                    caution.  ffTK only supports phase shift values of 0 and 180 degrees.</li>
+                    </ul>
+                    
+                <li style=padding-top:0.5em>&#9658 Advanced Settings</li>
+                    <ul style=list-style-type:none;padding-left:2em;margin:0>
+                        <li><b>Kmax:</b> The maximum value allowed for a force constant.</li>
+                        <li><b>Energy Cutoff:</b> The QM energy threshold for inclusion in the optimization.  Molecule conformations above this threshold will have their weighting factors set to zero.</li>
+                        <li><b>Tolerance:</b> Tolerance to determine the termination criteria use by the optimization function</li>
+                        <li><b>Mode:</b> Defines how the optimizer runs; downhill and simulated annealing are supported (see <a href="/Research/vmd/plugins/optimization/">Optimization</a> for details). .</li>
+                        <li><b>Write debugging log:</b> If checked, output also includes a .debug.log file that contains detailed information about the setup and calculation.</li>
+                        <li><b>Build Run Script:</b> If checked, instead of running the optimization immediately, it generates a script with all of the commands necessary to setup and run the optimization.  Useful for running the optimization with VMD in text mode.  Note that input files are assigned with absolute paths, and may need to be adjusted if the script is launched from a machine with a different filesystem.</li>
+                        <li><b>Output Freq.:</B> The frequency (iteration number) with which data is written to the ffTK output file, and status label updates.</li>
+                    </ul>
+                    
+                <li style=padding-top:0.5em>&#9658 Visualize Results</li>
+                    <ul style=list-style-type:none;padding-left:2em;margin:0>
+                        <li><tt>Data Set/RMSE/Plot Color:</tt> Attributes for optimization data sets.</li>
+                        <li><tt>Set Data Color:</tt> Change the plot color for selected data sets.</li>
+                        <li><tt>Plot Selected:</tt> Opens a multiplot window and plots selected data sets.</li>
+                        <li><tt>Include QME/Include MMEi:</tt> If checked, includes the QME target data, and the MMEi data in the plot.  Default is on.</li>
+                        <li><tt>Import From LOG:</tt> Loads optimization data (initial or refined).</li>
+                        <li><tt>Write Selected to LOG:</tt> Saves data necessary for reloading (via <tt>Import from LOG</tt>) and optimized parameters for use in BuildPar to update the dihedral parameters for each selected dataset.</li>
+                        <li><tt>Set As Refit Input:</tt> Copies the final parameter data from the selected dataset into the Refine section.</li>
+                    </ul>
+                    
+                <li style=padding-top:0.5em>&#9658 Refine</li>
+                    <ul style=list-style-type:none;padding-left:2em;margin:0>
+                    <li>The refinement parameters hold equivalent functions to those described in previous sections, but are only applied to the refitting/refinement optimizations.</li>
+                    </ul>
+            </ul>
+            </dd>
+            
+            <dt style=padding-top:0.5em><i>Output</i>:</dt>
+            <dd>A ffTK log file for use in updating dihedral parameters in the parameter file under development using BuildPar.</dd>
+            
+        </dl>
+    </div>
+    
+    <div>               
+    <h3><u>GUI Event Log</u></h3>
+    <dl style=padding-left:1em>
+        <dt style=padding-top:0.5em><i>Description</i>:</dt>
+        <dd>Logs the most recent 100 GUI events.  The primary functions is to inform the user of GUI actions that lack visual feedback (<i>e.g.,</i> update buttons, write buttons).</dd>
+        
+        <dt style=padding-top:0.5em><i>Usage</i>:</dt>
+        <dd>Click on <tt>GUI Event Log</tt> label to turn on/off.</dd>
+    </dl>
+    </div>
+    
+    <div style=background-color:#ECECEC>
+    <h3><u>Citation</u></h3>
+    C.G. Mayne, J. Saam, K. Schulten, E. Tajkhorshid, J.C. Gumbart <i>J. Comput. Chem.</i> <b>2013</b>, <a href="http://dx.doi.org/10.1002/jcc.23422">DOI: 10.1002/jcc.23422</a>.
+    <!--Mayne, C.G.; Saam, J.; Schulten, K.; Tajkhorshid, E.; and Gumbart, J.C.; Rapid parameterization of small molecules using the Force Field Toolkit, <b>2013</b>, <i>Submitted</i>.-->
+    </div>
+    
+    <div>
+    <h3><u>Authors</u></h3>
+    <a href="http://www.ks.uiuc.edu/~mayne">Christopher G. Mayne</a> and <a href="http://simbac.gatech.edu/">James C. Gumbart</a>
+    </div>
+
+    <div>
+    <h3><u>Other Contributors</u></h3>
+    Hongde Yu (undergraduate student, Tsinghua University, Beijing, China) contributed to the development of tools for parsing, processing, and analyzing CGenFF/ParamChem output.
+    </div>
+
+</div>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

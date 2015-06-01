@@ -1,0 +1,12 @@
+CREDITS
+-------
+
+The PBCTools plugin has been written by (in alphabetical order)
+* Toni Giorgino <toni.giorgino _at_ isib.cnr.it>
+* Jerome Henin <jhenin _at_ cmm.upenn.edu>
+* Olaf Lenz <olenz _at_ icp.uni-stuttgart.de> (maintainer)
+* Cameron Mura <cmura _at_ mccammon.ucsd.edu>
+* Jan Saam <saam _at_ charite.de>
+
+The "pbcbox" procedure copies a lot of the ideas of Axel Kohlmeyer's
+script "vmd_draw_unitcell".

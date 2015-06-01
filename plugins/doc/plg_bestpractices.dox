@@ -1,0 +1,56 @@
+/*! 
+
+\page bestpractices Plugin development best practices guide
+
+This section contains a description of "best practices" resulting from
+accumulated knowledge and experience developing VMD plugins
+over the last several years.
+
+<h3>Scripting-based plugins vs. C/C++</h3>
+One of the questions that is often raised by new plugin developers
+is whether they should develop plugins in C/C++, Python, or in Tcl/Tk.
+Frequently, inexperienced plugin developers are working on the assumption
+that by writing in C/C++ they'll achieve performance levels far beyond 
+that of scripting-based plugins, often however this is not the case, 
+particularly when the plugin is primarily calling VMD routines to perform
+its work.  In cases like these, the scripting interfaces don't reduce 
+performance much, because the bulk of the runtime is due to internal VMD
+routines, and the best method for achieving improved performance is usually
+to use a better algorithm, or to use the functions of VMD in the most
+efficient way to get the job done.  There are indeed cases where writing
+a plugin in C/C++ is the best way to go, but these are typically cases where
+there aren't any built-in VMD function to perform some arithmetic-heavy
+computations, or in cases where the types of data structures needed for
+implementation of an algorithm make script-based plugin solutions somewhat 
+unwieldy.
+
+<h3>Use of callbacks within plugins</h3>
+The VMD callback mechanism was originally designed to make it possible
+for user-written scripts and plugins to efficiently detect and react 
+to various types of events in VMD.  As the VMD plugin system has grown in 
+scope and complexity, it has become obvious that the existing callback 
+mechanism needs to be bolstered, and guidelines need to be developed in 
+order to make plugins interact with each other in a cooperative way.
+Generally speaking, plugins should only attempt to listen to and
+take action on VMD callback events when they have mouse focus, i.e.
+when the user is actively using them or interacting with them.  In cases
+where a plugin is not actively in use, it should "unwatch" callbacks and
+remain passive, so that it does not interfere with the correct operation of
+other plugins/scripts that the user may have invoked.  A simple example of
+this scenario would be a case where multiple plugins start acting on 
+VMD mouse picking events, each adding structural highlight representations,
+or other interactions.  In such a scenario, a single user mouse selection 
+would result in a multitude of duplicative highlighted representations,
+slowing things down and causing confusion.  For this reason, plugins should
+limit the scope of their callback registration to the minimum necessary, 
+and only during the times when they are in the process of being used.
+In future versions of VMD, we intend to provide a built-in mechanism to 
+manage "plugin focus" to assist developers with these issues.  Until then,
+it is a good idea to design plugins taking these issues into account and
+doing one's best to minimize callback processing activity when possible.
+
+
+<p>
+$Id: plg_bestpractices.dox,v 1.2 2008/04/01 19:05:49 johns Exp $
+
+*/

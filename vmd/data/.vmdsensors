@@ -1,0 +1,73 @@
+###
+### Example VMD Tracker/Sensor configuration File
+### Copyright (c) 2001-2007 Board of Trustees of the University of Illinois
+### $Id: .vmdsensors,v 1.10 2011/10/03 04:09:24 johns Exp $
+###
+
+###
+### Documentation on this file format can be found here:
+###   http://www.ks.uiuc.edu/Research/vmd/vmd-1.8/ug/node46.html
+### 
+### VRPN documentation can be found here:
+###   http://www.cs.unc.edu/Research/vrpn/ 
+###
+
+###
+### Spaceball via built-in drivers, pointer mode only
+### http://www.3dconnexion.com/
+###
+#device sballtracker0 sballtracker://local//dev/ttyS0
+#device sballtrackera sballtracker://local//dev/ttya
+#device sballbuttonsa sballtracker://local//dev/ttyb
+
+###
+### Sensable PHANTOM via VRPN
+### http://www.sensable.com/
+###
+#device  phantomtracker    vrpntracker://portland/Phantom0
+#scale 10
+#rot left  0 0 -1  0 1 0  1 0 0
+#device  phantombuttons    vrpnbuttons://portland/Phantom0
+#device  phantomfeedback  vrpnfeedback://portland/Phantom0
+
+###
+### Logicad3D Magellan via VRPN
+### http://www.3dconnexion.com/
+### 
+#device  magellantracker    vrpntracker://geneseo/Tracker0
+#scale 10
+#rot left 0 0 -1 0 1 0 1 0 0
+#device  magellanbuttons    vrpnbuttons://geneseo/Magellan0
+
+### 
+### Polhemus fastrak via VRPN
+### http://www.polhemus.com/
+### 
+#device fastrak1 vrpntracker://titan/Tracker0:0
+#rot right 0 0 1 1 0 0 0 1 0
+#rot left 0 0 -1 -1 0 0 0 -1 0
+#device fastrak2 vrpntracker://titan/Tracker0:1
+#rot right 0 0 1 1 0 0 0 1 0
+#rot left 0 0 -1 -1 0 0 0 -1 0
+
+###
+### Configuration for the NCSA CAVE trackers
+### http://www.ncsa.uiuc.edu/Vis/Facilities/
+###
+device cavetracker cavetracker://local/cave
+scale 1.0
+offset 0.9 -4.0 -1.0
+device cavebuttons cavebuttons://local/cave:0,1,2,3
+# For left-handers
+#device left_handed_cavebuttons cavebuttons://local/cave:2,1,0
+
+###
+### Configuration for the FreeVR wand
+###
+device freevrtracker freevrtracker://local/freevr
+scale 0.3048
+offset 0.0 -3.0 -0.0
+device freevrbuttons freevrbuttons://local/cave:0,1,2,3
+
+
+

@@ -1,0 +1,109 @@
+\label{unit10}
+
+%should add information on QR
+
+\section{Appendices}
+\subsection{Appendix A: $Q$}
+The following equation is from the article ``Evaluationg protein
+structure-prediction schemes using energy landscape theory'' by
+Eastwood, et al.
+
+\[
+Q=\frac{2}{\ (N-1)(N-2)} \sum _{i<j-1}\exp \left[ -\frac{\left( r_{ij}-r^{N}_{ij}
+\right)^{2}}{2\sigma ^{2}_{ij}}\right] 
+\]
+
+\noindent
+$r_{ij}$ is the distance between a pair of $C^{\alpha}$ atoms.\\
+~\\
+$r_{ij}^N$ is the $C^{\alpha}$-$C^{\alpha}$ distance between residues 
+$i$ 
+and $j$ in the native state.\\
+~\\
+$\sigma ^{2}_{ij}=\left| i-j\right| ^{0.15}$ is the standard deviation, determining the width of the Gaussian function.\\
+~\\
+$N$ is the number of residues of the protein being considered.
+
+
+\newpage
+\subsection{Appendix B: $Q_H$}
+The following text is in the article ``On the evolution of structure in 
+aminoacyl-tRNA synthetases.''
+by O'Donoghue et al.\\
+
+\begin{center}
+{\bfseries Homology Measure}
+\end{center}
+~\\
+We employ a structural homology measure which is based on the structural
+similarity measure, {\it Q}, developed by Wolynes, Luthey-Schulten, and
+coworkers  in the field of protein folding. Our adaptation of {\it Q} is
+referred to as $Q_H$, and the measure is designed to include the effects
+of the gaps on the aligned portion: $Q_H$=$\aleph$($q_{aln}$+$q_{gap}$),
+where $\aleph$ is the normalization, specifically given below.  $Q_H$ is
+composed of two components. $q_{aln}$ is identical in form to the
+unnormalized {\it Q} measure of Eastwood et al. and accounts for the
+structurally aligned regions. The $q_{gap}$ term accounts for the
+structural deviations induced by insertions in each protein in an
+aligned pair: 
+ 
+%\begin{center} \begin{figure}[here]
+%\centerline{\includegraphics{./pictures/qh.pdf}} \end{figure}
+%\end{center} \noindent
+\[Q_{H}=\aleph \left[ q_{aln}+q_{gap}\right] \]
+
+\[
+q_{aln}=\sum _{i<j-2}\exp \left[ -\frac{\left( r_{ij}-r_{i^{\prime }j^{\prime }}
+\right)^{2}}{2\sigma ^{2}_{ij}}\right] 
+\]
+
+
+\begin{eqnarray}
+q_{gap} &=& \sum _{g_{a}}\sum ^{N_{aln}}_{j}\max \left\{ \exp 
+\left[ -\frac{\left( r_{g_{a}j}-r_{g^{\prime}_{a}j^{\prime}}\right)^{2}}
+{2\sigma ^{2}_{g_{a}j}}\right] ,\exp \left[ -\frac{\left( r_{g_{a}j}-r_{g^{\prime \prime }_{a}j^
+{\prime }}\right) ^{2}}{2\sigma ^{2}_{g_{a}j}}\right]\right\}\nonumber\\
+&+& \sum _{g_{b}}\sum ^{N_{aln}}_{j}\max \left\{ \exp \left[ -\frac
+{\left( r_{g_{b}j}-r_{g^{\prime}_{b}j^{\prime}}\right)^{2}}{2\sigma ^{2}_{g_{b}j}}\right] ,
+\exp \left[ -\frac{\left( r_{g_{b}j}-r_{g^{\prime \prime }_{b}j^{\prime }}\right) ^{2}}
+{2\sigma^{2}_{g_{b}j}}\right] \right\} \nonumber
+\end{eqnarray}
+
+The first term, $q_{aln}$, computes the unnormalized fraction of
+$C^{\alpha}$-$C^{\alpha}$ pair distances that are the same or similar
+between two aligned structures. $r_{ij}$ is the spatial
+$C^{\alpha}$-$C^{\alpha}$ distance between residues $i$ and $j$ in
+protein a, and $r_{i'j'}$ is the $C^{\alpha}$-$C^{\alpha}$ distance
+between residues $i$' and $j$' in protein b. This term is restricted to
+aligned positions, e.g., where $i$ is aligned to $i$' and $j$ is aligned
+to $j$'.  The remaining terms account for the residues in gaps. $g_a$
+and $g_b$ are the residues in insertions in both proteins, respectively.
+${g'}_{a}$ and ${g''}_{a}$ are the aligned residues on either side of
+the insertion in protein a. The definition is analogous for ${g'}_{b}$
+and ${g''}_b$.\\ The normalization and the \(\sigma ^{2}_{ij} \) terms
+are computed as:
+
+\[
+\aleph =\frac{1}{\frac{1}{2}\left( N_{aln}-1\right) \left( N_{aln}-2\right) +N_{aln}N_{gr}-n_{gaps}-2n_{cgaps}}\]
+
+
+\[
+\sigma ^{2}_{ij}=\left| i-j\right| ^{0.15} 
+\]
+
+
+where~\( N_{aln} \) is the number of aligned residues. \( N_{gr} \) is
+the number of residues appearing in gaps, and \( n_{gaps} \) is sum of
+the number of insertions in protein ``a'', the number of insertions in
+protein ``b'' and the number of simultaneous insertions (referred to as
+bulges or c-gaps). \( n_{cgaps} \) is the number of c-gaps. Gap-to-gap
+contacts and intra-gap contacts do not enter into the computation, and
+terminal gaps are also ignored. \( \sigma ^{2}_{ij} \) is a slowly
+growing function of sequence separation of residues \( i \) and \( j \),
+and this serves to stretch the spatial tolerance of similar contacts at
+larger sequence separations. \(Q_{H}\) ranges from 0 to 1 where
+\(Q_{H}=1\) refers to identical proteins. If there are no gaps in the
+alignment, then \( Q_{H} \) becomes \( Q_{aln}=\aleph q_{aln}\), which
+is identical to the Q-measure described into the $Q$ measure described
+before.
+

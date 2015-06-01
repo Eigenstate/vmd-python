@@ -1,0 +1,58 @@
+<!--#set var="TITLE" value="RMSD Tool Plugin, Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>
+To get started with RMS fitting and alignment, 
+open the RMSD item from the <b>Extensions</b> menu.
+You should now have a new window titled RMSD Tool
+We'll describe the RMSD calculator function first.
+
+<h3>RMSD calculation</h3>
+
+<img src="rmsd_extension.png">
+
+<p>
+The RMSD calculator button is used to calculate RMS distances between molecules.
+The upper left corner of the menu is where you specify which atoms are to be
+used in the calculation.  In the input field, type the atom selection text
+just as you would in the Graphics form.  The checkbox below the input field
+entitled <i>Backbone only</i> restricts whatever atom selection you typed to just
+the backbone atoms of the selection; in effect, it adds "and backbone" to the
+atom selection text. 
+
+<p>
+The upper right corner of the menu has a button labeled <b>RMSD</b>.  Its effect
+depends on which of the <b>Top</b>, <b>Average</b>, or
+<b>Selected</b> radio buttons are selected.
+If <b>Top</b> is selected, VMD calculates the RMS distance between the top 
+molecule (which is usually the last molecule loaded) and every other molecule.
+If <b>Average</b> is selected, VMD first computes the average x, y, z 
+coordinates of the selected atoms in each molecule, then computes the 
+RMS distance of each molecule from that average structure.
+
+<p>
+Results of the RMS calculations for each molecule are shown in the browser in 
+the bottom half of the menu.  Note that this list is not updated until you
+presse the RMSD button, so the effects of loading/deleting molecules will 
+not be immediately reflected.  The <b>Total RMSD</b> label at the bottom of the
+menu shows the average RMSD for all molecules listed.
+
+<p>
+<h3>RMS Alignment</a>
+</h3>
+
+<p>
+The RMS Alignment button fits molecules based on selected groups of atoms.
+Whereas the RMSD calculator button finds the RMS distance between molecules 
+without disturbing their coordinates, the RMS Alignment button actually moves 
+molecules to new positions.
+
+</p><p>
+This button is quite simple: Enter an atom selection in the input field, and 
+press Align to align the molecules based on the atoms in that selection.
+If you recompute the RMSD between molecules with the RMSD calculator button, 
+you will probably find that the values are different; this is because the 
+calculation is made based on the current positions of the atoms.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

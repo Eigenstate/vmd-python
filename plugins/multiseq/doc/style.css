@@ -1,0 +1,33 @@
+<style type="text/css">
+body {background-color: white}
+p.menu {font-family: arial; font-size: 100%; color: #000099; background-color: #ffe2a5}
+p {font-family: arial; font-size: 100%; color: #000099}
+p.left {text-align: left; font-family: arial; font-size: 100%; color: #000099}
+p.right {text-align: right; font-family: arial; font-size: 100%; color: #000099}
+p.center {text-align: center; font-family: arial; font-size: 100%; color: #000099}
+h1 {font-family: arial; font-size: 200%; color: #000099}
+h1.left {text-align: left; font-family: arial; font-size: 200%; color: #000099}
+h1.right {text-align: right; font-family: arial; font-size: 200%; color: #000099}
+h1.center {text-align: center; font-family: arial; font-size: 200%; color: #000099}
+h2 {font-family: arial; font-size: 130%; color: #000099}
+h2.left {text-align: left; font-family: arial; font-size: 130%; color: #000099}
+h2.right {text-align: right; font-family: arial; font-size: 130%; color: #000099}
+h2.center {text-align: center; font-family: arial; font-size: 130%; color: #000099}
+h2.scs {font-family: times; font-size: 150%; color: #333366}
+a.menu:link {color: #000099; text-decoration: none; font-family: arial; font-size: 100%}
+a.menu:visited {color: #000099; text-decoration: none; font-family: arial; font-size: 100%}
+a.menu:hover {text-decoration: underline; font-family: arial; font-size: 100%}
+a.scs:link {text-decoration: none; font-family: times; font-size: 100%; color: #333366}
+a.scs:visited {text-decoration: none; font-family: times; font-size: 100%; color: #333366}
+a.text:link {color: #0000ff; font-family: arial; font-size: 100%}
+a.text:visited {color: #0000ff; font-family: arial; font-size: 100%}
+a.text:hover {background: #CCCCCC; font-family: arial; font-size: 100%}
+ul.menu {width:100%; padding:0; margin:0; list-style-type:none; font-family: arial; font-size: 100%; color: #000099}
+ul.none {list-style-type:none; font-family: arial; font-size: 100%; color: #000099}
+ul.circle {list-style-type:circle; font-family: arial; font-size: 100%; color: #000099}
+ul.front{ list-style-image: url(roundbutton.jpg); list-style-type: circle; font-family: arial; font-size: 100%; color: #000099}
+ul.square {list-style-type:square; font-family: arial; font-size: 100%; color: #000099}
+ol.lalpha {list-style-type: lower-alpha; font-family: arial; font-size: 100%; color: #000099}
+ol.decimal {list-style-type: decimal; font-family: arial; font-size: 100%; color: #000099}
+.menu {background: url('menubar3.jpg') no-repeat; color:#000099; font-family:arial; 
+font-weight:600;}

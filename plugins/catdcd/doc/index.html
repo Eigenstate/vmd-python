@@ -1,0 +1,140 @@
+<!--#set var="TITLE" value="CatDCD, Version 4.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>
+CatDCD is built using the molfile reader/writer plugins as the
+basis for it's file processing features, but is made available
+as a standalone program that can be compiled and run independently of
+VMD itself.
+
+<p>
+CatDCD is available for download from the MDTools page:
+  <a href="/Development/MDTools/catdcd/">http://www.ks.uiuc.edu/Development/MDTools/catdcd/</a>
+
+<pre>
+* catdcd *
+* Written by Justin Gullingsrud, based on DCD I/O code from VMD
+
+* FEATURES *
+- catdcd functions much like the Unix "cat" command: it concatenates DCD files
+into a single DCD file.  It also allows the user to specify which atoms and
+which frames should be written into the output file; thus DCD's can be split
+as well as combined.
+
+* USAGE *
+CatDCD 4.0
+   catdcd -o outputfile [-otype <filetype>] [-i indexfile]
+      [-stype <filetype>] [-s structurefile]
+      [-first firstframe] [-last lastframe] [-stride stride]
+      [-<filetype>] inputfile1 [-<filetype>] inputfile2 ...
+
+Allowed input file types:
+cpmd pdb dcd Alchemy AMBERPREP BallStick BiosymCAR Boogie 
+Cacao CADPAC CHARMm Chem3d-1 Chem3d-2 CSSR FDAT GSTAT Feature 
+Fractional GAMESSoutput Z-matrix Gaussianoutput HIN Isis MacMolecule 
+Macromodel MicroWorld MM2Input MM2Output MM3 MMADS MDLMOL MOLIN 
+MopacCartesian MopacInternal MopacOutput PCModel Quanta ShelX 
+Spartan SpartanSE SpartanMM Sybyl Sybyl2 Conjure Maccs2d Maccs3d 
+UniChemXYZ XYZ XED gro g96 trr xtc crd crdbox namdbin binpos 
+webpdb cube rst7 tinker dlpolyhist lammpstrj xyz cor molden 
+pqr mol2 car gamess xsf 
+
+Allowed output file types:
+pdb dcd trr crd crdbox namdbin binpos rst7 xyz pqr 
+
+OR
+
+catdcd -o <outputfile> [-i <indexfile>] [-first first] [-last last]
+               [-stride stride] <inputfile1> <inputfile2> ...
+
+OR
+
+catdcd -num <inputfile1> <intputfile2> ...
+
+-o <outputfile>: Specify the output file for CatDCD.  Required, unless -num
+is present (see below).
+
+-num: When present, no output file will be written.  Instead, CatDCD prints
+the number of frames in each file, then exits.
+ 
+-i <indexfile>:
+<indexfile> should contain the (zero-based) indices of the atoms in the
+dcd files whose coordinates are to appear in the output file.  The indices
+should be ASCII text, separated by whitespace.
+
+-first first: Specify the first frame to be written to the output file.  
+Default is 1 (write starting from the first frame read).
+
+-last last: Specify the last frame to write.  Default is the last frame in 
+the last file.
+
+-stride stride: Specify how many frames to skip when writing.  Default is 1
+(don't skip any frames).
+
+
+* CAVEATS *
+The input files may be any combination of charmm or xplor format, and big-
+or little-endianness.  However, they must all have the same number of atoms.
+
+The code uses only standard C library commands and should thus be portable to 
+pretty much anywhere, including non-Unix platforms (I haven't tested this ;-)
+
+* EXAMPLES *
+
+catdcd -num eq01.dcd eq02.dcd
+
+	Prints the number of frames in the two DCD files, then the total,
+	then exits.
+
+catdcd -o eq_all.dcd eq01.dcd eq02.dcd eq03.dcd
+
+	Combines eq01.dcd, eq02.dcd, and eq03.dcd into eq_all.dcd.
+
+catdcd -o eq_pro.dcd -i protein.ind eq01.dcd 
+
+	Takes only the coordinates corresponding to the indices in 
+	'protein.ind' from eq01.dcd and writes them to eq_pro.dcd
+
+catdcd -o eq_first.dcd -first 1000 -last 2000 -stride 10 eq01.dcd eq02.dcd
+	
+	After skipping 999 frames, writes the 1000 frame and every 10th
+	subsequent frame to eq_first.dcd, until a total of 2000 frames 
+	have been read.  	
+
+* Installation * 
+Unpack the distribution package.  A directory named catdcd will be created.
+Enter that directory and type "make".  To use a different compiler or compile
+flags, edit the first three definitions in the Makefile.
+
+New in version 4.0:
+        * CatDCD is now integrated into the VMD plugin tree and is
+          compiled as part of the standard plugin builds.
+
+New in version 3.0:
+        * Now uses the VMD plugins for file reading.  This makes it very easy
+          to adapt the program to handle other file formats.
+        * Use of VMD file readers means fixed atoms are handled automatically.
+  
+New in version 2.0:
+	* New command line interface: The -o option is now required for 
+	  setting the output file.
+	* New -num option to print the number of frames in each file, as well
+	  as the total.
+	* Fixed a bug in the DCD reading code that caused misreading of the
+	  DELTA parameter for byte-swapped Charmm DCD files; caused floating-
+	  point exceptions on Alpha platforms.
+
+New in Version 1.3:
+	* Fixed free of uninitialized pointer when no -i option is set.
+	* Fixed bug in reading of opposite-endian Charmm-format dcd files.
+
+New in Version 1.2:
+	* Fixed serious bug that appeared in 1.1; only frames from the first 
+	  input file were being written to the output file.
+
+New in Version 1.1:
+	* Added -first, -last, and -stride flags.
+	* Added version number information to the output.
+</pre>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

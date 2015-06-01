@@ -1,0 +1,65 @@
+<!--#set var="TITLE" value="Cispeptide Plugin, Version 1.1"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p style="padding-bottom: 0;">The Cispeptide plugin allows the user to:</p>
+
+<ul style="margin-top: 0.5em;">
+  <li>Detect <i>cis</i> peptide bonds in protein structures.</li>
+  <li>Visualize <i>cis</i> peptide bonds.</li>
+  <li>Convert peptide configuration from <i>cis</i> to <i>trans</i>.
+  <li>Define harmonic restraints to enforce peptide bond configuration in simulations with <a href="/Research/namd">NAMD</a>.</li>
+</ul>
+
+<p>See also the <a href="/Research/vmd/plugins/chirality">Chirality</a> plugin to detect, visualize, correct, and enforce chirality in protein and nucleic acid structures.</p>
+
+<p><strong>Tutorial:</strong> A tutorial describing both the Cispeptide and the Chirality plugins can be found <a href="http://www.ks.uiuc.edu/Training/Tutorials/#structurecheck">here</a>.</p>
+
+<p>Please cite the following reference in any work that uses the Cispeptide plugin:</p>
+<!--#include virtual="/cgi-bin/pubs.cgi?SCHR2011"-->
+
+<h3>Graphical interface</h3>
+
+<p>The graphical interface of the Cispeptide plugin is described in this <a href="http://www.ks.uiuc.edu/Training/Tutorials/#structurecheck">tutorial</a>.</p>
+
+<h3>Command-line interface</h3>
+
+<p>To load the plugin, type in the VMD text console or the Tk Console: <tt>package require cispeptide</tt>. The <tt>cispeptide</tt> commands should then be available. Simply typing <tt>cispeptide</tt> prints a list of available commands:</p>
+
+<p><tt>
+Usage:&nbsp;cispeptide&nbsp;<command>&nbsp;[args...]<br />Commands:<br />&nbsp;&nbsp;check&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;identify&nbsp;cis&nbsp;peptide&nbsp;bonds<br />&nbsp;&nbsp;list&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;list&nbsp;identified&nbsp;cis&nbsp;peptide&nbsp;bonds<br />&nbsp;&nbsp;minimize&nbsp;--&nbsp;fix&nbsp;cis&nbsp;peptide&nbsp;bonds&nbsp;using&nbsp;energy&nbsp;minimization<br />&nbsp;&nbsp;move&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;move&nbsp;specified&nbsp;atom&nbsp;to&nbsp;convert&nbsp;to&nbsp;trans<br />&nbsp;&nbsp;reset&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;reinitialize&nbsp;plugin&nbsp;state<br />&nbsp;&nbsp;restrain&nbsp;--&nbsp;generate&nbsp;NAMD&nbsp;extrabonds&nbsp;file&nbsp;to&nbsp;restrain&nbsp;peptide&nbsp;bonds<br />&nbsp;&nbsp;set&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;define&nbsp;how&nbsp;to&nbsp;modify&nbsp;a&nbsp;given&nbsp;cis&nbsp;peptide&nbsp;bond<br />&nbsp;&nbsp;show&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;visualize&nbsp;identified&nbsp;cis&nbsp;peptide&nbsp;bonds<br />
+</tt></p>
+
+<p>Typing each command provides further usage information (e.g., typing <tt>cispeptide check</tt> will print the usage information for the corresponding command). The command-line interface allows for <i>cis</i> peptide bonds to be identified in text mode (<tt>cispeptide check</tt>, <tt>cispeptide list</tt>). One can generate visualizations of <i>cis</i> peptide bonds (<tt>cispeptide show</tt>), but that obviously requires VMD running on graphics mode.</p>
+
+<p>In order to modify a peptide bond configuration, one first needs to choose which atom (H or O) should be moved (<tt>cispeptide set</tt>) followed by actually moving the chosen atom (<tt>cispeptide move</tt>). Finally, one needs to minimize the structure, possibly followed by a short equilibration (<tt>cispeptide minimize</tt>). This last step lauches <a href="/Research/vmd/plugins/autoimd">AutoIMD</a>, thus also requiring VMD running in graphics mode.</p>
+
+<p>The <tt>cispeptide restrain</tt> command generates a text file defining harmonic restraints to enforce peptide bond configuration in an MD simulation with <a href="/Research/namd">NAMD</a> through its <a href="http://www.ks.uiuc.edu/Research/namd/2.7/ug/node26.html#SECTION00084400000000000000">extraBonds</a> feature.</p>
+
+<h3>Under the hood</h3>
+
+<h4>Detection of cis peptide bonds</h4>
+
+<p><em>Identifying peptide bonds.</em> When a molecular structure (e.g., a PDB file) is loaded into VMD, a series of heuristics are applied in order to derive a graph describing all the bonds between atoms. If a file containing topology information of the given structure is first loaded (e.g., a PSF file), the graph describing the bonds in the system is derived from the file and VMD does not need to guess. The Cispeptide plugin traverses the bond graph, identifying all peptide bonds in the system.</p>
+
+<p><em>Missing atoms.</em> The Cispeptide plugin requires that all the following atoms be present in order for a peptide bond to be considered: O, C, N, CA. If any of these atoms are not present, a peptide bond is not considered. The Cispeptide plugin was designed to check and correct models used in molecular dynamics (MD) simulations, which never contain missing atoms. In fact, in order convert a <i>cis</i> peptide bond into the <i>trans</i>, the plugin requires a complete input structure, since an actual MD simulation is performed in the process.</p>
+
+<p><em>Default selection.</em> The default atom selection considered by the Cispeptide plugin is {same fragment as protein}. VMD considers a residue being a <a href="http://www.ks.uiuc.edu/Research/vmd/current/ug/node88.html">protein residue</a> if and only if it contains atoms named C, N, CA, and O. Thus, selecting simply {protein} may lead to peptide bonds not being analyzed. For example, say residue <em>i</em> contains atoms C, N, CA, and O, but residue <em>i</em>+1 contains only atoms N and CA. VMD considers residue <em>i</em> as a protein residue, but not residue <em>i</em>+1. There is, however, a peptide bond between residues <em>i</em> and <em>i</em>+1, and all the atoms required by the Cispeptide plugin are present (O and C from residue <em>i</em>, N and CA from residue <em>i</em>+1). For VMD, a <a href="http://www.ks.uiuc.edu/Research/vmd/current/ug/node88.html">fragment</a> is a set of connected residues. Setting the default selection to {same fragment as protein} ensures that, as long there is at least one residue with all four atoms C, N, CA, and O in a fragment, all residues in the fragment are taken into account by the Cispeptide plugin.</p>
+
+<p><em>Alternative conformations.</em> PDB files can contain alternative conformations for certain atoms (altLoc field). In such cases, the Cispeptide plugin considers only the first conformation.</p>
+
+<p><em>Checking the peptide configuration.</em> In order to determine the configuration of each peptide bond (<i>cis</i>/<i>trans</i>), the dihedral angle O-C-N-CA is calculated. If the absolute value is above a predefined cut-off (85 degrees), the peptide bond is considered to be in the <i>cis</i> configuration.</p>
+
+<h4>Conversion of peptide configuration from <i>cis</i> to <i>trans</i></h4>
+
+<p><em>Moving a hydrogen or oxygen atom.</em> For each <i>cis</i> peptide bond to be corrected, the user should chooses an atom to be moved (hydrogen or oxygen) based on the local geometry (see above). The Cispeptide plugin then moves the requested atom in the direction of the corresponding bond (N-H or C-O) by a distance equal to two times the original bond length. If this operation results in atoms being within 0.5 Angstroms of each other, the atom is moved progressively back until the clashes are resolved and a warning message is printed.</p>
+
+<p><em>Minimizing/equilibrating the modified structure.</em> After atoms for selected <i>cis</i> peptide bonds were moved, the user can minimize (and optionally equilibrate) the structure using <a href="/Research/vmd/plugins/autoimd">AutoIMD</a> (see above). The Cispeptide plugin provides the AutoIMD plugin with a subset of the original structure containing a region within 10 Angstroms of the modified peptide bonds. In addition, the Cispeptide plugin communicates with the AutoIMD plugin, generating a list of harmonic restraints that are then applied to H-N-C-O dihedral angles corresponding to the modified peptide bonds in order to avoid unphysical rearrangements during optimization of the <i>trans</i> configuration.</p>
+
+<h3>Authors</h3>
+
+<p><a href="http://www.ks.uiuc.edu/~ltrabuco">Leonardo Trabuco</a> <br />
+<a href="http://www.ks.uiuc.edu/~eschrein">Eduard Schreiner</a> <br />
+<a href="http://www.ks.uiuc.edu/~petefred">Peter Freddolino</a></p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

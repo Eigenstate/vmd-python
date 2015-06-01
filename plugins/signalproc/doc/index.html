@@ -1,0 +1,354 @@
+<!--#set var="TITLE" value="VMD Signal Processing Plugin Package, Version 1.1"-->
+<!--#include virtual="/include/header-over.shtml"-->
+
+<!-- CONTENT STARTS HERE -->
+
+    <h3>Background and Scope</h3>
+    <p>The <b>signalproc</b> plugin is a collection of scripted and compiled
+      Tcl plugins that can be of use for "signal processing" and related 
+      types of applications within VMD. To load <b>all</b> packages of this
+      collection in one go you can use:</p>
+    <pre>
+    package require signalproc
+    </pre>
+
+    <a name="specden"></a>
+    <h4>specden - Calculation of Spectral Densities (v1.1).</h4>
+    <p>This plugin is the heart of the <a href="../irspecgui/">IRSpecGUI</a> tool.
+      It allows to compute spectral densities from trajectories using time series data.
+      By computing the Fourier transformed auto-correlated data directly. This method
+      has the advantage over the more traditional way of first computing an auto-correlation
+      function (ACF) and then performing the fourier transform, that it is frequently faster
+      (O (N log(N)) instead of O(N^2)), especially if only lower frequency information is
+      required, and doesn't require to cut off the intermediate ACF arbitrarily.
+      On top of that i can renormalize the resulting power spectrum with frequency
+      dependent prefactors based on a number of different models.
+    </p>
+    <p>
+      Unlike the GUI using the low level <tt>specden</tt> command direcly, allows to process
+      for much more flexible auto-correlation data calculations. 
+      <a href="#specden_examples">Below</a> are a few example application scripts. 
+    </p>
+
+    <h5>Syntax</h5>
+    The <tt>specden</tt> command is individually added to the Tcl script interpreter through:
+    <pre>
+    package require specden
+    </pre>
+    And used as <tt>specden &lt;x-,y-,z-data&gt; &lt;deta t&gt; &lt;max. freq&gt; ?&lt;norm&gt;? ?&lt;temp&gt;? ?&lt;oversamp&gt;?</tt> for example like this:
+<pre>
+    specden $dat 10.0 3000.0 harmonic 300.0
+</pre>
+    <p>The individual arguments are:
+    <table>
+        <tr>
+          <td valign="top">&lt;x-,y-,z-data&gt;</td>
+          <td>This is a list of lists of xyx-triples, which can be any data like 
+            dipole moment vectors, velocities, positions, etc. for one-, or two-dimensional
+            data sets, the missing entries can be padded with zeroes.</td>
+        </tr>
+        <tr>
+          <td valign="top">&lt;delta t&gt;</td>
+          <td>Real time between the individual data sets in atomic units 
+            (1 a.u. ~= 0.0242 fs, 1ps ~= 41341.4 a.u.).</td>
+        </tr>
+        <tr>
+          <td valign="top">&lt;max. freq&gt;</td>
+          <td>Largest frequency to be considered in the calculation in wavenumbers (cm^-1).
+            The maximum allowed value depends on the size of the data set. Using a smaller
+            number, if no high frequency components are required, will speed up the calculation.</td>
+        </tr>
+        <tr>
+          <td valign="top">&lt;norm&gt;</td>
+          <td>Renormalization/Correction method of the spectral density. Optional.<br>
+            <tt>fourier:</tt> 
+            is the plain power spectrum of the input data (normalized to unity in 
+            the output frequency range;<br>
+            <tt>classical:</tt> 
+            is the power spectrum with a prefactor of <i>\omega ( 1 - \exp(-\beta \hbar \omega) )</i> 
+            corresponding to the classical/Gordon limit;<br>
+            <tt>kubo:</tt> is the power spectrum with a prefactor of <i>\omega \tanh(\beta \hbar \omega/2)</i>
+            corresponding to the Kubo correction;<br>
+            <tt>harmonic:</tt> is the power spectrum with a prefactor 
+            of <i>\omega \beta \hbar \omega</i>  corresponding to the high temperature / harmonic 
+            limit (this is the recommended correction factor);<br>
+            <tt>schofield:</tt> is the power spectrum with a prefactor 
+            of <i>\omega ( 1 - \exp(-\beta \hbar \omega) ) \exp(\beta \hbar \omega /2)</i> corresponding to Schofield's 
+            correction.<br> (Default: harmonic).</td>
+        </tr>
+        <tr>
+          <td valign="top">&lt;temp&gt;</td>
+          <td>Temperature of the system in Kelvin. Needed for the corrections from above. 
+            Optional.<br> (Default: 300.0)</td>
+        </tr>
+        <tr>
+          <td valign="top">&lt;oversamp&gt;</td>
+          <td>Integer that determines the noisyness and resolution of the resulting spectrum 
+            through oversampling. Optional. A value of 1 gives maximal resolution and noise.
+            Larger values reduce noice corresponding to a square root law at the expense
+            of resolution.</td>
+        </tr>
+      </table>
+    </p>
+     
+    <a name="sgsmooth"><img style="border: 0; padding: 0 0 1em 1em"
+	src="smooth.png" align="right"></a>
+    <h4>sgsmooth - Savitzky-Golay Data Smoothing and Numerical Derivative Calculation (v1.1)</h4>
+    <p>The Savitzky-Golay method performs some kind of improved slinding window averaging
+      filter by what comes down to effectively a local polynomial regression (of degree k) 
+      on a distribution of points. In a variant of this filter, the polynomial can be used 
+      to perform a calculation of a numerical derivative.<p>
+
+    <p>The main advantage of this approach is, that with a proper choice of parameters, 
+      it tends to preserve features of the original data distribution such as relative maxima, 
+      minima, width and the integral, which are usually 'flattened' by other adjacent 
+      averaging techniques (like sliding window averages, for example). Very good results
+      are achieved with already quite low order polynomial (4th-8th) and moderate 
+      window sizes. See graph on the right for an example. Note that the actual window
+      size is twice the number of polynomial bins plus one, i.e. 21 in the example.
+    </p>
+
+    <h5>Syntax</h5>
+    The <tt>sgsmooth</tt> and <tt>sgsderiv</tt> commands are individually added to the Tcl script 
+    interpreter through:
+    <pre>
+    package require sgsmooth
+    </pre>
+    And used as <tt>sgsmooth &lt;data&gt; &lt;window&gt; &lt;order&gt;</tt> and  
+    <tt>sgsderiv &lt;data&gt; &lt;window&gt; &lt;order&gt;</tt>.
+    <p>The individual arguments in both cases are:
+    <table>
+        <tr>
+          <td valign="top">&lt;data&gt;</td>
+          <td>This is a list floating point numbers. The data points are assumed to be equidistant.</td>
+        </tr>
+        <tr>
+          <td valign="top">&lt;window&gt;</td>
+          <td>This is the sliding average window size parameter. The total number of data points
+            used to generated the smoothed number is twice the window size plus one.</td>
+        </tr>
+        <tr>
+          <td valign="top">&lt;order&gt;</td>
+          <td>This is the order of the polynomial that is being used to generate the windowing function.</td>
+        </tr>
+   </table>
+      <p><tt>sgsmooth</tt> will return a smoothed version of the list of data points that have
+      been given as input, <tt>sgsderiv</tt> its first derivative.</p>
+
+
+
+    <p><i>Reference:</i><br>
+      A. Savitzky and Marcel J.E. Golay,
+      Smoothing and Differentiation of Data by Simplified Least Squares Procedures.<br>
+      Analytical Chemistry, 36: 1627-1639. (1964)
+      <a href="http://dx.doi.org/10.1021%2Fac60214a047">doi:10.1021/ac60214a047</a>
+    </p>
+
+    <a name="fftpack"></a>
+    <h4>fftpack - 1d, 2d, 3d, and 4d Fast Fourier Transforms (v1.1)</h4>
+    <p>This plugin provides a Tcl script interface to one and multi-dimensional Fourier 
+      transforms adapted from the <a href="http://kissfft.sf.net">Kiss FFT</a>
+      package, a small, portable and fairly efficient FFT library with a BSD type license.
+      This package can be used to do Fourier analysis or synthesis on data and 
+      other convolutions or filtering of data sets. The code provides complex to complex
+      transforms for one to four dimensional data. For 1d data sets also complex-to-real
+      and real-to-complex transforms are supported.</p>
+
+    <h5>Syntax</h5>
+    The the fftpack commands are individually added to the Tcl script interpreter through:
+    <pre>
+    package require fftpack
+    </pre>
+    The take lists of numbers as arguments and return the fourier transformed data.
+    Complex numbers are represented as list of two read numbers. If a command expects
+    a list of complex numbers, but only a list of real is given, the missing imaginary
+    part will automatically be added.
+    <p>The individual transform commands are:
+    <table>
+        <tr>
+          <td valign="top">r2cfft_1d</td>
+          <td>Real to complex 1d Fourier transform.</td>
+        </tr>
+        <tr>
+          <td valign="top">c2rfft_1d</td>
+          <td>Complex to real 1d Fourier transform.</td>
+        </tr>
+        <tr>
+          <td valign="top">cfftf_1d</td>
+          <td>Complex to Complex forward 1d Fourier transform.</td>
+        </tr>
+        <tr>
+          <td valign="top">cfftb_1d</td>
+          <td>Complex to Complex backward 1d Fourier transform.</td>
+        </tr>
+        <tr>
+          <td valign="top">cfftf_2d</td>
+          <td>Complex to Complex forward 2d Fourier transform.</td>
+        </tr>
+        <tr>
+          <td valign="top">cfftb_2d</td>
+          <td>Complex to Complex backward 2d Fourier transform.</td>
+        </tr>
+        <tr>
+          <td valign="top">cfftf_3d</td>
+          <td>Complex to Complex forward 3d Fourier transform.</td>
+        </tr>
+        <tr>
+          <td valign="top">cfftb_3d</td>
+          <td>Complex to Complex backward 3d Fourier transform.</td>
+        </tr>
+        <tr>
+          <td valign="top">cfftf_4d</td>
+          <td>Complex to Complex forward 4d Fourier transform.</td>
+        </tr>
+        <tr>
+          <td valign="top">cfftb_4d</td>
+          <td>Complex to Complex backward 4d Fourier transform.</td>
+        </tr>
+   </table>
+
+
+    <h4>data_io_lib - Frequently Used Operations on 1d-, 2d-, and 3d-data (v1.1)</h4>
+    <p>Some utility Tcl scripts for reading, writing and manipulating data sets related 
+      but not limited to the task of signal processing in Tcl. All commands are
+      placed in the <tt>::DataIOLib::</tt> namespace.</p>
+    <table>
+      <tr>
+        <td valign="top">transp_list_of_lists &lt;list&gt;</td>
+        <td>Take a list with m elements of n-item lists and transpose it, so
+          you have n elements of m items each.</td>
+      </tr>
+      <tr>
+        <td valign="top">gen_lin_list &lt;start&gt; &lt;delta&gt; &lt;num&gt;</td>
+        <td>Generate a sequence of <tt>num</tt> numbers with a linearly increasing 
+          value.</td>
+      </tr>
+      <tr>
+        <td valign="top">write_list &lt;name&gt; &lt;list&gt; [&lt;title&gt;]</td>
+        <td>Write a list to a text file <tt>name</tt> suitable for plotting data with 
+          Gnuplot or XmGrace. If <tt>list</tt> is a list of lists, then the resulting 
+          file will have multiple columns.</td>
+      </tr>
+      <tr>
+        <td valign="top">read_list &lt;name&gt; [&lt;column&gt;]</td>
+        <td>Read a list from a text file <tt>name</tt>. The optional <tt>column</tt>
+          parameter defaults to 0 (= the first column). It can be set to 'all' to
+          read all columns. Comment lines starting with '#' will be skipped.</td>
+      </tr>
+      <tr>
+        <td valign="top">write_2d_list &lt;name&gt; &lt;list&gt; [&lt;title&gt;]</td>
+        <td>Write a list of lists to a text file <tt>name</tt> in a three column
+          'i', 'j', 'data' format as it is used by Gnuplot for the "splot" command
+          by default.</td>
+      </tr>
+      <tr>
+        <td valign="top">write_3d_list_real &lt;name&gt; &lt;list&gt; [&lt;title&gt;]</td>
+        <td>Write a 3-d list of lists of lists data set to a text file <tt>name</tt> 
+          in DX-like format. If the innermost level has complex numbers, i.e. lists with
+          2 elements, only the real part is used.</td>
+      </tr>
+      <tr>
+        <td valign="top">write_3d_list_image &lt;name&gt; &lt;list&gt; [&lt;title&gt;]</td>
+        <td>Write a 3-d list of lists of lists data set to a text file <tt>name</tt> 
+          in DX-like format. The innermost level is expected to have complex numbers, 
+          i.e. lists with 2 elements, only the imaginary (= second) part is used.</td>
+      </tr>
+    </table>
+
+    <h3>Examples</h3>
+    <a name="specden_examples"></a>
+    <h4>Spectral Densities Plugin Examples</h4>
+    <h5>Example 1: data from external file</h5>
+    We assume the data file has its information in columns (here: CPMD style ENERGIES files)
+    and we want to compute the power spectrum of column two for a pair of files and 
+    plot them using the multiplot plugin to compare them.
+<pre>
+    # compare effect of fictitious mass on fictitious vibronic DOS in CP dynamics
+    package require specden
+    package require multiplot
+
+    set fp [open "ENERGIES-cp-200au" "r"]
+    set dlist {}
+    while { [gets $fp dat] >= 0 } {
+        lappend dlist [list [lindex $dat 1] 0.0 0.0]
+    }
+    close $fp
+    lassign [specden $dlist 4.0 20000.0] flist slist
+    set ph [multiplot -x $flist -y $slist -title "EKINC Power Spectrum" -lines -linewidth 3 -marker points -plot]
+
+    set fp [open "ENERGIES-cp-400au" "r"]
+    set dlist {}
+    while { [gets $fp dat] >= 0 } {
+        lappend dlist [list [lindex $dat 1] 0.0 0.0]
+    }
+    lassign [specden $dlist 4.0 20000.0] flist slist
+    close $fp
+    $ph add $flist $slist -lines -linecolor red -linewidth 3 -plot 
+</pre>
+
+    <h5>Example 2: Position auto-correlation</h5>
+    We want to compute the power spectrum of all H labeled atoms from a position 
+    auto-correlation function (works the same way for velocity auto-correlation
+    functions, if your trajectory file contains velocities instead of positions).
+    This example works in text mode and the output is a file with the individual
+    spectra as columns and an averaged spectrum as the last column.
+<pre>
+    # calculate power spectrum from position auto-correlation of hydrogen atoms
+    package require specden
+
+    set mol [mol new {h2o.psf} waitfor all]
+    mol addfile {TRAJEC-cp-200.xyz} waitfor all
+
+    set sel [atomselect $mol {name H}]
+    set nf [molinfo $mol get numframes]
+    set na [$sel num]
+
+    set reslist {}
+    for {set a 0} {$a < $na} {incr a} {
+        set dlist {}
+        for {set f 0} {$f < $nf} {incr f} {
+            $sel frame $f
+            lappend dlist [lindex [$sel get {x y z}] $a]
+        }
+        lassign [specden $dlist 400.0 3000.0 harm 330.0 1] flist slist
+        lappend reslist $slist
+    }
+
+    # write out the result as: fequency, h1, h2, ..., <h>
+    set fp [open "posacfspec-h.dat" "w"]
+    set ns [llength $flist]
+    for {set i 0} {$i < $ns} {incr i} {
+        puts -nonewline $fp "[lindex $flist $i] "
+        set avg 0.0
+        for {set a 0} {$a < $na} {incr a} {
+            set val [lindex $reslist $a $i]
+            puts -nonewline $fp "$val "
+            set avg [expr {$avg + $val}]
+        }
+        puts $fp "[expr $avg / $na]"
+    }
+    close $fp
+</pre>
+
+    <h3>Parallelization</h3>
+    <p> If compiled from source, <a href="#specden">specden</a>, <b>sgsmooth</b>, and <b>fftpack</b> can 
+      all be compiled with multi-threading support via the 
+      <a href="http://www.openmp.org/">OpenMP</a> parallel programming interface.
+      The number of threads can then be controlled by either the usual <b>OMP_NUM_THREADS</b>
+      environment variable, or using the VMD internal <b>VMDFORCECPUCOUNT</b> environment
+      variable. The latter will overrided the former.
+      <i>Note:</i> Due to portability issues, the precompiled VMD binaries shipped from
+      the VMD homepage, are currently (Version 1.8.7) <b>not</b> compiled with OpenMP support.
+    </p>
+
+<h3>Authors</h3>
+<p>These packages are written and maintained by 
+      <a href="http://sites.google.com/site/akohlmey/">Axel Kohlmeyer</a> with 
+      the following contributions:</p>
+<p><b>specden</b> is based on a Fortran 90 code written by Dr. Harald Forbert, 
+      and Dr. Volker Kleinschmidt between 2002 and 2004 at the Ruhr-Universit&auml;t Bochum.</p>
+<p><b>fftpack</b> uses code from <a href="http://kissfft.sourceforge.net/">Kiss FFT</a>
+      Copyright (c) 2003-2008, Mark Borgerding.</p>
+
+<!--#include virtual="/include/footer-over.shtml"-->
+</BODY></HTML>

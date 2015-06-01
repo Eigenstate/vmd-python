@@ -1,0 +1,23 @@
+ReadMe file for newmat10B - release version - 1 January, 2003
+-------------------------------------------------------------
+
+This is the release version of newmat10B.
+
+Documentation is in nm10.htm.
+
+This library is freeware and may be freely used and distributed.
+
+To contact the author please email robert@statsresearch.co.nz
+
+
+Version 10A corrects an error on the Kronecker production function and
+you can now run Gnu G++ version 3 and Intel for Linux without making
+any modifications.
+
+Version 10B corrects incompatibilities with Gnu G++ version 3.4 and
+Intel C++ for Windows, 8.1.
+
+Include.h, myexcept.h, myexcept.cpp, precisio.h are replaced with recent
+versions.
+
+

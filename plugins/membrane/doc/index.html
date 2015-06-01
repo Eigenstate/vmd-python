@@ -1,0 +1,96 @@
+<!--#set var="TITLE" value="Membrane Plugin, Version 1.1"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<h2 align="center"><a href="http://www.ks.uiuc.edu/%7Eilya">Ilya Balabin</a></h2>
+ <b>Why membrane structure generating?</b> The increase in the computational 
+power over the past few years has allowed for all-atom molecular dynamics 
+(MD) modeling of large biological molecules. Many of these molecules are membrane
+proteins, which function may (and often does) critically depend on the structure
+of the surrounding lipid membrane. The <i>membrane </i>plugin implements
+a simple, yet efficient, algorithm to instantly generate biological membrane
+structures for all-atom MD simulations of membrane proteins.<br>
+  <b><br>
+  Generating algorithm.</b> The <i>membrane</i> plugin builds a rectangular
+ matrix of the required size out of pre-built membrane square patches. Since
+ biological membranes are lipid bilayers, the patches included two lipid
+layers,  either layer being a 2-dimensional hexagonal lattice of lipids.
+The lipid  tails were (almost) fully extended, allowing for easy inserting
+proteins (most of which have nearly cylindric shape) into the membrane and,
+therefore, reducing the required equilibration time. The distance between
+the layers was set to fit the actual membrane thickness, and the lattice
+period was set to fit the actual surface density of lipid molecules. Both
+parameters depended on the lipid type; for many commonly used lipids, these
+parameters are available from experiments (see, e.g., <a
+ href="http://www.brocku.ca/researchers/peter_rand/lipid/default.html">P. R. Rand's page</a>).<br>
+  <br>
+  To make the generated structure closer to the actual ones, some disorder
+ was introduced into the patches: random orientation of each lipid in the
+membrane plane, and truncated Gaussian spread in the perpendicular direction.
+More disorder was caused by a short (1ps) equilibration in vacuum, which
+eliminated steric collisions among the lipid atoms but left most of lipid
+tails extended. These features do not complicate inserting proteins into
+the membrane but additionally reduce the required equilibration time.<br>
+  <br>
+  Proper head group hydration may be critical for membrane properties and,
+ therefore, for function of membrane proteins. To properly hydrate the lipid
+ head groups, water shells are built around the lipids one by one. Since
+the  VMD <i>solvate</i> plugin makes use of a pre-equilibrated water box,
+shell-by-shell solvating was done using the <a
+ href="http://www.mpibpc.gwdg.de/abteilungen/071/solvate/docu.html">  <i>Solvate
+ </i></a> program by H. Gruebmuller. Later, water molecules outside the lipid
+ dimensions and inside the hydrophobic layer (there usually are only a few) 
+are deleted. Thus, the final patch structure is a slightly disordered lipid
+ bilayer with the lipid head groups solvated.<br>
+  <br>
+  <b>Plugin usage.</b> The command syntax is simple and consistent with the
+ <i>solvate</i> plugin syntax. Run the following commands in the VMD console:<br>
+  <br>
+  <code>package require membrane</code><br>
+  <br>
+  Running <code>membrane</code> with no arguments gives a short overview
+of  the syntax. For actual generating a membrane, run <code>membrane</code>
+as  follows:<br>
+  <br>
+  <code>membrane -l &lt;lipid_name&gt; -x &lt;size_in_X&gt; -y &lt;size_in_Y&gt;
+ {-o &lt;output_prefix&gt;}</code><br>
+  <br>
+  Replace the contents of the angular brackets with the corresponding parameters:<br>
+   
+<ul>
+    <li><i>lipid_name</i> can only be POPC or POPE at the moment. Other lipid
+ structures will be generated too.</li>
+    <li><i>size_in_X</i> and <i>size_in_Y</i> are the required membrane dimensions
+ in A. (The membrane is built in the XY plane).</li>
+    <li><i>output_prefix</i> is an optional parameter, which is simple the
+ output file name. By default, the generated files are named <i>membrane.psf</i>
+ and <i>membrane.pdb</i>.<br>
+    </li>
+   
+</ul>
+  It takes about 20 seconds to generate an about 100x100A size membrane on
+ a PIII 766MHz laptop.<br>
+ <br>
+ <b>Embedding proteins in membrane.</b> First, you need a coordinate file 
+(protein.pdb) and a structure file (protein.psf) for the protein. The PSF 
+file can be easily generated using the <i>psfgen</i> plugin. Load the both 
+protein and membrane into VMD and align the protein to the proper position 
+and orientation in the membrane. Aligning can be easily done using the VMD 
+GUI front end (hit "9" key to switch VMD in the "move molecule" mode, see 
+more details in the <a
+ href="http://www.ks.uiuc.edu/Research/vmd/current/ug/">VMD manual</a>) or 
+the console (using commands "move", "moveby", "moveto"). Make sure to use 
+all available experimental data to align the protein in the most accurate 
+way possible. Then, save the protein coordinates in another PDB file (protein_aligned.pdb). 
+The last step is merging the protein and the membrane and removing lipids 
+that overlap with the protein groups. The Tcl script <a
+ href="combine.tcl">combine.tcl</a> does that for you:   
+<p><tt> vmd -dispdev text &lt; <a href="combine.tcl">combine.tcl</a> | tee 
+combine.log </tt></p>
+ The protein-membrane complex coordinate and structure files are "protein-mem.psf/pdb".
+Note that the script requires the topology file <a
+ href="top_all27_prot_lipid.inp">top_all27_prot_lipid.inp</a>  (or a symbolic
+link to it) to be present in the working directory.<br>
+  <br>
+ <br>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

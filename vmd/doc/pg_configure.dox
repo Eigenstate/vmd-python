@@ -1,0 +1,299 @@
+/*! \page configure The VMD configure script in detail
+
+\section configurescript Working with the configure script
+<p>
+VMD is designed to be portable to diverse operating systems, and to 
+allow a person to individually include or exclude different optional 
+features or modules.
+To make this possible, the
+\ref buildscripts "configure" script creates a Makefile in the <b>src</b>
+directory, using the  selected architecture and any optional features that 
+are enabled.  This newly generated Makefile is then used to compile a VMD
+executable from the source code.
+
+<p>
+The configure script is found at the top level of
+the VMD working directory.  This script has three purposes:
+<ul>
+<li>To adapt the Makefile to use the proper libraries and compiler
+    options for the type of operating system being used.
+<li>To specify which ones of the many optional components of VMD
+    should be included in the final executable, and to include in the
+    Makefile the necessary files for the selected options.
+<li>To configure the VMD directories and source files to use the
+    values for configurable parameters chosen by the user, i.e., the name
+    of the final executable, the location for where the program is to be
+    installed, etc.
+</ul>
+
+<p>
+The configure script accepts options by command line or by reading
+a file named 'configure.options' in the top level directory.
+The main attributes required by the configure script are the
+target platform, graphics library, and any optional features
+which are to be enabled.  
+
+A typical example of this would be 
+to compile VMD for Solaris with the following command line:
+
+<P>
+The configuration can be set in two ways:
+
+<UL>
+<LI>On the command line, as in:
+<pre>
+./configure SOLARIS2 OPENGL FLTK TK IMD VRPN SILENT LIBBALL TCL PTHREADS ACTC LIBTACHYON FREEVR PYTHON NUMPY
+</pre>
+
+This will save the options to the file <TT>./configure.options</TT> so the
+next time you want to regenerate the Makefiles, you need but do<PRE>
+     ./configure
+</PRE>
+
+<P>
+</LI>
+<LI>Alternatively, you may edit the file <TT>./configure.options</TT> 
+ yourself.  You may wish to keep your settings in several 
+ configure.options files, or as new target platformms in the
+ top level VMD Makefile if you intend to compile VMD on 
+ multiple platforms.  This is a convenience which can save
+ time when you want to recompile VMD more than once.  
+</LI>
+</UL>
+
+<P>
+After you've set the options in the file, run <TT>./configure</TT> to
+propagate the new definitions to the Makefiles!  
+The full list of compile-time options set by the configure script
+are:
+
+<UL>
+<LI>Which OS are you running?  VMD can be compiled under several
+operating systems. The configure time options for these OSs are:
+
+<PRE>
+  Option:    Tested with: 
+       AIX5 -- IBM AIX 5.x (32-bit)
+    AIX5_64 -- IBM AIX 5.x (64-bit)
+     HPUX11 -- HPUX 11.0 
+      IRIX6 -- SGI IRIX 6.5.4 
+   IRIX6_64 -- SGI IRIX 6.5.4 (64-bit)
+      LINUX -- Linux 
+ LINUXALPHA -- Linux Alpha
+ LINUXAMD64 -- Linux on AMD Athlon64/Opteron (64-bit)
+  LINUXIA64 -- Linux on Intel Itanium (64-bit)
+   LINUXPPC -- Linux PowerPC
+     MACOSX -- MacOS X PowerPC
+  MACOSXX86 -- MacOS X Intel x86 
+   SOLARIS2 -- Solaris Sparc 
+SOLARIS2_64 -- Solaris Sparc (64-bit)
+ SOLARISX86 -- Solaris x86
+      TRU64 -- Tru64 Unix 4.0 (64-bit)
+      WIN32 -- Windows
+</PRE>
+<P>
+</LI>
+
+<p>
+<li>VMD supports GPU acceleration of non-graphical calculations on 
+    systems with compatible hardware.  GPUs can perform calculations
+    up to 100 times faster than the host CPU in some cases.
+    The configuration option is:
+<PRE>
+    Option:    GPU Acceleration Support:
+       CUDA -- Enable NVIDIA CUDA GPU acceleration support
+</li>
+
+
+<LI>Which type of display graphics will you use?  There are several
+options which will be explained below:
+<PRE>
+    Option:    Graphics Support:
+     OPENGL -- OpenGL graphics library (overall best choice)
+       MESA -- Free, Portable, Open Source, OpenGL workalike 
+</PRE>
+
+<P>
+OPENGL - VMD compiles with native OpenGL for DEC, HP, IBM, Sun, and SGI.  
+OpenGL offers the best rendering performance on new systems,
+and is best supported graphics option for VMD at this time.
+Contact your vendor or support service to get OpenGL for your system.
+
+<BR>
+<BR>
+
+MESA - Mesa is a free OpenGL compatible library which can be
+used on systems which have no native OpenGL implementation.  
+Mesa normally performs all of its rendering in software, and may run
+significantly slower than a native OpenGL implementation.
+On systems using XFree86 4.0 or later, the new DRI interface can
+provide hardware-accelerated Mesa, which will speed up VMD significantly.
+With few exceptions, a native OpenGL implementation will provide
+the best rendering performance.
+We have compiled VMD with MESA 3.1 on all of the tested 
+OSs.  The Mesa library is available for free via ftp from <TT>ftp.mesa3d.org</TT> in the <TT>mesa</TT> directory.  Mesa is also
+mirrored on sunsite in the directory <TT>pub/packages/development/graphics/mesa</TT>.  See the web address 
+<BR><TT>http://www.mesa3d.org/</TT> for more
+information, and the <TT>README</TT> in <TT>./lib/Mesa</TT> for information
+about how to get Mesa working with VMD.
+<P>
+</LI>
+
+
+<LI>VMD can be compiled to run in the CAVE.  If you don't know what the
+CAVE is, see <TT>http://www.vrco.com/</TT> .  To compile in
+the CAVE you will need to get the appropriate CAVE library.  
+VMD now only supports OpenGL, so you need to use <TT>libcave_ogl.a</TT>.
+
+<P>
+To get the CAVE library, please contact VRCO Inc.  
+The VRCO page is at <TT>http://www.vrco.com/</TT>.
+We cannot distribute the CAVE libraries themselves, but the 
+standard SGI binary versions are compiled with the CAVE library.  
+To use the CAVE, start VMD with the run-time option <TT>-dispdev caveforms</TT>.
+
+<P>
+The configuration options are:
+<PRE>
+
+    Option:    Graphics Support:
+       CAVE -- include run-time support for CAVE display (OpenGL).
+</PRE>
+
+<P>
+</LI>
+<LI>Which kind of GUI do you want to use?  (The GUI is nearly
+independent from the graphics display method.) They are:
+
+<P>
+<PRE>
+    Option:    GUI Support:
+       FLTK -- the standard FLTK GUI
+         TK -- Support for user-written GUI elements in scripts etc.
+</PRE>
+
+<P>
+You should compile with FLTK, in which case you need to get the
+source or binaries from <TT>http://www.fltk.org/</TT>.  
+
+
+<P>
+VMD was compiled against Tcl/Tk version 8.4.1.
+You must have the 8.0 or better versions of both packages. The latest
+versions can be found at:
+
+<P><PRE>
+  Tcl/Tk 8.4.1 is at http://www.tcl.tk/
+</PRE>
+
+<P>
+Because Tcl and Tk are very useful tools, we make the assumption
+that these will be installed on your system. 
+To configure VMD to use the appropriate Tcl/Tk
+directory, you may have to edit <TT>./configure</TT> and change a few
+variables.  The current settings look in <TT>/usr/local/[include,lib]</TT> unless the corresponding environment
+variable is set.  The variables are:
+
+<P>
+From the configure script:
+
+<PRE>
+################ Tcl / Tk
+# location of TCL library and include file.
+# If left blank, standard system  directories will be searched.
+$stock_tcl_include_dir=$ENV{"TCL_INCLUDE_DIR"} || "/usr/local/include";
+$stock_tcl_library_dir=$ENV{"TCL_LIBRARY_DIR"} || "/usr/local/lib";
+
+# location of Tk (for TK option)
+$stock_tk_include_dir=$ENV{"TK_INCLUDE_DIR"} || "/usr/local/include";
+$stock_tk_library_dir=$ENV{"TK_LIBRARY_DIR"} || "/usr/local/lib";
+</PRE>
+
+<P>
+Either change the default values or override them with the environment
+variables. 
+
+<P>
+</LI>
+<LI>VMD uses Amitabh Varshney's SURF program to compute the molecular
+surface.  This is actually an external program that VMD calls; it is
+not compiled into VMD.  You will need to compile SURF yourself to use
+option.  The configuration options are:
+<PRE>
+   SURF -- add the external call to SURF (uses DrawMolItemSurf.\{Ch\}
+           and adds the option to the graphics pop-up list)
+</PRE>
+
+<P>
+There is no reason not to compile SURF.  It is actually distributed
+(with permission) as part of the VMD distribution.  To compile surf,
+go to <TT>./lib/surf</TT> and follow the instructions in <TT>README.VMD</TT>
+
+(the <TT>README</TT> file if from surf itself).  The end result will be a
+program named <TT>surf_$ARCH</TT> in that directory.  Leave it there.
+
+<P>
+For the main SURF distribution, see 
+<BR><TT>ftp://ftp.cs.unc.edu/pub/projects/GRIP/SURF/surf.tar.Z</TT>
+
+<P>
+</LI>
+<LI>In addition to the CAVE library, VMD can use the VRPN 
+library to get information about various 3DOF and 6DOF spatial
+trackers and other input devices.   Our standard VMD builds now
+enable VRPN by default on most platforms.
+The configuration options for using VRPN input devices are:
+
+<P>
+<PRE>
+
+      VRPN -- Use the VRPN library to support local and remote trackers 
+              and other input devices.
+</PRE>
+
+<P>
+For more information about VRPN see 
+<BR><TT>http://www.cs.unc.edu/Research/vrpn</TT>
+
+<P>
+</LI>
+<LI>VMD can connect to NAMD to perform interactive simulations; the protocols
+related to this connection are referred to as Interactive Molecular Dynamics
+(IMD).
+The configuration option for IMD is enabled by default: <PRE>
+   IMD -- use IMD for doing remote simulations
+</PRE>
+
+
+<P>
+</LI>
+<LI>There are several compilation flags for VMD.  They are:<PRE>
+         LP64
+</PRE>
+    This option compiles VMD as a 64-bit application program,
+    allowing it to address large amounts of virtual and physical
+    memory, and to access large files.
+
+<P><PRE>
+         PTHREADS
+</PRE>
+    This option builds VMD with support for POSIX threads.  Threads are
+    used within VMD to accelerate IMD and for linkage against 
+    multithreaded libraries such as Tachyon.
+
+<P><PRE>
+         SILENT or NOSILENT
+
+</PRE>
+    The default is SILENT, in which case you don't see the details of 
+    the compilation as it suppresses the make command echo.  All this 
+    does is add or not add the line ".SILENT" near the top of the 
+    produced Makefile. 
+</LI>
+</UL>
+
+
+<p>
+$Id: pg_configure.dox,v 1.6 2008/06/09 03:56:52 johns Exp $
+
+ */

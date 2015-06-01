@@ -1,0 +1,12 @@
+This file describes the contents of the 'msvc' area of the VMD build tree.
+
+README  - this file
+inst    - subdirectory containing the InstallShield VMD installer sources
+libs    - copies DLL's needed to test vmd using "vmd.bat" in this directory
+scripts - symlink to the VMD Tcl scripts and such
+vmd.bat - A startup script to run VMD for testing/debugging without vmd.exe
+winvmd  - the build/src area for the MSVC 6.x project, producing winvmd.exe
+winzip  - files used by the WinZip self-extracting software installer archive 
+vs2005  - the build/src area for the MSVS 2005 project, producing both 32-bit
+          and 64-bit (x64) executables
+

@@ -1,0 +1,416 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%cr                                                                       
+%cr            (C) Copyright 1995 The Board of Trustees of the            
+%cr                        University of Illinois                         
+%cr                         All Rights Reserved                           
+%cr                                                                       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: pg_structure.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.16 $      $Date: 2012/01/10 18:57:48 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%
+% PROGRAMMERS GUIDE : program structure
+%   Breaks the source code up into a few logical units, and
+% describes the structure and relationship of these units.  All
+% classes mentioned here should be described in detail in the 
+% following chapter.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Program Structure}
+\label{chapter:pg:struct}
+
+\VMD\ is written in C++ and uses an object-oriented methodology for
+all program components.  This greatly aids in making \VMD\ modular
+and extensible to such things as new types of display devices, new
+user interface libraries, and new molecular data file formats.  As
+this chapter will explain, \VMD\ uses the {\em inheritance} and {\em
+polymorphism} features of an object-oriented design (in
+C++) extensively.  Users interested in extending or modifying \VMD\
+should have a good knowledge of programming in C++; this Guide uses
+terminology and explainations which assume such knowledge.  Two
+excellent references for users interested in learning more about C++
+are books by Lippman\mycite{}{} and Strousop\mycite{}{}.
+
+The \VMD\ source code consists of sets of utility functions,
+independent and interrelated object classes, and global variables. 
+The classes are organized into a few logical program components,
+e.g., the component responsible for displaying images, the user
+interface component, and others.  This chapter describes the
+structure of each of these components and mentions the objects which
+the components contain.  These components utilize several external
+libraries for such things as the graphical user interface, control of
+external spatial tracking devices, and support for displaying images
+in the CAVE display environment\mycite{}{}; the particular libraries
+which \VMD\ uses are described at the chapters conclusion.
+
+
+\section{Program component descriptions}
+
+For each program component, a figure illustrates the classes which
+comprise the component, and their relationship among each other. 
+Objects are generally represented as rectangles labeled with the
+class name.  Classes which are derived from one or more parent
+classes have a solid arrow pointing from the derived class to the
+parent class (an {\em is a} relationship).  Classes which use some
+capability of another class, but are not either derived from nor
+contain the other class, have a dashed line pointing to the class
+which is being used (a {\em uses a} relationship).  Classes which
+contain one or more instances of another class indicate this by
+having the rectangle for the contained class located within the
+containing class (a {\em has a} relationship).
+
+\VMD\ has a few important {\em base classes}, for which a single
+global instance is created either during program initialization or as
+a result of a user request.  For several of these base classes an
+instance of a specialized class derived from the base class is
+created, and the address of the instance assigned to a pointer of
+type {\em base} {\tt *}, with the instance accessed through
+{\em virtual functions}.  In the figures describing each program
+component, important base classes are indicated in {\bf bold} font.
+If a global instance of a base class exists, the name of the global
+variable is shown in {\tt typewriter} font in parentheses below the
+name of the base class in the figure.
+
+\subsection{Utility objects}
+
+Figure \ref{fig:pg:utility} illustrates the utility objects used in \VMD\ program development.  Several of these objects are C++ {\em templates}; instances of these classes are creates for different types, for example a {\tt Stack} of integers or a {\tt Stack} of {\tt char *} items.  These template and the other global objects are each detailed in section \ref{section:pg:utilityobjects}. 
+
+\begin{centering}
+
+\myfigure{pg_utility_objects}{Utility objects used in \VMD, and a key describing the function of diagrammatic items in these object description figures.}{fig:pg:utility}
+\end{centering}
+
+The \OBJ{Inform} class is deserving of particular notice, since it is one of the most widely used objects in \VMD.  This class provides a streams-like object which is used to print messages to the \VMD\ console.  There are four global instances of this class, which are used for the following purposes:
+\begin{itemize}
+  \TTLISTITEM{msgInfo}
+Used to display informative messages, which provide some data or message to the user which is either requested or ``typically'' provided.  For example, the messages describing the current status of the process of reading a molecule from a file or a network connection are printed by sending text to the {\tt msgInfo} instance of an \OBJ{Inform} object.
+  \TTLISTITEM{msgWarn}
+Used to display warning messages.  These are messages which do not indicate a fatal program condition, but which caution the user that things may not be going as they expect.
+  \TTLISTITEM{msgErr}
+Error messages are displayed by sending text to the {\tt msgErr} instantiation. 
+  \TTLISTITEM{msgDebug}
+Where debugging messages are printed.  It is possible to exclude the source code lines which print debugging messages when \VMD\ is compiled, to produce a smaller and faster executable, by eliminating the {\tt DEBUG} compilation option.
+\end{itemize}
+To use an \OBJ{Inform} object, text and data are given to object using insertion ({\tt <<}) operators, i.e.,
+\begin{quote} {\tt
+  msgInfo << "This is message number " << intVariable << "." << sendmsg;
+} \end{quote}
+The {\tt sendmsg} manipulator ends the message; this will cause the message to be printed to the console, prepended by a string indicating the type of messages, and appended by a newline.
+
+There are also several utility functions which are not part of any class; these are described in section \ref{section:pg:utilityfunctions}.
+
+\subsection{Display objects}
+
+Figure \ref{fig:pg:display} illustrates the structure and relationship of the many objects which are used by \VMD\ for storing and rendering graphical objects.  These objects are described in detail in section \ref{section:pg:displayobjects}.  Images are displayed through the use of four main objects (and subclasses thereof):
+\begin{enumerate}
+  \item \OBJ{DisplayDevice} objects, which are responsible for rendering a list of drawing commands to a given device or file;
+  \item \OBJ{DispCmd} objects, of which there are several subclasses; each \OBJ{DispCmd} subclass represents a single drawing command, such as a command to draw a line or to set the current color.
+  \item \OBJ{Displayable} objects, which each represent a single graphical item with a list of drawing commands that may be rendered to a \OBJ{DisplayDevice};
+  \item \OBJ{Scene} objects, which store lists of \OBJ{Displayable} objects.  When requested, a \OBJ{Scene} takes a given \OBJ{DisplayDevice} and requests the device to render each of the \OBJ{Displayable} objects it stores.
+\end{enumerate}
+
+\begin{centering}
+\myfigure{pg_display_objects}{Display objects used in \VMD.}{fig:pg:display}
+\end{centering}
+
+\paragraph{Device-Specific Rendering.}
+\OBJ{DisplayDevice} is the base class for objects which do the actual rendering of a \OBJ{Scene}.  Each derived class of this parent must provide versions of virtual functions which prepare the device for drawing (i.e., clear a screen or open a file), render a list of drawing commands, and update the display after drawing, among many other functions.  This class is where library-specific drawing commands are encapsulated, for example there exists a {\tt OpenGLDisplayDevice} subclass which is used to draw images using OpenGL graphics hardware.  
+A \OBJ{DisplayDevice} can also be defined which renders a \OBJ{Scene} to a file instead of a monitor, i.e., to a postscript file, a raytracing program input script, or a bitmap image file.
+
+\paragraph{Drawing Tokens.}
+\OBJ{DispCmd} objects are used by \OBJ{Displayable} objects to construct a list of drawing commands (tokens) in a format which can be processed by a \OBJ{DisplayDevice}.  When rendering an image, a \OBJ{DisplayDevice} does not work directory with a \OBJ{Displayable}; instead, the \OBJ{DisplayDevice} is given a simple byte array into which drawing commands have been assembled.  Each \OBJ{Displayable} contains one or more of these {\em drawing lists}; they are stored by the \OBJ{Scene} and processed by the {\tt render} routine of a \OBJ{DisplayDevice}.  The \OBJ{DispCmd} objects act to put the data into these drawing lists in the proper format for the operation specified.  Each \OBJ{DispCmd} object appends its data to the current end of a provided drawing list in this format and order:
+\begin{enumerate}
+  \item Integer code specifying the drawing operation (codes are defined in the file {\tt DispCmds.h}).
+  \item Integer stating the size of the command, in bytes (not including the code or this size count).
+  \item Data necessary for the drawing command (i.e., XYZ positions of the endpoints of a line or a cylinder).
+\end{enumerate}
+Why are things done this way?  There are a few reasons:
+\begin{itemize}
+  \item Speed -- Once a compact display list has been created in a single block of memory, that block may be read quickly by the \OBJ{DisplayDevice} when drawing the object.  Putting it all as a contiguous block helps take advantage of cache memory.
+  \item CAVE access -- The CAVE programming paradigm now requires the drawing program to fork into several different processes, including one process for each wall and an ``update'' process.  All these processes run on the same computer (a multi-headed SGI, i.e. a tower Onyx) and use shared memory to communicate what to draw between the update process and the drawing processes.  Using a list of simple integer codes and copies of the coordinates for drawing lines, triangles, etc. instead of, say, a list of pointers to \OBJ{DispCmd} objects helps reduce the amount of shared memory required and simplifies the drawing processes.  Drawing in the CAVE then requires only a specialized \OBJ{CaveDisplayDevice} and {\tt CaveScene} to deal with this shared memory requirement (along with a few other CAVE support routines).
+\end{itemize} 
+
+\paragraph{\OBJ{Displayable} objects.}
+Each \OBJ{Displayble} object contains a display list, as well as information about the item to be drawn such as whether to display or hide the object, it's current {\em transformation} (how much to rotate, scale, and translate the object), whether it is a 2D or a 3D object, whether it is {\em fixed} (set to ignore any requests to scale, translate, or rotate the object), and a list of {\em children}.  A \OBJ{Displayable} {\em registers} with one or more \OBJ{Scene} objects, so that the \OBJ{Scene} then will contain a list of all the \OBJ{Displayable} objects which should be drawn when requrested.  The \OBJ{Scene} is responsible for providing the physical memory storage for a display list, through a request by a \OBJ{Displayable}.  Each molecule and other graphical item in \VMD\ is a \OBJ{Displayable} subclass.  These derived objects supply the methods to fill the object's display list with drawing commands for the item to be drawn, i.e., the commands to draw the points for each atom and the lines for each bond in a molecle.
+
+A key feature of each \OBJ{Displayable} is that it may contain any number of {\em child} \OBJ{Displayable} objects, and may also be a child of some other {\em parent} \OBJ{Displayable}.  Each child may be individually translated, rotated, etc., and may be turned on or off individually; but operations to a parent such as a transformation typically affect {\em all} the children of that parent as well.  For example, if a parent is currently being hidden, so will be all the children of that parent.  Also, only \OBJ{Displayable} objects which have {\bf no} parent register with a \OBJ{Scene}; all children of a parent are drawn properly when the parent is drawn, so it is only necessary for the very top-level parent to be stored in the \OBJ{Scene}.
+
+\paragraph{The \OBJ{Scene}.}
+Since it has been discussed quite a bit already, it is somewhat obvious at this point that \OBJ{Scene} objects are used to maintain a database on what should be drawn to a user-specified \OBJ{DisplayDevice}.  A \OBJ{Scene} contains routines for applying transformation such as rotate, scale, etc. to all the (non-fixed) \OBJ{Displayable} objects which have registered with it, and contains routines to manage the memory used for display lists.  Each \OBJ{Scene} contains actually two categories of lists of items, and in each category there are two lists, one for 2D objects and one for 3D objects.  These two types of lists are:
+\begin{enumerate}
+  \item Pointers to all the \OBJ{Displayable} objects which have registered with the \OBJ{Scene}.
+  \item Pointers to the beginning of each display list (essentially treated as arrays of {\tt char}s).  There may be more of these lists than there are registered \OBJ{Displayable} objects, since each \OBJ{Displayable} (regardless of whether it is a parent, child, or both) provides the \OBJ{Scene} object with a copy of the pointer to its display list.
+\end{enumerate}
+
+A \OBJ{Scene} is the object primarily responsible for collecting all the objects that are to be drawn and for giving these objects to a \OBJ{DisplayDevice} for rendering.  This is done as follows:
+\begin{enumerate}
+  \item The routine {\tt scene->prepare(DisplayDevice *)} is called by the user.  The \OBJ{Scene} will call a routine for each registered \OBJ{Displayable} that allows the object to prepare to be drawn.  This preparation may include, for example, changing which frame in an animation should be shown, or updating the current position of a 3D pointer, or most anything else that needs to be done each time the \OBJ{Scene} is drawn.
+  \item The routine {\tt scene->draw(DisplayDevice *)} is called by the user.  This routine proceeds in the following steps:
+    \begin{enumerate}
+      \item Prepare the \OBJ{DisplayDevice} for drawing 3D objects.
+      \item For each 3D display list stored by the \OBJ{Scene}, call the routine {\tt display->render(void *)} with the pointer to the display list.
+      \item If stereo is being used, repeat the following step for the other eye.
+      \item Prepare the \OBJ{DisplayDevice} for drawing 2D objects.
+      \item For each 2D display list stored by the \OBJ{Scene}, call the routine {\tt display->render(void *)} with the pointer to the display list.
+      \item Update the \OBJ{DisplayDevice} after all drawing is complete.
+    \end{enumerate}
+\end{enumerate}
+
+As shown in figure \ref{fig:pg:display}, there are many classes derived from \OBJ{Displayable}, and actually in fact from \OBJ{Displayable3D}.  Global \OBJ{Displayable} objects of note are \OBJ{LightList}, which contains a list of \OBJ{Light} objects; \OBJ{Axes}, which displays a set of XYZ axes in a corner of the display; \OBJ{Stage}, which displays a checkerboard panel to one side of the objects in the \OBJ{Scene}; \OBJ{VMDTitle}, which displays the VMD title credits and rotating letteres; and \OBJ{ColorList}, which is described next.  The \OBJ{Light} objects each represent one light used to illuminate the objects in a \OBJ{Scene} which have defined {\em material characteristics} for their surfaces.
+
+\paragraph{Colors.}
+Colors in \VMD\ are handled mainly by the \OBJ{ColorList} object.  This maintains a list of 16 unique colors in the \VMD\ ``colormap'', as well as a color scale of 1024 colors arranged in a selectable pattern of blue\,$\rightarrow$\,green\,$\rightarrow$\,red or blue\,$\rightarrow$\,white\,$\rightarrow$\,red.  For each color there are two versions, a solid color and a semi-transparent color.  Each color may be changed through user commands, and for each color there are corresponding material characteristics which are used when solid objects are drawn and the \OBJ{Displayable} drawing the solid objects requests that materials be used.  The \OBJ{ColorList} also maintains several lists of names which are used to specify a color: using the \OBJ{NameList} template, a set of color {\em categories} are stored in the \OBJ{ColorList}, and for each color category there are any number of color {\em objects}, which consist of a {\em name} and {\em index}.  For example, in the color category ``Stage'' there are two objects, an ``Even'' object (for the even-numbered stage checkerboard squares) and an ``Odd'' object (for the odd-numbered squares).  The index for these objects indicates which of the 16 \VMD\ colors to use to color that square.  \OBJ{Displayble} objects may request to have new categories created, and to add new color objects to each category.  This capability is provided by the \OBJ{ColorUser} class, from which each \OBJ{Displayable} is derived, thus all objects can automatically access the colors through the functionality of the \OBJ{ColorUser} class.
+
+\paragraph{Picking Items.}
+The action of {\em picking} graphical objects with a pointer, like clicking on an atom with the mouse, is handled by the Display objects as well.  Picking objects requires that \VMD\ know where all the points are in space that may be selected, where the pointer is located when a button is pressed, and what to do once an item is picked.  This is managed by objects derived from three `picking' base classes: \OBJ{Pickable}, \OBJ{PickList}, and \OBJ{PickMode}, which are discussed below.
+
+Each \OBJ{Displayable} object is derived from the \OBJ{Pickable} base class; a \OBJ{Pickable} is an object which contains a drawing list with special \OBJ{DispCmd} tokens which indicate ``this is a point in space which may be selected''.  These {\em picking tokens} do not result in anything being drawn on the screen; they are used by the \FNO{Displayable}{void}{pick}{void *} routine to determine if a pointer is over a selectable item.  Each picking token contains also an integer {\em tag}, which is returned by the picking routine when the pointer is found over an item.  When a \OBJ{Displayable} wants to put picking tokens in its display list, and then wants to be have its display list be checked for pickable points, it must register with a \OBJ{PickList} object (described below).  This is done by calling the routine
+\begin{center}
+  \FNO{Pickable}{void}{register\_with\_picklist}{PickList *}
+\end{center}
+in the constructor of the \OBJ{Displayable}, using the pointer to the \OBJ{Scene} in which the \OBJ{Displayable} is registered (this is because \OBJ{Scene} is derived from \OBJ{PickList}).  There are several virtual functions which must be provided by an object derived from \OBJ{Pickable}, which will be discussed below.
+
+There are two types of pointers which may be used to pick items, 2D or 3D.  2D pointers (i.e. the mouse) report their position in `relative scaled coordinates', that is, the X and Y position of the mouse is provided to the rest of the program as values in the range 0 ... 1, so that the lower-left corner of the graphics window is (0,0), and the upper-right corner is (1,1).  The coordinates of 3D pointers, on the other hand, are given to the rest of the program as just the location of the pointer in 'eye' coordinates, i.e. the 3D position after it has been transformed by any internal transformation matrix of the pointer.  Each pointing device (the mouse, 3D spatial trackers, etc) must be in a certain {\em picking mode}, which determines what action is done when an item is picked; new modes can be easily added to a central source by any object that wants to extend the usability of the picking mechanism.  A picking operation consists of three phases:
+\begin{enumerate}
+  \item Start: when a button is pressed by a pointer, a command is issued which checks to see if something is under the current pointer position.  If so, a new picking operation is started, and continues until the button (or whatever the pointer is using) is released.
+  \item Moving: As the button is held down, if the start of the picking operation did indeed find something under the pointer, commands are executed as the pointer moves to allow objects to be continually manipulated by the pointer.
+  \item End: When the button is released, some final action may be required, and this is signaled by a command to end the current picking session.
+\end{enumerate}
+The effect on objects during these phases may be dependent on which button was pressed (two buttons, {\em left} and {\em middle}, are assumed), and what the current mode was when the button was pressed.  \OBJ{PickMode} objects are used to handle the different actions required for different picking modes.
+
+Each picking mode is embodied by a special derivation of the \OBJ{PickMode} abstract base class.  An example, \OBJ{PickModeQuery}, has been added which does the very simple job of just printing out the name of the \OBJ{Pickable} object when the picking is ended (and only if the pointer position does not move much between the start and end).  Each \OBJ{PickMode} simply contains three virtual functions:
+\begin{enumerate}
+  \item \FNO{PickMode}{int}{pick\_start}{DisplayDevice *, Pickable *, int button, int tag, int dim, float *pos} \\
+When a pick is successfully started (which means the {\em tag} of the point which was picked has been determined), this routine is called for the \OBJ{PickMode} object corresponding to the current pick mode, to let that object perform some special action based on the selection.  The item selected is provided, as is the button pressed, the dimension (2 or 3) and position of the pointer, and the \OBJ{DisplayDevice} used to find the selected item (this is necessary to allow access to routines which convert 2D screen positions to 3D world coordinates).  Finally, the tag of the point in the \OBJ{Pickable} that was actually clicked on is provided (more on this later).
+  \item \FNO{PickMode}{int}{pick\_move}{same args} \\
+Again, called only for the \OBJ{PickMode} object of the current mode for the pointer used; this is called every time the pointer moves to a new position.
+  \item \FNO{PickMode}{int}{pick\_end}{same args} \\
+Same as the others, just called when the pointer button is released.
+\end{enumerate}
+
+A \OBJ{PickList} object contains a list of all the current picking modes which the mouse may be in; these all have unique id's from 0 ... num\_modes - 1.  The Mouse object (described in a later section) gets this list and adds a submenu to the graphics window pop-up menu.  When the mouse is in a picking mode, the cursor changes to a crosshair.  The \OBJ{Scene} is derived from \OBJ{PickList}; it is the \OBJ{PickList} which maintains all the coordinating data to manage all the objects which can be picked, and all the different picking modes.  The \OBJ{PickList} maintains two lists:
+\begin{enumerate}
+  \item All the \OBJ{Pickable} objects which have registered themselves as items which contain points which can be selected with a pointer.
+  \item All the \OBJ{PickMode} objects which are used to provide different action capabilities to the same pointer, in an extendible fashion.
+\end{enumerate}
+The pointer objects call routines in \OBJ{PickList} to get the current number of names of picking modes, to check if the current pointer position is over a pickable point (and to find out which one), to tell the program that the pointer is moving while an object is being picked, and to tell the program that the button has been released following a picking operation.  Thus, \OBJ{PickList} is the ``coordinator'' for all picking operations.  \OBJ{PickList} contains a routine similar to the draw routine, but which instead checks for picked item and executes the proper action if one is found.  The algorithm used is:
+\begin{enumerate}
+  \item For each \OBJ{Pickable} registered,  check if it is interested in the current mode.  If so, call \FNO{Pickable}{int}{pick\_start}{see later}.  If not, skip the \OBJ{Pickable} and go to the next.
+	2) Then, call \FNO{PickMode}{int}{pick\_start} for the \OBJ{PickMode} object corresponding to the current pick mode.
+\end{enumerate}
+
+To set up a \OBJ{Displayable} to operate properly as a useful \OBJ{Pickable}, these things must be added to the \OBJ{Displayable} (see Axes.C and Axes.h for a good example of how to do these things).
+\begin{itemize}
+
+  \item A version of the virtual routine \FNO{Pickable}{int}{want\_pick\_mode}{int} must be supplied, which returns TRUE if the given pick mode is one which the item is interested in.  If no version of this routine is supplied, the default is to return FALSE, which means the \OBJ{Pickable} will never be told when a pick starts, moves, or ends (this may actually be desirable, however, if the \OBJ{PickMode} object is to do all the work).
+
+  \item If the \OBJ{Pickable} will need to add new \OBJ{PickMode} objects to the \OBJ{PickList} (which is the same as the \OBJ{Scene} object which the \OBJ{Displayable} is added to), or find the index for an existing mode:
+  \begin{enumerate}
+    \item The routine \FNO{Pickable}{int}{add\_pick\_mode}{char *, int} should be called to add a new mode.  The name given is used by this routine to check the \OBJ{PickList} if the mode exists already.  If so, this returns the current  index of that mode without creating a new instance of the proper \OBJ{PickMode} object.  If the mode has not yet been added, the 2nd arg is a code value given to the virtual function \FNO{Pickable}{int}{create\_pick\_mode}{int}, which will create a new \OBJ{PickMode} instance (the particular subclass based on the value of the integer arg).  This avoids unnecessary duplication of \OBJ{PickMode} objects.
+    \item The index must be saved by the \OBJ{Pickable}, and used by {\tt want\_pick\_mode} to report if the pointers current pick mode is one the \OBJ{Pickable} is interested in.
+  \end{enumerate}
+
+  \item In the constructor for the specialized \OBJ{Pickable}, the routine \FNO{Pickable}{int}{register\_with\_picklist}{PickList *} must be called, to tell the \OBJ{PickList} (\OBJ{Scene} in this case, since \OBJ{Scene} is derived from \OBJ{PickList}) that the \OBJ{Displayable} can be picked.
+
+  \item Also in the constructor go calls to {\tt add\_pick\_mode}, if necessary.
+
+  \item Pick drawing tokens must be placed in the draw list of the object.
+
+  \item Finally, if the \OBJ{Displayable} will be doing some action based on when it is picked and moved (independent of action performed by \OBJ{PickMode}'s during this same time), versions of {\tt pick\_start}, {\tt pick\_move}, and {\tt pick\_end} must be supplied.  By default, these virtual functions do nothing.  Again,  see Axes for an example (Axes actually only supplies a version of the {\tt pick\_move} routine, since no action is required by Axes at the start or end).
+
+\end{itemize}
+
+A key thing that may be needed during the {\tt pick\_move} phase for both \OBJ{Pickable} and \OBJ{PickMode} objects is the ability to convert a 2D screen coord (the relative scaled coords x and y, valued 0 ... 1) to a 3D world coordinate.  The difficult of course is the abiguity in what the Z-axis coordinate should be.  The routine
+\begin{center}
+  \FNO{DisplayDevice}{}{find\_3D\_from\_2D}{float *A3D, float *B2D, float *B3D} \end{center}
+takes a 3D world coordinate (at point A, A3D), and a 2D relative scaled coordinate (the screen position of point B, B2D), and returns the 3D world coordinate for point B (B3D).  This works assuming the eye is looking along the Z axis.  The coordinate returned is the point where the line formed by the 2D's projection back into 3D space intersects the plane parallel to the XY plane which contains point A (i.e. the point will have the same Z-coordinate as the given point A).
+
+
+\subsection{Molecule objects}
+
+The objects used for displaying and rendering graphical objects in \VMD\ are quite general, and can be used to draw essentially anything.  The objects used by \VMD\ to create, store, and manipulate molecules, which are illustrated in figure \ref{fig:pg:molecule}, are much more specific to the purpose of \VMD, which is to visualize to dynamic properties of biopolymers (in particular proteins and nucleic acids).  The heart of this category of object classes is the \OBJ{Molecule} class, which is actually inherited from a number of base classes and for which several subclasses exist.  \OBJ{MoleculeList} is an object which maintains a list of all current molecules.  There are also several helping objects which store data about particular components of each molecule.
+
+\begin{centering}
+\myfigure{pg_molecule_objects}{Molecule objects used in \VMD.}{fig:pg:molecule}
+\end{centering}
+
+At the very top level of the \OBJ{Molecule} hierarchy is the \OBJ{Animate} class, which stores a list of \OBJ{Timestep} objects.  Nothing is known about the molecule at this level other than the number of atoms; a \OBJ{Timestep} stores simply arrays of floating-point values for each of these atoms for each discrete timestep in the trajectory of the molecule.  The \OBJ{Animate} class also maintains the {\em current} frame in the trajectory, and the direction (i.e., fast-forward, reverse, pause) and speed of animation.  The \OBJ{Timestep} objects, one for each frame of animation in each molecule, are stored simply as pointers in a \OBJ{ResizeArray} instance within the \OBJ{Animate} object.  A \OBJ{Timestep} is currently quite simple, and stores data as publicly-available floating point arrays which are allocated when a new \OBJ{Timestep} is created (or for some data which may be optionally stored for each step, by the users request).  This is done primarily for speed since this data is accessed quite often.  It may be helpful to improve this class in the future, by making a much more general method to store different types of atomic data for timesteps which would not require a change to the \OBJ{Timestep} class each time.  For example, the \OBJ{Timestep} may just store a list of pointers to something like a \OBJ{TimeStepData} class instance, where each \OBJ{TimeStepData} would store some number of floating-point values.
+
+At the next level, the \OBJ{BaseMolecule} object is inherited from the \OBJ{Animate} object.  This object stores all the basic information which comprises the structure of the molecule.  Data about the coordinates are stored by \OBJ{Animate}, while \OBJ{BaseMolecule} stores how the atoms are connected, what residues and segments exist, etc.  When it is created, a \OBJ{BaseMolecule} is empty, indicating no atoms or anything present.  A virtual function \FNO{BaseMolecule}{int}{create}{} is used by \OBJ{BaseMolecule} and all other class derived from \OBJ{BaseMolecule}; this function is called when a new molecule is to be created, and derived classes do their creation tasks after which they call {\tt create} for the parent class.  \OBJ{BaseMolecule} does NOT contain any data or functions for the drawing of the molecule, just for storing the structure.  After a new molecule has been read in from some files or from a network connection, the structure of the molecule is analyzed and stored in a retrievable format.  Several small classes help in this storage; they include the following:
+\begin{itemize}
+  \TTLISTITEM{Atom}
+This object stores the data for one atom in a molecule, including the name, segment, type, charge, mass, etc.  A list of these \OBJ{Atom} objects are stored in a \OBJ{BaseMolecule}.  Atoms are numbered 0 $\ldots$ N-1, where N is the number of atoms in the molecule; a pointer to the $n$th \OBJ{Atom} object may be obtained through the routine \FNO{BaseMolecule}{Atom *}{atom}{\FA{int}{n}}.  Bonds are not stored as separate objects; instead, in each \OBJ{Atom} object there is noted the number of bonds in which the \OBJ{Atom} participates, and a list of the indices of the other atoms to which it is connected.  Note that a bond is effectively stored twice (to speed rendering of the molecule), once for each atom which defines the bond.
+  \TTLISTITEM{Residue}
+Each residue such as an amino acid or nucleic acid is referenced by a single \OBJ{Residue} object, which stores the indices of the corresponding atoms and information about how the residue is connected to other residues.  A list of all the residues in a molecule is kept in the \OBJ{BaseMolecule} class.
+  \TTLISTITEM{Fragment}
+A {\em fragment} is defined as a contiguous string of residues.  This may be as short as one (i.e., a water molecule), or as long as an entire protein from N-terminus to C-terminus.  A \OBJ{Fragment} object stores a list of residues which form a fragment, noting their order and connectivity.  A \OBJ{BaseMolecule} stores a list of all the fragments which are found within the molecule.
+  \TTLISTITEM{NameList}
+A \OBJ{BaseMolecule} also contains several lists of names which are basically \OBJ{NameList} templates. They store the lists of unique names which occur in the molecule, i.e., the list of all atom names.  These lists are maintained as public data member for speedy access by other parts of the program.
+\end{itemize}
+
+From \OBJ{BaseMolecule} and from \OBJ{Displayable3D} the \OBJ{DrawMolecule} object is derived.  This level of the \OBJ{Molecule} hierarchy stores all the information about how to {\em draw} the molecule.  A molecule in \VMD\ is drawn as a composition of one or more {\em representations} of the molecule structure, which are contained within a \OBJ{DrawMolItem} object (described later).  A  \OBJ{DrawMolecule} stores a list of all the different representations (\OBJ{DrawMolItem}) of the molecule that the user has selected, and contains routines to add, change, or delete these representations.  Since it is also a \OBJ{Displayable}, a \OBJ{DrawMolecule} can specify its own display list, but currently all molecule drawing commands are contained within \OBJ{DrawMolItem} objects.
+
+A \OBJ{DrawMolItem} is also derived from \OBJ{Displayable3D}; its function is to maintain the display list with the proper drawing commands to render one specified representation of a molecule.  When a new \OBJ{DrawMolItem} is created, it is given the molecule for which it is to render an image, and instances of the following three objects which describe exactly {\em what} the representation is to be:
+\begin{itemize}
+  \TTLISTITEM{AtomColor}
+Stores the color index number which is to be used for each atom in the molecule when it is drawn; essentially, {\em how to color} the molecule.  The coloring can be done in any number of ways, for example each residue a different color, or shaded through the color scale from the midpoint of the molecule outwards.
+  \TTLISTITEM{AtomRep}
+Stores what shape to draw the molecule as; essentially, {\em how to draw} the molecule.  For example, bonds may be represented as thin lines, or solid cylinders, or not drawn at all.
+  \TTLISTITEM{AtomSel}
+{\em Which atoms to draw}.  This objects takes as input a text string with an atom selection command, and determines from the string which atoms of the molecule the user wishes to have drawn.
+\end{itemize}
+An instance of all three of these objects, taken together as a group, completely define how a represenation of a molecule should be drawn, and so each \OBJ{DrawMolItem} requires one of these objects to allow it to construct the list of drawing commands for the representation.  Each \OBJ{DrawMolItem} is a child \OBJ{Displayable} of the parent \OBJ{DrawMolecule}, and may be independently turned on or off.  By doing it this way, a complex image of the molecule may be constructed by separate more basic components, which may be separately manipulated, while the set of components are kept with the same transformation (rotation, scaling, and centering) applied to the molecule as a whole.
+
+The main base class \OBJ{Molecule} is then derived from \OBJ{DrawMolecule}.  This is the level at which most other objects in \VMD\ work with molecules, as pointers to instances of a \OBJ{Molecule} class.  In fact relatively little functionality is includes at this level.  What this class does do, in fact, is provide the routines for reading in or writing out of animation frames from or to different coordinate file formats (i.e., PDB or DCD files).  This is done through the use of a \OBJ{CoorFileData} object, which encapsulates the information on {\em how} to read/write such a coordinate file (this includes storing which frames are to be read or written, the coordinate file format, and the current status of such an operation).  Since \OBJ{Molecule} is a subclass of \OBJ{Displayable}, it has a {\tt prepare} virtual routine which is called each time the \OBJ{Scene} is to be drawn to the current \OBJ{DisplayDevice}.  \OBJ{Molecule} uses this call to {\tt prepare} to read/write a single coordinate set from/to the current coordinate file, if one is being processed.  Thus, a coordinate file is not processed in one single operation, instead one frame is processed each time the \OBJ{Scene} is drawn.  This allows \VMD\ to continue to animate and check for user commands while a coordinate file is being read or written.  For the actual coordinate file reading or writing, the \OBJ{CoorFile} base class and derived \OBJ{ICoorFile} and \OBJ{OCoorFile} classes abstract the action of taking a set of XYZ positions for a molecule and reading or writing a trajectory file.  Specific versions of these classes for PDB and DCD files are used, and any other number of trajectory formats may be supported by developing new subclasses of \OBJ{ICoorFile} and \OBJ{OCoorFile}, with also an update to \OBJ{CoorFileData}.
+
+Up to the point just described are all the classes necessary to store and manipulate a molecule.  However, there are several different ways for a molecule to be imported into \VMD, and each method has a specific subclass of \OBJ{Molecule} to provide the functions to read in the proper data and store it into the standard internal format of the \OBJ{Molecule} class hierarchy.  Currently, the following subclasses of \OBJ{Molecule} exist:
+\begin{itemize}
+  \TTLISTITEM{MoleculeFile}
+Used to create a new molecule by reading structure information from a file, such as a PDB or PSF file.  This object provides routines which understand the format of these data files, and which convert the data within the files to the internal molecular structure format used by \OBJ{BaseMolecule}.  This action is done when the {\tt create} routine is called; after reading in the file and successfully creating the molecular structure, the {\tt create} routine for \OBJ{Molecule} is called, which then calls {\tt create} for \OBJ{DrawMolecule}, $\ldots$
+  \TTLISTITEM{MoleculeRemote}
+This reads a molecular structure directly from a molecular dynamics simulation program running as a separate process on the same or another computer.  The data is transferred directly over the network, without using any intermediate files, using sockets (see section \ref{section:pg:moreinfo}).  Otherwise, it functions identically to \OBJ{MoleculeFile}.
+\end{itemize}
+
+Thus, the steps in creating a new molecule in \VMD\ are as follows:
+\begin{enumerate}
+  \item Create a new empty \OBJ{Molecule} object, by creating an instance of one of the subclasses in the list above and assigning it to a \OBJ{Molecule *} variable.  This new molecule is empty, with 0 atoms, 0 bonds, etc.
+  \item Give information to this new object on how the molecule is to be created.  Much of this data is actually specified as arguments to the constructor of the special subclass used.
+  \item Call the function {\tt create} for the new \OBJ{Molecule}, which will do most of the work in creating the new molecule.  During this process, the following actions are done:
+    \begin{enumerate}
+      \item Data in the original format is read in from the proper source.
+      \item Each atom is added one by one to the molecular structure via routines in \OBJ{BaseMolecule}.  The lists of unique names for molecule components are constructed during this process.
+      \item After all atoms are read, the bonds between atoms are stored.  With the atoms and namelists, this completely defines the basic structure of the molecule.  This step may involve finding the bonds through a nearest-neighbor search (necessary when the structure is read from a PDB file).
+      \item ``Extra'' data helpful in displaying the molecule is read, such as which atoms are hydrogen-bond donors or acceptors.
+      \item After all data is read and the basic structure defined, the {\tt create} routine in \OBJ{BaseMolecule} analyzes the molecule and creates the lists of \OBJ{Residues}, \OBJ{Fragments}, and anything else which helps define the structure.
+      \item An initial representation of the molecule is created by \OBJ{DrawMolecule}, and the display list necessary to draw the molecule is constructed.
+    \end{enumerate}
+  \item After it has been created, a request to read in any trajectory files is given to the new molecule if necessary.
+\end{enumerate}
+
+The object which keeps track of all the currently-loaded \OBJ{Molecule} objects is \OBJ{MoleculeList}, of which there is exactly one in \VMD\ assigned to the global variable {\tt moleculeList} (although there is no reason why there could not be more than one).  \OBJ{MoleculeList} is an important object: it manages all the molecules, contains routines to allow an operation to be performed on a number of molecules at the same time, and supplies information on how the molecules are related to each other.  \OBJ{MoleculeList} is derived from \OBJ{Displayable} as well: it is the top-level parent \OBJ{Displayable} with all \OBJ{Molecule} objects as child \OBJ{Displayable}s.  Thus, turning off the \OBJ{MoleculeList} turns off {\em all} the molecules, and similarly rotating or scaling the \OBJ{MoleculeList} does so to all the molecules.  There are no drawing commands currently for the \OBJ{MoleculeList} itself (although they could be added for something which indicates relationships between the molecules).  This is a useful trick in \VMD: have a container class which is derived from \OBJ{Displayable}, but which has no drawing commands of its own; instead, have it contain several child \OBJ{Displayable} objects which form components of the complex object which is to be drawn.  By applying rotations, translations, etc. to the container class, all the child components are similarly transformed, and they may be separately altered or turned on or off.
+
+\subsection{Remote connection objects}
+
+To create, maintain, and access a connection to a molecular dynamics simulation running on a remote computer (which may just happen to be the same computer running \VMD), the objects illustrated in figure \ref{fig:pg:remote} are used.
+
+\begin{centering}
+\myfigure{pg_remote_objects}{Remote simulation access and control objects used in \VMD.}{fig:pg:remote}
+\end{centering}
+
+The \OBJ{Remote} object is used to encapsulate the functionality for initializing, accessing, and controlling a remote simulation.  This object contains all the data necessary to create a new simulation or to attach to an already-running simulation.  It also contains member functions for querying whether a simulation may be run on another computer, for retrieving the list of available MD programs or jobs on that computer, for obtaining and modifying parameters necessary to start a new job, and for actually starting, attaching to, or stopping an MD simulation.
+
+There are three phases in the task of displaying a molecule in \VMD\ which is being simulated by a separate MD process; they must be accomplished in this order:
+\begin{enumerate}
+  \item Select a computer for the MD simulation, and connect to it to retrieve the list of running jobs there and the list of available MD simulation packages.  When this is done by a \OBJ{Remote} object, the lists are stored and may be retrieved by other objects in \VMD.  If the proper daemon process is not running on the selected computer, this step will fail.
+  \item If the user is to connect to a job which is already running, this phase is skipped; if the user wishes to start a new job, this phase is where the parameters for the job are retrieved from the remote computer and modified to the users requirements.  This requires first selecting which one of the possible MD simulation programs the user wishes to run, and then having the \OBJ{Remote} object retrieve the list of optional and required parameters for that program.  This list is stored \OBJ{Remote}, which also supplies routines to query and change these settings.  Once this is accomplished, a routine in \OBJ{Remote} is called to start a new simulation (a similar routine exist to attach to an already-running job).  After this is called, the simulation starts, loads its data, and this connection procedure proceeds to the final phase.
+  \item Once a connection is made to a {\em running} application (as opposed to the state for the earlier phases where a simulation was being {\em initialized}), the molecular structure is transferred from the remote process to \VMD, and coordinate sets are then sent over as they are calculated.  The structure sent via the network is stored in an internal format in the \OBJ{Remote} object (basically, as a {\tt struct}; this data is then given to a \OBJ{MoleculeRemote} object (described later) and used to create a \OBJ{Molecule} in \VMD.  The \OBJ{Remote} object also has routines for changing the state of the simulation after it is running, and for {\em disconnecting} from the simulation (which leaves it running, and in a state where \VMD\ can attach to it again later if preferred) as well as for {\em killing} the simulation process.
+\end{enumerate}
+
+As mentioned, once the connection is established and the structure sent over the network to \VMD, a new \OBJ{Molecule} can be created.  At the very beginning of the procedure just outlined for creating a connection, an instance of a \OBJ{Remote} is created to proceed through the phases.  After this is complete and the connection is successful, the \OBJ{Remote} instance is given to a new \OBJ{MoleculeRemote} object, which uses the data in \OBJ{Remote} to construct a new molecule in \VMD\ just as if the data were being read from a file.  If another simulation is to be started or attached to, another \OBJ{Remote} instance must be created.  Any number of simulations may be attached to by \VMD\ during a single session, even all the same time.  However, there can only be one \OBJ{Remote} object being used to initialize a new connection at any one time.  Thus, there is one global instance of a \OBJ{Remote} object, referred to by the global variable {\tt remote}; this is used for setting up a simulation, and if the setup is successful the instance is used to create a new \OBJ{MoleculeRemote}, after which a brand new instance of a \OBJ{Remote} is created and assigned to {\tt remote}.
+
+\OBJ{MoleculeRemote} acts very much like a \OBJ{MoleculeFile}, except structure data is retrieved from the provided \OBJ{Remote} instance.  It also provides a version of the {\tt prepare} virtual routine (originally defined in the \OBJ{Displayable} class).  When {\tt prepare} is called, the \OBJ{MoleculeRemote} checks for and processes any new data is available from the remote connection (i.e., new coordinate sets recently computed by the simulation).  It also maintains any special items used for graphical display of the simulation, for example the \OBJ{DrawPatch} object.  \OBJ{DrawPatch} is a \OBJ{Displayable}, and is used to graphically depict the shape and status (via different coloring schemes) of the volumes of space in which the molecule moves in the simulation.  This acts very much like \OBJ{DrawMolItem}, by being a child \OBJ{Displayable} to the \OBJ{MoleculeRemote} which creates it.
+
+The final object used specifically for remote simulation control is the \OBJ{RemoteList}, which functions very much like a \OBJ{MoleculeList} but which instead keeps a list of \OBJ{MoleculeRemote} pointers.  If a molecule is read from just some data files, it is stored by the \OBJ{MoleculeList} but not the \OBJ{RemoteList} (since it is not from a remote connection).  If the molecule is from a remote simulation, the pointer to the molecule is stored by {\em both} \OBJ{MoleculeList} (as a {\tt Molecule *} pointer) and \OBJ{RemoteList} (as a {\tt MoleculeRemote *} pointer).  This allows \VMD\ to distinguish which molecule is part of a presently or previously active simulation.  Even if the simulation is terminated, the reference in \OBJ{RemoteList} is maintained since the molecule was at some point part of a simulation.
+
+\subsection{User interface objects}
+
+A major design point for \VMD\ is to make it relatively easy to add completely different user interface (UI) methods, and allow for each interface to provide a means for accomplishing tasks that may also be accomplished by using the other interfaces as well.  Figure \ref{fig:pg:ui} illustrates the objects which are used to realize this design.  There are four main or base-class level objects used in this category:
+\begin{itemize}
+  \item \OBJ{Command} objects, which each represent a single task which may be accomplished in \VMD;
+  \item \OBJ{CommandQueue}, which maintains a queue of \OBJ{Command} instances and which requests these \OBJ{Command}s to be executed;
+  \item \OBJ{UIObject} objects, each of which represent one UI component.
+\end{itemize}
+
+\begin{centering}
+\myfigure{pg_ui_objects}{User interface objects used in \VMD.}{fig:pg:ui}
+\end{centering}
+
+Since there are to be several different UI components, there needs to be a way to avoid duplication of the code required to carry out the tasks requested by the user manipulating the user interface.  This is the purpose of the \OBJ{Command} object: each subclass of \OBJ{Command} represents a single operation or tasks which the user may request to be done via a user interface of some form.  These \OBJ{Command} objects may take parameters to tell them exactly how to perform the task, but are designed to be rather specific about exactly what they should do.  For example, \OBJ{CmdMolNew} is the \OBJ{Command} subclass which contains all the code necessary to create a new molecule via the algorithm described earlier, while the \OBJ{CmdRotate} object knows how to apply a specified rotation to the current \OBJ{Scene}.  Each \OBJ{Command} has a unique code, defined in the file {\tt Command.h}, and requires derived classes to do the following things:
+\begin{enumerate}
+  \item In the constuctor, the data necessary to perform the command must
+be given to the class and stored for the time when the command will be
+executed.
+  \item In a virtual function \FNO{Command}{void}{create\_text}{}, use a streams output technique to place within the {\em protected} variable ``{\em ostrstream *cmdText}'' a string which is the text command equivalent of the requested operation.  For example, for \OBJ{CmdRotate}, if {\tt deg} is the amount specified to rotate the scene, the function contains lines such as these:
+    \begin{quote} {\tt
+        *cmdText << "rot " << axis; \\
+        \ *cmdText << ( byOrTo == CmdRotate::BY ? " by " : " to "); \\
+        \ *cmdText << deg; \\
+        \ *cmdText << ends;
+    } \end{quote}
+  \item Provide a version of the protected virtual function \FNO{Command}{int}{do\_execute}{}, which is called when the \OBJ{Command} is requested to perform the actions it must do.  More completely, to execute a \OBJ{Command} the routine \FNO{Command}{int}{execute}{} is called, which then calls {\tt do\_execute}.
+\end{enumerate}
+Since the \OBJ{Command} will contain a text version of the requested action, it is relatively simple to create a text log of a \VMD\ session: each time a \OBJ{Command} is executed, the string for that command is simply written to a file.
+
+There are many many actions which need to be done each time through the main execution loop of \VMD\ (section \ref{section:pg:mainloop}).  The \OBJ{CommandQueue} object is used to queue and execute all the actions that need to be done.  This is essentially a FIFO queue, and there is just one instance of this in \VMD\ (stored in the global variable {\tt commandQueue}).  This object also contains routines for logging a \VMD\ session.  New \OBJ{Command} objects are added to the queue via the routine \FNO{CommandQueue}{void}{append}{\FA{Command *}{}}, and are appended to the end of the queue; the routine \FNO{CommandQueue}{void}{execute}{\FA{}{}} then executes the top \OBJ{Command} in the queue, and then {\tt delete}s the \OBJ{Command} instance.  After the \OBJ{Command} is executed, but before it is deleted, \OBJ{CommandQueue} informs the \OBJ{UIObject}'s (described later) that the action was done (why this is so is also described later).  Since the \OBJ{Command} is deleted after it is executed, an instance of the \OBJ{Command} must be created via {\tt new}, and then left to \OBJ{CommandQueue} to be deleted.  This is done because due to the asynchronous nature of this method of executing commands, it is not known exactly when the data in the \OBJ{Command} will be needed, and thus it is unknown when the storage space may be freed up for other use.  The only object which knows this is \OBJ{CommandQueue}, and so it must be given new copies of these \OBJ{Command} objects which it must delete when done.
+
+The objects which create these \OBJ{Command} objects are derived from the \OBJ{UIObject} base class.  This base class forms the heart of all the different types of UI components which \VMD\ provides.  For example, the text console UI (\OBJ{UIText}), the mouse interface (\OBJ{Mouse}), and all the GUI windows (\OBJ{FormsObj} and derivations thereof) are derived from \OBJ{UIObject}.  All the \OBJ{UIObjects}, when they are initialized, register with a \OBJ{CommandQueue} object, which maintains the list of all \OBJ{UIObject}s and can work with them as a group.  The \OBJ{UIObject} is given a unique ID code when it registers, which it uses to identify later if any actions being done were a result of a request from itself.
+
+Each \OBJ{UIObject} basically works with a subset of all the possible \OBJ{Command} objects which \VMD\ contains.  Typically a UI component displays some graphical feedback or status of the current state of the program, such as displaying via a slider or lighted button what the value of some variable is.  When an action is performed the UI components must be informed because this graphical status must be updated to reflect any changes.  Any number of different UI components may require such an update, but since the number of \OBJ{Command}s which can result in a change to the particular graphical display of each \OBJ{UIObject} is much smaller than the total number of available actions, it would be very inefficient to have every UI component notified when each action is performed.  Instead, the \OBJ{UIObjects} each maintain a list of the integer codes for the \OBJ{Command}s in which they are interested.  When a \OBJ{Command} is executed, the \OBJ{Commandqueue} notifies only those \OBJ{UIObject}s which have indicated they are interested in the \OBJ{Command}.  However, a \OBJ{UIObject} can create any available \OBJ{Command} instance, and give it to the \OBJ{CommandQueue} to be executed.  When a new \OBJ{Command} is created, the ID of the UI which is creating it is also given to the \OBJ{Command}, so that later when the UI components are notified of the action they can tell who requested the activity.
+
+The purpose of each \OBJ{UIObject} is to provide a means for the user to input commands, and to display to the user the current status of the program.  The virtual routine \FNO{UIObject}{int}{check\_event}{} is called once for each UI during the main execution loop to allow the UI component to check for user events (such as keyboard entries, mouse button presses, or manipulations of GUI components such as buttons or sliders).  If such an event is found, a new \OBJ{Command} is created for the event (events are simply derived from \OBJ{Command}, and contain the data specifying the type of event) and put on the \OBJ{CommandQueue}.  After all \OBJ{UIObjects} are checked for events, the \OBJ{CommandQueue} is told to start executing its queued actions, continuing until the queue is empty.  When an event action is processed, typically it results in some other form of \OBJ{Command} to be requested, which is done by creating the proper special derivationof \OBJ{Command} for the action and giving it to the \OBJ{CommandQueue}.  Eventually all events are processed, and the actions requested by them are then processed, and finally the queue is empty.  As each \OBJ{Command} is processed the requested action is done and all the \OBJ{UIObjects} which expressed an interest in the action are notified, which allows them to update their display.  When the queue is empty, \VMD\ proceeds to then redraw the \OBJ{Scene}.  This execution loop is summarized in section \ref{section:pg:mainloop}.
+
+It is relatively simple to create a new \OBJ{UIObject}; each on-screen menu is a separate \OBJ{UIObject} as is the mouse, the text console (which almost never needs to be updated due to a command being executed), and the 3D UI.  Each \OBJ{UIObject} can contain the ability to execute as many or as few actions as is desired.  New \OBJ{UIObject}s should be {\tt new}'ed in the {\tt VMDinitUI} routine, after the and \OBJ{CommandQueue} global instance are created.
+
+\subsection{Tracker objects}
+
+The objects responsible for controlling the external spatial tracking devices, and for displaying and using the 3D pointers, are currently in the experimental stage, and will be described later when their design is closer to being final.
+
+
+\section{Main \VMD\ execution loop}
+\label{section:pg:mainloop}
+
+After the program starts up and initializes all global objects as well as processing any startup data files, an execution loop is entered which continues until the user requests to quit \VMD.  This loop is mainly contained in the routine {\tt VMDupdate} (in the file {\tt Global.C}), which is called continuously by the {\tt main} routine of \VMD.  The algorithm for this loop is:
+\begin{enumerate}
+  \item The VMDupdate routine requests each \OBJ{UIObject} to check for any events such as mouse button presses or GUI button/slider/browser/whatever presses.  These events are entered into the \OBJ{CommandQueue} objects queue as \OBJ{Command} object instances.
+  \item All commands in the \OBJ{CommandQueue} are processed until the queue is empty.  Typically, the processing of an event will result in one or more new \OBJ{Command} object being created and placed at the end of the \OBJ{CommandQueue}.  The \OBJ{CommandQueue} will just continue processing each command until the queue is complete empty, which will deal with all the events found in the previous step, as well as any other commands generated while processing the events.
+  \item Each \OBJ{UIObject} is told to do any update that needs to be done each cycle through the execution loop.  This accomplishes such things as updating the current frame in the form used for molecule trajectory animation.
+  \item The current \OBJ{Scene} is rendered to the current \OBJ{DisplayDevice}.
+\end{enumerate}
+
+
+\section{External library descriptions}
+
+There are several libraries used by \VMD\ for the different optional components.  These libraries are either located in the {\tt lib} subdirectory of the \VMD\ working directory, or are located in standard system directories.  This section describes the purpose, usage, and location of these libraries.  Note that in the following, the list item headers contain the library name and associated header files in parentheses; also, the word {\tt ARCH} refers to the name of the Unix version for which \VMD\ is to be compiled (i.e., IRIX5 or HPUX9).  For almost all cases, the listed libraries are used when a specific configuration option is used to add an optional component into \VMD\ (e.g. the {\tt FORMS} or the {\tt TCL} options).
+
+\begin{itemize}
+  \TTLISTITEM{libgl\_s (gl/gl.h, gl/device.h, gl/sphere.h)}
+{\em Configuration option}: {\tt OpenGL}. \\
+{\em Expected library location}: system directory, typically {\tt /usr/lib}. \\
+{\em Expected header file location}: system directory, typically {\tt /usr/include}. \\
+{\em Purpose}: this is the graphics library developed by Silicon Graphics.  
+It is used when \VMD\ is being compiled for a workstation with hardware 
+accelerated graphics.  This library is needed by all the \OBJ{FormsObj} base- and sub-classes, as well as all classes which begin with the word {\tt OpenGL} or {\tt Cave} (i.e., OpenGLRenderer, CaveDisplayDevice).
+
+  \TTLISTITEM{libforms (forms.h)}
+{\em Configuration option}: {\tt FORMS}. \\
+{\em Expected library location}: {\tt lib/forms/lib\_ARCH}. \\
+{\em Expected header file location}: {\tt lib/forms/include}. \\
+{\em Purpose}: this is the FORMS library from Mark Overmars; it provides an easy to use set of buttons, sliders, dials, etc. for use as components of a graphical user interface. 
+
+  \TTLISTITEM{libtcl (tcl.h)}
+{\em Configuration option}: {\tt TCL}. \\
+{\em Expected library location}: must be already installed on your system. \\
+{\em Expected header file locaton}: must be already installed as well. \\
+{\em Purpose}: This library is used to parse and interpret text command scripts, including the capability to have variable substitution, control loops, procedure and function definitions, etc.  This library is used by the \OBJ{UIText} object.
+
+  \TTLISTITEM{libcave (cave.h)}
+{\em Configuration option}: {\tt CAVE}. \\
+{\em Expected library location}: {\tt lib/cave/lib\_ARCH}. \\
+{\em Expected header file location}: {\tt lib/cave/include}. \\
+{\em Purpose}: this is the CAVE library, used to display images in the CAVE virtual environment.  It is used by all objects and files with the word {\tt Cave} in their names, i.e., \OBJ{CaveDisplayDevice}.
+
+  \TTLISTITEM{libtracker, libquat (tracker.h)}
+{\em Configuration option}: {\tt UNC}. \\
+{\em Expected library location}: {\tt lib/unc/lib\_ARCH}. \\
+{\em Expected header file location}: {\tt lib/unc/include}. \\
+{\em Purpose}: used by the \OBJ{UNCTracker} object to access an external spatial tracking device connected to the graphics workstation running \VMD.  It uses a configuration file {\tt .tracker} to simplify configuation of these spatial trackers, and allows \VMD\ to use a variety of different devices without recompilation.  It has been developed at the University of North Carolina, Chapel Hill.
+
+\end{itemize}
+

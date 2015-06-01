@@ -1,0 +1,36 @@
+<!--#set var="TITLE" value="Multi Molecule Animation Plugin, Version 1.0"-->
+<!--#include virtual="/include/header-over.shtml"-->
+
+<!-- CONTENT STARTS HERE -->
+
+    <img style="border: 0; padding: 0 0 1em 1em" src="psf-molmovie.gif" align="right">
+
+    <p>The internal design of VMD does (currently) not support changes of topology and number of atoms 
+       during a trajectory for a single 'molecule'. In case of breaking bonds, this can be handled 
+       most of the time by using the <b>Dynamic Bonds</b> representation. But if one wants to have a 
+       changing number of atoms or display only specific bonds (e.g. as given in a series of psf files),
+       one has to load each into separate 'molecules'. The MultiMolAnim GUI can then be used to
+       emulate the regular animation GUI functionality by selectively displaying only one of the 
+       loaded molecules.</p> 
+
+    <p>To ease the creation of a consistent visualization of all frames/molecules you may
+       want to have a look at the <a href="../clonerep/index.html">Clone Reps Plugin</a>
+       which allows to transfer visualizations from one molecule to others from a simple GUI.
+    </p>
+
+    <h3>Graphical Interface:</h3>
+    <a href="multimolanimgui.png"><img style="border: 0; padding: 0 0 1em 1em"
+	src="multimolanimgui_small.png" align="right"></a>
+    <p>The graphical user interface has two horizontal sliders where you can
+      navigate to an individual frame (='molecule') and set the delay between
+      displaying two consecutive frames/molecules. The set of buttons below allows
+      to run the animation forward or backwards in continuous loops or with single
+      stepping.</p>
+
+    <h3>Author</h3>
+
+    <p><a href="http://sites.google.com/site/akohlmey/">Axel Kohlmeyer</a>.</p>
+
+<!--#include virtual="/include/footer-over.shtml"-->
+</BODY></HTML>
+

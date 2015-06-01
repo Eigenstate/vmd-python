@@ -1,0 +1,53 @@
+<!--#set var="TITLE" value="Intersurf Plugin: Custom Color Function"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p> The colors of the interface are defined by the nearest atoms : each
+vertex of the surface is placed on a segment defined by an atom of each
+group. The coloring method is then given by a function taking two atoms
+are argument. </p><h3>Defining a new coloring function</h3>
+
+<p> Defining a new coloring function is not yet well interfaced. You
+have to edit the
+$(VMD_DIR)\plugins\WIN32\tcl\intersurf1.0\color_func.tcl (or
+$(VMD_DIR)\plugins\noarch\tcl\intersurf1.0\color_func.tcl) to add a new
+function (just copy/paste and modify an exemple). To make this new
+function available from the interface you must edit the
+"intersurf_gui.tcl" in the same directory.
+<br>
+<br>
+</p><p> After the following lines of code :
+<br>
+<br>
+$w.data.color.m.menu add radiobutton -value "color_from_distance" \<br>
+    -label "color_from_distance" \<br>
+    -variable ::NicoStuff::color_func<br>
+$w.data.color.m.menu add radiobutton -value "color_white" \<br>
+    -label "color_white" \<br>
+    -variable ::NicoStuff::color_func<br>
+<br>
+</p><p> just add :
+<br>
+<br>
+$w.data.color.m.menu add radiobutton -value "your_function_name" \<br>
+    -label "as_you_want" \<br>
+    -variable ::NicoStuff::color_func<br>
+<br>
+
+</p><p> It will appear in the interface.
+
+
+</p><h3>Quantitative <i>vs</i> Qualitative functions</h3>
+
+<p> If the color represents qualitative things such as type of
+residues, your function must return values in the range [0..16]. If it
+represents quantitative values such as forces or distance, you should
+use values in the range [17..1024], the VMD transfert function will
+retreive the final colors.
+<!-- End OF CONTENT AREA -->
+	 </p><p> <br>
+        </p></td> 
+       </tr>
+      </tbody></table>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

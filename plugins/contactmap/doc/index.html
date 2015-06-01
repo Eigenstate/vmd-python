@@ -1,0 +1,66 @@
+<!--#set var="TITLE" value="Contact Map Plugin, Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<table border="0">
+<tr>
+<td>
+The Contact Map plugin provides an easy-to-use interface for viewing
+residue-residue contacts between two sets of selected atoms from
+molecules loaded into VMD.  The contact distances are displayed as a 
+color-coded matrix where darker colors indicate residues which are
+close to each other and lighter colors indicate residue pairs which
+are distant from each other.
+<p>
+The controls allow selection of the molecules used for the
+calculation, with a separate atom selection for each molecule.
+The graphical display of residue contacts can be scrolled and
+zoomed as necessary to see results for large structures.
+</td>
+
+<td>
+  <a href="contactmap.gif"><img src="contactmap-thumb.gif" alt="Image of Contact Map Plugin"></a>
+</td>
+
+</tr>
+
+<tr>
+<td colspan="2">
+<p>
+<b>Brief Tutorial Example:</b>
+<ol>
+  <li>Start VMD 
+
+  <li> Load two molecules, or one molecule with two parts you want to compare.  
+  <ul>
+    <li> Note: If you have no molecules handy to compare, use the below to load two identical, but slightly unaligned proteins as Molecule 0 and Molecule 1.  Enter this into the VMD console:<br>
+      <p>
+      mol pdbload 1tit; mol pdbload 1tit<br>
+      set sel [atomselect 1 "all"]; $sel move [transaxis x 4 deg]<br>
+      <p>
+      </li> 
+    </ul>
+    <li> Select <strong>Extensions:contactmap</strong> from "VMD Main" window.
+
+  <li> In the left hand column, select molecule numbers for Molecule A and Molecule B.  Select the parts of the molecules which wish to compare.
+
+  <li> Select "fit all", then "Calculate: Calc res-res Dists".  <br>The vertical axis lists MoleculeA resiudes, the horizontal axis list MoleculeB residues.  <br> 
+
+  <li><strong>Contact distance coloring: </strong>The alpha-Carbon to alpha-Carbon distance for each pair is plotted. A graph sqaure is colored black at 0.0 Angstrom distance,  to a linear gray scale between 0.0 and 10.0 Angstroms, and white when equal to or greater than 10.0 Angstroms.
+
+  <li> <strong>Pair scanning: </strong> move over contact map with button 2 (middle button) pressed to see pair selected.  The vertical axis residue appears in green, the horizontal axis residue appears in brown.  Scrubbing over the horizontal or vertical direction provides a "walk" along the molecule.
+  
+    <li> <strong>Change selection: </strong>  After you change either molecule selection text, or molecule number for MoleculeB, you must re-select the "MoleculeA" molecule number.
+  (This is slightly broken, you must Re-select "Molecule A" molecule number even if you have changed the information for MoleculeB. To change both, change selection for B, then for A,)
+
+  <li><strong> Graph zooming: </strong> 
+    Control the residue numbering as for the Sequence Viewer [link to section].
+    The top left horizontal slider sets the scale for the horizontal axis.
+    The horizontal slider below it sets the scale for both axes 
+     simultaneously axis.  "Fit all" will fit both the vertical and horizontal graphs into the
+window.  
+</td>
+
+</tr>
+</table>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

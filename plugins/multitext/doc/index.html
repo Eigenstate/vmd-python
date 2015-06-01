@@ -1,0 +1,67 @@
+<!--#set var="TITLE" value="MultiText Plugin, Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<table border="0">
+<tr>
+  <td rowspan="4">
+  <p>
+  This plugin provides a very simple built-in text file viewer and
+  editor for VMD.  It can be used by other plugins in place of having to
+  find a platform-specific text editor when one is needed.
+
+  </td>
+
+  <td>   
+  <img src="multitext.png" alt="Image of Text Editor" align=top>
+  <br><b>Text Editor Window</b> 
+  </td>
+</tr>
+</table>
+
+If you want to use multitext in your own plugin:
+<P>
+You would first need to get a handle to an instance of the text 
+viewer/editor.  There can be many editors open at once, so you can
+get a handle by doing:
+<PRE>
+set instancehandle [multitext ?reset|list? ]
+   reset --- Ends instances and deletes all namespaces and instancehandles
+   list  --- Returns list of all existing instancehandles
+</PRE>
+
+You can use the returned instancehandle to control the instance:
+<PRE>
+$instancehandle namespace --Returns the current namespace
+$instancehandle newfile   --Clean out text window and start over
+$instancehandle openfile 'arg' --Inserts text from arg filename
+$instancehandle text 'string' --Inserts textstring in arg variable/literal
+$instancehandle getWindowHandle --Get wm-ready handle, useful for Binding
+$instancehandle quit      --Destroy the instance, delete all data etc
+</PRE>
+
+Examples:
+<PRE>
+package require multitext
+
+### Get a handle to a specific text editor window
+set instancehandle [multitext ]
+
+### Now we configure the instance
+
+# Good for displaying long error messages...
+$instancehandle text "This is the text"
+
+# or
+# if you want to actually edit contents of a file..
+$instancehandle openfile "/tmp/filename.txt"
+
+### Close the instance/destroy window
+$instancehandle quit
+</PRE>
+
+If you want to retrieve the contents of the editor programatically, you 
+can get a window handle which lets you know when the window has been
+destroyed.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

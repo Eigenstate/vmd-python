@@ -1,0 +1,132 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_form_labels.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.17 $      $Date: 2012/01/10 19:30:05 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%  labels form
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\subsection{Labels Window}
+\label{ug:ui:window:labels}
+\index{window!label}
+\index{labels!window}
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{ug_labels}{The Labels window}{fig:ug:labels}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+The Labels window is used to manipulate the labels which may be placed on
+atoms, and the geometry monitors which may be placed between atoms.
+Labels are selected with a mouse, as discussed in section 
+\ref{ug:ui:disp:pick}.  Once selected, the {\sf Labels}
+window can be used to turn different labels on or off or to delete them
+entirely.  Also, labels displaying geometrical data such as bond
+lengths may be graphically displayed using this window.
+
+
+\subsubsection{Label categories}
+\index{labels!categories}
+
+The {\sf Category} chooser (in the upper left) is used to select which
+category of labels to manipulate.  The different label categories include:
+\begin{itemize}
+  \item Atoms, which are shown as a text string next to the atom listing
+the name and residue of the atom;
+  \item Bonds, which are shown as dotted lines between the atoms with the
+bond length displayed at the bond midpoint;\index{bonds!label}
+  \item Angles, which are shown as dotted lines between the three atoms with
+the angle displayed at the center of the defined triangle;\index{angles}
+  \item Dihedrals, which are shown as dotted lines between the four atoms
+with the dihedral angle (the angle between the planes formed by the first
+three atoms and the last three atoms) shown at the midpoint of the 
+torsional bond.
+  \item Springs, which are shown as dotted lines between the atoms with the
+bond length displayed at the bond midpoint;\index{bonds!label}
+\end{itemize}
+All the labels for the selected category which have been previously
+added are displayed in the browser in the center of the window.  The
+line itself contains from 1 to 4 atom names, depending on the
+category; the atom names have the form
+\begin{centering}
+{\tt <residue name><residue id>:<atom name>}
+\end{centering}
+followed by either {\tt (on)} or {\tt (off)}.  The last word
+indicates if the label is turned on or off.
+
+
+\subsubsection{Modifying or deleting a label} 
+\index{labels!hide}
+\index{labels!show}
+\index{labels!delete}
+
+A label can be turned on or off without deleting it, by selecting the
+label in the central browser and pressing the {\sf Hide} button.  To
+turn it back on, select it again then press the {\sf Show} button.
+Press the {\sf Delete} button to delete it.  This browser allows
+multiple selections, which, for example, allows you to delete several
+labels at once.  To select everything in the current category, press
+{\sf Select All}; to unselect them, press {\sf Unselect All}.  If
+nothing is selected, the action is applied to everything.  Thus, one
+way to turn everything off is to press {\sf Unselect All} then press
+{\sf Hide}.  (It may seem counterintuitive, but it was done this way
+so all the labels could be deleted by just pressing {\sf Delete}.)
+
+\subsubsection{Pick information}
+\index{mouse!pick information}
+
+The {\sf Picked Atom} tab displays
+information about the last atom picked by the mouse.  This information
+is also echoed to the vmd console.  The data in the will
+remain in until a new label is selected by the mouse.
+Information about the following fields is identified:
+
+\begin{itemize}
+\item Molecule - the name of the molecule referenced
+\item XYZ - the position of the atom in 3D space
+\item Resname - the type of the amino or nucleic acid to which this atom
+belongs
+\item ResID - the internal VMD ID number of the entire residue to which
+the particular atom belongs. E.g., ResId for an atom of a protein is the
+same as the residue number of that atom as listed in its PDB file.
+\item Name - the name of the atom as it appeared in the coordinate file
+\item Type - the type of the atom, as determined by an internal VMD match-up
+of the given name to a likely atom type associated with that name
+\item Chain - if the coordinate file contained data in the ``Chain'' field
+for this atom, then that data is given here.
+\item Segname - the name of the segment to which this atom belongs
+\item Index - the internal VMD index used to identify the atom; this is
+useful for specifying selection syntax to generate different
+representation styles for particular atoms. For PDB files Index corresponds
+to the atom number listed in the file minus 1 (so that the index starts with
+0).
+\item Value - the calculated length of bonds, angles, or 
+      geometric measurements performed by the selected label
+\end{itemize}
+
+
+\subsubsection{Plotting a label's value}
+\label{ug:ui:window:labels:plotting}
+\index{labels!plotting}
+\index{atoms!distance between!plotting}
+\index{plot!geometry monitors}
+
+If the label has a numeric value (such as a bond length geometry
+monitor), it is easy to graph the change of the value over time (for
+multiple frames in an animation).  The {\sf Graph} button calls a
+Tcl script to plot the data for the selected labels.  You can create
+your own script to handle label plotting simply by creating a Tcl proc
+named {\tt vmd\_labelcb\_user}.  The proc should accept three arguments.
+Have a look at the default scripts in the VMD scripts directory, found in
+the VMD installation directory under {\tt scripts/vmd/graphlabels.tcl}.
+If no supported graphing program is available, a dialog box will be
+presented which will allow you to save the values of the labels to a file.

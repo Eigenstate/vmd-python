@@ -1,0 +1,5 @@
+GRAPHENE        POT       potentials/graphene_pot.dat
+GRAPHENE        CLA       potentials/graphene_cla.dat
+POT				POT		  potentials/extend114_pot-pot.dat
+POT				CLA		  potentials/extend114_pot-chl.dat
+CLA				CLA		  potentials/extend114_chl-chl.dat

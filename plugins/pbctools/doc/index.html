@@ -1,0 +1,757 @@
+<!--#set var="TITLE" value="PBCTools Plugin, Version 2.7"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<!-- HTML docs as used on the VMD homepage in
+  http://www.ks.uiuc.edu/Research/vmd/plugins/pbctools/
+-->
+
+<div style="text-align:right;font-weight:bold">by </div>
+
+<p style="border:thin solid black;background:yellow;padding:0.5em;font-weight:bold;margin-left:5%;margin-right:5%">
+Please note that this is the documentation of the PBCTools plugin as
+it comes with the current development version of VMD, and it may
+therefore not match the plugin version you are using. If you want to
+find the documentation of a specific version of the plugin, please
+refer to the <a
+href="http://github.com/olenz/pbctools/downloads">PBCTools development
+page</a>.
+</p>
+
+</p>  The plugin <tt>pbctools</tt> provides Tcl functions to handle periodic boundary conditions.
+  </p>
+  <h3 class="sectionHead"><span class="titlemark">1 </span> <a 
+ id="x1-10001"></a>Basic usage</h3>
+<p>All of the plugin&#8217;s functions can be accessed via the Tcl text command
+</p>
+  </p><div class="fancyvrb" id="fancyvrb1"><a 
+ id="x1-1002r1"></a>&#x00A0;&#x00A0;&#x00A0;&#x00A0;pbc&#x00A0;<i>subcommand</i>&#x00A0;[<i>options</i>]...</div>
+<p>that you can write in a VMD-Tcl-script or interactively enter in the VMD console window or the
+VMD TkConsole (accessible via VMD Main Menu &#x2192; Extensions &#x2192; Tk Console). When no
+<i>subcommand</i> is provided, a short help message will be printed. The list of available subcommands can
+be found in table <a 
+href="#x1-10031">1<!--tex4ht:ref: tab:commands --></a>.
+  <p><div class="table">
+                                                                                     
+                                                                                     
+</p>  <a 
+ id="x1-10031"></a><hr class="float"><div class="float" 
+>
+                                                                                     
+                                                                                     
+</p><div class="tabular"><table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2"><tr style="vertical-align:baseline;"><td></p><b>Subcommand</b>           </td><td></p><b>Description</b>                                   </td><td><b>p.</b></td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>set</tt> <i>cell</i> [<i>options</i>&#x2026;]         </td><td></p>Set the VMD unit cell properties (e.g. to use VMD&#8217;s
+feature that allows to display periodic copies of the
+system).                                       </td><td> <a 
+href="#x1-30003">7<!--tex4ht:ref: sec:set --></a></td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>get</tt> [<i>options</i>&#x2026;]             </td><td></p>Get the VMD unit cell properties.                </td><td> <a 
+href="#x1-80004">8<!--tex4ht:ref: sec:get --></a></td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>readxst</tt> <i>xstfile</i> [<i>options</i>&#x2026;]  </td><td></p>Read the VMD unit cell properties from an XST
+file.                                            </td><td> <a 
+href="#x1-130005">9<!--tex4ht:ref: sec:readxst --></a></td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>writexst</tt> <i>xstfile</i> [<i>options</i>&#x2026;] </td><td></p>Write the VMD unit cell properties to an XST file.</td><td> <a 
+href="#x1-130005">9<!--tex4ht:ref: sec:writexst --></a></td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>wrap</tt> [<i>options</i>&#x2026;]            </td><td></p>When the atoms of the system are not all in one
+periodic  image,  but  are  distributed  over  various
+images, this function wraps all atoms into the chosen
+image. It is also possible to change between different
+representations  of  the  unit  cell  (orthorhombic  or
+triclinic).                                       </td><td><a 
+href="#x1-180006">10<!--tex4ht:ref: sec:wrap --></a></td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>unwrap</tt> [<i>options</i>&#x2026;]         </td><td></p>When  overlong  bonds  (that  stretch  the  whole
+system) occur and compounds (residues, segments,
+chains or fragments) are broken in the course of a
+simulation  trajectory  because  atoms  are  wrapped
+around the periodic boundaries, this function will
+remove large jumps of atoms between consecutive
+frames.                                        </td><td><a 
+href="#x1-230007">13<!--tex4ht:ref: sec:unwrap --></a></td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>join</tt> <i>compound</i> [<i>options</i>&#x2026;]  </td><td></p>When you have still broken compounds in frames
+after you have used <tt>unwrap</tt>, this function can be
+used  to  join  broken  compounds.  Note,  that  this
+function is significantly slower than <tt>unwrap</tt>!       </td><td><a 
+href="#x1-280008">14<!--tex4ht:ref: sec:join --></a></td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>box</tt> [<i>options</i>&#x2026;]             </td><td></p>When you want to draw a box around the unit cell
+of your system, this function can be used. The box
+will automatically adapt to changes in the unit cell
+parameters in the course of a trajectory.          </td><td><a 
+href="#x1-340009.1">16<!--tex4ht:ref: sec:box --></a></td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>box_draw</tt> [<i>options</i>&#x2026;]       </td><td></p>When the unit cell parameters do not change in the
+course of a trajectory, this function draws a static
+box that will not adapt to changes in the unitcell
+properties.                                     </td><td><a 
+href="#x1-390009.2">17<!--tex4ht:ref: sec:box_draw --></a></td>
+</tr><tr style="vertical-align:baseline;"><td>                          </td></tr></table></div>
+<br /> <div class="caption" 
+><span class="id">Table&#x00A0;1: </span><span  
+class="content">List of the subcommands of the PBCTools plugin.</span></div><!--tex4ht:label?: x1-10031 -->
+                                                                                     
+                                                                                     
+  </p></div><hr class="endfloat" />
+  </div>
+  <h3 class="sectionHead"><span class="titlemark">2 </span> <a 
+ id="x1-20002"></a>Installation</h3>
+<p>Since VMD version 1.8.6, the PBCTools plugin is part of the official distribution of
+VMD<span class="footnote-mark"><a 
+href="#fn1x0" id="fn1x0-bk"><sup class="textsuperscript">1</sup></a></span><a 
+ id="x1-2001f1"></a>,
+and all commands can be used within VMD without further preparation.
+</p>  In the case that you are using an older version of VMD, or that you want to use a more recent
+version of PBCTools than what came with the VMD distribution, you can activate the PBCTools
+plugin as follows:
+</p>
+     </p><ol  class="enumerate1" >
+     <li 
+  class="enumerate" id="x1-2003x1">Fetch the PBCTools plugin from Github
+     <div class="fancyvrb" id="fancyvrb2"><a 
+ id="x1-2005r1"></a>&#x00A0;&#x00A0;git&#x00A0;clone&#x00A0;git://github.com/olenz/pbctools.git</div>
+     <p>This will create a new directory <tt>pbctools</tt> in the current directory.
+     <p></li>
+     <li 
+  class="enumerate" id="x1-2007x2">Add the following lines to your VMD startup file (<span class="obeylines-h"><span class="verb">~/.vmdrc</span></span> on Unix or <span class="obeylines-h"><span class="verb">vmd.rc</span></span> on
+     Windows)<span class="footnote-mark"><a 
+href="#fn2x0" id="fn2x0-bk"><sup class="textsuperscript">2</sup></a></span><a 
+ id="x1-2008f2"></a>:
+     <div class="fancyvrb" id="fancyvrb3"><a 
+ id="x1-2010r1"></a>&#x00A0;&#x00A0;set&#x00A0;dir&#x00A0;<i>pbctools-directory</i><br class="fancyvrb" /><a 
+ id="x1-2012r2"></a>&#x00A0;&#x00A0;source&#x00A0;$dir/pkgIndex.tcl<br class="fancyvrb" /><a 
+ id="x1-2014r3"></a>&#x00A0;&#x00A0;package&#x00A0;require&#x00A0;pbctools</div>
+     </li></ol>
+</p>
+                                                                                     
+                                                                                     
+  </p>
+  <h3 class="sectionHead"><span class="titlemark">3 </span> <a 
+ id="x1-30003"></a><tt>set</tt> &#8211; Setting the unitcell parameters</h3>
+<p>To be able to work correctly, all other procedures of the PBCTools plugin require the VMD unitcell
+parameters to be set. Some file formats and their readers provide the necessary information
+(e.g. the DCD, VTF and Amber crdbox formats). When the format does not provide the
+information, the parameters can either be set with help of the command <tt>pbc set</tt>, or they
+can be read in from a file in XST format via the procedure <tt>pbc readxst</tt> (see section
+<a 
+href="#x1-130005">5<!--tex4ht:ref: sec:readxst --></a>).
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-40003"></a>Syntax</h5>
+<p><tt>pbc</tt> <tt>set</tt> <i>cell</i> [<i>options</i>&#x2026;]
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-50003"></a>Description</h5>
+<p>Sets the VMD unit cell properties to <i>cell</i> in the specified frames. <i>cell</i> must either contain a single set
+of unit cell parameters that will be used in all frames of the molecule, or it must contain a parameter
+set for every frame.
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-60003"></a>Example</h5>
+<p>
+  <p><div class="fancyvrb" id="fancyvrb4"><a 
+ id="x1-6002r1"></a>&#x00A0;&#x00A0;#&#x00A0;set&#x00A0;the&#x00A0;unit&#x00A0;cell&#x00A0;side&#x00A0;length&#x00A0;to&#x00A0;10&#x00A0;in&#x00A0;all&#x00A0;frames<br class="fancyvrb" /><a 
+ id="x1-6004r2"></a>&#x00A0;&#x00A0;pbc&#x00A0;set&#x00A0;{10.0&#x00A0;10.0&#x00A0;10.0}&#x00A0;-all</div>
+  <h5 class="minisecHead"> <a 
+ id="x1-70003"></a>Options</h5>
+  <div class="tabular"><table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2"><tr style="vertical-align:baseline;"><td></p><tt>-molid</tt> <i>molid</i>|<tt>top</tt>        </td><td></p>Which molecule to use (default: <tt>top</tt>).                             </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-first</tt> <i>frame</i>|<tt>first</tt>|<tt>now</tt>   </td><td></p>The first frame to use (default: <tt>now</tt>).                              </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-last</tt> <i>frame</i>|<tt>last</tt>|<tt>now</tt>     </td><td></p>The last frame to use (default: <tt>now</tt>).                               </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-all</tt>[<tt>frames</tt>]                   </td><td></p>Equivalent to <tt>-first first -last last</tt>.                       </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-now</tt>                   </td><td></p>Equivalent to <tt>-first now -last now</tt>.                            </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-namd</tt>|<tt>-vmd</tt>              </td><td></p>Format  of  the  unit  cell  parameters  <i>cell</i>.  When  <tt>-vmd</tt> is
+used, a parameter set must be a list of the VMD unitcell
+parameters <i>a</i>, <i>b</i>, <i>c</i> (i.e. the side lengths of the unit cell) and
+optionally <i>alpha</i>, <i>beta</i> and <i>gamma</i> (the angles of the unit
+cell) for non-orthorhombic unitcells. When <tt>-namd</tt> is used, a
+parameter set must contain the three unit cell vectors <i>A</i>, <i>B</i>
+and <i>C</i> (the 3D-vectors of the unitcell sides) (default:<tt>-vmd</tt>). </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-</tt>[<tt>no</tt>]<tt>alignx</tt>             </td><td></p>If the option <tt>-namd</tt> is used and the unit cell vector <i>A</i> is not
+parallel to the x-axis, <tt>-alignx</tt> will rotate the system so that
+it is. If <tt>-noalignx</tt> is used, the function will return with a
+warning when <i>A</i> ist not aligned with the x-axis.                </td>
+</tr><tr style="vertical-align:baseline;"><td>                                     </td> </tr></table></div>
+<p>
+                                                                                     
+                                                                                     
+  <p>
+  <h3 class="sectionHead"><span class="titlemark">4 </span> <a 
+ id="x1-80004"></a><tt>get</tt> &#8211; Getting the unitcell parameters</h3>
+  <h5 class="minisecHead"> <a 
+ id="x1-90004"></a>Syntax</h5>
+<p><tt>pbc</tt> <tt>get</tt> [<i>options</i>&#x2026;]
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-100004"></a>Description</h5>
+<p>Gets the VMD unit cell properties from the specified frames. Returns a list of one parameter set for
+each frame or an empty list when an error occured.
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-110004"></a>Example</h5>
+<p>
+  <p><div class="fancyvrb" id="fancyvrb5"><a 
+ id="x1-11002r1"></a>&#x00A0;&#x00A0;#&#x00A0;get&#x00A0;the&#x00A0;unit&#x00A0;cell&#x00A0;parameters&#x00A0;of&#x00A0;the&#x00A0;current&#x00A0;frame<br class="fancyvrb" /><a 
+ id="x1-11004r2"></a>&#x00A0;&#x00A0;set&#x00A0;cell&#x00A0;[pbc&#x00A0;get&#x00A0;-now]</div>
+  <h5 class="minisecHead"> <a 
+ id="x1-120004"></a>Options</h5>
+  <div class="tabular"><table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2"><tr style="vertical-align:baseline;"><td></p><tt>-molid</tt> <i>molid</i>|<tt>top</tt>        </td><td></p>Which molecule to use (default: <tt>top</tt>)                              </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-first</tt> <i>frame</i>|<tt>first</tt>|<tt>now</tt>   </td><td></p>The first frame to use (default: <tt>now</tt>).                              </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-last</tt> <i>frame</i>|<tt>last</tt>|<tt>now</tt>     </td><td></p>The last frame to use (default: <tt>now</tt>).                               </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-all</tt>[<tt>frames</tt>]                   </td><td></p>Equivalent to <tt>-first first -last last</tt>.                       </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-now</tt>                   </td><td></p>Equivalent to <tt>-first now -last now</tt>.                            </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-namd</tt>|<tt>-vmd</tt>              </td><td></p>Format of the unit cell parameters. When <tt>-vmd</tt> is used, a
+parameter set will contains the VMD unitcell parameters <i>a</i>,
+<i>b</i>, <i>c</i>, <i>alpha</i>, <i>beta</i>, <i>gamma</i>. When <tt>-namd</tt> is used, a parameter
+set  contains  the  three  3D  unit  cell  vectors  <i>A</i>,  <i>B</i>  and  <i>C</i>
+(default: <tt>-vmd</tt>).                                                          </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-</tt>[<tt>no</tt>]<tt>check</tt>              </td><td></p>Check whether the unit cell parameters seem reasonable, i.e.
+whether the side lengths are not too small and the angles are
+not very small or very large (default: <tt>-nocheck</tt>).               </td>
+</tr><tr style="vertical-align:baseline;"><td>                                     </td> </tr></table></div>
+<p>
+                                                                                     
+                                                                                     
+  <p>
+  <h3 class="sectionHead"><span class="titlemark">5 </span> <a 
+ id="x1-130005"></a><tt>readxst</tt> and <tt>writexst</tt> &#8211; Handling XST files</h3>
+  <h5 class="minisecHead"> <a 
+ id="x1-140005"></a>Syntax</h5>
+<p><tt>pbc</tt> <tt>readxst</tt> <i>xstfile</i> [<i>options</i>&#x2026;]<br 
+class="newline" /><tt>pbc</tt> <tt>writexst</tt> <i>xstfile</i> [<i>options</i>&#x2026;]
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-150005"></a>Description</h5>
+<p>Read/write the unit cell information from an XST or XSC file.
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-160005"></a>Example</h5>
+<p>
+  <p><div class="fancyvrb" id="fancyvrb6"><a 
+ id="x1-16002r1"></a>&#x00A0;&#x00A0;#&#x00A0;read&#x00A0;the&#x00A0;unit&#x00A0;cell&#x00A0;parameters&#x00A0;from&#x00A0;system.xst<br class="fancyvrb" /><a 
+ id="x1-16004r2"></a>&#x00A0;&#x00A0;pbc&#x00A0;readxst&#x00A0;system.xst<br class="fancyvrb" /><a 
+ id="x1-16006r3"></a>&#x00A0;&#x00A0;pbc&#x00A0;writexst&#x00A0;system.xst</div>
+  <h5 class="minisecHead"> <a 
+ id="x1-170005"></a>Options</h5>
+  <div class="tabular"><table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2"><tr style="vertical-align:baseline;"><td></p><tt>-molid</tt> <i>molid</i>|<tt>top</tt>        </td><td></p>Which molecule to use (default: <tt>top</tt>).                             </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-first</tt> <i>frame</i>|<tt>first</tt>|<tt>now</tt>   </td><td></p>The first frame to use (default: <tt>first</tt>).                           </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-last</tt> <i>frame</i>|<tt>last</tt>|<tt>now</tt>     </td><td></p>The last frame to use (default: <tt>last</tt>).                             </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-all</tt>[<tt>frames</tt>]                   </td><td></p>Equivalent to <tt>-first first -last last</tt>.                       </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-now</tt>                   </td><td></p>Equivalent to <tt>-first now -last now</tt>.                            </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-stride</tt> <i>stride</i>                </td><td></p>Read only every <i>stride</i>-th timestep from the file (default: 1).</td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-</tt>[<tt>no</tt>]<tt>skipfirst</tt>          </td><td></p>(only readxst) Whether to skip the first line of the file, or not
+(default: <tt>-skipfirst</tt> for XST files, <tt>-noskipfirst</tt> for XSC
+files)                                                                        </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-step2frame</tt> <i>num</i>            </td><td></p>Conversion factor between step <i>num</i> in XST file and frame
+<i>num</i> in DCDs. This is useful when loading multiple XSTs and
+want to avoid over-writing info of earlier frames by having a
+unique mapping between step and frame.                        </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-step0</tt> <i>num</i>                   </td><td></p>(only writexst) Timestep number for the first written frame.</td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-</tt>[<tt>no</tt>]<tt>alignx</tt>             </td><td></p>(only readxst)  If  the  unit  cell  vector  <i>A</i> is  not  parallel  to
+the x-axis, <tt>-alignx</tt> will rotate the system so that it is. If
+<tt>-noalignx</tt> is used, the function will return with a warning
+when <i>A</i> ist not aligned with the x-axis.                           </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-log</tt> <i>logfile</i>                    </td><td></p>(only readxst) Log file used for debugging information.       </td></tr><tr style="vertical-align:baseline;"><td> </td> </tr></table>
+</div>
+<p>
+                                                                                     
+                                                                                     
+  <p>
+  <h3 class="sectionHead"><span class="titlemark">6 </span> <a 
+ id="x1-180006"></a><tt>wrap</tt> &#8211; Wrapping atoms</h3>
+  <h5 class="minisecHead"> <a 
+ id="x1-190006"></a>Syntax</h5>
+<p><tt>pbc</tt> <tt>wrap</tt> [<i>options</i>&#x2026;]
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-200006"></a>Description</h5>
+<p>Wrap atoms into a single unitcell.
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-210006"></a>Example</h5>
+<p>
+  <p><div class="fancyvrb" id="fancyvrb7"><a 
+ id="x1-21002r1"></a>&#x00A0;&#x00A0;#&#x00A0;wrap&#x00A0;the&#x00A0;system&#x00A0;into&#x00A0;the&#x00A0;orthorhombic&#x00A0;box&#x00A0;shifted&#x00A0;by&#x00A0;one&#x00A0;box&#x00A0;length&#x00A0;in&#x00A0;X-dir<br class="fancyvrb" /><a 
+ id="x1-21004r2"></a>&#x00A0;&#x00A0;pbc&#x00A0;wrap&#x00A0;-orthorhombic&#x00A0;-shiftcenterrel&#x00A0;1&#x00A0;0&#x00A0;0</div>
+  <h5 class="minisecHead"> <a 
+ id="x1-220006"></a>Options</h5>
+<a 
+ id="x1-22001r2"></a>  <!--l. 390--><div class="longtable"> <table id="TBL-6" class="longtable" 
+cellspacing="0" cellpadding="0" rules="groups" 
+><colgroup id="TBL-6-1g"><col 
+id="TBL-6-1"></colgroup><colgroup id="TBL-6-2g"><col 
+id="TBL-6-2"></colgroup>
+                                                                                     
+                                                                                     
+<tr  
+ style="vertical-align:baseline;" id="TBL-6-5-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-5-1"  
+class="td11">
+</p><tt>-molid</tt> <i>molid</i>|<tt>top</tt>        </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-5-2"  
+class="td11">
+</p>Which molecule to use (default: <tt>top</tt>)                              </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-6-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-6-1"  
+class="td11">
+</p><tt>-first</tt> <i>frame</i>|<tt>first</tt>|<tt>now</tt>   </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-6-2"  
+class="td11">
+</p>The first frame to use (default: <tt>now</tt>).                              </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-7-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-7-1"  
+class="td11">
+</p><tt>-last</tt> <i>frame</i>|<tt>last</tt>|<tt>now</tt>     </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-7-2"  
+class="td11">
+</p>The last frame to use (default: <tt>now</tt>).                               </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-8-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-8-1"  
+class="td11">
+</p><tt>-all</tt>[<tt>frames</tt>]                   </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-8-2"  
+class="td11">
+</p>Equivalent to <tt>-first first -last last</tt>.                       </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-9-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-9-1"  
+class="td11">
+</p><tt>-now</tt>                   </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-9-2"  
+class="td11">
+</p>Equivalent to <tt>-first now -last now</tt>.                            </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-10-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-10-1"  
+class="td11">
+</p><tt>-parallelepiped</tt>
+|<tt>-orthorhombic</tt>          </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-10-2"  
+class="td11">
+</p>Wrap   the   atoms   into   the   unitcell   parallelepiped   or
+the   corresponding   orthorhombic   box   with   the   same
+volume and center as the (non-orthrhombic) unitcell. The
+unitcell  displacement  vectors  are  not  changed  (default:
+<tt>-parallelepiped</tt>).                                                     </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-11-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-11-1"  
+class="td11">
+</p><tt>-sel</tt> <i>sel</i>                        </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-11-2"  
+class="td11">
+</p>The selection of atoms to be wrapped (default: <tt>"all"</tt>). Use
+this if you don&#8217;t want to wrap all atoms.                         </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-12-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-12-1"  
+class="td11">
+</p><tt>-nocompound</tt>
+|<tt>-compound</tt>
+<tt>res</tt>[<tt>id</tt>[<tt>ue</tt>]]|<tt>seg</tt>[<tt>id</tt>]|<tt>chain</tt>|<tt>fragment</tt> </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-12-2"  
+class="td11">
+</p>Defines, which atom compounds should be kept together, i.e.
+which atoms will not be wrapped if a compound would be
+split by the wrapping: residues, segments or chains (default:
+<tt>-nocompound</tt>).                                                           </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-13-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-13-1"  
+class="td11">
+</p><tt>-nocompoundref</tt>
+|<tt>-compoundref</tt> <i>refsel</i>        </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-13-2"  
+class="td11">
+</p>When  compounds  have  been  defined  via  the  <tt>-compound</tt>
+option,  this  defines  a  reference  selection  of  atoms.  After
+the  wrapping,  at  least  one  of  the  atoms  in  this  selection
+will  be  in  the  central  image.  This  can  be  useful,  for
+example,  when  water  molecules  should  be  wrapped  such
+that the oxygen atom ends up in the central image (default:
+<tt>-nocompoundref</tt>).                                                       </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-14-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-14-1"  
+class="td11">
+</p><tt>-center</tt>  <tt>origin</tt>|<tt>unitcell</tt>
+&#x00A0;   |<tt>com</tt>|<tt>centerofmass</tt>
+&#x00A0;   |<tt>bb</tt>|<tt>boundingbox</tt>      </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-14-2"  
+class="td11">
+</p>Specify the center of the wrapping cell. The center can be
+set  to  the  origin  (<tt>origin</tt>),  to  the  center  of  the  unit  cell
+(<tt>unitcell</tt>), to the center of mass (<tt>com</tt> or <tt>centerofmass</tt>)
+of the selection specified by the option <tt>-centersel</tt>, or to
+the  center  of  the  bounding  box  (<tt>bb</tt> or  <tt>boundingbox</tt>)  of
+the selection specified by the option <tt>-centersel</tt> (default:
+<tt>unitcell</tt>).                                                                </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-15-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-15-1"  
+class="td11">
+</p><tt>-centersel</tt> <i>sel</i>               </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-15-2"  
+class="td11">
+</p>Specify  the  selection  <i>sel</i>  that  defines  the  center  of  the
+wrapping cell in the option <tt>-center</tt> (default: <tt>"all"</tt>). Note
+that this option only has an effect if used together with the
+arguments <tt>com</tt>, <tt>centerofmass</tt>, <tt>bb</tt> or <tt>boundingbox</tt> to the
+option <tt>-center</tt>.                                                         </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-16-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-16-1"  
+class="td11">
+</p><tt>-shiftcenter</tt> <i>shift</i>          </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-16-2"  
+class="td11">
+</p>Shift the center of the box by <i>shift</i>. <i>shift</i> has to be a list of
+three numerical values. (default: <span class="obeylines-h"><span class="verb">{0&#x00A0;0&#x00A0;0}</span></span>)                       </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-17-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-17-1"  
+class="td11">
+</p><tt>-shiftcenterrel</tt> <i>shift</i>      </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-17-2"  
+class="td11">
+</p>Shift the center of the box by <i>shift</i> (in units of the unit
+cell vectors). <i>shift</i> has to be a list of three numerical values.
+(default: <span class="obeylines-h"><span class="verb">{0&#x00A0;0&#x00A0;0}</span></span>)                                                      </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-18-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-18-1"  
+class="td11">
+</p><tt>-</tt>[<tt>no</tt>]<tt>verbose</tt>            </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-18-2"  
+class="td11">
+</p>Turn  on/off  verbosity  of  the  function  (for  debugging)
+(default: <tt>-noverbose</tt>).                                                 </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-19-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-19-1"  
+class="td11">
+</p><tt>-</tt>[<tt>no</tt>]<tt>draw</tt>               </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-6-19-2"  
+class="td11">
+</p>Draw some test vectors (for debugging) (default: <tt>-nodraw</tt>). </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-20-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-20-1"  
+class="td11">                       </td>                                                          
+                                                                                     
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-21-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-21-1"  
+class="td11">                       </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-22-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-22-1"  
+class="td11">
+</p>                       </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-23-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-23-1"  
+class="td11">
+</p>                       </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-24-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-24-1"  
+class="td11">
+</p>                       </p></td>
+  </tr>
+<tr  
+ style="vertical-align:baseline;" id="TBL-6-3-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-3-1"  
+class="td11">
+</p>                       </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-6-4-"><td  style="white-space:wrap; text-align:left;" id="TBL-6-4-1"  
+class="td11">
+</p>                       </p></td>
+  </tr>
+  </table></div>
+<p>
+                                                                                     
+                                                                                     
+  <p>
+  <h3 class="sectionHead"><span class="titlemark">7 </span> <a 
+ id="x1-230007"></a><tt>unwrap</tt> &#8211; Unwrapping atoms</h3>
+  <h5 class="minisecHead"> <a 
+ id="x1-240007"></a>Syntax</h5>
+<p><tt>pbc</tt> <tt>unwrap</tt> [<i>options</i>&#x2026;]
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-250007"></a>Description</h5>
+<p>If a simulation only saves the central image coordinates of a system, atoms are wrapped around when
+they reach the boundaries. This leads to big jumps in the coordinates of the atoms, and to
+bonds that stretch the whole box length. This procedure will reverse these jumps and
+make the movement of the atoms continuous over a series of frames. This process is not
+necessarily unique, so this procedure can not exactly reverse the effects of the command <tt>pbc
+wrap</tt>.
+</p>  In the case of a simulation trajectory, the following process most probably gives the best
+result:
+     </p><ol  class="enumerate1" >
+     <li 
+  class="enumerate" id="x1-25002x1">Go to the first frame.
+     </li>
+     <li 
+  class="enumerate" id="x1-25004x2"><a 
+ id="x1-250032"></a> Shape the unitcell of the frame for the best visualization by using the commands<br 
+class="newline" /><tt>pbc join -now</tt> and <tt>pbc wrap -now</tt> with appropriate options.
+     </li>
+     <li 
+  class="enumerate" id="x1-25006x3">Unwrap the trajectory, starting from the current frame, by using<br 
+class="newline" /><tt>pbc unwrap -first now</tt>.
+     </li>
+     <li 
+  class="enumerate" id="x1-25008x4">Visually check the result. If the system gets smeared out too fast because the diffusion
+     is too high, repeat the procedure with successively later frames.</li></ol>
+  <h5 class="minisecHead"> <a 
+ id="x1-260007"></a>Example</h5>
+<p>
+  <p><div class="fancyvrb" id="fancyvrb8"><a 
+ id="x1-26002r1"></a>&#x00A0;&#x00A0;#&#x00A0;unwrap&#x00A0;all&#x00A0;protein&#x00A0;atoms<br class="fancyvrb" /><a 
+ id="x1-26004r2"></a>&#x00A0;&#x00A0;pbc&#x00A0;unwrap&#x00A0;-sel&#x00A0;"protein"</div>
+  <h5 class="minisecHead"> <a 
+ id="x1-270007"></a>Options</h5>
+  <div class="tabular"><table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2"><tr style="vertical-align:baseline;"><td></p><tt>-molid</tt> <i>molid</i>|<tt>top</tt>        </td><td></p>Which molecule to use (default: <tt>top</tt>)                              </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-first</tt> <i>frame</i>|<tt>first</tt>|<tt>now</tt>   </td><td></p>The first frame to use (default: <tt>now</tt>).                              </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-last</tt> <i>frame</i>|<tt>last</tt>|<tt>now</tt>     </td><td></p>The last frame to use (default: <tt>now</tt>).                               </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-all</tt>[<tt>frames</tt>]                   </td><td></p>Equivalent to <tt>-first first -last last</tt>.                       </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-now</tt>                   </td><td></p>Equivalent to <tt>-first now -last now</tt>.                            </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-sel</tt> <i>sel</i>                        </td><td></p>The selection of atoms to be unwrapped (default: <tt>"all"</tt>).
+Use this if you don&#8217;t want to unwrap all atoms.                </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-</tt>[<tt>no</tt>]<tt>verbose</tt>            </td><td></p>Turn  on/off  verbosity  of  the  function  (for  debugging)
+(default: <tt>-noverbose</tt>).                                                 </td>
+</tr><tr style="vertical-align:baseline;"><td>                                     </td> </tr></table></div>
+<p>
+                                                                                     
+                                                                                     
+  <p>
+  <h3 class="sectionHead"><span class="titlemark">8 </span> <a 
+ id="x1-280008"></a><tt>join</tt> &#8211; Joining residues, chains, segments, fragments, and connected/bonded groups</h3>
+  <h5 class="minisecHead"> <a 
+ id="x1-290008"></a>Syntax</h5>
+<p><tt>pbc</tt> <tt>join</tt> <i>compound</i> [<i>options</i>&#x2026;]
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-300008"></a>Description</h5>
+<p>Joins compounds of type <i>compound</i> of atoms that have been split due to wrapping around the unit
+cell boundaries, so that they are not split anymore. <i>compound</i> must be one of the values
+<tt>res[id[ue]]</tt>, <tt>chain</tt>, <tt>seg[id]</tt>, <tt>fragment</tt> or <tt>connected</tt>.
+</p>  This procedure can help to remove bonds that stretch the whole box. Note, however,
+that <tt>join</tt> is relatively slow and is required only in few cases. If you have a simulation
+trajectory that contains frames with overstretched bonds, it is usually enough to apply
+<tt>join</tt> only to the first frame and then the much faster procedure <tt>unwrap</tt> to all of the
+frames:
+  </p><div class="fancyvrb" id="fancyvrb9"><a 
+ id="x1-30002r1"></a>&#x00A0;&#x00A0;&#x00A0;&#x00A0;pbc&#x00A0;join&#x00A0;<i>compound</i>&#x00A0;-first&#x00A0;0&#x00A0;-last&#x00A0;0<br class="fancyvrb" /><a 
+ id="x1-30004r2"></a>&#x00A0;&#x00A0;&#x00A0;&#x00A0;pbc&#x00A0;unwrap</div>
+</p>  Note also, that the (faster) default algorithm only works when none of the compounds stretches
+more than half the periodic box in any direction. With the option <tt>-bondlist</tt> you can select an
+alternate algorithm that joins compounds based on direct bonds and does not suffer from this
+limitation, but can be significantly slower.
+  </p>
+  <h5 class="minisecHead"> <a 
+ id="x1-310008"></a>Examples</h5>
+<p>
+  <p><div class="fancyvrb" id="fancyvrb10"><a 
+ id="x1-31002r1"></a>&#x00A0;&#x00A0;#&#x00A0;join&#x00A0;all&#x00A0;residues&#x00A0;such&#x00A0;that&#x00A0;the&#x00A0;Carbon&#x00A0;alpha&#x00A0;atom<br class="fancyvrb" /><a 
+ id="x1-31004r2"></a>&#x00A0;&#x00A0;#&#x00A0;is&#x00A0;in&#x00A0;the&#x00A0;central&#x00A0;image
+<br class="fancyvrb" /><a 
+ id="x1-31006r3"></a>&#x00A0;&#x00A0;pbc&#x00A0;join&#x00A0;res&#x00A0;-ref&#x00A0;"name&#x00A0;CA"<br class="fancyvrb" /><a 
+ id="x1-31008r4"></a>&#x00A0;&#x00A0;#&#x00A0;join&#x00A0;all&#x00A0;bonds&#x00A0;of&#x00A0;long&#x00A0;polymer&#x00A0;chain&#x00A0;molecules<br class="fancyvrb" /><a 
+ id="x1-31010r5"></a>&#x00A0;&#x00A0;pbc&#x00A0;join&#x00A0;fragment&#x00A0;-bondlist</div>
+  <h5 class="minisecHead"> <a 
+ id="x1-320008"></a>Options</h5>
+<a 
+ id="x1-32001r3"></a>  <!--l. 609--><div class="longtable"> <table id="TBL-8" class="longtable" 
+cellspacing="0" cellpadding="0" rules="groups" 
+><colgroup id="TBL-8-1g"><col 
+id="TBL-8-1"></colgroup><colgroup id="TBL-8-2g"><col 
+id="TBL-8-2"></colgroup>
+                                                                                     
+                                                                                     
+<tr  
+ style="vertical-align:baseline;" id="TBL-8-5-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-5-1"  
+class="td11">
+</p><tt>-molid</tt> <i>molid</i>|<tt>top</tt>        </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-8-5-2"  
+class="td11">
+</p>Which molecule to use (default: <tt>top</tt>)                              </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-6-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-6-1"  
+class="td11">
+</p><tt>-first</tt> <i>frame</i>|<tt>first</tt>|<tt>now</tt>   </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-8-6-2"  
+class="td11">
+</p>The first frame to use (default: <tt>now</tt>).                              </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-7-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-7-1"  
+class="td11">
+</p><tt>-last</tt> <i>frame</i>|<tt>last</tt>|<tt>now</tt>     </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-8-7-2"  
+class="td11">
+</p>The last frame to use (default: <tt>now</tt>).                               </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-8-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-8-1"  
+class="td11">
+</p><tt>-all</tt>[<tt>frames</tt>]                   </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-8-8-2"  
+class="td11">
+</p>Equivalent to <tt>-first first -last last</tt>.                       </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-9-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-9-1"  
+class="td11">
+</p><tt>-now</tt>                   </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-8-9-2"  
+class="td11">
+</p>Equivalent to <tt>-first now -last now</tt>.                            </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-10-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-10-1"  
+class="td11">
+</p><tt>-sel</tt> <i>sel</i>                        </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-8-10-2"  
+class="td11">
+</p>The selection of atoms to be joined (default: <tt>"all"</tt>). Use this
+if you don&#8217;t want to join all atoms.                                 </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-11-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-11-1"  
+class="td11">
+</p><tt>-noborder</tt>|<tt>-border</tt> <i>depth</i>  </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-8-11-2"  
+class="td11">
+</p>When only atoms close to the boundaries of the unit cell
+have overstretched bonds, this option can be used to specify
+the maximal depth inside the system. Using this option will
+significantly speed up join (default: <tt>-noborder</tt>).               </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-12-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-12-1"  
+class="td11">
+</p><tt>-noref</tt>|<tt>-ref</tt> <i>refsel</i>           </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-8-12-2"  
+class="td11">
+</p>This defines a reference selection of atoms. When joining
+compounds, the first atom matching the selection in each
+compound will be chosen, and all atoms will be wrapped into
+a unit cell around this atom. If <tt>noref</tt> is used, the first atom
+in the compound is the reference atom (default: <tt>-noref</tt>).   </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-13-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-13-1"  
+class="td11">
+</p><tt>-</tt>[<tt>no</tt>]<tt>bondlist</tt>           </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-8-13-2"  
+class="td11">
+</p>Turn on/off alternate, bond topology based joining algorithm
+(default: <tt>-nobondlist</tt>).                                               </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-14-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-14-1"  
+class="td11">
+</p><tt>-</tt>[<tt>no</tt>]<tt>verbose</tt>            </p></td><td  style="white-space:wrap; text-align:left;" id="TBL-8-14-2"  
+class="td11">
+</p>Turn  on/off  verbosity  of  the  function  (for  debugging)
+(default: <tt>-noverbose</tt>).                                                 </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-15-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-15-1"  
+class="td11">                       </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-16-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-16-1"  
+class="td11">                       </td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-17-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-17-1"  
+class="td11">
+</p>                       </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-18-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-18-1"  
+class="td11">
+</p>                       </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-19-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-19-1"  
+class="td11">
+</p>                       </p></td>
+  </tr>
+<tr  
+ style="vertical-align:baseline;" id="TBL-8-3-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-3-1"  
+class="td11">
+</p>                       </p></td>
+</tr><tr  
+ style="vertical-align:baseline;" id="TBL-8-4-"><td  style="white-space:wrap; text-align:left;" id="TBL-8-4-1"  
+class="td11">
+</p>                       </p></td>
+  </tr>
+  </table></div>
+<p>
+                                                                                     
+                                                                                     
+  <p>
+  <h3 class="sectionHead"><span class="titlemark">9 </span> <a 
+ id="x1-330009"></a><tt>box</tt> and <tt>box_draw</tt> &#8211; Drawing the unit cell boundaries</h3>
+<p>
+  <p>
+  <h4 class="subsectionHead"><span class="titlemark">9.1 </span> <a 
+ id="x1-340009.1"></a><tt>box</tt> &#8211; Automatically updateing box</h4>
+  <h5 class="minisecHead"> <a 
+ id="x1-350009.1"></a>Syntax</h5>
+<p><tt>pbc</tt> <tt>box</tt> [<i>options</i>&#x2026;]
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-360009.1"></a>Description</h5>
+<p>(Re)Draws a box that shows the boundaries of the unit cell. The box will automatically adapt
+to changes in the unit cell parameters in the course of a trajectory, as for example for
+simulations at constant pressure. Only a single automatically updated box can exist at a
+time.
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-370009.1"></a>Example</h5>
+<p>
+  <p><div class="fancyvrb" id="fancyvrb11"><a 
+ id="x1-37002r1"></a>&#x00A0;&#x00A0;#&#x00A0;draw&#x00A0;a&#x00A0;box,&#x00A0;centered&#x00A0;on&#x00A0;the&#x00A0;origin<br class="fancyvrb" /><a 
+ id="x1-37004r2"></a>&#x00A0;&#x00A0;pbc&#x00A0;box&#x00A0;-center&#x00A0;origin</div>
+  <h5 class="minisecHead"> <a 
+ id="x1-380009.1"></a>Options</h5>
+  <div class="tabular"><table style="text-align: left; width: 100%;" border="1" cellpadding="2" cellspacing="2"><tr style="vertical-align:baseline;"><td></p><tt>-molid</tt> <i>molid</i>|<tt>top</tt>        </td><td></p>Which molecule to use (default: <tt>top</tt>)                              </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-on</tt>|<tt>-off</tt>|<tt>-toggle</tt>        </td><td></p>Turn the box on, off, or toggle whether it is on or off. (default:
+<tt>-on</tt>)                                                                         </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-parallelepiped</tt>
+|<tt>-orthorhombic</tt>          </td><td></p>Draw the box as a parallelpiped, or as the corresponding
+orthorhombic box. (default: <tt>-parallelepiped</tt>).                </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-color</tt> <i>color</i>                  </td><td></p>Draw the box in color <i>color</i>. (default: <tt>blue</tt>)                     </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-material</tt> <i>Material</i>          </td><td></p>Draw the box using the material <i>Material</i>. (default: <tt>Opaque</tt>)</td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-style</tt>
+<tt>lines</tt>|<tt>dashed</tt>|<tt>arrows</tt>|<tt>tubes</tt> </td> <td></p>Choose the style of the box (default: <tt>lines</tt>).                    </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-width</tt> <i>width</i>                  </td><td></p>Define the <i>width</i> of the lines/arrows/tubes (default: <tt>3</tt>).      </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-resolution</tt> <i>res</i>              </td><td></p>Use <i>resolution</i> faces for the tube style (default: <tt>8</tt>).            </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-center</tt>  <tt>origin</tt>|<tt>unitcell</tt>
+&#x00A0;   |<tt>com</tt>|<tt>centerofmass</tt>
+&#x00A0;   |<tt>bb</tt>|<tt>boundingbox</tt>      </td><td></p>Specify the center of the box. The center can be set to the
+origin (<tt>origin</tt>), to the center of the unit cell (<tt>unitcell</tt>), to
+the center of mass (<tt>com</tt> or <tt>centerofmass</tt>) of the selection
+specified by the option <tt>-centersel</tt>, or to the center of the
+bounding box (<tt>bb</tt> or <tt>boundingbox</tt>) of the selection specified
+by the option <tt>-centersel</tt> (default: <tt>unitcell</tt>).                </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-centersel</tt> <i>sel</i>               </td><td></p>Specify  the  selection  <i>sel</i>  that  defines  the  center  of  the
+wrapping cell in the option <tt>-center</tt> (default: <tt>"all"</tt>).        </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-shiftcenter</tt> <i>shift</i>          </td><td></p>Shift the center of the box by <i>shift</i>. <i>shift</i> has to be a list of
+three numerical values. (default: <span class="obeylines-h"><span class="verb">{0&#x00A0;0&#x00A0;0}</span></span>)                       </td>
+</tr><tr style="vertical-align:baseline;"><td></p><tt>-shiftcenterrel</tt> <i>shift</i>      </td><td></p>Shift the center of the box by <i>shift</i> (in units of the unit
+cell vectors). <i>shift</i> has to be a list of three umerical values.
+(default: <span class="obeylines-h"><span class="verb">{0&#x00A0;0&#x00A0;0}</span></span>)                                                      </td>
+</tr><tr style="vertical-align:baseline;"><td>                                     </td> </tr></table></div>
+<p>
+                                                                                     
+                                                                                     
+  <p>
+  <h4 class="subsectionHead"><span class="titlemark">9.2 </span> <a 
+ id="x1-390009.2"></a><tt>box_draw</tt> &#8211; Drawing a static box</h4>
+  <h5 class="minisecHead"> <a 
+ id="x1-400009.2"></a>Syntax</h5>
+<p><tt>pbc</tt> <tt>box_draw</tt> [<i>options</i>&#x2026;]
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-410009.2"></a>Description</h5>
+<p>Draws a static box that shows the boundaries of the unit cell, but will not adapt to changes in the
+unitcell properties. This might be useful when you want to draw more than one box at a time (e.g. to
+show periodic images of a box), or to show the initial box in a simulation with fluctuating box unit
+cell geometry.
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-420009.2"></a>Options</h5>
+<p><tt>pbc box_draw</tt> uses the same options as the command <tt>pbc box</tt>, with the exception of the options
+<tt>-on</tt>|<tt>-off</tt>|<tt>-toggle</tt> and <tt>-color</tt>, which can not be used. To set the color of the box, use the <tt>graphics
+color</tt> command.
+  <p>
+  <h5 class="minisecHead"> <a 
+ id="x1-430009.2"></a>Example</h5>
+<p>
+  <p><div class="fancyvrb" id="fancyvrb12"><a 
+ id="x1-43002r1"></a>&#x00A0;&#x00A0;#&#x00A0;draw&#x00A0;a&#x00A0;box&#x00A0;around&#x00A0;the&#x00A0;central&#x00A0;image<br class="fancyvrb" /><a 
+ id="x1-43004r2"></a>&#x00A0;&#x00A0;set&#x00A0;box0&#x00A0;[pbc&#x00A0;box_draw&#x00A0;-shiftcenterrel&#x00A0;&#x00A0;0&#x00A0;0&#x00A0;0&#x00A0;]
+<br class="fancyvrb" /><a 
+ id="x1-43006r3"></a>&#x00A0;&#x00A0;#&#x00A0;draw&#x00A0;a&#x00A0;box&#x00A0;around&#x00A0;the&#x00A0;central&#x00A0;image&#x00A0;shifted&#x00A0;by<br class="fancyvrb" /><a 
+ id="x1-43008r4"></a>&#x00A0;&#x00A0;#&#x00A0;the&#x00A0;unit&#x00A0;cell&#x00A0;vector&#x00A0;C
+<br class="fancyvrb" /><a 
+ id="x1-43010r5"></a>&#x00A0;&#x00A0;set&#x00A0;box1&#x00A0;[pbc&#x00A0;box_draw&#x00A0;-shiftcenterrel&#x00A0;&#x00A0;0&#x00A0;0&#x00A0;1&#x00A0;]</div>
+<p>
+  <p>
+  <h3 class="sectionHead"><span class="titlemark">10 </span> <a 
+ id="x1-4400010"></a>Credits</h3>
+<p>The PBCTools plugin has been written by (in alphabetical order) <p>
+     <ul class="itemize1">
+     <li class="itemize">Toni Giorgino <tt>&#x003C;toni.giorgino _at_ isib.cnr.it&#x003E;</tt>
+     </li>
+     <li class="itemize">Jerome Henin <tt>&#x003C;jhenin _at_ cmm.upenn.edu&#x003E;</tt>
+     </li>
+     <li class="itemize">Olaf Lenz <tt>&#x003C;olenz _at_ icp.uni-stuttgart.de&#x003E;</tt> (maintainer)
+     </li>
+     <li class="itemize">Cameron Mura <tt>&#x003C;cmura _at_ mccammon.ucsd.edu&#x003E;</tt>
+     </li>
+     <li class="itemize">Jan Saam <tt>&#x003C;saam _at_ charite.de&#x003E;</tt></li></ul>
+<p>The <tt>pbcbox</tt> procedure copies a lot of the ideas of Axel Kohlmeyer&#8217;s script <tt>vmd_draw_unitcell</tt>.
+Please submit your bug reports, comments and feature requests on the PBCTools
+homepage<span class="footnote-mark"><a 
+href="#fn3x0" id="fn3x0-bk"><sup class="textsuperscript">3</sup></a></span><a 
+ id="x1-44001f3"></a>.
+                                                                                     
+                                                                                     
+  <p><div class="footnotes"></p>   <span class="footnote-mark"><a 
+href="#fn1x0-bk" id="fn1x0">
+<sup class="textsuperscript">1</sup></a></span><a 
+href="http://www.ks.uiuc.edu/Research/vmd/" class="url" >http://www.ks.uiuc.edu/Research/vmd/</a></p></p><span class="footnote-mark"><a 
+href="#fn2x0-bk" id="fn2x0">
+<sup class="textsuperscript">2</sup></a></span>For more details on the startup files, see chapter &#8220;Startup Files&#8221; in the VMD User&#8217;s Guide.</p></p> <span class="footnote-mark"><a 
+href="#fn3x0-bk" id="fn3x0">
+<sup class="textsuperscript">3</sup></a></span><a 
+href="http://github.com/olenz/pbctools/" class="url" >http://github.com/olenz/pbctools/</a></p>                                                         </div>
+ 
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

@@ -1,0 +1,38 @@
+#
+# $Id: TODO.txt,v 1.16 2014/09/05 14:48:29 mayne Exp $ 
+#
+
+TO DO:
+--
+09/05/2014 - convert GUI style variables into namespaced variables that can be imported/exported for use in third-party extensions of ffTK
+09/03/2013 - BA optimization requires tk due to a dependncy in QMtool.  This prevents executing the optimization while VMD is in text mode, i.e. via the build script.  The long term fix is to remove dependencies to QMtool, but a potential short term fix is to make QMtool's tk commands conditional on tk being present.
+--
+
+USER REQUESTS:
+--
+2014/09/03 -- Brian Bennion (Bennion1@llnl.gov)
+    . ffTK hangs on charge opt tab when charge constraints -> "guess" is clicked after having performed an optimization.
+      The cause of this is -- after optimization, water interaction range is left in VMD; fftk "guess" routine assumes PSF+PDB is TOP
+--
+2014/08/18 -- Toni Giorgino (toni.giorgino@isib.cnr.it)
+    . Include 'step 0' PES for torsion that shows the PES arriving from input parameter entries.  MMEi is not that informative when k!=0
+    . Ability to fix entry parameters in torsion refinements to allow separate fitting of high and low energy regimes
+--
+2014/04/04 -- Jim Parker (jimparker96313@gmail.com)
+	Method for remembering ffTK states in-between VMD sessions
+--
+2013/12/03 -- Chris Mayne
+    User-defined constraints for bond/angle optimization, i.e., planar vertex, planar ring (interior angles sum to 540, 720, etc).
+--
+2013/10/02 -- Josh Vermaas
+    During the dihedral fitting rather than renormalizing to global minimum and computing RMSE, allow for optimization of the global translation of the MM PES and then compute RMSE.  This will better handle MM PESes in which one minimum is too low and causes a large offset for the entire profile.
+--
+2013/10/08 -- Josh Vermaas
+    Automatically check elements data is filled before writing Gaussian input files.  Maybe scrape first letter from type (though this isn't completely robust).
+--
+??? -- Ilia Solov'yov
+    Add panning to plot controls
+--
+??? -- Jeff Wereszczynski, McCammon Lab (jeffweresz@gmail.com)
+    Add a check for normal termination in Gaussian log files when loading
+--

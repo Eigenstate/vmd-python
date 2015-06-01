@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+   <item android:id="@+id/takeSnapshot" 
+         android:icon="@+drawable/ic_menu_camera"
+         android:title="@string/snapshotOption" />
+
+   <item android:id="@+id/resetVMDView" 
+         android:icon="@+drawable/ic_menu_revert"
+         android:title="@string/resetVMDView" />
+
+   <item android:id="@+id/chooseServer" 
+         android:icon="@+drawable/ic_menu_goto"
+         android:title="@string/chooseServer" />
+
+   <item android:id="@+id/chooseButtonList" 
+         android:icon="@+drawable/ic_menu_manage"
+         android:title="@string/chooseButtonList" />
+
+   <item android:id="@+id/settings" 
+         android:icon="@+drawable/ic_menu_preferences"
+         android:title="@string/settings" />
+
+</menu>

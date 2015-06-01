@@ -1,0 +1,54 @@
+<!--#set var="TITLE" value="DX Plugin, Version 1.9"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads potential maps stored in 
+<a href=http://opendx.npaci.edu/docs/html/>Data Explorerer "DX"</a> 
+format used by 
+<a href="http://agave.wustl.edu/apbs/">APBS</a>. 
+It may not read DX-format files produced by other applications, 
+though this could change in the future.
+
+<h3>Notes:</h3>
+
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+writing this file type.</p>
+
+<p><b>Unit Cell</b>
+<br>All files are assumed to have an orthogonal unit cell.</p>
+
+<p><b>Example</b>
+<pre>
+   DX potential maps
+  
+   Format of the file is:
+   # Comments
+   .
+   .
+   .
+   object 1 class gridpositions counts xn yn zn
+   origin xorg yorg zorg
+   delta xdel 0 0
+   delta 0 ydel 0
+   delta 0 0 zdel
+   object 2 class gridconnections counts xn yn zn
+   object 3 class array type double rank 0 items [ xn*yn*zn ] data follows
+   f1 f2 f3
+   f4 f5 f6
+   .
+   .
+   .
+   object "Dataset name" class field
+  
+   Where xn, yn, and zn are the number of data points along each axis;
+   xorg, yorg, and zorg is the origin of the grid, in angstroms;
+   xdel, ydel, and zdel are the scaling factors to convert grid units to
+   angstroms.
+   Grid data follows, with three values per line, ordered z fast, y medium,
+   and x slow.
+  
+   Note: this plugin was written to read the OpenDX files created by the
+   APBS program, and doesn't support all of the features in the file format.
+</pre>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

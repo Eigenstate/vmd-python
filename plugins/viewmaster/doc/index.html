@@ -1,0 +1,66 @@
+<!--#set var="TITLE" value="Viewmaster Plugin, Version 2.5"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+This plugin provides a complete solution for managing 
+different structure views within VMD along with its own
+saved state files.
+
+<img align=right src=viewmasterfig.png>
+
+<h2> Creating and Editing Views </h2>
+Use ViewMaster with VMD as you normally would to create pictures of
+your molecules.  When you have a view you would like to preserve,
+open the ViewMaster window from the Extensions pulldown menu and 
+press the "Create New" button.  A small screenshot of the current
+graphics will be generated and placed into the ViewMaster window
+below the main row of buttons.  Use the "Create New" button to create
+as many views as you want.  
+
+To switch between saved views, click on the snapshot corresponding to
+the view you want.  All the molecular representations you used to
+create the view, as well as the orientation and most other VMD options,
+will be restored.  
+
+To help yourself remember what the different views were for, you can
+type a note into the Notes entry, just below the buttons and above
+the saved snapshots.  You can have a different note for each view.
+
+Recall the clicking a screenshot restores the view.  It also selects the
+view, which is indicated by the circle next to each snapshot.  To select
+a view without restoring the graphics, press the circle instead of the
+snapshot.
+
+The circle next to each view lets you select the view for various
+operations.  The Replace button replaces the selected view with the
+current VMD graphics.  The Duplicate button makes a copy of the
+view and adds it to the list.  The Delete button deletes the selected
+view.  
+
+
+<h2> Session files </h2>
+
+ViewMaster automatically saves your views in a file called 
+"viewmaster-session.tcl" in the current working directory.  A new copy
+is saved every time you change your list of views or notes.  If you
+want to avoid overwriting your current list of views with future changes,
+you can save your current views to a new file with the Save As choice in
+the ViewMaster File menu.  The Set Session File choice lets you change
+the name of ViewMaster's autosave session file; this change lasts only
+until you quit VMD.  Using Load Views, you can load previously saved
+views; these will be added to the end of your list.
+
+Session files can be loaded just like normal VMD save_state files; for
+example, if you are working from a Unix command line,
+"vmd -e viewmaster-session.tcl" will start VMD and load up your most
+recent set of views from that directory.
+
+<h2> Locating molecule data files </h2>
+
+ViewMaster tries to keep track of the absolute filename of the files
+used to create the molecules used in the views you create.  When you
+load a ViewMaster session file, if ViewMaster can't find the molecule
+files, you will be prompted to either locate the files yourself or
+skip the files.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

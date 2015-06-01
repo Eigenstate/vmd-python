@@ -1,0 +1,22 @@
+<!--#set var="TITLE" value="MSMS Plugin, Version 0.4"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads and displays MSMS surface files described
+by the MSMS vertex and facet output files.
+
+<h3>Notes:</h3>
+This plugin requires both the vertex and the facet file in order
+to successfully load the MSMS surface data.  The two files are
+expected to be named filename.vert and filename.face, as they 
+would be produced by MSMS.
+Since MSMS surface files are a 'finished product' type of data,
+they can't be manipulated very much within VMD when they are
+computed outside of VMD, though they can be displayed.
+
+<p><b>Unused data</b>
+At present, the plugin doesn't provide atom index data from 
+the surface facet file.  The surface is loaded using the active
+user-defined graphics drawing color.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

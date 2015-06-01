@@ -1,0 +1,259 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%cr                                                                       
+%cr            (C) Copyright 1995 The Board of Trustees of the            
+%cr                        University of Illinois                         
+%cr                         All Rights Reserved                           
+%cr                                                                       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: graphic.sty,v $
+%       $Author: billh $        $Locker:  $                $State: Exp $
+%       $Revision: 1.2 $      $Date: 1995/03/21 00:31:47 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%
+% style file for displaying included eps files nicely.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% REVISION HISTORY:
+%
+% $Log: graphic.sty,v $
+% Revision 1.2  1995/03/21 00:31:47  billh
+% Added copyright notice.
+%
+% Revision 1.1  1994/10/24  07:50:48  dalke
+% Initial revision
+%
+% Revision 1.1  1994/06/29  17:31:09  billh
+% Initial revision
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%  graphic.sty  macro file:
+%
+%  ________________________________________________________
+%     PICT and EPSF graphics macro set  (based on LaTeX)
+%  ________________________________________________________
+%
+%  created by Markus van Almsick, UIUC, Illinois
+%  4-Dec-1991
+%
+%
+%  manual:
+%  =======
+% 
+%  This macro file defines the following 4 graphic macros for PICT and EPSF
+%  graphics. It uses macro file epsf.sty. Note, EPSF pictures that do not 
+%  include a Mac preview are not displayed on a Macintosh screen but are printed. 
+%  PICT graphics can only be used on a Macintosh. Type \pictfalse if you like to
+%  exclude all PICT images. \includepicttrue is default.
+%
+%  !!! Don't forget the blanks between the arguments !!!
+%
+%  \pict:
+%  ------
+%
+%    display PICT formated data out of the <name>.tex.picture in a vbox
+%    __________________________________________________________________
+%
+%    \pict <height> by <width> (<name> scaled <scale>)
+%
+%    <comand> comand to be used when placing the picture
+%    <name>   name of the picture in the TeX-Scrapbook
+%    <scale>  scale times 1000 to rescale the picture (optional)
+%             it also scales <height> and <width>
+%
+%
+%  \displaypict:
+%  -------------
+%
+%    display PICT formated data out of the <name>.tex.picture as a figure
+%    ____________________________________________________________________
+%
+%    \pict[<floatcode>] <height> by <width> (<name> scaled <scale>) {<internals>}
+%
+%    <floatcode> code to determine preferences for positioning floating objects (optional) 
+%    <name>      name of the picture in the TeX-Scrapbook
+%    <scale>     scale times 1000 to rescale the picture  (optional)
+%                it also scales <height> and <width>
+%    <internals> caption cammand, label command, etc. (may be empty)
+%
+%
+%  \epsf:
+%  ------
+%
+%    display EPSF formated data from a file called <name> in a vbox
+%    ______________________________________________________________
+%
+%    \epsf <height> by <width> (<name> scaled <scale>)
+%
+%    <comand> comand to be used when placing the picture
+%    <name>   path and name of the EPSF-file where picture is strored in
+%    <scale>  scale times 1000 to rescale the picture (optional)
+%             it also scales <height> and <width>
+%    <height> by <width>  (optional)
+%
+%  \displayepsf:
+%  -------------
+%
+%    display EPSF formated data from a file called <name> as a figure
+%    ________________________________________________________________
+%
+%    \displayepsf[<floatcode>] <height> by <width> (<name> scaled <scale>) {<internals>}
+%
+%    <floatcode> code to determine preferences for positioning floating objects
+%    <comand>    comand to be used when placing the picture
+%    <name>      path and name of the EPSF-file where picture is strored in
+%    <scale>     scale times 1000 to rescale the picture
+%                it also scales <height> and <width>
+%    <internals> caption command, label command, etc.
+%
+%
+%  usage:
+%  ------
+%
+%  To use these macros type into your document:
+%
+%  \input {graphic.sty}               or
+%  \documentstyle[...,graphic,...]
+%
+%
+%  end of manual
+%  -------------
+%
+\input{epsf.sty}%
+%
+\typeout{including epsf.sty}%
+%
+\epsfverbosetrue%
+%
+\newif\ifincludepict%
+\includepictfalse%                    NeXT setting !
+%
+\typeout{including graphic.sty}%
+%
+%
+%  defining pictures and placing pictures in a text
+%  ================================================
+%
+%
+%  def of a picture defining routine that excludes counting by LaTeX
+%  using PICT formated data out of the <file>.tex.picture
+%  _________________________________________________________________
+%
+%  \def\<comand>{\pict <height> by <width> (<name> scaled <scale>)}
+%
+\def\pict #1 by #2 (#3){\subpict #1 by #2 (#3 scaled 1000 void)}%
+%
+\def\subpict #1 by #2 (#3 scaled #4 #5){%
+  \dimen0=#1 \dimen1=#2%
+  \divide\dimen0 by 1000 \multiply\dimen0 by #4%
+  \divide\dimen1 by 1000 \multiply\dimen1 by #4%
+  \ifepsfverbose\message{#3: width=\the\dimen0, height=\the\dimen1, scale=#4}%
+    \ifincludepict\relax%
+      \else\message{PICT file #3 (page \number\count0 , line \number\inputlineno)%
+        not included!}\fi\fi%
+  \vbox to \dimen1{\vfil\hbox to\dimen0{%
+    \ifincludepict\special{picture #3 scaled #4}%
+       \else{\smash{[PICT graphic #3 missing here!]}}\hidewidth\fi%
+    \hfil}%
+  }%
+}%
+%
+%
+%  def of a picture defining routine that includes counting by LaTeX
+%  using PICT formated data out of the <file>.tex.picture
+%  _________________________________________________________________
+%
+%  \def\<comand>{\pict[<floatcode>] <height> by <width> (<name> scaled <scale>) {<internals>}}
+%
+\def\displaypict #1{%
+  \ifx#1[%
+    \let\next=\subadisplaypict%
+  \else%
+    \let\next=\subbdisplaypict\fi%
+  \next #1}%
+%
+\def\subadisplaypict[#1] #2 by #3 (#4)#5{%
+    \subsubdisplaypict[#1] #2 by #3 (#4){#5}}%
+%
+\def\subbdisplaypict #1 by #2 (#3)#4{%
+    \subsubdisplaypict[htbp] #1 by #2 (#3){#4}}%
+%
+\def\subsubdisplaypict[#1] #2 by #3 (#4)#5{%
+		\medskip%
+  \begin{figure}[#1]%
+    \centerline{\pict #2 by #3 (#4)}%
+  {#5}%
+  \end{figure}%
+  }%
+%
+%
+%  def of a picture defining routine that excludes counting by LaTeX
+%  using EPSF formated data from a file in the same folder
+%  _________________________________________________________________
+%
+%  \def\<comand>{\epsf <height> by <width> (<name> scaled <scale>)}
+%
+\newcount\epsfscale    % scaling factor times 1000
+\epsfscale=1000        % default setting
+%
+\def\epsfsize#1#2{\epsfxsize%
+                  \epsfxsize=#1%
+                  \divide\epsfxsize by1000%
+                  \advance\epsfscale by1%
+                  \multiply\epsfxsize by\epsfscale%
+                  \epsfscale=1000}%
+%
+\def\epsf #1){\subepsf #1 scaled 1000 void)}%
+%
+\def\subepsf #1{%
+  \ifx#1(%
+    \let\next=\subaepsf%
+  \else%
+    \let\next=\subbepsf\fi%
+  \next #1}% 
+%
+\def\subaepsf (#1 scaled #2 #3){\epsfscale=#2\epsfbox{#1}}%
+%
+\def\subbepsf #1 by #2 (#3 scaled #4 #5){%
+   \dimen0=#1 \dimen1=#2% 
+   \divide\dimen0 by1000 \multiply\dimen0 by#4%
+   \divide\dimen1 by1000 \multiply\dimen1 by#4%
+   \hbox to\dimen0{%
+   \vrule height\dimen1 width0pt depth0pt%
+   {\smash{\epsfscale=#4\epsfbox{#3}}}\hidewidth}}%
+%
+%
+%  def of a picture defining routine that includes counting by LaTeX
+%  using EPSF formated data from a file in the same folder
+%  _________________________________________________________________
+%
+%  \def\<comand>{\displayepsf[<floatcode>] <height> by <width> (<name> scaled <scale>) {<internals>}}
+%
+\def\displayepsf #1{%
+    \ifx#1[%
+           \let\next=\subadisplayepsf%
+       \else%
+           \let\next=\subbdisplayepsf\fi%
+    \next #1}%
+%
+\def\subadisplayepsf[#1] #2)#3{%
+  \begin{figure}[#1]%
+    \medskip%
+    \centerline{\epsf #2)}%
+    {#3}%
+  \end{figure}%
+  }%
+%
+\def\subbdisplayepsf #1)#2{%
+  \begin{figure}[htbp]%
+    \medskip%
+    \centerline{\epsf #1)}%
+    {#2}%
+  \end{figure}%
+  }%

@@ -1,0 +1,29 @@
+<!--#set var="TITLE" value="DLPOLY Plugin, Version 0.8"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>
+This plugin reads formatted DLPOLY HISTORY (trajectory) files, 
+a minimalistic plain text format for storing molecular coordinate trajectories. 
+This plugin can't read binary history files, and may not handle all 
+variants yet but should work for the most common files.
+
+<p>
+The DLPOLY formatted HISTORY file spcecification 
+<a href="http://hidra.iqfr.csic.es/man/dlpoly/USRMAN/node156.html">is available here</a>
+
+<h3>Notes:</h3>
+
+<p><b>Periodic Cell Data</b>
+The plugin will read periodic cell information from the DLPOLY history file
+as long as the cell basis vectors are orthogonal.  The plugin doesn't presently
+convert non-orthogonal DLPOLY unit cell basis vectors to alpha/beta/gamma
+cell angles.
+</p>
+
+<p><b>Unused Data</b>
+<br>
+This plugin only reads the index and coordinates for each atom. Any
+additional data recorded for an atom is ignored presently.
+</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

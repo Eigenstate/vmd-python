@@ -1,0 +1,209 @@
+2013-05-17   Olaf Lenz
+
+	* ChangeLog: This ChangeLog is discontinued. If you are interested
+	in the history of pbctools, refer either to NEWS or to the git
+	log.
+
+2010-04-26  Olaf Lenz  <olenz@qwghlm>
+
+	* pbcjoin.tcl: Small fix to allow pbc join to be used on several
+	frames in one command.
+
+2010-04-21  Olaf Lenz  <lenzo@pckr97.mpip-mainz.mpg.de>
+
+	* pbcwrap.tcl: Reintroduced Tcl code (get_connected) to determine
+	connected compounds that contain all atoms that are
+	connected ("fragment" only does this if all atoms are in the same
+	segment and chain).
+
+	* pbcjoin.tcl: Added compound type "connected". Extended verbosity.
+
+2010-02-16  Olaf Lenz  <olenz@qwghlm>
+
+	* pbctools.tcl: Fixed email address of olenz.
+
+	* pbcwrap.tcl: Added compound type "fragment".
+
+2009-11-04  Olaf Lenz  <olenz@qwghlm>
+
+	* pbcset.tcl: Incorporated Jan Saams commits to the VMD CVS, log
+	message:
+	Fixed a bug reported by Olaf Lenz:
+	> % pbc readxst kiley.xst -alignx
+	> atomselection move:: need a 4x4 matrix
+	Now xst files containing PBC vectors that don't follow the
+	standard alignment (A||x, B in x-y plane) are read and the
+	molecule is aligned accordingly when using -alignx option.
+	Fixed indentation in a few places.
+
+2009-10-09  Olaf Lenz  <lenzo@pckr97.mpip-mainz.mpg.de>
+
+	* doc/pbctools.tex (subsection{\texttt{set}}): Fixed small error
+	in the documentation of "pbc set", thanks to Axel Kohlmeier and
+	Lan He.
+
+2009-06-26  Olaf Lenz  <lenzo@pckr97.mpip-mainz.mpg.de>
+
+	* doc/pbctools.tex: Added note that -centersel only has an effect
+	when -center bb/com is used. Thanks to Alberto Sergio Saray.
+
+2009-05-14  Olaf Lenz  <olenz@qwghlm>
+
+	* pbctools.tcl: Applied Axel Kohlmeyer's docfix patch.
+
+	* doc/pbctools.tex: Restructured introduction, abstract and basic
+	usage section.
+
+	* pbcjoin.tcl (pbcjoin): Added option "-[no]border", which allows
+	to specify the maximal depth were atoms of a broken compound can
+	be found inside the unit cell. Currently works only for orthorhombic
+	unit cells.
+
+	* pbcwrap.tcl (pbcwrap): "-center" now understands a selection as
+	argument again, for backward compatibility. However, a deprecation
+	warning is printed.
+
+2009-05-11  Olaf Lenz  <olenz@qwghlm>
+
+	* pbcjoin.tcl (pbcjoin): Some more improvements, added more
+	detailed progress report.
+
+2009-04-30  Olaf Lenz  <lenzo@pckr97.mpip-mainz.mpg.de>
+
+	* pbcjoin.tcl (pbcjoin): Some more improvements to "pbc
+	join". Im my tests, I got a performance gain of about 50%.
+
+2009-04-23  Olaf Lenz  <olenz@qwghlm>
+
+	* pbcjoin.tcl: Thanks to Dan Lussier: significantly reduced memory
+	footprint of "pbc join".
+
+2009-02-10  Olaf Lenz  <olenz@true>
+
+	* pbcjoin.tcl: Thanks to Axel Kohlmeyer, join now checks whether the pbc cell
+	parameters are reasonable.
+
+	* pbctools.tcl: Added implementation of vmdcon for VMD version
+	before 1.8.7.
+	
+	* *.tcl: All functions use vmdcon now instead of "puts".
+
+2009-01-21  Olaf Lenz  <olenz@true>
+
+	* Advanced to version 2.5.
+
+	* pbcbox.tcl, pbcwrap.tcl, pbctools.tex: Commands pbcwrap and
+	pbcbox: Added option "-centersel" that takes a selection. The
+	option "-center" does not take the $sel argument anymore, instead
+	the keywords "com", "centerofmass", "bb" or "boundingbox" can be
+	used to denote that the center of the box/wrapping is in the
+	center of mass or the center of the bounding box of the given
+	selection.
+
+2008-11-20  Olaf Lenz  <lenzo@pckr76.mpip-mainz.mpg.de>
+
+	* Advanced to version 2.4.
+	
+	* maintainer/: Added maintainer directory that contains scripts
+	and notes for the maintainer.
+
+	* pbcwrap.tcl, pbcunwrap.tcl, pbcjoin.tcl: Added option
+	"-noverbose" for completeness.
+
+	* doc/index.html: Now contains only link to the pbctools gfroge
+	home page: http://www.espresso-pp.de/projects/pbctools/ 
+	
+	* doc/pbctools.tex: Translated doc/index.html to LaTeX.
+
+2008-10-27  Olaf Lenz  <olenz@true>
+
+	* doc/index.html: History and credits will be included from the
+	NEWS and AUTHORS file in the future.
+
+	* doc/ChangeLog: Moved one directory up.
+
+	* NEWS, README, AUTHORS: Created files with release notes, basic
+	docs and credits.
+
+2008-10-04  Olaf Lenz  <olenz@qwghlm>
+
+	* Advanced to version 2.3.
+
+	* pbcbox.tcl, pbcwrap.tcl: Renamed option -rectangular to
+	-orthorhombic (-rectangular still works).
+
+	* doc/index.html: Updated docs.
+
+2008-09-04  Olaf Lenz  <lenzo@mpip-mainz.mpg.de>
+
+	* doc/index.html: Updated history.
+
+2008-06-14  Olaf Lenz  <olenz@qwghlm>
+
+	* pbcjoin.tcl, doc/index.html: Replaced homemade "bonded" keyword
+	and implementation by VMDs native "fragment".
+
+2008-06-10  Olaf Lenz  <olenz@qwghlm>
+
+	* pbcwrap.tcl, pbcjoin.tcl: Bugfix: "pbcwrap -compound segment"
+	didn't work: Used wrong keyword "segment" for segment selection,
+	instead of "segid". Reported by Chris Maffeo <cmaffeo2@uiuc.edu>.
+
+2008-03-27  Olaf Lenz  <olenz@fias.uni-frankfurt.de>
+
+	* Advanced to version 2.2.
+
+	* pbcwrap.tcl (pbcwrap), index.html: Changed default of option
+	"-compound" to "-nocompound".
+
+	* index.html: Some doc fixes.
+
+2007-07-30  Olaf Lenz  <olenz@fias.uni-frankfurt.de>
+
+	* Advanced to version 2.1.
+
+	* index.html: Added history and table of contents.
+
+2007-06-01  Olaf Lenz  <olenz@fias.uni-frankfurt.de>
+	
+	* pbcjoin.tcl, pbcwrap.tcl, pbcunwrap.tcl, pbcset.tcl, pbcbox.tcl:
+	Improved error handling. 
+
+	* pbcwrap.tcl, pbcunwrap.tcl, pbcjoin.tcl: Added -verbose option
+	to wrap, unwrap and join. 
+
+	* pbcset.tcl: Added -check option to pbcget: checks the cell
+	parameters for validity.
+
+	* pbcunwrap.tcl: Use generic function from pbcwrap.
+
+	* pbcwrap.tcl: Added generic pbcwrap_coordinates function to wrap
+	coordinates into a unit cell around another coordinate.
+
+	* pbcjoin.tcl, pkgIndex.tcl, doc/index.html: First implementation
+	of pbc join.
+
+2007-03-01  Olaf Lenz  <olenz@fias.uni-frankfurt.de>
+
+	* pbcjoin.tcl: Added. Will contain a function to join wrapped atom
+	compounds.
+
+	* pbcbox.tcl (pbcbox): Bugfix: handling of errors in pbcbox when
+	tracing is activated and pbcbox_draw returns with an
+	error. Reported by Axel Kohlmeyer.
+	
+2007-02-28  Olaf Lenz  <olenz@fias.uni-frankfurt.de>
+
+	* all: Made all files into a single package pbctools, version
+	2.0.
+	Removed docs from the Tcl files, to reduce redundancy and
+	maintenance overhead.
+	RELEASE 2.0
+
+	* pbcwrap.tcl, index.html: Added option "-compoundref" to "pbc
+	wrap".
+
+2007-02-26  Olaf Lenz  <olenz@fias.uni-frankfurt.de>
+
+	* Created the ChangeLog.
+

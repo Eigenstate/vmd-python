@@ -1,0 +1,226 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+
+<style>
+
+h1 {font-size:40px;}
+h2 {font-size:30px;}
+h3 {font-size:18px;font-family:"Arial"; }
+h4 {font-size:16px;font-family:"Arial"; }
+
+p {
+    font-family:"Courier New","Verdana";
+    font-size:12px;
+    /*max-width:400px;*/
+}
+
+span.imgref{
+    font-family:"Courier New";
+    font-size:11px;
+    color:#FF0000;
+    /*padding-left:50px;*/
+    vertical-align:top; 
+} 
+
+a:link {color: #000000; text-decoration: underline; }
+a:active {color: #ff0000; text-decoration: underline; }
+a:visited {color: #000000; text-decoration: underline; }
+a:hover {color: #0000ff; text-decoration: underline; }   
+
+    
+}
+
+</style>
+
+</head>
+<body>
+
+<table align="center" border="0" style="max-width:800px;"><tr><td>
+
+<a href="http://www.uta.fi/ibt/en/index.html"><img src="uta_ibt.jpg" border="0" alt="Tampere University, Instutute of Biomedical Technology"></a>
+
+
+<p style="text-align:center;">
+RMSD Visualizer Tool v1.0<br>
+VMD extension
+</p>
+<pre style="text-align:center;">
+
+:.: <a href="#description">Description</a> :.: <a href="#usage">Usage Instructions</a> :.: <a href="#download">Download and Install</a> :.: <a href="#about">About</a> :.:
+
+</pre>
+
+<h3><a name="description">Description</a></h3>
+
+<p>
+RMSD Visualizer Tool -plugin is an extension for <a href="http://www.ks.uiuc.edu/Research/vmd/">VMD</a>. Its main functions include
+aligning molecules and calculating and visualizing RMSD (Root Mean Square Deviation)
+and RMSF (Root Means Square Fluctuation) data through trajectories.
+</p><p>
+Plotting the calculated RMSD 2D data is available by using a separate 'Multiplot' plugin (included with <a href="http://www.ks.uiuc.edu/Research/vmd/">VMD</a>).<br>
+Plotting the calculated RMSD 3D data is available by using a separate 'Heatmapper' plugin
+(see <a href="#download">Download and Install</a> below).
+</p>
+
+
+
+
+<h3><a name="usage">Usage Instructions</a></h3>
+
+<img src="rmsdvt1.0_ui.jpg">
+
+<h4>Molecule: <span class="imgref">2</span></h4>
+<p>
+All the operations are performed on the selected molecule. The refresh button can be used
+to update the list of available molecules, for example when molecule trajectories have 
+changed and the list is not updated automatically.
+</p>
+
+<h4>Atom Selection: <span class="imgref">3</span></h4>
+<p>
+The Atom Selection text box is used to specify the atoms that are used in the <i>Align</i><span class="imgref">8</span>
+and <i>RMSD</i><span class="imgref">7</span> operations. The Atom Selection text box accepts the same inputs as the VMD
+Graphical representations Selected Atoms text input.
+</p>
+<h4>Atom selection modifiers: <span class="imgref">4</span></h4>
+<p>
+The Atom Selection Modifiers are provided as a convenience, the same effects can be
+achieved by using only the Atom Selection clause<span class="imgref">3</span>. <i>'Backbone'</i> selects only atoms of 
+the protein backbone. <i>'Trace'</i> selects only the alpha carbon atoms of the backbone. 
+<i>'noH'</i> leaves out all hydrogen atoms from the selection.
+</p>
+
+<h4>Trajectory: <span class="imgref">5</span></h4>
+<p>
+The affected trajectory frames can be selected by checking the Frames and Step size
+checboxes in the Trajectory options. These selections affect both <i>Align</i><span class="imgref">8</span> and
+<i>RMSD</i><span class="imgref">7</span> operations.
+</p>
+
+<h4>Reference: <span class="imgref">6</span></h4>
+<p>
+In RMSD calculations the atom positions used as the reference for the calculation
+are specified using the Reference Molecule ID and Frame. Using the <i>Window</i>
+selection instead of <i>Frame</i> moves the reference frame along with the
+calculation frame. For example, using a <i>Window</i> of 5 would use frame 1 of the
+reference molecule as the reference for the atom locations in selected molecules
+frame 6. For the first 5 frames of the calculation the reference frame will be frame 0.
+</p><p>
+Note: If frames are limited from entire range,  reference frame can still be taken
+from outside specified limited range. For example, using RMSF (windowed) mode with a 
+window of 8, in frame 10, the reference frame of the selected reference molecule will
+be 2, even if the trajectory frames were specified to be from 10-20. 
+</p>
+
+<h4>Alignment: <span class="imgref">7</span></h4>
+<p>
+Alignment is done using the atoms specified by the Atom Selection clause<span class="imgref">3</span> in the Atom
+Selection text box. Even though only the selected atoms are used in the calculations
+for finding the alignment, all the atoms of the selected molecule will be moved according
+to the new alignment. Alignment is always done through a specified trajectory using a
+reference molecule and its specified frame (or frame window). Selected molecule will be superimposed on 
+the selected Reference molecule<span class="imgref">6</span>. The alignment is done according to the <a href="http://www.ks.uiuc.edu/Research/vmd/vmd-1.7.1/ug/node185.html">VMD
+guidelines</a> for computing the alignment.
+</p><p>
+Selecting 'self' as the reference 'Molecule ID' will align the molecule with itself through
+the specified trajectory. Selecting another molecule's ID as the reference 'Molecule ID'<span class="imgref">6</span> will
+align the molecule with the selected reference molecule and its frame, so that it will be
+superimposed on the reference molecule. 
+</p><p>
+<u>Note:</u> When doing an alignment using another
+molecule as the reference, the selections for both molecules need to have the exact same number
+of atoms. It is not possible to use a separate Atom Selection clauses<span class="imgref">3</span> for the two
+molecules involved in this kind of an alignment. Caution should be especially used when the residue numberings
+differ between the reference molecule and the aligned (superimposed) molecule.
+</p>
+<h4>RMSD: <span class="imgref">8</span></h4>
+<p>
+RMSD calculations are done for the selected molecule<span class="imgref">2</span>, through the selected frames<span class="imgref">5</span>, using a
+selected molecule and a frame<span class="imgref">6</span> (or a frame window) as a reference point. The results of the
+calculation will appear in the results list, where they can be selected and plotted in either
+2D or 3D graphs (See <i>Plotting</i> below). The RMSD calculations are done according to the <a href="http://www.ks.uiuc.edu/Research/vmd/vmd-1.7.1/ug/node185.html">VMD
+guidelines</a>.
+</p>
+
+<h4>Plotting: <span class="imgref">9,</span><span class="imgref">10,</span><span class="imgref">11</span></h4>
+<p>
+The results list shows information about the done RMSD calculations. To plot RMSD results, 
+select a row in the Results list. The results are stored as long as the item (row) is not 
+removed from the list. The selected results can be plotted as 2D graphs (multiple results
+can be selected and plotted in one graph) using Multiplot, or as 3D heatmap graphs using
+the Heatmapper-plugin.
+</p><p>
+Using the heatmap plot function, further RMSD calculations are done based on the selected
+Heatmap plot mode (in the Options menu<span class="imgref">1</span>). The default functionality is to calculate RMSD 
+separately for each residue that includes any selected atoms (selected by Atom Selection<span class="imgref">3</span>). 
+For example, using the selection 'Plot all backbones in atom selection (resid)', a series of RMSD calculations are made
+individually for each residue's backbone atoms and its reference residue's backbones atoms. Every RMSD calculation will
+represent a single data point in the heatmap. 
+</p><p>
+<b>It is imporant to note that the heatmap RMSD calculations are done for all the residues that include an atom selected by
+the atom selection clause</b><span class="imgref">3</span>. For example, by selecting only alpha carbon atoms with the
+atom selection clause<span class="imgref">3</span>, still the complete residues including all their atoms will be used in the heatmap calculations. 
+If you wish to use only the alpha carbons in the heatmap calculations, select either:
+</p><p>
+<i>'Options<span class="imgref">1</span> -> Backbone def... -> CA only'</i>
+<br>and
+<br><i>'Options<span class="imgref">1</span> -> Heatmap plot... -> Plot resid backbone atoms in atom selection'</i><br> 
+</p><p>
+or alternatively use:<br></i>'Options<span class="imgref">1</span> -> Heatmap plot... -> Plot every atom in atom selection'</i>
+</p><p>
+which will plot and use <i>only</i> the atoms selected with the atom selection clause<span class="imgref">3</span>.
+</p><p>
+It is also possible to save calculated heatmap data into a file or to change the plotted heatmaps axis labels through
+the <i>Results -> Heatmap...</i> menu.
+</p><p>
+Note: No matter what the selected Heatmap Plot mode is, the calculations are always done
+internally using "residue" numbering (not "resid") to avoid duplicate resid numberings affecting
+the calculation. "Residue" numberings are unique IDs used and assigned by VMD, where "resid" 
+numberings are not quaranteed to be unique, as they are read in from the molecule structure 
+files (PDB).
+</p><p>
+Note: Results can be replotted as long as they are present in the results list. Changing the
+Heatmap plot mode and replotting a heatmap for a result will cause the heatmap data to be 
+recalculated.
+</p>
+
+<h3><a name="download">Download and Install</a></h3>
+
+<p>
+<b>Download:</b>
+</p><p>
+Included with VMD 1.9.1.
+The RMSD Visualizer Tool plugin is intended for use with the Heatmapper and Multiplot plugins.
+</p><p>
+<b>Installation for earlier VMD versions:</b>
+</p><p>
+Copy folder rmsdvt1.0 into the directory <i>'VMD/plugins/noarch/tcl/'</i> and run 
+the following commands in the VMD console:
+</p><p style="margin-left:30px;">
+vmd_install_extension rmsdvt rmsdvt_tk "Analysis/RMSD Visualizer"<br>
+vmd_install_extension heatmapper heatmapper "Visualization/Heatmapper"
+</p>
+</p><p>
+To load the plugins on VMD start up, insert the commands into the file 'vmd.rc' (Windows) or '.vmdrc' (Unix) in the VMD installation directory.
+</p>
+
+
+<h3><a name="about">About</a></h3>
+<p>
+RMSDVT v1.0<br>
+<a href="http://www.ks.uiuc.edu/Research/vmd/">VMD</a> extension<br>
+30-01-2012
+</p><pre>
+Authors: Anssi Nurminen, Sampo Kukkurainen, Laurie S. Kaguni, Vesa P. Hytönen
+<a href="http://www.uta.fi/ibt/en/index.html">Institute of Biomedical Technology</a>
+University of Tampere, Tampere, Finland
+and
+<a href="http://www.biomeditech.fi/">BioMediTech</a>, Tampere, Finland
+
+</pre>
+
+</td></tr></table>
+
+</body>
+</html>

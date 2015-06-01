@@ -1,0 +1,43 @@
+<!--#set var="TITLE" value="APBS Plugin: Main Window"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<img src="main.png" align="right">
+
+<p>APBS runs are managed and started from the main window of the plugin. All
+options are accessable from this window.
+
+<h3>Predefined APBS Jobs</h3>
+
+<p>A list of already-configured APBS Jobs can be selected from the drop-down
+menu. Current jobs can create maps of the electrostatic potential and
+solvent accessibility. To create a new job from scratch, select "Custom"
+from this menu. The "Default" button restores the currently selected job to
+its default settings.
+
+<h3>Individual PB Calculations</h3>
+
+<p>This presents a list of the actual Poisson-Boltzman equations APBS to be
+solved by APBS for the currently selected Job. New calculations can be added
+and existing ones can be edited or deleted using the appropriate buttons.
+When adding or editing a calculation, the <a href="elec.html">ELEC
+  Window</a> is opened for user input.
+
+<h3>Starting and Stopping APBS</h3>
+
+<p>When the current APBS Job is ready to be run, click the "Run APBS"
+button. The job can be stopped while it's running by clicking the button a
+second time. The "Status" line gives the status of the plugin as it prepares
+the job and runs the program, while messages from APBS are displayed in the
+VMD console.
+
+<p>The plugin will present <a href="map.png">a list</a> of any maps created
+by APBS upon its completion. Individual maps can be selected for loading.
+Each selected map will appear as a new molecule in VMD.
+
+<h3>Plugin Settings</h3>
+
+<p>The <a href="settings.html">Settings Window</a> is accessed from the
+Settings item in the Help menu. This window provides access to all
+plugin-related settings, such as the location of the APBS program.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

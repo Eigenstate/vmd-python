@@ -1,0 +1,27 @@
+<!--#set var="TITLE" value="PHI Plugin, Version 0.7"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>
+This plugin reads "formatted ASCII" '.big' potential maps created by the
+<a href="http://www.msg.ucsf.edu/local/programs/insightII/doc/life/insight2000.1/delphi/B_Utilities.html#696658">format_phi</a> utility, or the 
+<a href=http://www.csb.yale.edu/userguides/datamanip/delphi/manual.html#ASCIIPHI>ASCIIPHI</a> utility.
+
+To read the "unformatted" binary phi maps produced by DelPhi, use the 
+<a href="grdplugin.html">grdplugin</a>.</p>
+
+<h3>Notes:</h3>
+
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+writing this file type.</p>
+
+<p><b>Grid Points</b>
+<br>It is assumed that the density values of all files are arranged in a
+cubic grid.</p>
+
+<p><b>Unit Cell</b>
+<br>Since ASCII PHI maps do not explicitly state the angles of the basis 
+vectors, it is assumed that they are orthogonal.</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

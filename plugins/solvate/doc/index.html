@@ -1,0 +1,54 @@
+<!--#set var="TITLE" value="Solvate Plugin, Version 1.5"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<img src="solvate.png" align="right">
+<p>
+The Solvate plugin provides both a graphical user
+interface and text commands for automatic solvation in VMD. 
+Using psfgen and VMD commands, the plugin performs the following functions:
+
+<ul>
+  <li>Generate water block coordinates (VMD)</li>
+  <li>Replicate water block (psfgen)</li>
+  <li>Combine water block and solute (psfgen)</li>
+  <li>Create a PDB with just the water you want (VMD)</li>
+  <li>Merge the solute and the cutout water (psfgen)</li>
+</ul>
+
+<h2>Graphical User Interface</h2>
+<p>The Solvate interface is fairly straightforward.  Simply fill in
+   the values and click the "Solvate" button to perform the solvation. 
+   Files are created in the current working directory, as in the 
+   command-line interface.
+
+<p>PSF and PDB filenames are not required if "Waterbox Only" is selected,
+   and the box size is ignored and the minmax of the molecule is used if "Use
+   Molecule Dimensions" is selected. All other fields are required, although
+   default values are automatically filled-in when the plugin is launched. Note
+   that "Use Molecule Dimensions" cannot be selected if "Waterbox Only" is.
+
+   <p>The "Rotate to minimize volume" check button toggles whether or not the system should be rotated to minimize the amount of water needed to fulfill the given boundary conditions prior to solvation. Because the solvation box must be oriented along the cardinal axes, this can result in significant system size reductions, but should not be used if the initial orientation was chosen to facilitate analysis. The parameters "Rotation Increment" and "Selection for Rotation" control the number of degrees between attempted rotations and the portion of the molecule used for calculating these rotations, respectively.</p>
+
+<h2>Tutorials</h2>
+<ul>
+<li><a href="http://www.ks.uiuc.edu/Training/Tutorials/namd/namd-tutorial-html/node6.html">Solvating a Protein</a> 
+- Discussion of the use of the 'solvate' plugin text interface to build 
+a water box as part of the <a href="http://www.ks.uiuc.edu/Training/Tutorials/namd/namd-tutorial-html/">NAMD tutorial</a> 
+</ul>
+
+<h2>Using solvent other than water</h2>
+
+Beginning in VMD 1.8.6, it is possible to solvate a system with solvents other than water. In order to do this, you must prepare:
+
+<ul>
+  <li>An equilibrated, cubic box of the solvent of choice <tt>(-spdb)</tt></li>
+  <li>A psf file for the solvent cube <tt>(-spsf)</tt></li>
+  <li>A topology file for all residue types in the solvent <tt>(-stop)</tt></li>
+  <li>A key selection which will occur once in each solvent residue (eg., "name OH2") <tt>(-ks)</tt></li>
+  <li>The side length of the box (should be taken from the equilibration's periodic cell <tt>(-ts)</tt></li>
+</ul>
+
+These five items are the required inputs for using an alternative solvent; if they are not specified (on the command line) or changed (in the GUI) standard TIP3P water will be used. To use an alternate solvent in the command line mode, specify the five required inputs for solvate using the flags listed above. Please note that your solvent pdb <b>must</b> have segid QQQ for all atoms. In addition, all solvent residues should be in the same chain and each residue should have a unique resid (ie, for mixed solvents, do <b>not</b> use separate residue numbering schemes for the multiple solvent types.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

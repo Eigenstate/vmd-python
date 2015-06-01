@@ -1,0 +1,107 @@
+<!--#set var="TITLE" value="Molefacture Plugin, Version 1.3"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<a href="molefacture.png"><img src="molefacture-thumb.png" align="right" alt="molefacture figure"></a>
+
+<p>The molefacture plugin provides VMD users with an interface to edit molecules. This includes the ability to add, delete, or manipulate their structure at an atomic level, and to build new components from a library of common fragments. 
+
+
+<h2>Invoking Molefacture</h2>
+<p>
+Molefacture may be invoked from the command line or through a graphical interface found under the Modeling submenu of the extensions menu. Invocation from the command line is as follows:
+<pre>
+package require molefacture
+::Molefacture::molefacture_gui $sel
+</pre>
+In either the GUI or command line mode, molefacture may be invoked with or without a selection (this should be an atomselect object on the command line, or selection text from the GUI). If a selection is provided, this selection will be loaded into molefacture; otherwise, a blank molecule will be created.
+</p>
+
+<h2>The Molefacture GUI</h2>
+<p>
+When molefacture is invoked, the main VMD display will cut to a view of the segment being edited, and the menu shown in the figure above will appear. Molefacture offers interfaces for editing atoms, bonds, and angles, as well as menus for performing general functions.
+
+<p>
+Most operations in molefacture act on one or more picked atoms, indicated by orange spheres. To enter the molefacture pick mode in the VMD OpenGL window, press p on the keyboard (molefacture automatically begins in this mode; it is only necessary to re-enter it if other mouse modes are used). Atoms can be selected either by clicking on them in the list in the molefacture GUI or directly in the OpenGL window. Shift-clicking in the OpenGL window allows the selection of multiple atoms. 
+</p>
+
+<h2>Menus</h2>
+<h3>File Menu</h3>
+<p>
+The Molefacture "File" menu offers options to save your edited molecule (as a pdb or xbgf file) or to undo all changes that have been applied since the molecule was last saved. Note that if you save your molecule as a pdb, information on charges and force field types will be lost, whereas the XBGF format (a modification of the MSI biograf format) will retain all of this information. Because molefacture is fully integrated into VMD, you may also save your edited molecule in other file formats working through the TkCon or the main VMD GUI.</p>
+
+<h3>Build Menu</h3>
+<p>
+The Build menu provides a number of options for construction of new molecules. The "Add All Hydrogens" button will fill out all remaining open valences in the molecule with hydrogens. Two options are available for construction of molecules from basic organic fragments, "Replace hydrogen with fragment" and "New molecule from fragment". As might be expected from the names, the former menu replaces a selected hydrogen with a small organic fragment, while the latter creates a new molecule from a small organic fragment. The Build menu also has a "Protein Builder" button, which opens a separate menu allowing the construction of short polypeptide chains.
+
+<p>
+<b> Autotyping and geometry optimization</b>
+<p>
+The build menu also containts several options for geometry optimization and autotyping of the currently loaded molecule. Several of these options (AM1 geometry optimization, and all choices with "Antechamber" in the name) require the installation of a slightly modified version of <a href="http://ambermd.org/antechamber/antechamber.html">AmberTools</a>; a  patched version of the AmberTools source which is compatible with VMD can be downloaded <a href="http://www.ks.uiuc.edu/~johanstr/AmberTools-tcbg_molefmod-1.5.tar.bz2">here</a>.
+
+<p>
+Molefacture allows autotyping of loaded molecules for either the GAFF or OPLS force fields; OPLS typing will use CM1 charges and thus requires that you also have an installation of AMBER (to make use of the divcon program), which must be in your path. GAFF charges can be generated solely using features included in Antechamber. If Antechamber is properly installed, it can also be used to perform a semiempirical geometry optimization (using mopac) on the structure currently loaded in molefacture.
+
+<p>
+<b>Fragments and fragment addition</b>
+<p>
+Most molecular editing in molefacture will be done at the level of fragments: small, predefined moieties which can be combined to create most molecules of interest. Fine-tuning can be done at the level of adding individua atoms or bonds when the fragment libraries are not sufficient.
+
+<p>
+Fragments in Molefacture are divided into parent fragments and child fragments. The former can be used as a basis for building a new molecule, and are accessed in the "New molecule from fragment" option in the Build menu. The latter can be used to replace whatever hydrogen is currently selected in molefacture, using the "Replace hydrogen with fragment" button in the Build menu. 
+
+<p>
+Molefacture comes with a variety of parent and child fragments predefined; however, users can also define additional fragments for their own purposes, as detailed <a href="fragments.html">here</a>.
+
+
+<h3>Settings Menu</h3>
+<p>
+By default, molefacture displays radicals as purple cones, lone pairs as green cones with a pair of spheres at the end, and shows the formal charge of all atoms with nonzero charges (this is <i>not</i> the same as the partial charge on the atom for the purposes of the MD force field). Both the display of electrons and of formal charges can be toggled in the Settings menu.</p>
+
+<h3>Simulations Menu</h3>
+
+<p>
+The simulations menu contains various options to aid in the setup of specific types of MD simulations.
+
+<h2>FEP</h2>
+<p>
+The FEP menu of molefacture can be used to aid in setting up FEP or TI simulations in NAMD. The gui allows incoming and outgoing atoms to be selected, autotyping (using GAFF or OPLS, as described above) to be performed on the beginning and ending molecules, and finished topology, psf, and pdb files to be generated. In the process molefacture will require the use of alchemify to set up nonbonded exclusions, which can be downloaded <a href="http://www.edam.uhp-nancy.fr/Alchemify/">here</a>.
+
+<p>
+In the FEP interface, incoming and outgoing atoms can be selected in the FEP selections menu or the VMD gui and flagged using the "Define incoming/outgoing atoms" buttons. 
+Once all atoms have been selected, click the "Run Alchemify" button to generate the files necessary for FEP simulations. Files will be written with the prefix specified by "Output prefix". If the molecule being worked on in molefacture is a component of a larger structure (for example, a ligand bound to a protein), one can merge the FEP-ready structure into the parent molecule by specifying the prefix of the parent molecule PSF/PDB, and the segment name and residue ID of the residue being worked on in molefacture. This allows editing of only a small portion of the overall structure in molefacture while still generating all files necessary for FEP simulations on the complete system.
+
+<h2>Frames</h2>
+
+<h3>Atoms</h3>
+<p>
+The Atoms frame displays a list of all atoms in the edited fragment, along with several important properties. In this listing, "Open" refers to the number of open valences on an atom, "FormCharge" to its formal charge, "OxState" to the number of valence electrons on the atom, and "Charge" the atom's actual partial charge (the charge that appears in a PSF, for example). Atoms may be selected for manipulation either by clicking on them in the Atoms menu or by picking them in the VMD OpenGL display. The following manipulations may be applied to atoms using this menu:
+<ul>
+	<li><b>Add hydrogen to selected atom</b> - Add a single hydrogen to the selected atom in the appropriate geometry</li>
+	<li><b>Delete selected atom</b> - Remove the selected atom </li>
+	<li><b>Set to planar geometry</b> - Force an atom with 3 or fewer bonds into a planar geometry</li>
+	<li><b>Set to tetrahedral geometry</b> - Force an atom with 4 or fewer bonds into a tetrahedral geometry</p>
+	<li><b>Raise/Lower oxidation state</b> - Change the valence of metals or other atoms with multiple possible valences</p>
+	<li><b>Edit selected atom</b> - Bring up a menu to arbitrarily edit the properties of the chosen atom</li>
+</ul></p>
+
+<h3>Bonds</h3>
+<p>The bonds frame shows a list of all covalent bonds formed between atoms in the edited fragment. Bonds may be selected either by clicking on the list or by holding shift and clicking on two atoms int the VMD OpenGL window. Lowering a bond order to zero removes the bond, and selecting two atoms which are unbonded and then raising their bond order creates a bond between them. This frame also allows manipulation of the length of the chosen bond, or rotation of the dihedral centered on that bond (if there is one).</p>
+
+<h3>Angles</h3>
+<p>
+Similar to the atoms and bonds menus, the angles menu shows all currently formed angles in the edited fragment (an angle is defined as any set of two bonds with one atom in common). The angles frame provides a slider for changing the selected angle; angles can be picked either from the menu in the frame or by holding shift and clicking on three atoms in the VMD OpenGL window. The "Move" radiobutton allows you to pick either of the two non-central groups associated with the angle to move while scaling the angle.</p>
+
+<h3>Contributors</h3>
+<ul>
+<li>Peter Freddolino, Theoretical and Computational Biophysics Group, 
+    University of Illinois at Urbana-Champaign 
+    <li> Johan Strumpfer, Theoretical and Computational Biophysics Group, University of Illinois at Urbana-Champaign
+<li>Paratool-related: Jan Saam, Theoretical and Computational Biophysics Group,
+    University of Illinois at Urbana-Champaign
+<li>FEP section:
+Chris Chipot, Centre National de la Recherche Scientifique, Nancy
+University and Theoretical and Computational Biophysics Group,
+University of Illinois at Urbana-Champaign
+</ul>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

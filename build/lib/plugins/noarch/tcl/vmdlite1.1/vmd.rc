@@ -1,0 +1,18 @@
+# turn on lights 0 and 1
+light 0 on
+light 1 on
+light 2 off
+light 3 off
+
+# position the stage and axes
+axes location lowerleft
+stage location off
+
+menu main     off
+menu graphics off
+
+## FOR VMDLITE ##
+menu main off
+menu graphics off
+package require vmdlite
+vmdlite

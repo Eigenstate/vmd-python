@@ -1,0 +1,110 @@
+/*! \page cvsget Using CVS to retrieve the VMD source code
+
+<p>
+VMD is developed using the CVS revision control system.  One of the
+advantages of CVS over older systems such as RCS or SCCS is its ability
+to provide read-only source code access to scientists that wish to keep
+abreast of ongoing VMD developments and/or build their own versions of
+VMD from source code.
+
+\section cvsuse Using CVS access to get the current VMD source code
+<p>
+In order to check out a copy of the VMD source code, follow these steps 
+(on Unix):
+<ol>
+  <li><a href="http://www.ks.uiuc.edu/Research/vmd/cvsrequest.html">Request</a> 
+      and receive a username and password from us.
+      After you've been granted CVS access, you may continue with the 
+      remaining steps.
+  <li> Run or add the following to your login scripts (replace "username"): <br>
+       C shell: <b>alias vmdcvs 'cvs -d :pserver:%username@cvs.ks.uiuc.edu:/vmd/cvsroot'</b> <br>
+       Bourne shell: <b>alias vmdcvs "cvs -d :pserver:%username@cvs.ks.uiuc.edu:/vmd/cvsroot"</b> 
+  <li> <b>vmdcvs login</b>  (enter your password)
+  <li> In a directory that doesn't already contain files or directories of
+       the same names do:
+  <br> <b>vmdcvs checkout vmd</b>
+  <br> <b>vmdcvs checkout plugins</b>
+  <br> <b>vmdcvs checkout vmdbench</b>
+  <br> <b>vmdcvs logout</b>
+</ol>
+
+
+\section cvsweb Viewing recent CVS changes on the web
+Each night we run a cron job that processes the CVS history files
+to find source code changes for the last 30 days or so.  After processing,
+we end up with a tree of web pages that allow you to view individual
+source code changes, source code diffs, and other useful information
+by browsing on the web.  The links below will take you to this 
+information:
+
+<ul>
+  <li><strong>View Recent Revisions</strong> (updated nightly using <a
+  href="http://www.sslug.dk/cvs2html/">cvs2html</a>)
+    <ul>
+      <li><a href="http://www.ks.uiuc.edu/Research/vmd/cvs2html/vmd/chronological.html">VMD revisions by date</a>
+      <li><a href="http://www.ks.uiuc.edu/Research/vmd/cvs2html/vmd/vmd.html">VMD revisions by file</a>
+      <li><a href="http://www.ks.uiuc.edu/Research/vmd/cvs2html/plugins/chronological.html">Plugin revisions by date</a>
+      <li><a href="http://www.ks.uiuc.edu/Research/vmd/cvs2html/plugins/plugins.html">Plugin revisions by file</a>
+      <li><a href="http://www.ks.uiuc.edu/Research/vmd/cvs2html/scriptlib/chronological.html">Script library revisions by date</a>
+      <li><a href="http://www.ks.uiuc.edu/Research/vmd/cvs2html/scriptlib/scriptlib.html">Script library revisions by file</a>
+      <li><a href="http://www.ks.uiuc.edu/Research/vmd/cvs2html/vmdbench/chronological.html">VMDBench revisions by date</a>
+      <li><a href="http://www.ks.uiuc.edu/Research/vmd/cvs2html/vmdbench/vmdbench.html">VMDBench revisions by file</a>
+    </ul>
+  <li><strong>View Revision Statistics</strong> (updated nightly using 
+      <a href="http://cvschangelogb.sourceforge.net/">cvschangelogbuilder</a>)
+  <ul>
+      <li><a href="http://www.ks.uiuc.edu/Research/vmd/cvs2html/vmdlog/cvschangelogbuilder_vmd.html">VMD revision statistics</a>
+      <li><a href="http://www.ks.uiuc.edu/Research/vmd/cvs2html/pluginslog/cvschangelogbuilder_plugins.html">Plugin revision statistics</a>
+  </ul>
+</ul>   
+
+
+\section cvstags Release versions and CVS tags used in VMD development
+<p>
+Through the course of VMD development, we go through thousands of
+source code revisions between major releases of the program.  In order
+to make it easier to see what has changed between the current source
+tree and a previous release of VMD, we tag the source tree with a symbolic
+tag for the released version.  The currently available CVS tags in the 
+source tree are listed below:
+<ul>
+<li><b>vmd-1-9-2</b> VMD 1.9.2 released on December 28, 2014
+<li><b>vmd-1-9-1</b> VMD 1.9.1 released on February 1, 2012
+<li><b>vmd-1-9-0</b> VMD 1.9   released on March 14, 2011
+<li><b>vmd-1-8-7</b> VMD 1.8.7 released on August 1, 2009
+<li><b>vmd-1-8-6</b> VMD 1.8.6 released on April 4, 2007
+<li><b>vmd-1-8-5</b> VMD 1.8.5 released on August 25, 2006
+<li><b>vmd-1-8-4</b> VMD 1.8.4 released on April 17, 2006
+<li><b>vmd-1-8-3</b> VMD 1.8.3 released on February 15, 2005 
+<li><b>vmd-1-8-2</b> VMD 1.8.2 released on December 5, 2003
+<li><b>vmd-1-8-1</b> VMD 1.8.1 released on June 15, 2003
+<li><b>vmd-1-8-0</b> VMD 1.8   released on December 9, 2002
+</ul>
+<p>
+You can diff the current source tree against VMD 1.9.2 with the 
+following command:
+<pre>
+cvs diff -rvmd-1-9-2
+</pre>
+You can diff a specific file or files with a command such as:
+<pre>
+cvs diff -rvmd-1-9-2  README  configure
+</pre>
+You can retrieve the source code used for older versions of VMD 
+with a command such as:
+cvs get -rvmd-1-9-2 vmd 
+
+\section cvscleartags Clearing CVS tags and deleted files
+<p>
+If you've ever used revision numbers or symbolic tags to checkout 
+older versions of the VMD source and you want your source tree updated
+to the current developmental versions of all files, issue this command
+in your vmd source tree:
+<pre>
+cvs update -PAd
+</pre>
+
+<p>
+$Id: pg_cvsget.dox,v 1.26 2014/12/30 05:30:12 johns Exp $
+
+ */

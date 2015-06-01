@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+
+<style>
+
+h1 {font-size:40px;}
+h2 {font-size:30px;}
+h3 {font-size:18px;font-family:"Arial"; }
+h4 {font-size:16px;font-family:"Arial"; }
+
+p {
+    font-family:"Courier New","Verdana";
+    font-size:12px;
+    /*max-width:400px;*/
+}
+
+a:link {color: #000000; text-decoration: underline; }
+a:active {color: #ff0000; text-decoration: underline; }
+a:visited {color: #000000; text-decoration: underline; }
+a:hover {color: #0000ff; text-decoration: underline; }    
+
+
+
+
+</style>
+
+</head>
+<body>
+
+<table align="center" border="0" style="max-width:800px;"><tr><td>
+
+<a href="http://www.uta.fi/ibt/en/index.html"><img src="uta_ibt.jpg" border="0" alt="Tampere University, Instutute of Biomedical Technology"></a>
+
+
+<p style="text-align:center;">
+Heatmapper v1.0<br>
+VMD extension
+</p>
+<pre style="text-align:center;">
+
+:.: <a href="#description">Description</a> :.: <a href="#usage">Usage Instructions</a> :.: <a href="#download">Download and Install</a> :.: <a href="#about">About</a> :.:
+
+</pre>
+
+<h3><a name="description">Description</a></h3>
+
+<p>
+Heatmapper -plugin is an extension for <a href="http://www.ks.uiuc.edu/Research/vmd/">VMD</a>. Its main function is to plot 3D data as a heatmap graph, 
+where color codings express graph point values. The Heatmapper plugin is intended to be used directly with the RMSD Visualizer Tool -plugin.
+</p><p>
+<img src="heatmapper1.0_ui.jpg" style="margin-top:20px;">
+</p>
+
+
+
+
+<h3><a name="usage">Usage Instructions</a></h3>
+
+
+
+<h4>File menu: </h4>
+<p>
+Graphs can be stored and loaded using the File Menu commands. Clicking or draging the mouse on the graph prints out datapoint
+values into the VMD console.
+
+</p><p>
+Note: Due to Tcl-language limitations only 'gif' image format is supported. Because of the same limitations, the exported
+gif images contain only the heatmap graph datapoints and not the axis, legend and text information that is only available
+in the postscript format. The best way to turn the graph into for example a jpg, bmp or png, is to simply take a screencapture
+of the visible graph using appropriate software. The most simple way to obtain a screencapture is to use the 'Print Screen'-button
+on the keyboard, which takes and places the screencapture on the clipboard. If the visible graph is too big to fit the screen 
+(even on zoom level 'x1'), there is no simple way available (other than post script format) for exporting and saving the whole graph
+as an image.
+</p>
+
+<h4>Operations:</h4>
+<p>
+By using the commands of the Operations menu, another graph's data can be loaded into the same graph. This enables for example an easy
+way to confirm that two graphs are identical. For example, substracting an identical graph should yield a graph with only 0.00 values.
+To substract, add or multiply a graph, it must be first saved as a Heatmapper text file: <i>File menu -> Save heatmap data as text</i>.
+</p><p>
+The <i>Apply expression</i> menu selection performs a calculation on each datapoint in the heatmap graph. In each datapoint calculation,
+every instance of the keyword "VALUE" in the expression is replaced by the value of the current datapoint. See Tcl 'expr' documentation
+for available mathematical functions.
+</p><p>
+Note: Using graphs of different dimesions for any operation should be done very carefully.
+</p>
+<h4>Tools: </h4>
+<p>
+The Tool menu selection allows changing of the graph Zoom factor and the used color set. At zoom level '1x'
+every pixel on the screen represents a single datapoint, at zoom level 'x8' every datapoint represents a 8x8
+pixel square on the screen.
+</p>
+
+<h4>Show: </h4>
+<p>
+The commands of the Show menu can be used to hide and show different elements of the heatmap graph.
+</p>
+
+<h4>Using Heatmapper to visualize any data:</h4>
+<p>
+Heatmapper can be lauched using Tcl scripts ("[heatmapper -loadfile filename]") to visualize any data that is in the correct format. Heatmapper reads in text
+files containing the data to be graphed. The format of the files can be easily understood by saving
+an example graph (as a .hm file) and examining the file in a text editor.
+</p>
+
+<h3><a name="download">Download and Install</a></h3>
+
+<p>
+<b>Download:</b>
+</p><p>
+Included with VMD 1.9.1.
+The Heatmapper plugin is intended for use with the RMSD Visualizer Tool plugin.
+</p><p>
+<b>Installation for earlier VMD versions:</b>
+</p><p>
+Copy folder heatmapper1.0 into the directory <i>'VMD/plugins/noarch/tcl/'</i> and run 
+the following commands in the VMD console:
+</p><p style="margin-left:30px;">
+vmd_install_extension rmsdvt rmsdvt_tk "Analysis/RMSD Visualizer"<br>
+vmd_install_extension heatmapper heatmapper "Visualization/Heatmapper"
+</p>
+</p><p>
+To load the plugins on VMD start up, insert the commands into the file 'vmd.rc' (Windows) or '.vmdrc' (Unix) in the VMD installation directory.
+</p>
+
+
+<h3><a name="about">About</a></h3>
+<p>
+Heatmapper v1.0<br>
+<a href="http://www.ks.uiuc.edu/Research/vmd/">VMD</a> extension<br>
+30-01-2012
+</p><pre>
+Authors: Anssi Nurminen, Sampo Kukkurainen, Laurie S. Kaguni, Vesa P. Hytönen
+<a href="http://www.uta.fi/ibt/en/index.html">Institute of Biomedical Technology</a>
+University of Tampere, Tampere, Finland
+and
+<a href="http://www.biomeditech.fi/">BioMediTech</a>, Tampere, Finland
+
+</pre>
+
+</td></tr></table>
+
+</body>
+</html>
+

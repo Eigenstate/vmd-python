@@ -1,0 +1,78 @@
+<!--#set var="TITLE" value="HBonds Plugin, Version 1.2"-->
+<!--#include virtual="/include/header-over.shtml"-->
+
+<!-- CONTENT STARTS HERE -->
+
+    <a href="hbonds.png"><img style="border: 0; padding: 0 0 1em 1em"
+        src="hbonds.png" align="right"></a>
+
+    <p>The Hbonds plugin counts the number of hydrogen bonds formed
+      throughout a trajectory. The search can be restricted to a single selection 
+      or between two distinct selections, as well as
+      a frame range given by the user.</p>
+
+    <h3>Criteria for the formation of a hydrogen bond</h3>
+
+    <p>A hydrogen bond is formed between an atom with a hydrogen bonded to it (the donor, D) 
+       and another atom (the acceptor, A) provided that the distance D-A is less 
+       than the cut-off distance (default 3.0 Angstroms) and the angle D-H-A is less 
+       than the cut-off angle (default 20 degrees).</p>
+
+    <h3>Options</h3>
+
+        <p>The plugin provides options for up to two selections (which should not 
+           overlap) as well as the frames over which to calculate.  The selections can be updated 
+           every frame, but at the cost of speed; details about selections that may require this option 
+           can be found on the <a href="http://www.ks.uiuc.edu/Research/vmd/plugins/saltbr/">Salt Bridges plugin</a> page.  The number of 
+           hydrogen bonds vs. time can be plotted immediately within VMD, and/or 
+           saved to a file (default hbonds.dat).  Additionally, all messages can be output 
+           to a log file.</p>
+
+        <p>Further options are provided to control the atoms used in the selections (only polar atoms 
+           vs. all atoms as normally done in VMD), whether to limit the first selection to be the donor, 
+           the acceptor, or both (default: both), and whether to calculate detailed information about the 
+           hydrogen bonds.  The detailed output includes all hydrogen bonds formed in the trajectory (according 
+           to some basic criteria) and their frequency.  Note that when using the option "all" for detailed 
+           output, the frequency of interaction may be greater than 100%, because a given residue pair may contain 
+           more than one hydrogen bond, each of which is counted separately. </p>
+
+<h3>Command-line interface</h3>
+
+<p>All the functionalities of the plugin are also available through the
+command line interface.</p>
+
+<p><tt>Usage: hbonds -sel1 &lt;atom selection&gt; &lt;option1&gt; &lt;option2&gt; ...</p>
+
+<pre>
+Options:
+  -sel2 &lt;atom selection&gt; (default: none)
+  -writefile &lt;yes|no&gt; (default: no)
+  -upsel &lt;yes|no&gt; (update atom selections every frame? default: yes)
+  -frames &lt;begin:end&gt; or &lt;begin:step:end&gt; or all or now (default: all)
+  -dist &lt;cutoff distance between donor and acceptor&gt; (default: 3.0)
+  -ang &lt;angle cutoff&gt; (default: 20)
+  -plot &lt;yes|no&gt; (plot with MultiPlot, default: yes)
+  -outdir &lt;output directory&gt; (default: current)
+  -log &lt;log filename&gt; (default: none)
+  -writefile &lt;yes|no&gt; (default: no)
+  -outfile &lt;dat filename&gt; (default: hbonds.dat)
+  -polar &lt;yes|no&gt; (consider only polar atoms (N, O, S, F)? default: no)
+  -DA &lt;D|A|both&gt; (sel1 is the donor (D), acceptor (A), or donor and acceptor (both))
+        Only valid when used with two selections, default: both)
+  -type: (default: none)
+	none--no detailed bonding information will be calculated
+	all--hbonds in the same residue pair type are all counted
+	pair--hbonds in the same residue pair type are counted once
+	unique--hbonds are counted according to the donor-acceptor atom pair type
+  -detailout &lt;details output file&gt; (default: stdout)
+</pre>
+</tt>
+
+
+<h3>Authors</h3>
+
+<p><a href="http://www.ks.uiuc.edu/~gumbart">JC Gumbart</a><br>
+and Dong Luo (us917_at_yahoo.com)</a></p>
+
+<!--#include virtual="/include/footer-over.shtml"-->
+</BODY></HTML>

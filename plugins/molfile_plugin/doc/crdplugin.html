@@ -1,0 +1,27 @@
+<!--#set var="TITLE" value="CRD Plugin, Version 0.8"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads and writes 
+<a href="http://amber.scripps.edu/">Amber</a> trajectory files. 
+More information can be found at 
+<a href="http://amber.scripps.edu/formats.html#trajectory">http://amber.scripps.edu/formats.html#trajectory</a>.
+</p>
+
+<p>
+Note that this plugin is not used for CHARMM "cartesian coordinate
+files", which often have the same extension. 
+Use the <a href="corplugin.html">COR plugin</a> for these <tt>crd</tt> files.
+</p>
+
+<h3>Notes:</h3>
+
+<p><b>Unused data</b>
+<br>Velocity information is ignored by VMD.</p>
+
+<p><b>Periodic Box</b>
+<br>This format makes no distinction between files that contain periodic box
+information and those that do not. When opening a crd file, the file type
+must be explicitly set to either <tt>crd</tt> or <tt>crdbox</tt> to ensure
+that the information is properly read by the plugin.</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

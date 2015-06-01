@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VMD Remote</string>
+    <string name="welcomeMsg">Welcome To VMD Remote</string>
+
+    <string name="sendTouchStart">Start Sending Touchpad</string>
+    <string name="sendTouchStop">Stop Sending Touchpad</string>
+    <string name="resetVMDView">Reset VMD View</string>
+    <string name="snapshotOption">Take Snapshot</string>
+    <string name="chooseButtonList">Choose Button Set</string>
+    <string name="chooseServer">Select New Server</string>
+
+    <string name="sendSensorOn">Orient: Send</string>
+    <string name="sendSensorOff">Orient: Not Send</string>
+    <string name="sendTouchOn">Touch: Send</string>
+    <string name="sendTouchOff">Touch: Not Send</string>
+    <string name="button0On">Button 0 On</string>
+    <string name="button0Off">Button 0 Off</string>
+
+    <string name="buttonChooserMenu">Show Buttons</string>
+
+    <string name="settings">Settings</string>
+    <string name="exit">Exit</string>
+
+
+    <string name="chooseserver">Connect To Server</string>
+    <string name="find_new_server">Find New Server...</string>
+
+<!-- settings screen --> 
+    <string name="prefsSettingsHeading">Preferences</string>
+
+    <string name="nickLabel">Nickname</string>
+    <string name="nickDescript">Device Nickname For Display</string>
+
+    <string name="rotScaleLabel">Rotation Sensitivity</string>
+    <string name="rotScaleDescript">1 is default; 2 rotates twice as fast; 0.5 is half as fast</string>
+
+    <string name="zoomScaleLabel">Scale Sensitivity</string>
+    <string name="zoomScaleDescript">1 is default; 2 scales twice as fast; 0.5 is half as fast</string>
+
+    <string name="tranScaleLabel">Translation Sensitivity</string>
+    <string name="tranScaleDescript">1 is default; 2 translates twice as fast; 0.5 is half as fast</string>
+
+    <string name="showBackgroundImageLabel">Show Background Image</string>
+    <string name="showBackgroundImageDescript">Should Image Appear In Touch Area Background?</string>
+
+
+    <string name="serverSettingsHeading">VMD Server</string>
+
+    <string name="ipLabel">Server</string>
+    <string name="ipDescript">Fully-Qualified VMD Server Address </string>
+
+    <string name="portLabel">Port (probably OK)</string>
+    <string name="portDescript">Network port of the VMD server</string>
+
+    <string name="listenportLabel">Listen Port (probably OK)</string>
+    <string name="listenportDescript">Network port to listen on</string>
+
+    <string name="advancedSettingsHeading">Advanced</string>
+
+    <string name="showDebugLabel">Show Debugging</string>
+    <string name="showDebugDescript">Print Debug Msgs To Comment Area</string>
+
+    <string name="apiVersionLabel">API Version To Send</string>
+    <string name="apiVersionDescript">Version To Report To VMD</string>
+
+    <string name="shareButton">Share</string>
+    <string name="closeButton">Close</string>
+
+</resources>

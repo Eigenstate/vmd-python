@@ -1,0 +1,53 @@
+<!--#set var="TITLE" value="VMD DemoMaster Plugin, Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<table border=0>
+<tr>
+<td valign=top>
+This plugin provides a complete solution for creating simple 
+demonstrations with Tk menus, keyboard/joystick/spaceball control buttons,
+and fully-automatic timed demo loops.
+</td>
+
+<td>
+<img src="demomaster.png">
+<br><b>Example window created by DemoMaster</b>
+</td>
+</tr>
+</table>
+
+<h3>Example demo script</h3>
+<pre>
+  # load the package
+  package require demomaster
+
+  # delete any existing demomaster windows 
+  ::DemoMaster::reset
+
+  # create a new Tk window with buttons
+  ::DemoMaster::usewindow .test "Test VMD Demo Window #1"
+
+  # add buttons, associated actions, and timed delays (for
+  # autorun) to the demo window/procedure
+  ::DemoMaster::addbutton {Start Demo} { puts "start demo" }  1
+  ::DemoMaster::addbutton {Button 1} { puts "button 1" }  1
+  ::DemoMaster::addbutton {Button 2} { puts "button 2" }  1
+  ::DemoMaster::addbutton {Button 3} { puts "button 3" }  1
+  ::DemoMaster::addbutton {Button 4} { puts "button 4" }  1
+
+  # display the newly added buttons etc
+  ::DemoMaster::packbuttons
+
+  # setup hot keys for the OpenGL window that step through the buttons
+  ::DemoMaster::registernexthotkey 1
+  ::DemoMaster::registerprevhotkey 2
+
+  # print out the current demo status
+  ::DemoMaster::printstatus
+
+  # run the demo automatically with no user input, stepping through
+  # the buttons with the specified time delays etc.
+  ::DemoMaster::autorun
+</pre>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

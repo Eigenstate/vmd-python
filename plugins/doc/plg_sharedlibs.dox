@@ -1,0 +1,90 @@
+/*! 
+
+\page sharedlibs Writing plugins with C/C++ shared libraries
+
+When developing C/C++ based plugins for VMD based on shared
+libraries, one must be aware of a few of the details about
+how different platforms perform dynamic linking, and what these
+means in terms of organizing the internal structure of a plugin.
+
+<h3>Static, global data</h3>
+For the purposes of implementing VMD plugins, one should avoid 
+all global or static data.  There are many differences in the way
+static data is handled in Unix and in Windows, so this is an area
+where one can easily get into trouble.  Global or static data is also
+problematic for multithreaded execution due to the need for 
+atomic updates, mutual exclusion locking, etc.
+For these reasons, it is strongly recommended that plugins 
+store their state only in dynamically allocated handles and the like.  
+
+
+<h3>Unix: shared objects</h3>
+The shared library linkage model employed on Unix systems is 
+relatively straightforward.  By default, every function not 
+declared with static (file scope) linkage will be exported into
+the linker's global namespace.  Multiply-defined symbols are merged
+such that a given symbol only resolves to a single function or variale
+in memory at runtime.  In practice this can create problems
+if multiple shared objects export symbols with the same name.
+On Unix complete linkage and symbol resolution is deferred until 
+runtime, when the dynamic linker attempts resolve all of the libraries
+into a single self-consistent namespace.
+
+
+<h3>Windows: dynamic link libraries</h3>
+On the Windows, the default behavior for DLLs is that no symbols are 
+exported to or imported from the global namespace unless explicitly 
+marked with __declspec(dllexport), or __declspec(dllimport).
+On windows, building a DLL results in a fully-linked executable
+with all of the internal functions resolved against import/export
+libraries, and errors result for undefined symbols.  Sibling functions
+within the same DLL are encoded with relative addresses rather than
+referencing the global namespace, so one can easily write code 
+that works on Windows but fails on Unix, or vice-versa just as a 
+result of these differences in linkage implementation. 
+<p>
+Beyond differences in symbol resolution and linking, Windows
+differs from Unix in that memory allocations performed with 
+a DLL can end up being "owned" by that DLL, such that they must 
+also be freed by the DLL rather than the caller.  This is the
+case because the heap management functions used can differ between 
+the caller and the DLL if they aren't compiled against identical C
+runtime library versions, compilers, etc.
+
+
+<h3>Example dynamic linking problem cases</h3>
+<p>
+A common case where portability issues with dynamic linking
+can crop up in VMD is when one implements
+a molfile_plugin for reading/writing a particular molecule file format.
+It is commonly the case that new plugin developers are unaware of the
+"global symbol namespace" behavior of Unix, and so they neglect to restrict
+the linkage scope of the internal functions of their plugin by adding the
+"static" keyword to the function declaration.  The problem typically goes
+unnoticed for one or two versions of a plugin, until an incompatible change
+is made in one of the plugin's internal functions.  The first time the plugin
+author attempts to load their new plugin version, they are mystefied when
+their new plugin continues behaving like the old code, despite the changes
+they've made to their source code.  This occurs because the behavior 
+of the linker is such that the linker remains bound to the first instance
+of a symbol exported by one of the plugins.  If a new plugin (or new 
+version of a plugin) is subsequently loaded, and it provides duplicate
+symbols that have already been bound to another shared library, these
+are ignored.  In effect, the net result is that the newly updated 
+internal plugin functions are ignored, and the new plugin will call
+the old internal functions provided by the old version of the plugin.
+
+<p>
+To prevent these sorts of portability problems with dynamic linking systems,
+ALL of the internal-use-only
+functions of a plugin MUST be declared with file scope linkage 
+(e.g. with the "static" keyword).
+More specifically for molfile plugins, only the 
+VMDPLUGIN_init(), VMDPLUGIN_register(), and VMDPLUGIN_fini() 
+functions should be declared with external linkage, which is 
+normally handled automatically by the VMDPLUGIN_EXTERN macro.
+
+<p>
+$Id: plg_sharedlibs.dox,v 1.1 2008/03/31 22:37:37 johns Exp $
+
+*/

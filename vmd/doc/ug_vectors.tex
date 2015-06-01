@@ -1,0 +1,511 @@
+\chapter{Vectors and Matrices}
+\label{ug:topic:vectors}
+\index{vector routines}
+
+Tcl does not handle mathematical expressions very well.  It is slow at
+evaluating expressions, and provides no facility for handling vectors
+or matrices.  Since the latter two are needed for structure analysis,
+we have added routines to manipulate them.  
+
+A vector in \VMD\ is a list of numbers.  All of the vector routines
+but one will work with vectors of any length; {\tt veccross} will only
+use vectors of three numbers.  A matrix is a 4x4 collection of numbers
+stored as a list of 4 vectors of 4 numbers, in row-major order.
+
+Following are descriptions and examples of all the commands.  For more
+examples of vectors, though without much documentation, the script
+used to test the vectors implementation is located at {\tt
+\$env(VMDDIR)/scripts/vmd/test-vectors.tcl}.
+
+Since Tcl is slow at math, some of these commands have been
+reimplemented in C++.  (The original definition is in the vmd script
+distribution, but it is redefined later on inside \VMD).  At times,
+the speedup is a factor of 40 or more.  These commands are noted by
+(C++).
+
+\section{Vectors}
+
+\begin{itemize}
+\item {\bf veczero} --
+\index{vector command!veczero}
+Returns the zero vector, \{0 0 0\}
+\begin{verbatim}
+Example:
+vmd > veczero
+0 0 0
+\end{verbatim}
+
+\item (C++) {\bf vecadd {\it v1 v2} [{\it v3 ... vn}]} --
+Returns the vector sum of all the terms.
+\index{vector command!vecadd}
+\begin{verbatim}
+Examples:
+vmd > vecadd {1 2 3} {4 5 6} {7 8 9} {-11 -11 -11}
+1 4 7
+vmd > vecadd {0.1 0.2 0.4 0.8} {1 1 2 3} {3 1 4 1}
+4.1 2.2 6.4 4.8
+vmd > vecadd 4 5
+9
+\end{verbatim}
+
+\item {\bf vecmul {\it v1 v2}} --
+Returns the vector of a term-by-term multiply.
+\index{vector command!vecadd}
+\begin{verbatim}
+Examples:
+vmd > vecmul {1 2 3} {4 5 6} 
+4 10 18
+vmd > vecmul {0.1 0.2 0.4 0.8} {1 1 2 3}
+0.1 0.2 0.8 2.4
+\end{verbatim}
+
+\item (C++) {\bf vecsub {\it v1 v2}} --
+Returns the vector subtraction of the second term from the first
+\index{vector command!vecsub}
+\begin{verbatim}
+Examples:
+vmd > vecsub 6 3.2
+2.8
+vmd > vecsub {10 9.8 7} {0.1 0 -0.1}
+9.9 9.8 7.1
+vmd > vecsub {1 2 3 4 5} {6 7 8 9 10}
+-5 -5 -5 -5 -5
+\end{verbatim}
+
+\item (C++) {\bf vecsum {\it v}} --
+Returns the sum of the elements in v
+\index{vector command!vecsum}
+\begin{verbatim}
+Examples:
+vmd > vecsum { 1 2 3 }
+6.0
+\end{verbatim}
+
+\item (C++) {\bf vecmean {\it v}} --
+Returns the mean of the elements in v
+\index{vector command!vecmean}
+\begin{verbatim}
+Examples:
+vmd > vecmean { 1 2 3 }
+2.0
+\end{verbatim}
+
+\item (C++) {\bf vecstddev {\it v}} --
+Returns the standard deviation of the elements in v
+\index{vector command!vecstddev}
+\begin{verbatim}
+Examples:
+vmd > vecstddev { 1 2 3 4 5 6 7 8 9 10 }
+2.87228131294
+\end{verbatim}
+
+\item (C++) {\bf vecscale {\it c v}} --
+\item (C++) {\bf vecscale {\it v c}} --
+Returns the vector of the scalar value c applied to each term of v
+\index{vector command!vecscale}
+\begin{verbatim}
+Examples:
+vmd > vecscale .2 {1 2 3}
+0.2 0.4 0.6
+vmd > vecscale {-5 4 -3 2} -2
+10 -8 6 -4
+vmd > vecscale -2 3
+-6
+\end{verbatim}
+
+\item {\bf vecdot {\it v1 v2}} --
+Returns the scalar dot product of the two vectors
+\index{vector command!vecdot}
+\begin{verbatim}
+Examples:
+vmd > vecdot {1 -2 3} {4 5 6}
+12
+vmd > vecdot {3 4} {3 4}
+25
+vmd > vecdot {1 2 3 4 5} {5 4 3 2 1}
+35
+vmd > vecdot 3 -2
+-6
+\end{verbatim}
+
+\item {\bf veccross {\it v1 v2}} --
+Returns the vector cross product of the two vectors.
+\index{vector command!veccross}
+\begin{verbatim}
+Examples:
+vmd > veccross {1 0 0} {0 1 0}
+0 0 1
+vmd > veccross {2 2 2} {-1 0 0}
+0 -2 2
+\end{verbatim}
+
+\item {\bf veclength {\it v}} --
+Returns the scalar length of v ($\|v\|$)
+\index{vector command!veclength}
+\begin{verbatim}
+Examples:
+vmd> veclength 5
+5.0
+vmd > veclength {5 12}
+13.0
+vmd > veclength {3 4 12}
+13.0
+vmd > veclength {1 -2 3 -4}
+5.47723
+\end{verbatim}
+
+\item {\bf veclength2 {\it v}} --
+Returns the square of the scalar length of v ($\|v\|^2$)
+\index{vector command!veclength2}
+\begin{verbatim}
+Examples:
+vmd > veclength2 5
+25
+vmd > veclength2 {5 12}
+169
+vmd > veclength2 {3 4 12}
+169
+vmd > veclength2 {1 -2 3 -4}
+30
+\end{verbatim}
+
+\item {\bf vecnorm {\it v}} --
+Returns the vector of length 1 directed along v
+\index{vector command!vecnorm}
+\begin{verbatim}
+Examples:
+vmd > vecnorm -10
+-1.0
+vmd > vecnorm {1 1 }
+0.707109 0.707109
+vmd > vecnorm {2 -3 1}
+0.534522 -0.801783 0.267261
+vmd > vecnorm {2 2 -2 2 -2 -2}
+0.408248 0.408248 -0.408248 0.408248 -0.408248 -0.408248
+\end{verbatim}
+
+\item {\bf vecdist {\it v1 v2}} --
+Returns the distance between the two vectors ($\|v_2 - v_1 \|$)
+\index{vector command!vecdist}
+\begin{verbatim}
+Examples:
+vmd > vecdist -1.5 5.5
+7.0
+vmd > vecdist {0 0 0} {3 4 0}
+5.0
+vmd > vecdist {0 1 2 3 4 5 6} {-6 -5 -4 -3 -2 -1 0}
+15.8745
+\end{verbatim}
+
+
+
+\item {\bf vecinvert {\it v}} --
+Returns the additive inverse of v ($-$v).
+\index{vector command!vecinvert}
+\begin{verbatim}
+Examples:
+vmd > vecinvert -11.1
+11.1
+vmd > vecinvert {3 -4 5}
+-3 4 -5
+vmd > vecinvert {0 -1 2 -3}
+0 1 -2 3
+\end{verbatim}
+
+\end{itemize}
+
+\section{Matrix routines}
+\index{matrix routines!list of}
+
+  Because matrices are rather large when expressed in text form, the
+following definitions are used for the examples.
+
+
+\begin{itemize}
+\item {\bf transidentity} --
+Returns the identity matrix.
+\index{matrix routines!identity}
+\begin{verbatim}
+Example:
+vmd > transidentity
+{1.0 0.0 0.0 0.0} {0.0 1.0 0.0 0.0} {0.0 0.0 1.0 0.0} {0.0 0.0 0.0 1.0}
+\end{verbatim}
+
+\item {\bf transtranspose {\it m}} --
+Returns the matrix transpose of the given matrix
+\index{matrix routines!transpose}
+\begin{verbatim}
+Example:
+vmd > transtranspose {{0 1 2 3 4} {5 6 7 8} {9 10 11 12} {13 14 15 16}}
+{0 5 9 13} {1 6 10 14} {2 7 11 15} {3 8 12 16}
+\end{verbatim}
+
+\item (C++) {\bf transmult {\it m1 m2} [{\it m3 ... mn}]} --
+Returns the matrix multiplication of the given matrices
+\index{matrix routines!multiplication}
+\begin{verbatim}
+Examples:
+vmd > set mat1 {{1 2 3 4} {-2 3 -4 5} {3 -4 5 -6} {4 5 -6 -7}}
+vmd > set mat2 {{1 0 0 0} {0 0.7071 -0.7071 0} {0 0.7071 0.7071 0} {0 0 0 1}}
+vmd > set mat3 {{0.866025 0 0 0} {0 1 0 0} {-0.5 0 0.866025 0} {0 0 0 1}}
+vmd > transmult $mat1 [transidentity]
+{1.0 2.0 3.0 4.0} {-2.0 3.0 -4.0 5.0} {3.0 -4.0 5.0 -6.0} 
+   {4.0 5.0 -6.0 -7.0}
+vmd > transmult $mat1 $mat2 $mat3
+{0.512475 3.5355 0.612366 4.0} {0.7428 -0.7071 -4.28656 5.0}
+   {-0.58387 0.7071 5.5113 -6.0} {7.35315 -0.7071 -6.73603 -7.0}
+\end{verbatim}
+
+\item {\bf transaxis $<$x\verb!|!y\verb!|!z$>$ 
+{\it amount} [deg\verb!|!rad\verb!|!pi]} --
+\index{matrix routines!rotation}
+Returns the transformation matrix needed to rotate around the
+specified axis by a given amount.  By default, the amount is specified
+in degrees, though it can also be given in radians or factors of pi.
+\begin{verbatim}
+Examples:
+vmd > transaxis x 90
+{1.0 0.0 0.0 0.0} {0.0 -3.67321e-06 -1.0 0.0} {0.0 1.0 -3.67321e-06 0.0}
+         {0.0 0.0 0.0 1.0}
+vmd > transaxis y 0.25 pi
+{0.707107 0.0 0.707107 0.0} {0.0 1.0  0.0 0.0} 
+         {-0.707107 0.0 0.707107 0.0} {0.0 0.0  0.0 1.0}
+vmd > transaxis z 3.1415927 rad
+{-1.0 -2.65359e-06 0.0 0.0} {2.65359e-06 -1.0 0.0 0.0} {0.0 0.0 1.0 0.0}
+         {0.0 0.0 0.0 1.0}
+\end{verbatim}
+
+\item {\bf transvec {\it v}} --
+\index{matrix routines!alignment}
+Returns the transformation matrix needed to bring the x axis along the
+v vector.  This matrix is not unique, since a final rotation is
+allowed around the vector.  The matrix is made from a rotation around
+y, then one about z.
+\begin{verbatim}
+Examples:
+vmd > transvec {0 1 0}
+{-3.67321e-06 -1.0 0.0 0.0} {1.0 -3.67321e-06 0.0 0.0} {0.0 0.0 1.0 0.0}
+         {0.0 0.0 0.0 1.0}
+vmd > vectrans [transvec {0 0 2}] {1 0 0}
+0.0 0.0 1.0
+\end{verbatim}
+
+\item {\bf transvecinv {\it v}} --
+\index{matrix routines!inverse alignment}
+Returns the transformation needed to bring the vector v to the x axis.
+This produces the inverse matrix to transvec, and is composed of a
+rotation about z then one about y.
+\begin{verbatim}
+Examples:
+vmd > transvecinv {0 -1 0}
+{-3.67321e-06 -1.0 0.0 0.0} {1.0 -3.67321e-06 0.0 0.0} {0.0 0.0 1.0 0.0}
+    {0.0 0.0 0.0 1.0}
+vmd > vectrans [transvecinv {-3 4 -12}] {-3 4 -12}
+13.0 -1.8e-05 5.8e-05
+vmd > transmult [transvec {6 -5 7}] [transvecinv {6 -5 7}]
+{0.999999 2.29254e-07 -6.262e-09 0.0} {2.29254e-07 0.999999
+    -4.52228e-07 0.0} {-6.262e-09 -4.52228e-07 1.0 0.0} {0.0 0.0 0.0 1.0}
+\end{verbatim}
+
+\item (C++) {\bf transoffset {\it v}} --
+\index{matrix routines!translation}
+Returns the transformation matrix needed to translate by the given offset
+\begin{verbatim}
+Examples:
+vmd > transoffset {1 0 0}
+{1.0 0.0 0.0 1} {0.0 1.0 0.0 0} {0.0 0.0 1.0 0} {0.0 0.0 0.0 1.0}
+vmd > transoffset {-6 5 -4.3}
+{1.0 0.0 0.0 -6} {0.0 1.0 0.0 5} {0.0 0.0 1.0 -4.3} {0.0 0.0 0.0 1.0}
+\end{verbatim}
+
+\item {\bf transabout {\it v amount} [deg\verb!|!rad\verb!|!pi]} --
+Generates the transformation matrix needed to rotate by the given amount
+counter-clockwise around axis which goes through the origin and along the
+given vector.  As with transvec, the units of the amount of rotation
+can be degrees, radians, or multiples of pi.
+\index{example scripts!Tcl!calculation!matrix transformations}
+\begin{verbatim}
+Examples:
+# this is a rotation about x by 180 degrees
+vmd > transabout {1 0 0} 180
+{1.0 0.0 0.0 0.0} {0.0 -1.0 -2.65359e-06 0.0} {0.0 2.65359e-06
+        -1.0 0.0} {0.0 0.0 0.0 1.0}
+# a rotation about z by 90 degrees
+# (compare this to "transaxis z 90"
+vmd > transabout {0 0 1} 1.5709 rad
+{0.999624 -0.027414 0.0 0.0} {0.027414 0.999624 0.0 0.0} 
+        {0.0 0.0 1.0 0.0} {0.0 0.0 0.0 1.0}
+vmd > transabout {1 1 1} 1 pi
+{-0.333335 0.666665 0.666669 0.0} {0.666668 -0.333334 0.666666
+        0.0} {0.666666 0.66667 -0.333332 0.0} {0.0 0.0 0.0 1.0}
+\end{verbatim}
+
+
+\item {\bf trans [center \{{\it x y z}\}] 
+  [origin \{{\it x y z}\}] [offset \{{\it x y z}\}]
+  [axis x {\it amount} [rad\verb!|!deg\verb!|!pi]]
+  [axis y {\it amount} [rad\verb!|!deg\verb!|!pi]]
+  [axis z {\it amount} [rad\verb!|!deg\verb!|!pi]]
+  [x {\it amount} [rad\verb!|!deg\verb!|!pi]]
+  [y {\it amount} [rad\verb!|!deg\verb!|!pi]]
+  [z {\it amount} [rad\verb!|!deg\verb!|!pi]]
+  [axis \{{\it x y z}\}  {\it amount} [rad\verb!|!deg\verb!|!pi]]
+  [bond \{{\it x1 y1 z1}\} \{{\it x2 y2 z2}\} {\it amount} 
+      [rad\verb!|!deg\verb!|!pi]]
+  [angle \{{\it x1 y1 z1}\} \{{\it x2 y2 z2}\} \{{\it x3 y3 z3}\} 
+      {\it amount} [rad\verb!|!deg\verb!|!pi]]} --
+\index{matrix routines!trans command}
+
+This command can do almost everything the other ones can do, and then
+some.  It is designed to be the main function used for generating
+transformation matrices.
+\end{itemize}
+
+Using it correctly calls for understanding how it works internally.
+There are three matrices: centering, rotation, and offset.  The
+centering matrix determines where the center of rotation is located.
+By default, this is the origin, but it can be changed to pivot about
+any point.  The rotation matrix defines the rotation about that
+centering point, and the offset matrix defines the final translation
+after the rotation.  
+
+  For example, to rotate around a given point, the transformations
+would be 1) the centering matrix to bring that point to the origin, 2)
+the rotation about the center, and 3) the final offset to return the
+origin back to its original location.
+
+  The different options for the {\tt trans} command modify the
+matrices in various ways.
+
+%\renewcommand{\labelitemi}{\labelitemii}
+\newenvironment{MYitemize}{%
+  \renewcommand{\labelitemi}{\bfseries --}%
+      \begin{itemize}}{\end{itemize}}
+\begin{MYitemize}
+%\begin{itemize}
+\item {\bf center \{{\it x y z}\}} --
+	Sets the centering matrix so that point {x y z} is brought to the origin
+\item {\bf offset \{{\it x y z}\}} --
+	Sets the offset matrix so that the origin is brought to {x y z}
+\item {\bf origin \{{\it x y z}\}} --
+	Sets both the centering and offset matrices to {x y z}
+
+\item {\bf axis x {\it amount} [rad\verb!|!deg\verb!|!pi]}
+--
+	Adds a rotation about the x axis by the given amount to the
+rotation matrix
+
+\item {\bf axis y {\it amount} [rad\verb!|!deg\verb!|!pi]}
+--
+	Adds a rotation about the y axis by the given amount to the
+rotation matrix
+
+\item {\bf axis z {\it amount} [rad\verb!|!deg\verb!|!pi]}
+-- 
+	Adds a rotation about the z axis by the given amount to the
+rotation matrix
+
+\item {\bf axis \{{\it x y z}\} {\it amount} [rad\verb!|!deg\verb!|!pi]} --
+	Adds a rotation of the given amount about the given vector to
+the rotation matrix
+
+\item {\bf bond \{{\it x1 y1 z1}\} \{{\it x2 y2 z2}\} {\it amount} 
+      [rad\verb!|!deg\verb!|!pi]} --
+	Sets the center and offset transformations to the first point,
+and defines a rotation about the bond axis by the given amount.
+
+\item {\bf angle \{{\it x1 y1 z1}\} \{{\it x2 y2 z2}\} \{{\it x3 y3 z3}\} 
+    {\it amount} [rad\verb!|!deg\verb!|!pi]} --
+	Sets the center and offset transformation to the second point,
+and defines a rotation about the axis perpendicular to the plane made
+by the three points (the vector is computed from the cross product of
+the vector connecting the first two points with that connected the
+last two).
+%\end{itemize}
+\end{MYitemize}
+
+%Should have some examples here ???.
+
+\section{Multiplying vectors and matrices}
+
+There are two commands to multiply a matrix and a vector, {\tt
+vectrans} and {\tt coordtrans}.  They assume the vector is in column
+form and premultiply the matrix to the vector.  If the vector contains
+four numbers, the two commands are identical.  If the vector has three
+elements, a fourth is added; a 0 for {\tt vectrans} and a 1 for {\tt
+coordtrans}.  The difference is that vectors are not affected by
+translations during transformations, while coordinates are.
+\begin{itemize}
+\item (C++) {\bf vectrans {\it m v}} --
+\index{vector command!vectrans}
+Multiple the matrix m with the vector v (length 4); returns a vector
+\item {\bf coordtrans {\it m v}} --
+\index{vector command!coordtrans}
+Multiple the matrix m with the coordinate v (length 3); returns a vector
+\end{itemize}
+\begin{verbatim}
+Examples:
+vmd > vectrans [transaxis z 90] {1 0 0}
+-3.67321e-06 1.0 0.0
+vmd > vectrans [transvecinv {-3 4 -12}] {-3 4 -12}
+13.0 -1.8e-05 5.8e-05
+\end{verbatim}
+
+
+\section{Misc. functions and values}
+
+\index{variables!M\_PI}
+  Several other terms are added to the vectors package.  The first is
+the variable M\_PI, which contains the value of pi.
+\begin{verbatim}
+Examples:
+vmd > set M_PI
+3.14159265358979323846
+vmd > expr 90 * ($M_PI / 180)
+1.5708
+\end{verbatim}
+
+  The functions {\tt trans\_from\_rot}, {\tt trans\_to\_rot}, {\tt
+trans\_from\_offset}, and {\tt trans\_to\_offset} are used to get or set a
+transformation matrix from either a 3x3 rotation matrix or offset
+vector.  As currently designed, these assume there is no scaling in
+the matrix.  The {\tt trans\_from\_offset} is identical to {\tt
+transoffset} and is present for completeness.
+
+
+  The last is {\tt find\_rotation\_value varname}, which takes a
+variable name and extracts from the beginning of it those terms which
+describe an amount of rotation.  The rest of the data in the variable
+remains, and the amount of rotation, in radians, is returned.  This is
+used by those functions which need a rotation.  The valid values are:
+a number, followed by one of {\tt rad}, {\tt radian}, or {\tt radians}
+for a value in radians, the word {\tt pi} to give the rotation in
+factors of pi, or one of {\tt deg}, {\tt degree}, or {\tt degrees} for
+a value in degrees.  If no units are given, the value is assumed to be
+in degrees.
+
+Examples:
+\begin{verbatim}
+vmd > set a "180 deg north"
+180 deg north
+vmd > find_rotation_value a
+3.14159
+vmd > set a
+north
+vmd > set a "1 pi to eat"
+1 pi to eat
+vmd > find_rotation_value a
+3.14159
+vmd > set a
+to eat
+vmd > set a 45 
+45
+vmd > find_rotation_value a
+0.785398
+vmd > expr $M_PI * 3.0 / 2.0
+4.71239
+vmd > set a "4.71238 radians"
+4.71238 radians
+vmd > find_rotation_value a
+4.71238
+\end{verbatim}

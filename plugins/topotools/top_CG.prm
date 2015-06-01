@@ -1,0 +1,436 @@
+# CG-CMM force field topology database. MPDyn format
+# updated: 26-aug-2009
+#
+# please cite:
+# W. Shinoda, R. H. DeVane, M. L. Klein, Multi-property fitting and 
+# parameterization of a coarse grained model for aqueous surfactants,
+# Molecular Simulation, 33, 27-36 (2007)
+#
+# and:
+# W. Shinoda, R. H. DeVane, M. L. Klein, Coarse-grained molecular modeling
+# of non-ionic surfactant self-assembly, Soft Matter, 4, 2453-2462 (2008)
+#
+### Water
+>> WAT  ! water (representing three water molecules)
+NUMATOM=  1
+NUMBOND=  0
+NUMIMPR=  0
+ATOM      1       W            W         54.0444    0.0   0.0
+<<
+
+### Ethylene Glycols
+>> EGL ! ethylene glycol
+NUMATOM= 2
+NUMBOND= 1
+NUMIMPR=  0
+ATOM       1      COH          OA        31.0337    0.0   0.0
+ATOM       2      COH          OA        31.0337    0.0   0.0
+BOND   1   2
+<<
+
+>> E2GL
+NUMATOM= 3
+NUMBOND= 2
+NUMIMPR=  0
+ATOM       1      COH1         OA        31.0337    0.0   0.0
+ATOM       2      EO           EO        44.0526    0.0   0.0
+ATOM       3      COH2         OA        31.0337    0.0   0.0
+BOND   1   2   2  3
+<<
+
+>> E3GL
+NUMATOM= 4
+NUMBOND= 3
+NUMIMPR=  0
+ATOM       1      COH1         OA        31.0337    0.0   0.0
+ATOM       2      EO1          EO        44.0526    0.0   0.0
+ATOM       3      EO2          EO        44.0526    0.0   0.0
+ATOM       4      COH2         OA        31.0337    0.0   0.0
+BOND   1   2   2  3   3  4
+<<
+
+>> E4GL
+NUMATOM= 5
+NUMBOND= 4
+NUMIMPR=  0
+ATOM       1      COH1         OA        31.0337    0.0   0.0
+ATOM       2      EO1          EO        44.0526    0.0   0.0
+ATOM       3      EO2          EO        44.0526    0.0   0.0
+ATOM       4      EO3          EO        44.0526    0.0   0.0
+ATOM       5      COH2         OA        31.0337    0.0   0.0
+BOND   1   2   2  3   3  4   4  5
+<<
+
+>> DMXE ! dimethoxyether
+NUMATOM= 2
+NUMBOND= 1
+NUMIMPR=  0
+ATOM       1      EOT          EOT       45.0605    0.0   0.0
+ATOM       2      EOT          EOT       45.0605    0.0   0.0
+BOND   1   2
+<<
+
+>> EO2M
+NUMATOM= 3
+NUMBOND= 2
+NUMIMPR=  0
+ATOM       1      EOT          EOT       45.0605    0.0   0.0
+ATOM       2      EO           EO        44.0526    0.0   0.0
+ATOM       3      EOT          EOT       45.0605    0.0   0.0
+BOND   1   2   2  3
+<<
+
+>> EO3M
+NUMATOM= 4
+NUMBOND= 3
+NUMIMPR=  0
+ATOM       1      EOT          EOT       45.0605    0.0   0.0
+ATOM       2      EO           EO        44.0526    0.0   0.0
+ATOM       3      EO           EO        44.0526    0.0   0.0
+ATOM       4      EOT          EOT       45.0605    0.0   0.0
+BOND   1   2   2  3   3  4
+<<
+
+>> EO4M
+NUMATOM= 5
+NUMBOND= 4
+NUMIMPR=  0
+ATOM       1      EOT          EOT       45.0605    0.0   0.0
+ATOM       2      EO           EO        44.0526    0.0   0.0
+ATOM       3      EO           EO        44.0526    0.0   0.0
+ATOM       4      EO           EO        44.0526    0.0   0.0
+ATOM       5      EOT          EOT       45.0605    0.0   0.0
+BOND   1   2   2  3   3  4   4  5
+<<
+
+>> TEBE
+NUMATOM= 5
+NUMBOND= 4
+NUMIMPR=  0
+ATOM       1      CT           CT        43.0883    0.0   0.0
+ATOM       2      EO           EO        44.0526    0.0   0.0
+ATOM       3      EO           EO        44.0526    0.0   0.0
+ATOM       4      EO           EO        44.0526    0.0   0.0
+ATOM       5      CT           CT        43.0883    0.0   0.0
+BOND   1   2   2  3   3  4   4  5
+<<
+
+### Alkanes
+>> HEXA  ! n-hexane
+NUMATOM= 2
+NUMBOND= 1
+NUMIMPR=  0
+ATOM       1      C1           CT        43.0883    0.0   0.0
+ATOM       2      C2           CT        43.0883    0.0   0.0
+BOND   1   2
+<<
+
+>> OCTA  ! n-octane
+NUMATOM= 3
+NUMBOND= 2
+NUMIMPR=  0
+ATOM       1      C1           CT2       29.0615    0.0   0.0
+ATOM       2      C2           CM        42.0804    0.0   0.0
+ATOM       3      C3           CT        43.0883    0.0   0.0
+BOND   1   2     2   3
+<<
+
+>> NONA  ! n-nonane
+NUMATOM= 3
+NUMBOND= 2
+NUMIMPR=  0
+ATOM       1      C1           CT        43.0883    0.0   0.0
+ATOM       2      C2           CM        42.0804    0.0   0.0
+ATOM       3      C3           CT        43.0883    0.0   0.0
+BOND   1   2     2   3
+<<
+
+>> HEPA ! n-heptane
+NUMATOM= 3
+NUMBOND= 2
+NUMIMPR=  0
+ATOM       1      C1           CT2       29.0615    0.0   0.0
+ATOM       2      C2           CM        42.0804    0.0   0.0
+ATOM       3      C3           CT2       29.0615    0.0   0.0
+BOND   1   2     2   3
+<<
+
+>> DECA ! n-decane
+NUMATOM= 4
+NUMBOND= 3
+NUMIMPR=  0
+ATOM       1      C1           CT2       29.0615    0.0   0.0
+ATOM       2      C2           CM        42.0804    0.0   0.0
+ATOM       3      C3           CM        42.0804    0.0   0.0
+ATOM       4      C4           CT2       29.0615    0.0   0.0
+BOND   1   2     2   3    3   4
+<<
+
+>> DDCA  ! n-dodecane
+NUMATOM=  4
+NUMBOND=  3
+NUMIMPR=  0
+ATOM       1      C1          CT        43.0883    0.00   0.0
+ATOM       2      C2          CM        42.0804    0.00   0.0
+ATOM       3      C3          CM        42.0804    0.00   0.0
+ATOM       4      C4          CT        43.0883    0.00   0.0
+BOND   1   2   2   3   3   4
+<<
+
+>> PNDC  ! n-pentadecane
+NUMATOM=  5
+NUMBOND=  4
+NUMIMPR=  0
+ATOM       1      C1          CT        43.0883    0.00   0.0
+ATOM       2      C2          CM        42.0804    0.00   0.0
+ATOM       3      C3          CM        42.0804    0.00   0.0
+ATOM       4      C4          CM        42.0804    0.00   0.0
+ATOM       5      C5          CT        43.0883    0.00   0.0
+BOND   1   2   2   3   3   4   4   5
+<<
+
+>> DMHX ! 2,5-dimethylhexane
+NUMATOM=  2
+NUMBOND=  1
+NUMIMPR=  0
+ATOM       1      C1          CQT       57.1151    0.00   0.0
+ATOM       2      C2          CQT       57.1151    0.00   0.0
+BOND   1   2
+<<
+
+>> TMNN ! 2,5,8-trimethylnonane
+NUMATOM=  3
+NUMBOND=  2
+NUMIMPR=  0
+ATOM       1      C1          CQT       57.1151    0.00   0.0
+ATOM       2      C2          CQM       56.1072    0.00   0.0
+ATOM       3      C3          CQT       57.1151    0.00   0.0
+BOND   1   2   2   3
+<<
+
+>> DMBN ! 2,3-dimethylbutane
+NUMATOM=  2
+NUMBOND=  1
+NUMIMPR=  0
+ATOM       1      C1          CBT       43.0883    0.00   0.0
+ATOM       2      C2          CBT       43.0883    0.00   0.0
+BOND   1   2
+<<
+
+>> DMHP ! 2,6-dimethylheptane
+NUMATOM=  3
+NUMBOND=  2
+NUMIMPR=  0
+ATOM       1      C1          CBT       43.0883    0.00   0.0
+ATOM       2      C2          CM        42.0804    0.00   0.0
+ATOM       3      C3          CBT       43.0883    0.00   0.0
+BOND   1   2   2   3
+<<
+
+
+>> CHEX  ! cyclo-hexane
+NUMATOM= 2
+NUMBOND= 1
+NUMIMPR=  0
+ATOM       1      C1           CMR       42.0804    0.0   0.0
+ATOM       2      C2           CMR       42.0804    0.0   0.0
+BOND   1   2
+<<
+
+### Alkene
+>> HEXE ! 3-cis-hexene
+NUMATOM=  3
+NUMBOND=  2
+NUMIMPR=  0
+ATOM       1      C1           CT2       29.0615    0.0   0.0
+ATOM       2      C2           CMD2      26.0378    0.0   0.0
+ATOM       3      C3           CT2       29.0615    0.0   0.0
+BOND 1 2  2 3
+<<
+
+>> OTEN ! 4-cis-octene
+NUMATOM=  3
+NUMBOND=  2
+NUMIMPR=  0
+ATOM       1      C1           CT        43.0883    0.0   0.0
+ATOM       2      C2           CMD2      26.0378    0.0   0.0
+ATOM       3      C3           CT        43.0883    0.0   0.0
+BOND 1 2  2 3
+<<
+
+### PEG surfactants
+>> C12E2
+NUMATOM=  7
+NUMBOND=  6
+NUMIMPR=  0
+ATOM       1      OA          OA        31.0337    0.00   0.0
+ATOM       2      E1          EO        44.0526    0.00   0.0
+ATOM       3      E2          EO        44.0526    0.00   0.0
+ATOM       4      C1          CM        42.0804    0.00   0.0
+ATOM       5      C2          CM        42.0804    0.00   0.0
+ATOM       6      C3          CM        42.0804    0.00   0.0
+ATOM       7      C4          CT2       29.0615    0.00   0.0
+BOND   1   2   2   3   3   4   4   5   5   6   6   7
+<<
+
+>> C12E3
+NUMATOM=  8
+NUMBOND=  7
+NUMIMPR=  0
+ATOM       1      OA          OA        31.0337    0.00   0.0
+ATOM       2      E1          EO        44.0526    0.00   0.0
+ATOM       3      E2          EO        44.0526    0.00   0.0
+ATOM       4      E3          EO        44.0526    0.00   0.0
+ATOM       5      C1          CM        42.0804    0.00   0.0
+ATOM       6      C2          CM        42.0804    0.00   0.0
+ATOM       7      C3          CM        42.0804    0.00   0.0
+ATOM       8      C4          CT2       29.0615    0.00   0.0
+BOND   1   2   2   3   3   4   4   5   5   6   6   7   7   8
+<<
+
+>> C12E4
+NUMATOM=  9
+NUMBOND=  8
+NUMIMPR=  0
+ATOM       1      OA          OA        31.0337    0.00   0.0
+ATOM       2      E1          EO        44.0526    0.00   0.0
+ATOM       3      E2          EO        44.0526    0.00   0.0
+ATOM       4      E3          EO        44.0526    0.00   0.0
+ATOM       5      E4          EO        44.0526    0.00   0.0
+ATOM       6      C1          CM        42.0804    0.00   0.0
+ATOM       7      C2          CM        42.0804    0.00   0.0
+ATOM       8      C3          CM        42.0804    0.00   0.0
+ATOM       9      C4          CT2       29.0615    0.00   0.0
+BOND   1   2   2   3   3   4   4   5   5   6   6   7
+BOND   7   8   8   9
+<<
+
+>> C12E5
+NUMATOM= 10
+NUMBOND=  9
+NUMIMPR=  0
+ATOM       1      OA          OA        31.0337    0.00   0.0
+ATOM       2      E1          EO        44.0526    0.00   0.0
+ATOM       3      E2          EO        44.0526    0.00   0.0
+ATOM       4      E3          EO        44.0526    0.00   0.0
+ATOM       5      E4          EO        44.0526    0.00   0.0
+ATOM       6      E5          EO        44.0526    0.00   0.0
+ATOM       7      C1          CM        42.0804    0.00   0.0
+ATOM       8      C2          CM        42.0804    0.00   0.0
+ATOM       9      C3          CM        42.0804    0.00   0.0
+ATOM      10      C4          CT2       29.0615    0.00   0.0
+BOND   1   2   2   3   3   4   4   5   5   6   6   7
+BOND   7   8   8   9   9  10
+<<
+
+>> C12E6
+NUMATOM= 11
+NUMBOND= 10
+NUMIMPR=  0
+ATOM       1      OA          OA        31.0337    0.00   0.0
+ATOM       2      E1          EO        44.0526    0.00   0.0
+ATOM       3      E2          EO        44.0526    0.00   0.0
+ATOM       4      E3          EO        44.0526    0.00   0.0
+ATOM       5      E4          EO        44.0526    0.00   0.0
+ATOM       6      E5          EO        44.0526    0.00   0.0
+ATOM       7      E6          EO        44.0526    0.00   0.0
+ATOM       8      C1          CM        42.0804    0.00   0.0
+ATOM       9      C2          CM        42.0804    0.00   0.0
+ATOM      10      C3          CM        42.0804    0.00   0.0
+ATOM      11      C4          CT2       29.0615    0.00   0.0
+BOND   1   2   2   3   3   4   4   5   5   6   6   7
+BOND   7   8   8   9   9  10  10  11
+<<
+
+>> C12E8
+NUMATOM= 13
+NUMBOND= 12
+NUMIMPR=  0
+ATOM       1      OA          OA        31.0337    0.00   0.0
+ATOM       2      E1          EO        44.0526    0.00   0.0
+ATOM       3      E2          EO        44.0526    0.00   0.0
+ATOM       4      E3          EO        44.0526    0.00   0.0
+ATOM       5      E4          EO        44.0526    0.00   0.0
+ATOM       6      E5          EO        44.0526    0.00   0.0
+ATOM       7      E6          EO        44.0526    0.00   0.0
+ATOM       8      E7          EO        44.0526    0.00   0.0
+ATOM       9      E8          EO        44.0526    0.00   0.0
+ATOM      10      C1          CM        42.0804    0.00   0.0
+ATOM      11      C2          CM        42.0804    0.00   0.0
+ATOM      12      C3          CM        42.0804    0.00   0.0
+ATOM      13      C4          CT2       29.0615    0.00   0.0
+BOND   1   2   2   3   3   4   4   5   5   6   6   7
+BOND   7   8   8   9   9  10  10  11  11  12  12  13
+<<
+
+>> C12E12
+NUMATOM= 17
+NUMBOND= 16
+NUMIMPR=  0
+ATOM       1      OA          OA        31.0337    0.00   0.0
+ATOM       2      E1          EO        44.0526    0.00   0.0
+ATOM       3      E2          EO        44.0526    0.00   0.0
+ATOM       4      E3          EO        44.0526    0.00   0.0
+ATOM       5      E4          EO        44.0526    0.00   0.0
+ATOM       6      E5          EO        44.0526    0.00   0.0
+ATOM       7      E6          EO        44.0526    0.00   0.0
+ATOM       8      E7          EO        44.0526    0.00   0.0
+ATOM       9      E8          EO        44.0526    0.00   0.0
+ATOM      10      E9          EO        44.0526    0.00   0.0
+ATOM      11      E10         EO        44.0526    0.00   0.0
+ATOM      12      E11         EO        44.0526    0.00   0.0
+ATOM      13      E12         EO        44.0526    0.00   0.0
+ATOM      14      C1          CM        42.0804    0.00   0.0
+ATOM      15      C2          CM        42.0804    0.00   0.0
+ATOM      16      C3          CM        42.0804    0.00   0.0
+ATOM      17      C4          CT2       29.0615    0.00   0.0
+BOND   1   2   2   3   3   4   4   5   5   6   6   7
+BOND   7   8   8   9   9  10  10  11  11  12  12  13
+BOND  13  14  14  15  15  16  16  17
+<<
+
+>> C18E3
+NUMATOM= 10
+NUMBOND=  9
+NUMIMPR=  0
+ATOM       1      OA          OA        31.0337    0.00  0.0
+ATOM       2      E1          EO        44.0526    0.00  0.0
+ATOM       3      E2          EO        44.0526    0.00  0.0
+ATOM       4      E3          EO        44.0526    0.00  0.0
+ATOM       5      C1          CM        42.0804    0.00  0.0
+ATOM       6      C2          CM        42.0804    0.00  0.0
+ATOM       7      C3          CM        42.0804    0.00  0.0
+ATOM       8      C4          CM        42.0804    0.00  0.0
+ATOM       9      C5          CM        42.0804    0.00  0.0
+ATOM      10      C6          CT2       29.0615    0.00  0.0
+BOND   1   2   2   3   3   4   4   5   5   6   6   7
+BOND   7   8   8   9   9  10
+<<
+
+### alcohols
+>> ETNL ! ethanol (not so successful though)
+NUMATOM= 1
+NUMBOND= 0
+NUMIMPR=  0
+ATOM       1      C1           EOH       46.0684    0.0   0.0
+<<
+
+>> PROL ! 1-propanol
+NUMATOM= 2
+NUMBOND= 1
+NUMIMPR=  0
+ATOM       1      CT2          CT2       29.0615    0.0   0.0
+ATOM       2      OA           OA        31.0337    0.0   0.0
+BOND   1   2
+<<
+
+>> HXOL ! 1-hexanol
+NUMATOM= 3
+NUMBOND= 2
+NUMIMPR=  0
+ATOM       1      CT2          CT2       29.0615    0.0   0.0
+ATOM       2      CM           CM        42.0804    0.0   0.0
+ATOM       3      OA           OA        31.0337    0.0   0.0
+BOND   1   2    2   3
+<<
+

@@ -1,0 +1,107 @@
+
+\subsection{Mouse Menu}
+\label{ug:ui:window:mouse}
+\index{window!mouse menu}
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+% \myfigure{ug_mouse}{Main Window Mouse Menu}{fig:ug:mouse}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+The {\sf Mouse} menu indicates and controls the behavior of the mouse
+when the mouse moves and clicks within the graphics window.  Mouse clicks
+and drags can affect VMD in one of two ways.  It can change the {\em view}
+of the scene, either by rotating, translating, or scaling.  It can also
+{\em pick} objects in the scene, causing some further action to be taken.
+These behaviors are all reflected in the state of the Mouse menu.  
+            
+Below, we describe the main parts of the Mouse menu.
+
+\subsubsection{Mouse modes}
+\index{mouse!mouse mode}
+
+The top three menu items select whether the mouse will 
+rotate, translate, or scale the scene
+when the user clicks and drags with the left mouse button.  
+
+\subsubsection{Pick modes}
+\index{mouse!object menus}
+
+These modes, located right below the mouse modes in the Mouse menu, 
+control how the mouse affects objects in the scene (as opposed
+to how the mouse changes the {\em view} of these objects).  Note that
+any time you choose a new pick mode, the current mouse mode changes to "Rotate".  
+
+\begin{itemize}
+\item {\bf Center} changes how VMD rotates and scales the scene.
+To get a feel for how this works, select "Center" from the Mouse menu, then
+click on an atom in the scene.  If you now rotate the scene by clicking
+and dragging with the left mouse button, the scene should rotate about the
+picked atom.  If you change the view mode to "Scale" using the "View Mode"
+pulldown menu, the scene will expand while keeping the picked atom in view.
+The picked atom will remain the center atom until a new atom is selected as
+"Center", the "Reset View" button is pressed, or a new molecule is loaded.
+
+\item {\bf Query} prints information about the item (e.g. the atom name) on the
+text console window.
+
+\item {\bf Label} adds labels to atoms in the scene.  Labels
+include atoms, bonds, angles, and dihedrals.  These labels require, 
+respectively, one, two, three, and four atoms to be picked. For the latter 
+three label types, the numerical value of the geometric label is displayed, 
+along with a stippled line connecting the picked atoms.  The units for 
+"Bonds" corresponds to whatever units the coordinate file is written in. 
+"Angles" and "Dihedrals" are measure in degrees.  
+
+Labels can then be manipulated through the {\sf Labels} window.
+ 
+\index{mouse!move}
+\index{mouse!move!atom}
+\index{mouse!move!residue}
+\index{mouse!move!fragment}
+\index{mouse!move!molecule}
+\index{mouse!move!highlighted rep}
+\item{\bf Move} changes the actual coordinates of atoms in the scene.  Note
+that this is different from simply changing the view.  Clicking on one of
+the buttons in the Mode Mode menu selects what group of atoms to move.  "Atom"
+moves only the selected atom.  "Residue" moves all atoms in the same residue
+(e.g., amino acid or nucleotide) as the selected atom.  "Fragment" moves all 
+atoms connected by a bond to the picked atom.  "Molecule" moves
+every atom in the molecular structure.  "Highlighted Rep" is the most 
+flexible; it moves all atoms in the highlighted representation in the
+browser window of the Graphics window.  
+
+Atoms are moved by clicking and dragging with the left mouse button.  If
+the {\sf shift} key is held while the mouse is moved, the affected atoms are
+{\em rotated} about the selected atom.   Rotating atoms with the left button
+rotates about the x or y axis of the screen; rotating with the middle or
+right button rotates about an axis perpendicular to the screen.
+
+Note that there is currently no way to undo Move operations, so the 
+atom coordinates should first be saved to a file. 
+
+\item{\bf Force} applies a force to selected atoms in a running simualtion. 
+These forces will
+be visible only if an IMD connection has been established.  Clicking and
+dragging with the left mouse button will apply a force to the selected Atom,
+Residue, or Fragment, as in Move Mode.  Clicking with the middle or right
+button will cancel the force on the selected atoms.
+
+\item{\bf Move Light} allows the lights to be positioned around the scene.  
+Individual lights are turned on or off in the Display window.  Selecting
+one of the lights in the Move Light menu rotates the selected light about
+the origin. The Move Light Mode can also be cancelled by changing into any 
+other pick mode or mouse mode.
+
+\item {\bf Add/Remove Bonds} adds a bond between two clicked atoms if there is
+not one present, and removes the bond otherwise. Both atoms must belong to the
+same molecule.
+
+\end{itemize}
+ 
+
+ 
+

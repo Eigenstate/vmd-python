@@ -1,0 +1,454 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_tutorial.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.44 $      $Date: 2014/12/29 02:50:13 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%   How to get up and running with myoglobin -- show the basics
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\chapter{Tutorials}
+\label{chapter:tutorial:ug}
+
+\section{Rapid Introduction to \VMD}
+For those of you who don't like reading manuals, here is a quick
+introduction to \VMD.  The molecules and data files used in this tutorial 
+can be downloaded from the \VMD\ home page from the documentation area 
+associated with this version and is clearly labeled as User's Guide 
+tutorial data.  The rest of this tutorial assumes that you have 
+downloaded and unpacked this data set.
+
+To start \VMD\ type {\tt vmd} on the command line of your shell (Unix), or
+start it by clicking the VMD icon in your desktop or Start menu (Apple MacOS
+X and Microsoft Windows).  \VMD\ should start up with a window titled {\sf
+vmd console}, a display window entitled {\sf VMD OpenGL Display}, and a main
+menu entitled {\sf VMD}.  Text commands are typed in the console window,
+molecules are displayed and manipulated in the graphics window, and other
+interfaces and extensions are available from the menu interface.  All of the
+windows can be closed or minimized, using your computer's standard windowing
+controls or the \hyperref{{\tt menu} command}{{\tt menu} command
+[\S}{]}{ug:ui:text:menu} in text console.  Most functions can be performed
+with both the menu interface and the text console, though some of the more
+sophisticated scripting features are only available as text commands.
+
+\section{Viewing a molecule: Myoglobin}
+\label{ug:tutorial:viewing}
+\index{window!files}
+\index{file!load}
+\index{files!reading}
+\index{molecule!loading}
+In our quick tour of \VMD, we'll start out by demonstrating a few
+of its visualization features.
+To load a new molecule, select {\sf New Molecule\ldots}
+from the {\sf File} menu in the Main window, this will open the 
+\hyperref{{\sf Files} window}{{\sf Files} window [\S }{]}{ug:ui:window:files}.
+We will load a PDB (Protein Data Bank) file containing the coordinates
+of the atoms in myoglobin 
+(compliments of Joel Berendzen of Los Alamos National Laboratory).  
+Select the {\sf Browse\ldots} button in the files window to bring up a file
+browser.  Go into the {\tt proteins/} directory of the tutorial data set
+that you have downloaded from the VMD web site.
+Once there, select the file {\tt mbco.pdb} in the file browser, and
+press the {\sf Load} button in the molecule file browser.
+button in the Files window.  
+Figure \ref{fig:ug:myco} shows an example of \VMD\ displaying this protein.
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myhugefigure{ug_myco}{Sample \VMD\ session displaying myoglobin.}{Sample \VMD\ session displaying myoglobin.}{fig:ug:myco}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+You can use the mouse to manipulate the structure in the display
+window.  There are three basic \index{mouse!modes}
+\hyperref{mouse modes}{mouse modes [\S }{]}{ug:ui:disp:modes}: 
+rotation, translation, and scaling.
+The mode can be changed from the Mouse menu in the main window, or by
+pressing {\tt r}, {\tt t}, or {\tt s} on the keyboard while the mouse
+is in the graphics window.  
+While experimenting, note how the cursor changes to indicate the mouse mode.  
+In rotation mode, the left mouse button controls
+rotation about axes parallel to the screen, and the middle button
+controls rotation about the axis perpendicular to the screen.  In
+translation mode, the left mouse button controls translation parallel
+to the screen, while the middle button controls translation in and
+out of the screen.  Finally, in scaling mode, both the left and middle
+buttons control global scaling when the mouse is moved left or right,
+but the middle button causes larger changes.  
+
+By default molecules are displayed in a ``lines'' representation, 
+colored by atom type.
+Suppose you would like to view the myoglobin structure with its
+protein backbone represented as a tube, the heme represented as
+licorice, the $SO_4$ ion and $CO$ molecule represented as van der
+Waals spheres, and histidines 64 and 93 represented as CPK
+models. 
+First, open the
+\hyperref{{\sf Graphics} window}{{\sf Graphics} window [\S }{]}{ug:ui:window:graphics}
+by selecting the {\sf Representations} item in the the graphics menu
+of the VMD Main window. \index{window!graphics}
+Type {\tt backbone} in the {\sf Selected Atoms} text entry
+\index{selection}
+\index{atom!selection}
+\index{coloring!methods}
+area and press 'enter' to select the myoglobin backbone.  All of the
+protein except for the backbone will disappear.  
+Choose {\sf NewCartoon} in the drawing method chooser to display the backbone 
+as a tube, and choose {\sf Structure} in the coloring method chooser 
+to color the tube with the predefined secondary structure color.  
+Press the {\sf Create Rep} button.  This creates a new representation 
+in the browser, identical to the original one.  The new representation 
+can be changed without affecting others, so clear the atom selection 
+text area and enter {\tt resname HEM} to select the heme.  At this point
+the heme isn't visible because it cannot be drawn as a cartoon, so choose
+the `Licorice' drawing method 
+\index{representation!style}
+\index{drawing!method}
+to make it appear.  Click on {\sf Create
+New} again to make a new view, and enter {\tt resname SO4 CO} to
+select the $SO_4$ ion and the $CO$ molecule, and choose the drawing
+method `VDW' to render them as Van der Waal spheres.  Once again,
+press the {\sf Create Rep} button and enter {\tt resid 93 64} to
+select the two histidines, and render them as `CPK'.  
+If you followed all that, then congratulations, you have made a nice 
+image of myoglobin!  With further experimentation you should be 
+well on your way to learning how to use \VMD.
+
+\section{Rendering an Image}
+\index{rendering}
+  Find an interesting view of the molecule from the previous
+tutorial.  Suppose you want to publish this view in a journal and want
+a high quality image, or you want to make a large poster.  Taking the
+image from a screen capture often results in a rather grainy image as the
+size of the pixels becomes apparent, so you want something with more
+resolution.  There are several programs available which can render a
+high-quality raster image, based on an input script.  \VMD\ has the option
+to create input scripts for many of these image processing programs,
+which may then be processed to create a higher quality
+image of the scene displayed by \VMD\ at the time the script was created.
+See Chapter \ref{ug:topic:rendering} on rendering
+for a further description of how this works.
+
+Open the
+\hyperref{{\sf Render} window}{{\sf Render} window [\S~}{]}{ug:ui:window:render}
+\index{render!window}
+\index{window!render}
+\index{output!format}
+\index{files!output}
+\index{rendering!Tachyon}
+and select `Tachyon' from the {\sf Render Using} menu. 
+Both of the text boxes will be filled with default values which should 
+not need to be changed for the purposes of this tutorial.
+Press the {\sf Start Rendering} button.  
+After a few moments of processing, you sould see the message
+\begin{verbatim}
+Info) Rendering complete.
+\end{verbatim}
+in the \VMD\ text console.
+If everything worked correctly, you will
+end up with an image file named plot.dat.tga (on MacOS X or Unix) or 
+plot.dat.bmp (on Windows) in your current working directory.
+This image is in either Windows BMP or Targa graphics format,
+and can be read by many programs (such as {\tt display}, 
+{\tt ipaste}, {\tt xv}, {\sf Gimp} or {\sf Photoshop}).
+
+\section{A Quick Animation}
+\label{ug:tutorial:animation}
+\index{animation}
+
+Another strength of \VMD\ lies in its ability to playback trajectories
+resulting from molecular dynamics simulations.  A sample trajectory,
+{\tt alanin.dcd} is provided in the {\tt proteins} directory included 
+with VMD.  To load it, open the molecule file browser as described
+previously.
+\index{files!reading}
+\index{molecule!loading}
+Next click on the {\sf Browse} button and select the {\tt alanin.psf}
+file in the file browser.  Once selected, press the {\sf Load} button to 
+load the structure file.  Next, select the {\tt alanin.dcd} file and
+load it as well.  This will read the DCD trajectory \timesteps into the
+same molecule with the previously loaded {\tt alanin.psf} file.
+
+In the display window you should see a simulation of an alanin residue 
+in vacuo.  It isn't particularly informative, but you can easily see that 
+the structure is quite unstable in an isolated environment.  After the DCD
+file has loaded, animation will stop.  
+To see it again or to fine- tune playback, use the
+\hyperref{{\sf animation} controls}{{\sf animation} controls  [\S }{]}{ug:ui:window:animate} 
+\index{window!animate}
+found at the bottom of the main \VMD\ window.
+Press the button that looks like {\tt >} to play the animation.  Use the 
+{\sf Speed} slider at the bottom of the window to change the speed of playback.  
+By rotating the molecule around, etc. you should get an idea about how
+the system destabilizes over the course of the simulation.  The animation
+controls are generally similar to what you'd find on a DVD or CD player.
+
+\section{An Introduction to Atom Selection}
+\index{selection}
+\index{atom!selection}
+In this section it is assumed that you have the myoglobin structure {\tt
+mbco.pdb} loaded and the views discussed in section \ref{ug:tutorial:viewing}
+created.  If this is not true, go back and repeat the process described there.
+
+\VMD\ has a powerful atom selection method which is very
+helpful when generating attractive, informative, and complex graphics.
+In the previous section you used a few of these atom selection tools.
+This tutorial assumes that you have already loaded the myoglobin
+molecule, but it isn't necessary to recreate all the graphical
+representations.
+
+To change which atoms are used to display each representation of the
+molecule shown in the display window, open the 
+\hyperref{{\sf Graphics} window}{{\sf Graphics} window [\S~}{]}
+{ug:ui:window:graphics} 
+\index{window!graphics}
+and select the representation you want to change.  
+\index{representation!changing}
+You can then either
+edit the different fields (selection, coloring method, or drawing
+method) or use the {\sf Delete} button to delete the view entirely.
+Try changing or deleting some of the views.  When finished, delete all
+representations for the myoglobin structure.  To get the basic line
+drawing view back, clear the atom selection text entry area, enter {\tt all}
+and press the {\sf Create Rep} button.
+
+\index{atom!selection!examples}
+Atoms may be selected on the basis of a property, i.e. {\tt protein}
+or {\tt not protein}, {\tt water}, or {\tt nucleic backbone}.  They
+may also be selected by atom name, such as {\tt atom C}, by residue
+name, such as {\tt resname HEM}, or by many other identifiers.
+Multiple atoms may be specified with one keyword.  For example, the
+selection {\tt name C CA N O} will select the backbone atoms.  (A
+similar effect may be obtained with the command {\tt protein
+backbone}.)  \VMD\ can handle regular expressions, so that {\tt name
+"C.*"} will select all atoms with names starting with C.  \VMD\ also
+understands the boolean operators {\tt and}, {\tt or}, and {\tt not},
+so the selection {\tt resname HEM and not name "N.*"} selects all
+non-nitrogen atoms in the heme group of myoglobin.
+
+Several more abstract selection criteria are available.  For instance, the
+selection {\tt x $>$ 5} finds all atoms with an x coordinate greater than 5,
+while {\tt mass $>$12 and mass $<$ 14} selects all atoms with mass greater
+than 12 and less than 14 atomic mass units.  Many \hyperref{math
+functions}{math functions [\S~}{]}{table:ug:functions} are also provided, so
+the selection {\tt sqrt( sqr(x) $+$ sqr(y) $+$ sqr(z) ) $<$ 10} will select
+atoms in a spherical region of radius 10 \AA\ centered about the origin of
+the coordinate space.  You can pick atoms nearby a selection with the phrase
+``within $<$distance$>$ of $<$selection$>$'' and all residues with the same
+property as a given selection as ``same $<$property$>$ as $<$selection$>$''.
+
+See section \ref{ug:topic:selections}
+for a full description of the selection command.
+
+\section{Comparing Two Structures}
+
+Let's start from scratch by deleting everything: use the text
+console and tye the command {\tt mol delete all} and press enter.
+This deletes all loaded molecules and is often more convenient
+then selecting them and deleting them all one by one.  Alternatively,
+you could highlight each molecule in the molecule browser, and
+use the {\sf Delete Molecule} item in the {\sf Molecule} menu to 
+remove them one by one.
+
+Begin by loading the {\tt mbco.pdb} structure with the Files window.
+Turn on just the heme, CO, and histidines by using the selection commands
+{\tt resname HEM CO or resid 64 93}.  The dot (probably green) in the
+middle is the iron and you can verify that by picking it with the
+mouse.  Do this by changing the ``Object Mode'' pull-down to ``Pick'', and
+selecting ``Atoms'' for the pick mode in the Mouse menu.
+The label {\tt HEM154:FE} should appear both on the display
+and in the text console.\index{labels}\index{atom!picking}
+\index{picking!atoms}
+
+Change the pick mode in the Mouse menu to ``Bonds''.
+To get the distance between the iron and the oxygen of the CO, click
+with the left mouse button first on the iron and then on the oxygen.
+\index{picking!bonds}\index{picking!distances}
+The first click turned the FE label on and the second turned the O
+label on and drew a line between the two atoms with the distance drawn
+in the middle and a bit to the right.  
+\index{distance between atoms}
+\index{atoms!distance between}
+The distance between the two
+atoms is 2.94 \AA, as compared to 2.93 \AA\ in the paper; not bad.
+However, picking the distance between the FE and the C of the CO
+reveals a distance of 1.91 \AA\ as compared to 1.85 \AA\ in the paper.
+The difference is that the structures in the \VMD\ distribution are
+actually preliminary structures obtained before the final coordinates
+were determined.
+
+In order to experiment with more complex picking modes, 
+\index{picking!modes}
+\index{mouse!modes}
+consider the
+angle made by the O of the CO with the FE of the heme and the NE2 of
+residue 93 (you can click on the atoms to find which ones are which).
+Using the Mouse menu, change the pick mode to ``Angles''.
+This should cause the cursor to become a red crosshair.  
+Click on each of the three atoms using the left mouse button.  After
+the third pick, a shallow angle will appear indicating an 8.71 degree
+angle between the three atoms.
+
+
+Now load the intermediate {\tt star.pdb} file which can also be found
+in the {\tt proteins} directory of your distribution. Again use the
+Files window to do this.  Both of the molecules will be loaded side by
+side.  Go to the Graphics window and change the selection so it the same
+as the first, i.e. {\tt resname HEM CO or resid 64 93}.  The two
+molecules are almost atop each other, making it hard to distinguish
+the two, so change the colors to simplify things.
+
+First, in the {\sf Graphics} window, change the {\sf Coloring method} to
+`Molecule'.  Use the {\sf Selected Molecule} chooser to change the
+{\tt mbco.pdb} {\sf Coloring method} to `Molecule' as well.  Open the
+\hyperref{{\sf Color} window}{{\sf Color} window [\S }{]}{ug:ui:window:color}
+\index{color!window}
+\index{window!color}
+and scroll the {\sf Category} browser down until the line `Molecule'
+is visible.  Click on it then click on the line which says {\tt
+mbco.pdb}.  (There may be two {\tt mbco} lines if the file had been loaded
+before in this session.)  Scroll the {\sf Colors} browser up to click
+on `blue'.  This should change one of the molecules in the display to
+blue. \index{color!assignment}
+
+Next, click on the last line in the {\sf Names} chooser, which says
+{\tt star.pdb}.  This time, choose `red' from the {\sf Colors}
+chooser.
+The display should be much easier to understand.  The myoglobin with
+the bound CO is in blue and the intermediate state is in red.  At this
+point it is easy to measure the change in position between the two
+different states by using the middle mouse button to pick the same
+atom in the two conformations.  
+
+Once that is done, it is easy to point out one interesting aspect of
+the way \VMD\ handles the graphics.  Go to the main window, select one of
+the two molecules, and press {\sf Toggle Fixed}.  Enter translation
+mode and move the other molecule around.  Notice that the number which
+lists the distance between the two atoms never changes.  That's
+because the mouse only affects the way the coordinates are translated
+to the screen image.  It does not affect the real coordinates at all.
+It is possible to change the coordinates in a molecule using the text
+command interface, or by using the 
+\hyperref{atom move pick modes}{atom move pick modes [\S }{]}{ug:ui:disp:pick}).
+\index{molecule!fixed}
+\index{molecule!translation}
+\index{atom!coordinates!changing}
+
+By the way, unfix the molecules and do a `Reset View' from the Display
+menu to reset everything.  Load up the third structure, {\tt deoxy.pdb} 
+and give it the same selection as the other two molecules.
+However, color this one green.  Pull out Nature v. 371, Oct. 27, 1994
+and turn to page 740.  With a bit of manipulation you should be able
+to recreate the image that appears there.
+
+\section{Some Nice Represenations}
+\index{representation!examples}
+The following views are quite nice for displaying proteins and nucleic
+acids:
+
+\begin{verbatim}
+selection: all
+drawing method: tube
+coloring method: segname (or chain)
+why?  This show the backbone of the protein and nucleic acid strands
+
+selection: protein and (name CA or not backbone)
+drawing method: lines
+coloring method: segname (or chain)
+why? shows where the side chains are located, but they are thin so the
+  backbone is still visible and the scene is quickly drawn
+
+selection: (numbonds = 0) and not waters
+drawing method: vdw
+coloring method: name
+why? shows ions.  The "not waters" omits cases where a water's oxygen is
+  known but not the hydrogen.
+
+selection: not (waters or protein or nucleic)
+drawing method: lines
+coloring method: name
+why? shows whatever is left; usually ligands and crystallizing agents
+\end{verbatim}
+
+
+
+\section{Saving your work}
+\label{ug:scripts:savestate}
+\index{save!vmd state}
+\index{save!configuration}
+\index{restore!vmd state}
+
+After creating a set of attractive and informative representations of your
+molecule, you may want to save your work so that you can regenerate the 
+scene later.  There are two ways to do this in \VMD:
+\begin{itemize}
+\item In the main menu, press the {\sf Save State} button found in the 
+{\sf File} menu; this will bring up
+a browser window where you can enter a file name in which to save your work.
+
+\item In the text console, type {\tt save\_state {\it filename}}, where
+{\it filename} is the name of the file in which to save your work.
+
+\end{itemize}
+
+To restore your scene, you also have three choices:
+
+\begin{itemize}
+
+\item Use the {\sf Load State} item in the {\sf File} manu to select and
+      load a previously saved \VMD\ session.
+
+\item From the command line, start \VMD\ with the options 
+{\tt vmd -e {\it filename}}, where {\it filename} was the name of the file you
+saved before.  
+
+\item After starting \VMD, from the text console, type {\tt play {\it filename}}. 
+
+\end{itemize}
+
+The most common source of problems is when \VMD\ can't find the files you
+used to load the molecule.  If this happens, try changing to the directory
+you were in when you first loaded the molecule, or edit the state file and
+use the full path names where you see {\tt mol new}, 
+{\tt mol addfile}, or {\tt mol load} commands.
+
+
+
+\section{Tracking Script Command Versions of the GUI Actions}
+\label{ug:scripts:logfile}
+\index{save!logfile}
+\index{logging tcl commands}
+\index{logfile!enable from GUI}
+\index{logfile!disable from GUI}
+
+For most actions performed from the \VMD GUI, there is an equivalent
+script command. \VMD can print these commands to a log file or the
+console. This is a convenient way to automate file processing by first 
+doing all steps interactively while logging to a file and then editing
+the logfile to turn it into a Tcl script operating on multiple files.
+There are two ways to do this in \VMD:
+\begin{itemize}
+\item In the main menu, press the {\sf Log TCL Commands to File} button 
+found in the {\sf File} menu; this will bring up a browser window where you 
+can enter a file name in which you can save the resulting script code.
+\item In the text console, type {\tt logfile {\it filename}}, where
+{\it filename} is the name of the log file.
+\end{itemize}
+
+The resulting file will contain Tcl script code that can be executed
+from the \VMD command prompt. The {\sf Log TCL Commands to Console} button
+or the command {\tt logfile console} will print the Tcl commands to
+the console window instead. This is most useful, if you just want to
+find out, which \VMD command is used to perform a specific action.
+
+Finally, the {\tt logfile off} command or clicking on the 
+{\sf Turn Off Logging} button will stop the log and close
+the log file, if needed.
+

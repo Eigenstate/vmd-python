@@ -1,0 +1,106 @@
+<!--#set var="TITLE" value="Molfile Plugin Documentation"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<b>Molfile</b> plugins act as translators between the on-disk file
+representations of molecular structures, trajectories, volumetric
+data sets, and graphics geometry data, and the in-memory 
+representation of these data in VMD.  This page contains a 
+list of all of the currently available file reader plugins for VMD.
+For each plugin, we try to maintain an up-to-date document which 
+explains what limitations the plugin has, whether it reads all data or
+only some of the data from the file format, any known bugs, and any
+other useful information, often with links to the file format specifications
+which were used to develop the plugin.
+
+
+<h3>Calling VMD molfile plugins from your own code</h3>
+Although the molfile plugins were primarily developed for use within VMD,
+they can also be used by other scientific software written 
+in C/C++/Fortran.  They are provided under the 
+<a href=/Research/vmd/plugins/pluginlicense.html>UIUC Open Source License</a>.
+See the 
+<a href="/Research/vmd/plugins/doxygen/">VMD Plugin Programmer's Guide</a> 
+for more information on using VMD plugins in other software.
+
+
+<h3>Molecule Coordinate/Structure File Plugins</h3>
+<ul>
+<li><a href="parmplugin.html">AMBER 4-6 structure file(.parm)</a>
+<li><a href="parm7plugin.html">AMBER 7-9 structure file(.prmtop, .parm7)</a>
+<li><a href="rst7plugin.html">AMBER 7-9 restart file(.rst7)</a>
+<li><a href="babelplugin.html">Babel file translator plugin</a>
+<li><a href="bgfplugin.html">Biograf structure files (.bgf)</a>
+<li><a href="carplugin.html">Insight II/Discover coordinate file (.car)</a>
+<li><a href="corplugin.html">CHARMM coordinate file (.crd)</a>
+<li><a href="psfplugin.html">CHARMM, CNS, NAMD, X-PLOR PSF structure file (.psf)</a>
+<li><a href="gamessplugin.html">GAMESS log file (.log)</a>
+<li><a href="groplugin.html">Gromos 87, Gromacs structure file (.gro)</a>
+<li><a href="g96plugin.html">Gromos 96, Gromacs coordinate and trajectory (.g96)</a>
+<li><a href="https://github.com/h5md/VMD-h5mdplugin">H5MD plugin (.h5)</a>
+<li><a href="namdbinplugin.html">NAMD Restart file (.namdbin)</a>
+<li><a href="mdfplugin.html">Insight II/Discover structure file (.mdf)</a>
+<li><a href="netcdfplugin.html">MMTK NetCDF structure reader (.nc)</a>
+<li><a href="moldenplugin.html">Molden structure files (.molden)</a>
+<li><a href="pdbplugin.html">PDB (Protein Data Bank) files (.pdb)</a>
+<li><a href="pqrplugin.html">PQR (coordinate, charge, and radii) (.pqr)</a>
+<li><a href="mol2plugin.html">SYBYL Mol2 structure files (.mol2)</a>
+<li><a href="tinkerplugin.html">Tinker coordinate and trajectory reader (.arc)</a>
+<li><a href="vaspplugin.html">VASP atomic configurations (.POSCAR, .CONTCAR)</a>
+<li><a href="xbgfplugin.html">VMD XBGF structure files (.xbgf)</a>
+<li><a href="vtfplugin.html">VTF structure files (.vsf, .vcf)</a>
+<li><a href="webpdbplugin.html">WebPDB (web-based PDB downloader)</a>
+<li><a href="xsfplugin.html">XCrySDen, Quantum Espresso XSF/AXSF coordinate files (.axsf, .xsf)</a>
+<li><a href="xyzplugin.html">XYZ coordinate files (.xyz)</a>
+</ul>
+
+<h3>Molecular Dynamics Trajectory File Plugins</h3>
+<ul>
+<li><a href="binposplugin.html">AMBER 'binpos' trajectory reader (.binpos)</a>
+<li><a href="crdplugin.html">AMBER "CRD" trajectory reader (.crd, .crdbox)</a>
+<li><a href="netcdfplugin.html">AMBER NetCDF trajectory reader (.nc)</a>
+<li><a href="dcdplugin.html">CHARMM, NAMD, X-PLOR "DCD" reader/writer (.dcd)</a>
+<li><a href="cpmdplugin.html">CPMD (CPMD trajectory) reader (.cpmd)</a>
+<li><a href="dlpolyplugin.html">DLPOLY HISTORY file reader (.dlpolyhist)</a>
+<li><a href="trrplugin.html">Gromacs TRR/XTC reader (.trr, .xtc)</a>
+<li><a href="tngplugin.html">Gromacs TNG reader (.tng)</a>
+<li><a href="https://github.com/h5md/VMD-h5mdplugin">H5MD plugin (.h5)</a>
+<li><a href="lammpsplugin.html">LAMMPS trajectory reader (.lammpstrj)</a>
+<li><a href="netcdfplugin.html">MMTK NetCDF trajectory reader (.nc)</a>
+<li><a href="vaspplugin.html">VASP trajectories of ionic steps (.xml, .OUTCAR, .XCATCAR)</a>
+<li><a href="vtfplugin.html">VTF trajectory files (.vtf)</a>
+<li><a href="xsfplugin.html">XCrySDen, Quantum Espresso XSF/AXSF trajectory files (.axsf, .xsf)</a>
+<li><a href="xyzplugin.html">XYZ trajectory files (.xyz)</a>
+</ul>
+
+<h3>Volumetric Data/Density/Potential Map Plugins</h3>
+<ul>
+<li><a href="mapplugin.html">Autodock Grid Map File reader (.map)</a>
+<li><a href="avsplugin.html">AVS Field File reader (.fld)</a>
+<li><a href="biomoccaplugin.html">Biomocca volumetric occupancy map reader (.bmcg) </a>
+<li><a href="brixplugin.html">Brix format electron density map reader (.brix)</a>
+<li><a href="ccp4plugin.html">CCP4, MRC format electron density map reader (.ccp4, .mrc)</a> 
+<li><a href="dxplugin.html">Data Explorer (DX) format volumetric grid (.dx) </a>
+<li><a href="grdplugin.html">Delphi, GRASP unformatted binary phimap reader (.grd, .phi)</a>
+<li><a href="phiplugin.html">Delphi, GRASP formatted ASCII phimap reader (.big)</a>
+<li><a href="cubeplugin.html">Gaussian "cube" file reader (.cube)</a>
+<li><a href="gridplugin.html">Molecular Discovery, UHBD GRID map reader (.grid)</a>
+<li><a href="pltplugin.html">gOpenmol PLT format electron density map reader (.plt)</a> 
+<li><a href="dsn6plugin.html">"O" DSN6 format electron density map reader (.ds6, .dsn6, .omap)</a> 
+<li><a href="situsplugin.html">Situs volumetric grids (.sit, .situs)</a>
+<li><a href="spiderplugin.html">SPIDER volumetric images (.spi, .spider)</a>
+<li><a href="uhbdplugin.html">UHBD potential maps (.uhbd)</a>
+<li><a href="vaspplugin.html">VASP charge densities and electron localization functions (.CHGCAR, .ELFCAR, .LOCPOT, .PARCHG)</a>
+<li><a href="edmplugin.html">X-PLOR, CNS format electron density map reader (.cns, .edm, .xplor)</a>
+<li><a href="xsfplugin.html">XCrySDen, Quantum Espresso XSF/AXSF trajectory files (.axsf, .xsf)</a>
+<li><a href="fs4plugin.html">XtalView "fsfour" electron density map reader (.fs, .fs4)</a>
+</ul>
+
+<h3>Graphics Plugins</h3> 
+<ul>
+<li><a href="graspplugin.html">GRASP surface file reader (.grasp, .srf)</a>
+<li><a href="msmsplugin.html">MSMS surface file reader (.face, .vert)</a>
+<li><a href="raster3dplugin.html">Raster3D scene reader (.r3d)</a>
+<li><a href="stlplugin.html">STL solid model triangulated geometry files (.stl)</a>
+</ul>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

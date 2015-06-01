@@ -1,0 +1,60 @@
+#
+# VMD residue type defaults
+#
+# Residue name, residue type
+#
+
+# Standard PDB amino acids:
+ALA   Nonpolar
+ARG   Basic
+ASN   Polar
+ASP   Acidic
+CYS   Nonpolar
+GLY   Polar
+GLU   Acidic
+GLN   Polar
+HIS   Basic
+ILE   Nonpolar
+LEU   Nonpolar
+LYS   Basic
+MET   Nonpolar
+PHE   Nonpolar
+PRO   Nonpolar
+SER   Polar
+THR   Polar
+TRP   Nonpolar
+TYR   Polar
+VAL   Nonpolar
+
+# Others
+ADE   Nucleic_Acid
+CYT   Nucleic_Acid
+GUA   Nucleic_Acid
+THY   Nucleic_Acid
+URA   Nucleic_Acid
+TIP   Solvent
+TIP3  Solvent
+WAT   Solvent
+SOL   Solvent
+H2O   Solvent
+LYR   Nonpolar
+ZN    Ion
+NA    Ion
+CL    Ion
+
+# Common CHARM residues:
+HSD   Polar
+HSE   Polar
+HSP   Basic
+TP3M  Solvent
+CAL   Ion
+CES   Ion
+CLA   Ion
+MG    Ion
+POT   Ion
+SOD   Ion
+ZN2   Ion
+
+# Amber
+CYX   Nonpolar
+

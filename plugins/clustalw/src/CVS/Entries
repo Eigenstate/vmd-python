@@ -1,0 +1,24 @@
+/alnscore.c/1.1/Wed Aug  9 17:03:26 2006//
+/amenu.c/1.2/Tue Mar 31 16:59:44 2009//
+/calcgapcoeff.c/1.2/Tue Mar 31 16:59:45 2009//
+/calcprf1.c/1.1/Wed Aug  9 17:03:26 2006//
+/calcprf2.c/1.1/Wed Aug  9 17:03:26 2006//
+/calctree.c/1.1/Wed Aug  9 17:03:26 2006//
+/clustalw.c/1.1/Wed Aug  9 17:03:26 2006//
+/clustalw.h/1.2/Tue Mar 31 16:59:45 2009//
+/dayhoff.h/1.1/Wed Aug  9 17:03:27 2006//
+/gcgcheck.c/1.1/Wed Aug  9 17:03:27 2006//
+/general.h/1.1/Wed Aug  9 17:03:27 2006//
+/interface.c/1.2/Tue Mar 31 16:59:45 2009//
+/malign.c/1.2/Tue Mar 31 16:59:45 2009//
+/matrices.h/1.1/Wed Aug  9 17:03:27 2006//
+/pairalign.c/1.2/Tue Mar 31 16:59:45 2009//
+/param.h/1.2/Tue Mar 31 16:59:45 2009//
+/prfalign.c/1.2/Tue Mar 31 16:59:45 2009//
+/random.c/1.1/Wed Aug  9 17:03:27 2006//
+/readmat.c/1.2/Tue Mar 31 16:59:45 2009//
+/sequence.c/1.2/Tue Mar 31 16:59:45 2009//
+/showpair.c/1.1/Wed Aug  9 17:03:28 2006//
+/trees.c/1.2/Tue Mar 31 16:59:45 2009//
+/util.c/1.2/Tue Mar 31 16:59:45 2009//
+D

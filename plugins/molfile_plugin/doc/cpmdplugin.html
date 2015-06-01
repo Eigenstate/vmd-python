@@ -1,0 +1,44 @@
+<!--#set var="TITLE" value="CPMD Plugin, Version 0.4"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads 
+<a href="http://www.cpmd.org/">CPMD trajectories</a> 
+from the <b>TRAJECTORY</b> file. 
+The file consists of many lines in the form
+<pre>
+timestep  x  y  z   vx  vy  vz
+</pre>
+which contain the timestep number (NFI), the x-, y-, and z-positions
+and the x-, y-, and z-velocities respectively (in atomic units) for each
+atom. If a trajectory file is continued, CPMD will insert a line
+with the string 
+<b>&lt;&lt;&lt;&lt;&lt;&lt;&nbsp;&nbsp;NEW&nbsp;DATA&nbsp;&nbsp;&gt;&gt;&gt;&gt;&gt;&gt;</b>
+which will be recognized and ignored by this plugin.
+
+<h3>Notes:</h3>
+
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+writing this file type. Saving in either binary DCD format (to reduce disk space
+requirements and enable much faster loading) or XYZ format (to avoid having to load
+a file with the atom name assignments first) instead is recommended.</p>
+
+<p><b>Automatic File Format Detection</b>
+<br>TRAJECTORY has no filename extension, so VMD will ask you to provide
+a file type manually or try to read it as PDB as last resort (which will fail). However, if you rename the file to a name ending in
+<b>.cpmd</b> VMD will atomatically detect the format.
+
+<p><b>Atom Names</b>
+<br>The TRAJECTORY file does not contain any information about the
+respective elements for the recorded positions. You have to 
+load a file containing that information in the same order, 
+e.g. the corresponding <b>GEOMETRY.xyz</b> file first and then
+use <b>Load Data Into Molecule...</b>.
+
+<p><b>Periodic Boundary Conditions</b>
+<br>CPMD does not apply periodic boundary conditions before writing
+to the TRAJECTORY file, so you may either preprocess the data
+accordingly or use a script like the pbcswrap script from the VMD
+script library to translate the atoms back into the unitcell.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

@@ -1,0 +1,315 @@
+<!--#set var="TITLE" value="Inorganic Builder Plugin, Version 0.1"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<img src="ib-start.png" align="right" alt="inorganic builder start"
+border=1>
+The InorganicBuilder plugin provides tools for many of the functions
+needed to set up simulations of molecules and inorganic structures. The
+functions of the plugin are organized into several Tasks. Initially, the plugin displays buttons for three common activities, which correspond to options in the Task and File menues. 
+
+<h2>Menus</h2>
+The plugin contains four top-level menus, File, Task, Material, and Help. 
+
+<h3>File Menu</h3>
+
+The File menu has 2 options, <b>Open</b> and <b>Save as</b>. <b>Save as</b> saves the state of the plugin, including specifications for the last-built device and any modifications to the Material library. The <b>Open</b> option restores a previously saved state file. Note that it does not load any previously-generated structures into VMD. Those must be loaded separately.
+
+<h3>Task Menu</h3>
+
+The <b>Task</b> menu provides tools for performing several common operations needed to build an atomic model of an inorganic device. These operations are explained below.
+
+<h4>Build device</h4>
+
+<img src="ib-build.png" align="right" alt="inorganic builder build"
+border=1>
+
+This task lets you set up the basic parameters, including material and
+dimensions, for the initial device structure. The following values
+describe the structure:
+
+<ul>
+
+<li>Material: Select a material to specify the corresponding unit cell
+and basis cell dimensions. Additional materials can be added to this
+menu using the text interface.
+
+<li>Hex box: For materials with hexagonal symmetry in the X-Y plane,
+checking this box will convert the structure to a hexagonal form.
+
+<li>Origin: Specify the coordinates of the center of the device box
+
+<li>Box dimension: Three integers specify the number of unit cells in
+the A, B, and C directions. When using hexagonal symmetry, Diameter
+defines the diameter of the inscribed cylinder, and height defines the
+number of unit cells in the Z dimension.
+
+<li>Make total charge an integer: If the total charge of the system is not an integer, the charge of all the atoms is scaled slightly to make the total system charge an integer. Then the total charge is recomputed. Due to insufficient precision in the PDB file format, there may still be a very small charge correction necessary, so any remaining charge is added to the first atom in the PDB file.
+
+<li>Output file: The file name to store the resulting PSF/PDB files
+
+<li>Save par file: For some material types, the plugin includes a parameter file in the CHARMM format which may be appropriate for some simulations. When available, this file will be saved along with the PDB and PSF files.
+
+</ul>
+
+<p> Clicking <b>Draw Box</b> after specifiying the box parameters will
+construct a wire frame outline of the device (including any exclusions)
+in the VMD OpenGL window.
+
+<p> In addition, you may cut regions out of the unit cell before you
+construct it, by <b>Adding exclusions</b>, regions to remove from the
+structure before constructing the PSF/PDB files. Defined regions can be
+removed before construction by selecting one and clicking <b>Remove
+exclusion</b>.
+
+<p> To create a device of interest, after the block of material is specified, regions of various shapes are removed. Several different types of exclusions are available for constructing the device: <ul>
+
+<li>Parallelopiped: Specify one corner of the parallelopiped, and the
+three vectors defining the three edges intersecting at that corner.
+
+<li>Cylinder: Specify the centers of the bottom and the top of the
+cylinder, as well as the radius.
+
+<li>Sphere: Specify the center and radius of the sphere.
+
+<li>Cone: Specify the center of the base of the cone, the apex, and the
+radius of the base.
+
+<li>Tetrahedron: Specify one corner of the tetrahedron, and the three
+vectors defining the three edges intersecting at that corner.
+
+<li>VMD selection: Specify a VMD selection (using the syntax of the
+atomselect command) to either include or exclude. Selections will be
+applied in the order that they are added to the exclusion list. VMD
+selection exclusions will not show up when the Draw Box button is used,
+since they must be applied while the structure is being filled with
+atoms.
+
+</ul>
+
+<p> After defining the device size and all desired exclusions, press the
+<b>Build structure</b> button to construct the model. Clicking
+<b>Cancel</b> closes the plugin window.
+
+<br clear=all>
+
+<!--
+<h4>Add periodic bonds</h4>
+
+<img src="ib-pb.png" align="right" alt="inorganic builder periodic
+bonds" border=1>
+
+When reading in a structure with no bond information, VMD uses a
+distance-based algorithm to guess the bonds. This algorithm works well
+for many models, but does not take into account bonds that wrap around
+the walls of a periodic cell. This task enhances the built-in VMD bond
+search algorithm by also adding the bonds that wrap around the periodic
+cell. The following parameters are available:
+
+<ul>
+
+<li>Molecule: Select a structure, either by selecting a molecule already
+loaded in VMD, or by selecting the PSF and PDB files for a stored
+structure.
+
+<li>Origin and Basis: If you just created this structure, the Origin and
+Basis parameters will be carried over from the Build Crystal task,
+otherwise, enter the Origin (center of the box) and the basis vectors
+for the periodic box.
+
+<li>Bond cutoff: Select a bond cutoff radius (in angstroms) appropriate
+for the material in use.
+
+<li>Transform to hex on completion: If the basis vectors of the device
+allow it to be represented with hexagonal periodicity, the structure
+will be stored in that form.
+
+<li>Build angles/dihedrals: After building the two-atom bonds, also
+generate angle and dihedral bonds
+
+<li>Load result: After generating and storing the structure, load it in
+to VMD
+
+<li>Output file: The name of the PSF/PDB files of the structure with
+bonds
+
+</ul>
+
+<p> After defining these parameters, press the <b>Build Periodic
+Bonds</b> button to construct the model. Clicking <b>Cancel</b> closes
+the plugin window.
+
+<br clear=all>
+-->
+
+<h4>Add bonds</h4>
+
+<img src="ib-bonds.png" align="right" alt="inorganic builder bonds"
+border=1>
+
+When reading in a structure with no bond information, VMD uses a
+distance-based algorithm to guess the bonds. This algorithm works well
+for many models, but does not take into account bonds that wrap around
+the walls of a periodic cell, or bond lengths in some materials, especially amorphous materials. This task enhances the built-in VMD bond
+search algorithm by letting you add bonds to a previously-generated structure. The first prompt allows you to select one of the four available methods for generating bonds:
+<ol>
+<li>Keep all existing bonds already defined in VMD, add bonds that wrap around the periodic box
+<li>Let VMD regenerate internal bonds, add bonds that wrap around the periodic box
+<li>Keep existing bonds, specify bonds to add by atom type
+<li>Ingnore existing bonds, and create a PDB/PSF file containing only specified bonds
+</ol>
+
+For some materials, the VMD distance-based bond search does not generate
+correct bonds. For instance, with amorphous silicon dioxide, VMD's
+distance-based search yields many incorrect O-O and Si-Si bonds in
+addition to the desired Si-O bonds. This task lets you specify which
+types of atoms may be bonded, and the maximum length of each bond type.
+The following parameters are available:
+
+<ul>
+
+<li>Molecule: Select a structure, either by selecting a molecule already
+loaded in VMD, or by selecting the PSF and PDB files for a stored
+structure.
+
+<li>Origin and Basis: If you just created this structure, the Origin and
+Basis parameters will be carried over from the Build Crystal task,
+otherwise, enter the Origin (center of the box) and the basis vectors
+for the periodic box.
+
+<li>Periodic in: Only generate bonds wrapping around the basis cell for the specified directions.
+
+<li>Transform to hex: If the unit cell has hexagonal symmetry in the X-Y plane, transform to a hexagonal box.
+
+<li>Build angles/dihedrals: After building the two-atom bonds, also
+generate angle and dihedral bonds
+
+<li>Include # of bonds: Rename the atom types so that the last digit of each atom's type includes the number of bonds as the last character. For instance, a silicon atom with 4 bonds would have the atom type "SI4"
+
+<li>Output file: The name of the PSF/PDB files of the structure with
+bonds
+
+<li>Load result: After generating and storing the structure, load it in
+to VMD
+
+</ul>
+
+<p>Specify what element types should be bonded by pressing the <b>Add
+bond</b> button. Enter the two element names and the maximum radius for
+the bond. The <b>Remove</b> button can be used to get rid of unwanted
+bond types.
+
+<p> After defining these parameters, press the <b>Find Bonds</b> button
+to construct the model. Clicking <b>Cancel</b> closes the plugin window.
+
+<br clear=all>
+
+<h4>Find surface atoms</h4>
+
+<img src="ib-surface.png" align="right" alt="inorganic builder find
+surface" border=1>
+
+This task allows a device to be separated into two sets of files, one
+containing atoms within a certain distance of the surface, and the other
+containing the interior atoms. The shell of surface atoms is defined by
+its proximity to vacuum. A grid is placed over the volume of the
+periodic cell, and each grid point is considered a vacuum grid point if
+no atoms fall within a sphere (bubble) of radius r centered on that grid
+point. Then, surface atom shell of the desired thickness t is determined
+by selecting all atoms closer than r + t of a vacuum grid point. These
+parameters are entered into the plugin as follows:
+
+<ul>
+
+<li>Molecule: Select a structure, either by selecting a molecule already
+loaded in VMD, or by selecting the PSF and PDB files for a stored
+structure.
+
+<li>Origin and Basis: If you just created this structure, the Origin and
+Basis parameters will be carried over from the Build Crystal task,
+otherwise, enter the Origin (center of the box) and the basis vectors
+for the periodic box.
+
+<li>Grid spacing: The approximate resolution of the grid for deteriming
+the vacuum region. This is only an approximate parameter, since the
+actual distance is adjusted in each direction so that there are an
+integer number of grid points along each basis vector.
+
+<li>Radius: A grid point is considered a vacuum if no atoms lie within
+the sphere of the specified radius around the grid point. Alternatively,
+atoms can be viewed as spheres of this radius, and a grid point is only
+a vacuum if it lies outside all the atoms.
+
+<li>Shell thickness: The resulting surface shell will contain atoms
+within this distance of the surface.
+
+<li>Surface: The PSF/PDB files for the surface shell
+
+<li>Interior: The PSF/PDB files for the interior atoms
+
+</ul>
+
+Click <b>Find Shell</b> to find the surface shell and interior
+structures, or <b>Cancel</b> to close the plugin window. This procedure
+may take a few minutes to complete.
+
+<br clear=all>
+
+
+<h4>Solvate box</h4>
+
+<img src="ib-solvate.png" align="right" alt="inorganic builder solvate"
+border=1>
+
+The Solvate task uses VMD's Solvate plugin to solvate a system according to the specified basis vectors.
+<ul>
+
+<li>Molecule: Select a structure, either by selecting a molecule already
+loaded in VMD, or by selecting the PSF and PDB files for a stored
+structure.
+
+<li>Origin and Basis: If you just created this structure, the Origin and
+Basis parameters will be carried over from the Build Crystal task,
+otherwise, enter the Origin (center of the box) and the basis vectors
+for the periodic box.
+
+<li>Solvated file: The PSF/PDB files for the resulting solvated
+structure
+
+<li>Transform to hex: If the basis vectors permit it, the structure will be transformed into a version that is hexagonal in the X-Y plane.
+
+</ul>
+
+Click <b>Solvate Box</b> to solvate the structure, or <b>Cancel</b> to
+close the plugin window.
+
+<br clear=all>
+
+<h3>Material Menu</h3>
+
+<img src="ib-newmat.png" align="right" alt="inorganic builder solvate"
+border=1>
+
+The plugin lets you define new materials to use for constructing devices. The materials can be defined as part of your InorganicBuilder session, and saved for reloading into another session. Materials currently in the library may also be viewed.
+
+<p>
+To add a new material, the plugin requires several pieces of information. 
+<ul>
+<li>Name and Short name: The Name is a longer, more descriptive name for the material. The Short Name is a shorthand name that should be a unique identifier for the material.
+
+<li>Unit coll PDB: A PDB file containing names and coordinates of the atoms in the unit cell.
+
+<li>Topology file: An optional file describing the unit-cell atom types in a CHARMM-compatible format.
+
+<li>Cutoff: The cutoff radius for periodic bond searches performed by the plugin. This does not affect VMD's internal bond search routine, or the plugin's specify-bonds algorithm.
+
+<li>Hex symmetry: Specifies whether the unit cell has the correct basis vectors to be represented as a hexagonal cell in the X-Y plane.
+
+<li>Basis vectors: The basis vectors for the unit cell.
+
+</ul>
+
+Click <b>Add to library</b> to add the material to your current InorganicBuilder session, or <b>Cancel</b> to close the plugin window. After adding a material to the library, you may view it with the View option in the Material menu. From there, you can choose to <b>Save a copy</b> of the material, which can be loaded into another InorganicBuilder session using the <b>Load Material</b> button
+ 
+<br clear=all>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

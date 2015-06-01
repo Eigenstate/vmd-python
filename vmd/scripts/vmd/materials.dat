@@ -1,0 +1,31 @@
+#
+# VMD material list defaults
+#
+# Material name, Ambient, Diffuse, Specular, Shininess, Mirror, Opacity, 
+#                [Outline, OutlineWidth]
+#
+# First two are coded in VMD, don't add them here, they're just for reference
+# Opaque         0.00  0.65  0.50  0.53  0.00  1.00
+# Transparent    0.00  0.65  0.50  0.53  0.00  0.30
+#
+BrushedMetal     0.08  0.39  0.34  0.15  0.00  1.00
+Diffuse          0.00  0.62  0.00  0.53  0.00  1.00
+Ghost            0.00  0.00  1.00  0.23  0.00  0.10
+Glass1           0.00  0.50  0.65  0.53  0.00  0.15
+Glass2           0.52  0.76  0.22  0.59  0.00  0.68
+Glass3           0.15  0.25  0.75  0.80  0.00  0.50
+Glossy           0.00  0.65  1.00  0.88  0.00  1.00
+HardPlastic      0.00  0.56  0.28  0.69  0.00  1.00
+MetallicPastel   0.00  0.26  0.55  0.19  0.00  1.00
+Steel            0.25  0.00  0.38  0.32  0.00  1.00
+Translucent      0.00  0.70  0.60  0.30  0.00  0.80
+Edgy             0.00  0.66  0.00  0.75  0.00  1.00  0.62  0.94
+EdgyShiny        0.00  0.66  0.96  0.75  0.00  1.00  0.76  0.94
+EdgyGlass        0.00  0.66  0.50  0.75  0.00  0.62  0.62  0.94
+Goodsell         0.52  1.00  0.00  0.00  0.00  1.00  4.00  0.90 
+AOShiny          0.0   0.85  0.20  0.53  0.00  1.00
+AOChalky         0.0   0.85  0.00  0.53  0.00  1.00
+AOEdgy           0.0   0.90  0.20  0.53  0.00  1.00  0.62  0.93
+BlownGlass       0.04  0.34  1.00  1.00  0.00  0.10  0.00  0.00  1.0
+GlassBubble      0.25  0.34  1.00  1.00  0.00  0.04  0.00  0.00  1.0
+RTChrome         0.00  0.65  0.50  0.53  0.70  1.00

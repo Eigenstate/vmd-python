@@ -1,0 +1,79 @@
+<!--#set var="TITLE" value="Intersurf Plugin Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<center>
+<a href="http://www.loria.fr/projets/docking/">ARC Docking</a>
+</center>
+
+<!-- CONTENT BEGINS HERE -->
+
+<table border="0">
+  <tbody><tr>
+    <td rowspan="2">
+
+<p>This plugin provides surfaces representing the interaction between
+two groups of atoms. Colors can be added to represent interaction
+forces between these groups of atoms.</p>
+
+<p>The method works as follow:</p>
+<ul>
+    <li>a 3D Delaunay Triangulation with atoms as vertices is constructed,</li>
+    <li>the surface is extracted using a Marching Tetrahedra algorithm,</li>
+    <li>geometry and colors of the surface are given by the nearest atoms.</li>
+</ul>
+
+<br>
+<b>Authors and contact information:</b>
+<ul>
+  <li>Xavier Cavin (Xavier.Cavin@loria.fr)
+  <li>Nicolas Ray  (Nicolas.Ray@loria.fr)
+</ul>
+
+<br>
+<b>Software License</b>
+<ul>
+  <li><a href=license.html>Intersurf License</a>
+</ul>
+
+<br>
+<b>Software Requirements</b>
+<ul>
+  <li>VMD 1.8.3 or above.</li>
+</ul>
+
+<br>
+
+<b>Using the Plugin</b>
+<ul>
+  <li><a href="gui.html">GUI</a> -- using the GUI</li>
+  <li><a href="coloring.html">Coloring</a> -- create custom coloring rules</li>
+</ul>
+
+<br>
+
+<b>Intersurf Links</b>
+<ul>
+  <li>Online reference to the main Intersurf paper: <a href="http://authors.elsevier.com/sd/article/S109332630400107X">Intersurf: dynamic interface between proteins</a>
+
+  <li><a href="http://www.loria.fr/projets/docking/">ARC Docking web
+  site:</a> This plugin was made in the ARC Docking project, which is a
+  cooperation between several french research teams.</li>
+
+  <li><a href="http://www.geometrictools.com/">Geometric Tools web
+  site:</a> The 3D Delaunay triangulation code used in Intersurf is
+  part of Magic Software.</li>
+</ul>
+
+</td>
+<td>
+  <a href="intersurf.png"><img src="intersurf.png" alt="Image of FAS2, created by VMD" height="180" width="240"></a>
+
+  <br><small> Interface between two proteins colored by shape complementarity.
+  </small>
+</td>
+</tr>
+
+</tbody></table>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

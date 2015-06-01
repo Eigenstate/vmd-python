@@ -1,0 +1,48 @@
+/*! 
+
+\page pythonplugins Writing Python based plugins and extensions for VMD
+
+<h2>Python Modules</h2>
+VMD doesn't do anything particularly special in support of Python
+modules other than to provide hooks by which they can be 
+registered in the VMD "Extensions" menu, and subdirectories 
+in the VMD installation directory where the extensions can be installed.
+
+<p>
+Python modules which implement a Tk-based GUI are registered in the 
+VMD "Extensions" menu by calling
+<b>VMD.registerExtensionMenu("MyPluginTitle", startMyPlugin)</b>
+
+<h2>A minimal Python example plugin</h2>
+<p>
+The example below is an extremely minmalistic Python script that
+creates a window when triggered by an appropriate selection in the
+VMD "Extensions" menu.
+
+<pre>
+from Tkinter import *
+
+# A minimal plugin class that just creates an empty window
+class MyPlugin:
+  def __init__(self):
+    self.root = Tk()
+    self.root.title("My Plugin Window")
+
+# Function to start the plugin.  Must return the window handle.
+def startMyPlugin():
+  return MyPlugin().root
+
+if __name__=="__main__":
+  import VMD
+  # Register the plugin so that it's not actually created until the
+  # first request to open the window.
+  VMD.registerExtensionMenu("myplugin", startMyPlugin)
+
+  # Create the plugin now and add it to the Extensions menu.
+  # VMD.addExtensionMenu("myplugin", MyPlugin().root)
+</pre>
+
+<p>
+$Id: plg_python.dox,v 1.3 2008/03/31 19:40:26 johns Exp $
+
+*/

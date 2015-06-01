@@ -1,0 +1,63 @@
+%MultiSeq Manual 8/1/2005
+%Root document / outline of the entire manual
+ 
+\documentclass[letterpaper]{article}
+\usepackage{graphicx, wrapfig, floatflt, html}
+\begin{document}
+
+
+\pagestyle{headings}
+
+%\input{macros}
+%\input{title}
+
+
+\setcounter{tocdepth}{3}
+% \tableofcontents
+% \pagebreak
+
+%Introduction which gives an in-depth description of what MultiSeq does 
+%Perhaps we could take this out of Elijah's paper
+% Necessary components to run MultiSeq - VMD 1.8.3a? installation / BLAST on the hard drive
+\input{intro}
+%\clearpage
+
+% A review of the MultiSeq main window
+% Go over the shortcuts and so forth
+% We should create an in-depth image with indicators of what is what
+\input{mainWindow}
+
+% Loading Data into MultiSeq
+% bkd 8/2 - I believe this warrants having its own section since there are multiple ways of doing this. i.e., Import Data
+% Detail doing a BLAST search 
+\input{data}
+
+% Performing Alignments?
+% detail doing both types of alignments
+% maybe a para on organizing sequences into groups within sequence display?
+\input{workingEnviron}
+
+
+\input {editMenu}
+
+
+\input {searchMenu}
+
+\input{toolsMenu}
+
+
+\input {optionsMenu}
+
+% View Menu
+\input{viewMenu}
+
+\input {savingData} 
+
+\input{appendix}
+
+\end{document}
+
+
+
+
+

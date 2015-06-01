@@ -1,0 +1,42 @@
+<h2>General Parametrization Strategies for CHARMM and AMBER</h2>
+The parametrization schemes for CHARMM, AMBER and many other force
+fields are quite similar with regard to the bonded interactions while
+greater differences can be found in the derivation of charges. 
+
+Typically force fields are parametrized against a combination of
+experimental and quantumchemical target data, i.e. properties of a
+molecule that the force field should be able to reproduce. Examples
+are equilibrium geometries, vibrational frequencies or dipole moments.
+In comparison CHARMM relies somewhat more on experimental values
+while AMBER utilizes a reasonable amount of quantumchemically
+determined values.
+The equilibrium geometries for the compounds are typically obtained
+from X-ray crystal structures and for gas phase structures from
+microwave and electron diffraction data. Force constants can be
+determined using vibrational frequencies from infrared and Raman
+spectroscopy. Whenever it is needed supplemental data can be generated
+by quantum mechanical calculations. 
+<p>
+The treatment of charges differs significantly among
+force fields. In CHARMM they are based on Mulliken charges which are
+scaled in a way such that the interaction of polar groups with TIP3
+water reproduces the interaction energy computed <i>ab initio</i>.
+For AMBER a method called RESP (restricted electrostatic potential
+fitting) is used <a href="usersguide.html#CORN93"[2]: Atom centered point charges are
+fitted applying certain restrictions such as to reproduce the
+molecular electrostatic potential on a number of shells around the
+molecule. Once an initial set of parameters has been generated, the
+intra- and intermolecular parameters are alternatingly optimized with
+respect to quantum chemical and experimental data in a selfconsistent,
+iterative manner until convergence. 
+<p>
+The degree to which one follows these protocols and the amount of
+effort one invests into the development of parameters for a novel
+component depends on the purpose for what they should be used. In case
+an organic ligand just needs to fill a binding pocket in the right
+conformation an abbreviated protocol might be sufficient. However
+parameters valid for accurate binding free energy calculations will
+require much more tuning and testing. PARATOOL aids generating the
+basic set of parameters that the user might then test against his
+target data such as conformational stability in simulations or
+vibrational frequencies.

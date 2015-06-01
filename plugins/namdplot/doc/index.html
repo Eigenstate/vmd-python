@@ -1,0 +1,64 @@
+<!--#set var="TITLE" value="NAMD Plot Plugin, Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<table border="0">
+<tr>
+  <td rowspan="4">
+  <p>
+  The <a href="http://www.ks.uiuc.edu/Research/namd/">NAMD</a> Plot 
+  plugin provides an easy-to-use interface for plotting
+  energy, volume, and other statistics reported in NAMD log files during
+  a simulation.  The functionality is similar to that provided by the 
+  'namdplot' shell script included with NAMD, but uses other VMD plugins
+  to do the plotting so no extra software is required.
+
+  <p>
+  <b>Using NAMD Plot (Graphical)</b>
+  Open the plugin in the extensions menu, then select the NAMD log file
+  you would like to plot.  Select the data fields you want to plot on the
+  Y axies.  Once everything is selected, use the "Plot Selected Data" 
+  choice in the File menu to create a graph of the fields you've selected.
+  If you select data fields that don't exist in the NAMD log file you're
+  plotting, and error will be returned.
+
+  <p>
+  <b>Using NAMD Plot (text commands)</b>
+  The NAMD Plot plugin can also be accessed with text commands.
+  In order to use the NAMD Plot package from the command line or from
+  within scripts, you must first run 'package require namdplot'.
+  From there, you can use the 'namdplot' text command to perform various
+  types of plots, including some that aren't accessible in the graphical
+  interface.
+  <p><b>Text command examples</b>
+  <ul>
+  <li>namdplot <i>(returns the fields available in the selected log file)</i>
+  <li>namdplot apoa1.log
+  <li>namdplot TIMING apoa1.log
+  <li>namdplot MEMORY apoa1.log
+  <li>namdplot ELECT VDW apoa1.log
+  <li>namdplot zero ELECT VDW apoa1.log
+  <li>namdplot diff TOTAL apoa1.log
+  <li>namdplot TOTAL vs TEMP apoa1.log
+  </ul>
+
+  </td>
+
+  <td>   
+  <img src="namdplot.png" alt="Image of NAMD Plot" align=top>
+  <b>NAMD Plot Field Selection Window</b> 
+  </td>
+</tr>
+<tr>
+  <td>   
+  <img src="namdplotgraph.png" alt="NAMD BOND Plot" align=top>
+  <b>"BOND vs TS" results displayed using MultiPlot plugin</b> 
+  </td>
+</tr>
+<tr>
+</tr>
+<tr>
+</tr>
+</table>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

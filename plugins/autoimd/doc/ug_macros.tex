@@ -1,0 +1,22 @@
+\newcommand{\autoimdversion} {1.7}
+\newcommand{\autoimdauthors} {Jordi Cohen, Paul Grayson}
+
+\newcommand {\gui} {\bf}
+
+\newcommand{\nitem} [1] {\noindent \addtocounter{nitems}{1} \arabic{nitems}. #1 \newline}
+\newcommand{\descr} [1] {\noindent { #1 \newline} }
+
+\newcommand{\screenshot}[3]{
+  \begin{figure}[ht!]
+  \begin{center}
+    \html{
+      \htmlimage{scale=1.6}
+    }
+    \latex{
+      \includegraphics[scale=0.625]{#1}
+    }
+    \end{center}
+    \caption{#2}
+    \label{#3}
+  \end{figure}
+}

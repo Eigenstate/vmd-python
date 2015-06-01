@@ -1,0 +1,63 @@
+* Toplogy and parameter information for helium, neon
+* and a dummy atom
+*
+
+!Parent files that have to be read prior to streaming this file
+!top_all27_na.rtf or the protein or lipid top file
+!par_all27_na.prm or the protein or lipid par file
+!
+!Testcase
+!test_dum_nobel_gases.inp
+
+!The following atom types are unique atom types and
+!have been added to the protein rtf and parameter files.  In
+!future versions of charmm, if the ability to append MASSes is added
+!these atom types should be removed from the original topology and
+!the following lines uncommented.
+!MASS   190 HE     4.00260 ! helium
+!MASS   191 NE    20.17970 ! neon
+!MASS   192 DUM    0.00000 ! dummy atom
+
+read rtf card append
+* Topology information
+*
+31  1
+
+RESI HE1       0.00 ! helium
+GROUP
+ATOM HE01  HE  0.00
+PATCHING FIRST NONE LAST NONE
+
+RESI NE1       0.00 ! neon
+GROUP
+ATOM NE01  NE  0.00
+PATCHING FIRST NONE LAST NONE
+
+RESI DUM       0.00 ! DUMMY ATOM
+GROUP
+ATOM DUM DUM   0.00
+PATCHING FIRST NONE LAST NONE
+
+end
+
+read para card append
+* Parameter information
+*
+
+NONBONDED nbxmod  5 atom cdiel shift vatom vdistance vswitch -
+cutnb 14.0 ctofnb 12.0 ctonnb 10.0 eps 1.0 e14fac 1.0 wmin 1.5
+
+!The following atom types are unique atom types and
+!have been added to the protein rtf and parameter files.  In
+!future versions of charmm, if the ability to append MASSes is added
+!these atom types should be removed from the original topology and
+!the following lines uncommented.
+!DUM    0.000000  -0.000000     0.000000
+!HE     0.000000  -0.021270     1.480000
+!NE     0.000000  -0.085450     1.530000
+
+end
+
+return
+
+

@@ -1,0 +1,29 @@
+<!--#set var="TITLE" value="MDF Plugin, Version 0.5"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+Molecular data file (.mdf) reader
+Insight II, Discover, etc.  Structure and bond information. This plugin
+reads only the topology section, ignoring the optional symmertry and
+atomset sections.
+
+<p>
+Format specification can be found at:
+<a href="http://instinct.v24.uthscsa.edu/~hincklab/html/soft_packs/msi_docs/insight980/formats980/File_Formats_1998.html#484257">
+http://instinct.v24.uthscsa.edu/~hincklab/html/soft_packs/msi_docs/insight980/formats980/File_Formats_1998.html#484257
+</a>
+
+<h3>Notes:</h3>
+
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+writing this file type.</p>
+
+<p><b>TODO:</b>
+<br>
+The current code reads the file *four* times -- once on open, once
+to read the structure, and twice to read the bonds. Perhaps these could
+be consolidated, e.g. by counting the bonds and populating the hash
+tables during open or read_structure.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

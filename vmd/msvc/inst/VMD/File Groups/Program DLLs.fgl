@@ -1,0 +1,11 @@
+[TopDir]
+file0=S:\vmd\lib\tcl\lib_WIN32\tclreg11.dll
+file1=S:\vmd\lib\tcl\lib_WIN32\tcldde12.dll
+file2=S:\vmd\lib\tcl\lib_WIN32\tclpip84.dll
+file3=S:\vmd\lib\tcl\lib_WIN32\tcl84.dll
+file4=S:\vmd\lib\tk\lib_WIN32\tk84.dll
+
+[General]
+Type=FILELIST
+Version=1.00.000
+

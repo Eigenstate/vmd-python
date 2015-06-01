@@ -1,0 +1,27 @@
+<!--#set var="TITLE" value="VMD psfgen Plugin, Version 1.6"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+The 'psfgen' plugin is a structure building tool consisting of a 
+library of portable structure and file manipulation routines that
+implement Tcl interface, callable from within VMD.
+
+<h3>File Formats</h3>
+The 'psfgen' plugin reads standard PDB files, Charmm topology files, 
+and PSF files in X-PLOR/NAMD format.  Psfgen will accept PSF files using 
+the Charmm CMAP cross-term map force field extension.  
+Psfgen does not currently support Charmm PSF files using the
+Charmm 'EXT' expanded format, but will updated soon.
+
+<p>
+<ul>
+<li><a href="/Training/Tutorials/namd/namd-tutorial-html/node5.html">Generating a Protein Structure File (PSF)</a> - A quick introduction to using psfgen is available as part of the <a href="/Training/Tutorials/namd/namd-tutorial-html/">NAMD tutorial</a>.
+<li><a href="/Research/namd/tutorial/NCSA2002/hands-on/">"Building Gramacidin A"</a> - A NAMD structure building tutorial
+<li><a href=ug.pdf>psfgen User's Guide</a> (PDF)
+</ul>
+
+<p>
+<img src="psfgenflowchart.png" alt="Flowchart indicating the role of files as used by VMD, NAMD, and psfgen">
+<br><b>Flowchart indicating the role of files as used by VMD, NAMD, and psfgen</b>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

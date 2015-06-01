@@ -1,0 +1,92 @@
+		chemical2vmd -- version 1.1
+
+	This program lets you use the Babel interface of VMD to load
+various molecular coordinate files via a web client.  It is also used
+to start VMD with a downloaded VMD script.  Since the script contains
+executable content, you will be asked to verify that you want to run
+the script.
+
+-----------
+WHAT TO DO (only for Unix machines with browsers that use the .mailcap file):
+
+0) Install VMD (http://www.ks.uiuc.edu/Research/vmd), Babel
+(ftp://joplin.biosci.arizona.edu/pub/Babel/), and perl (on SGIs, this
+came on the "gifts" package and should be at /usr/bin/perl).
+
+1) Untar (and perhaps uncompress/gunzip) the latest copy of
+chemical2vmd.tar, which is available via anonymous ftp to
+ftp.ks.uiuc.edu in /pub/mdscope/vmd/contrib.  This will untar to its
+own directory.
+
+2) Copy the perl script (chemical2vmd) to wherever you want it (eg.,
+/usr/local/bin).  Check that the first line of the script has the full
+name of the correct version of perl.
+
+3) add the following group of ten lines to the .mailcap (either
+$HOME/.mailcap or the local mailcap, eg, in /usr/local/etc or
+/usr/local/lib/netscape):
+
+# This makes VMD read the file as script input
+chemical/x-vmd; /usr/local/bin/chemical2vmd vmd %s
+# This starts VMD to view various types of molecular coordinate files
+chemical/x-pdb; /usr/local/bin/chemical2vmd pdb %s
+# these require Babel to be installed
+chemical/x-xyz; /usr/local/bin/chemical2vmd xyz %s
+chemical/x-mol; /usr/local/bin/chemical2vmd alchemy %s
+chemical/x-mdl-molfile; /usr/local/bin/chemical2vmd mdlmol %s
+chemical/x-macromodel;  /usr/local/bin/chemical2vmd macromodel %s
+chemical/x-gaussian-input; /usr/local/bin/chemical2vmd z-matrix %s
+
+
+(you may want to change the '/usr/local/bin/' to reflect your setup.)
+
+If you want to add more types, you'll need to find the MIME type (the
+part like "chemical/*") and the name VMD uses for it.  These names are
+in the chemical2vmd perl script.  I would add them here, but I either
+don't know the MIME type or the mapping to the name VMD uses for Babel.
+
+  For some test sites:
+
+Many molecule types are available from the "Chemical Object Test" page at:
+  http://www-dsed.llnl.gov/documents/tests/chem.html
+
+http://www.chemie.fu-berlin.de/chemistry/bio/amino-acids.html 
+  has Alchemy Mol files
+
+http://chem.leeds.ac.uk/Project/MIME.html
+  has a PDB and an XYZ file
+
+-----------
+THE DETAILS
+
+	When your web browser receives a document from a remote site,
+it also receives some header information which describes the type of
+the document.  This is known as the "MIME type".  Based on this type
+data, the correct program is launched to view it.
+
+	Molecular information is sent via the "chemical" MIME type.
+Many browsers can be reconfigured to recognize these types and launch
+a molecular visualization program.  On Unix machines, and for Mosaic
+or Netscape, this association is made in the .mailcap file.  (For more
+information on this, see
+http://chem.leeds.ac.uk/Project/MIME.html.)
+
+
+	VMD should not be started directly from the .mailcap since 
+  1) the command line options do not load non-PDB coordinate files, and
+  2) VMD creates its own text console in the background, and returns
+control to the browser, which then deletes the data file.  However,
+VMD hasn't had the time to read the file yet, so nothing appears.
+
+Instead, the .mailcap should specify the program, "chemical2vmd".
+This starts VMD with the right commands to load the file (via a
+temporary file containing VMD text commands), and waits a while before
+exiting, to give VMD a chance to read the data.
+
+
+
+Enjoy!
+
+						Andrew Dalke
+						dalke@ks.uiuc.edu
+						May 14, 1996

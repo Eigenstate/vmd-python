@@ -1,0 +1,50 @@
+
+package require pmepot_core
+
+set mol [mol new alanin.psf type psf waitfor all]
+
+puts {set pmepot_create}
+set pme [pmepot_create {8 8 8} 0.5]
+
+puts {pmepot_add}
+pmepot_add $pme {{0 0 0} {8 0 0} {0 8 0} {0 0 8}} {{0 0 2 10} {0 0 -2 -10}}
+
+puts {graphics}
+graphics $mol color 0
+graphics $mol sphere {0 0 2} radius 0.2
+graphics $mol color 1
+graphics $mol sphere {0 0 -2} radius 0.2
+
+puts {pmepot_writedx}
+file delete /tmp/pme.dx
+pmepot_writedx $pme /tmp/pme.dx
+
+puts {pmepot_destroy}
+pmepot_destroy $pme
+
+puts {addfile /tmp/pme.dx}
+mol addfile /tmp/pme.dx type dx waitfor all
+file delete /tmp/pme.dx
+mol delrep 0 top
+puts {mol representation}
+mol representation VolumeSlice 0.500000 0.000000 0.000000 1.000000
+mol color Volume 0
+mol selection {all}
+mol material Opaque
+mol addrep top
+mol selupdate 0 top 0
+mol colupdate 0 top 0
+mol scaleminmax top 0 -1000 1000
+mol smoothrep top 0 0
+mol drawframes top 0 {now}
+mol representation Isosurface 0.000000 0.000000 0.000000 0.000000 1
+mol color Volume 0
+mol selection {all}
+mol material Opaque
+mol addrep top
+mol selupdate 1 top 0
+mol colupdate 1 top 0
+mol scaleminmax top 1 -1000 1000
+mol smoothrep top 1 0
+mol drawframes top 1 {now}
+

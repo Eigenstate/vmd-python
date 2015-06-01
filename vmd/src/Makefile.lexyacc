@@ -1,0 +1,23 @@
+
+LEX 	    = flex
+YACC	    = yacc
+YFLAGS      = -d
+#YACC	    = bison
+#YFLAGS      = -b y -d
+
+SRCS = AtomParser.C AtomLexer.C y.tab.h
+
+all : $(SRCS)
+
+AtomParser.C : AtomParser.y
+	$(YACC) $(YFLAGS) AtomParser.y
+	mv y.tab.c AtomParser.C
+
+AtomLexer.C : AtomLexer.l
+	$(LEX) AtomLexer.l
+	mv lex.yy.c AtomLexer.C
+
+clean : 
+	rm -f $(SRCS)
+
+

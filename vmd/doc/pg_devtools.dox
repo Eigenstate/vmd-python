@@ -1,0 +1,57 @@
+/*! \page devtools VMD Development Tools
+
+<p>
+VMD, a highly complex program, incorporates various graphics, interface, and 
+scripting software components.  Supporting VMD on multiple platforms
+and assuring the quality of the software, requires the use a variety of 
+software tools and equipment in development and testing.  
+This page lists the tools we use in-house to develop and test VMD.
+
+<p>
+<h2>Locally maintained graphics test systems</h2>
+A range of locally maintained systems are used in the day-to-day 
+VMD development and testing process.  This list encompasses the hardware
+configurations we routinely use with VMD to ensure quality and portability.
+
+<p>
+<ul>
+<li><a href="http://www.apple.com/">Apple</a> G4, Dual 1Ghz PowerPC, with ATI Radeon 9700 graphics, running MacOS 10.4.9
+<li><a href="http://www.demensional.com">Eye3D</a> stereo LCD shutter glasses
+<li>Sun Ultra 24, 
+    with 
+    <a href="http://www.nvidia.com/">NVIDIA</a> GeForce 7900 graphics, running Windows XP
+<li><a href="http://www.stereographics.com/">Stereographics</a> CrystalEyes stereo LCD shutter glasses
+<li><a href="http://www.sun.com/">Sun</a> V880z dual <a href="http://www.sun.com/desktop/products/graphics/xvr4000/details.html">XVR-4000 graphics</a>, running Solaris 10
+<li><a href="http://www.sun.com/">Sun</a> Ultra 24 with <a href="http://www.nvidia.com/>NVidia</a> GeForce GTX 280 graphics, running Redhat Enterprise Linux 4 update 6
+</ul>
+
+<p>
+<h2>Donated graphics equipment used for development and testing</h2>
+Vendors have occasionally provided the VMD development team 
+equipment equipment donations to aid us in our efforts to add support 
+for unique hardware features and for performance tuning.
+<p>
+<ul>
+<li><a href="http://www.amd.com/">AMD/ATI</a> Radeon HD 4870, for GLSL testing
+<li><a href="http://www.3dlabs.com/">3DLabs</a> Wildcat Realizm, for GLSL testing
+<li><a href="http://www.3dlabs.com/">3DLabs</a> Wildcat 4 7110, for Linux testing
+<li><a href="http://www.apple.com/">Apple G5 /w NVIDIA Quadro FX 4500 Stereo</a>
+<li><a href="http://www.apple.com/">Apple DTK Intel-based Development System</a>
+<li><a href="http://www.dti3d.com/">DTI</a> 18.1" stereoscopic flat panel display
+<li><a href="http://www.hp.com/">HP</a> J6000, SV6 graphics rack
+<li><a href="http://www.nvidia.com/">NVIDIA</a> GeForce 8800GTX cards
+<li><a href="http://www.nvidia.com/">NVIDIA</a> GeForce 9800GT cards
+<li><a href="http://www.nvidia.com/">NVIDIA</a> Tesla D870
+<li><a href="http://www.nvidia.com/">NVIDIA</a> Tesla C1060 cards
+<li><a href="http://www.nvidia.com/">NVIDIA</a> Quadro FX 5800 card
+<li><a href="http://www.nvidia.com/">NVIDIA</a> Personal Supercomputer
+<li><a href="http://www.sun.com/">Sun</a> Ultra 80, Expert3D graphics
+<li><a href="http://www.sun.com/">Sun</a> Blade 1000, XVR-1000 graphics
+<li><a href="http://www.sun.com/">Sun</a> V880z, XVR-4000 graphics
+</ul>
+
+<p>
+$Id: pg_devtools.dox,v 1.7 2009/08/06 15:56:43 johns Exp $
+
+*/
+

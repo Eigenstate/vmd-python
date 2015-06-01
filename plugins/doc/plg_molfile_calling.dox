@@ -1,0 +1,48 @@
+/*! 
+
+\page callmolfileplugins Calling C/C++ based molecule file reader plugins from other programs
+
+Although the molfile plugins were primarily developed for use within VMD,
+they can also be used by other scientific software written
+in C, C++, and Fortran, and potentially from scripting languages.
+
+<h3>C Bindings</h3>
+The native interface for all of the VMD molfile plugins is implemented
+in C.  Plugins written in C++ also expose their interface routines
+as C-callable functions so this is transparent to the caller.
+At present, the best example code illustrating how to use molfile plugins
+in a standalone program is CatDCD.  CatDCD is compiled and linked against
+the static library version of the plugins, and is built as a standalone 
+program.  Static linkage (ala CatDCD) is by far the easiest method of
+using VMD plugins in other programs.  The C interface to the static library
+requires inclusion of the libmolfile_plugin.h header file which is
+automatically generated when the plugin tree is compiled, and the 
+molfile_plugin.h header file found in the top level include directory
+of the plugin library.  The libmolfile_plugin.h file includes 
+extern declarations for every plugin entry poing provided in the
+compiled libmolfileplugin.a (libmolfileplugin.lib on WIN32/WIN64) 
+static link library.  These declarations encompass the 
+'init', 'register', and 'fini' routines for each of the plugins 
+in the static link library.  The libmolfile_plugin.h header and
+libmolfileplugin.a (or .lib) static library are found in the 
+compile/[lib_architecture]/molfile directory after successfull
+compilation.  Dynamic plugins are structured similarly, except
+that all of the dynamic plugins provide their 'init', 'register',
+and 'fini' routines with the prefix "vmdplugin_" rather than with
+the unique name of the plugin.  This allows these entry points to 
+be opened and queried dynamically using functions such as
+dlopen(), dlsym(), and dlclose() on Unix, or by using
+LoadLibrary(), GetProcAddress(), and FreeLibrary() on Windows.
+
+
+<h3>Fortran Bindings</h3>
+Axel Kohlmeyer has contributed Fortran bindings for the molfile 
+plugins which are found in the "f77" subdirectory of the molfile_plugins
+source directory.  Examine the README file in the "f77" directory for
+complete instructions on compiling and using the Fortran bindings for
+the molfile plugins in your own programs.
+
+<p>
+$Id: plg_molfile_calling.dox,v 1.2 2008/03/31 19:40:26 johns Exp $
+
+*/

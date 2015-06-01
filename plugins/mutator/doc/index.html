@@ -1,0 +1,93 @@
+<!--#set var="TITLE" value="Mutator Plugin, Version 1.3"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<div style="clear: right; float: left; width: 99%; margin: 0.5em 0;">
+<div style="float: right; margin: 0 1em;">
+<img src="mutator.png" alt="Image of Mutator">
+<div>
+<b>Mutator Window</b>
+</div>
+</div>
+
+<p>
+This plugin provides a very simple method for mutating a target
+residue selected by its segment name and id, and the three character
+residue code for the mutant amino acid. It can also build,  for the
+specific purpose of free energy calculations, a hybrid structure where
+both the initial and mutated side chains are present.
+<br>
+</p>
+
+
+<h3>Normal operation</h3>
+<p>
+The plugin takes in psf and pdb files containing your protein (if you
+are not familiar with psf files, check out the 
+<a href="http://www.ks.uiuc.edu/Research/vmd/plugins/autopsf/">autopsf plugin</a>
+or the 
+<a href="http://www.ks.uiuc.edu/Training/Tutorials/">namd tutorial</a>),
+the segment name and ID of the specific residue to be mutated (if you
+want to mutate residue 4 of segment DA in your protein, then Segment
+would be "DA" and ID would be "4"), and the final mutation (lets say
+you want to replace the amino acid at position 4 by tyrosine, then the
+three letter residue name for the mutation would be TYR). The mutated
+protein will be saved by default in files called "MUTATED.pdb" and
+"MUTATED.psf" on your working directory. If a segment is not
+specified, then the mutation will be performed on all protein segments
+of the system (note that mutator is able to handle systems that
+already include membrane, ions, and water).
+</p>
+
+
+<h4>Caveats</h4>
+<p>
+Mutator does not support DNA. Patches are supported provided they 
+are listed in the REMARKS section of the input psf file.
+Since coordinates for the mutated amino-acid are
+assigned based on internal coordinates provided in standard CHARMM
+topology files, it is strongly recommended to perform an energy
+minimization on the resulting structure.
+</p>
+
+<h3>Making a hybrid with the FEP option</h3>
+<p>
+The FEP option is used in the
+specific case where you wish to study the thermodynamic impact of the
+mutation through free energy calculations with NAMD. This can be done
+using the 
+<a href="http://www.ks.uiuc.edu/Research/namd/2.6b1/ug/node35.html">alchemical Free Energy Perturbation</a>
+(FEP) code. For alchemical FEP, you need a hybrid structure where both
+the original and the mutated amino acid side chains are present. When
+run with the FEP option, Mutator produces the files required for such
+a calculation. These include a fepFile and a PSF file modified to
+exclude all interactions between the original amino acid side chain
+and the mutated one.
+</p>
+
+<h4>Caveats for the FEP option</h4>
+<ul>
+  <li>Because of atom name changes, patches that modify the side
+      chains cannot be used with the provided hybrid topologies. Standard
+      patches for the termini should work fine, although it is always
+      advisable to carefully inspect the resulting structure.
+  </li>
+  <li>In the particular case of glycine, the alpha carbon atom has to
+      be modified in the transformation. For that reason, most patches will
+      probably cause problems. Also, mutating a glycine will cause some
+      angle and dihedral parameters to be duplicated, possibly modifying
+      backbone conformational preferences. In short, do not mutate a residue
+      from or to glycine unless you know what you are doing.
+  </li>
+  <li>Since proline has a special structure (and is actually not an 
+      amino acid), hybrids involving proline are not supported.<br>
+  </li>
+  <li>If the PSF produced by Mutator/FEP is further processed (by
+      psfgen, solvate, ionize, etc.), the non bonded exclusion lists are
+      likely to be lost. The resulting PSF should then be <a
+      href="http://www.edam.uhp-nancy.fr/Alchemify/">alchemified</a> again
+      to add these lists back.
+  </li>
+</ul>
+</div>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

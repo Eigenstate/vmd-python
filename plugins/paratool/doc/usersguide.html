@@ -1,0 +1,704 @@
+<h1>Paratool User's Guide</h1>
+
+<h2>Introduction</h2>
+Paratool provides a graphical interface for force field parametrizations of
+molecules that are not contained in your force field. It is designed
+to generate CHARMM compliant parameters, while it is also possible to
+adhere to the AMBER protocol. Note that the recommended tool for AMBER
+parameters is 
+<a href="http://amber.scripps.edu/antechamber/antechamber.html">Antechamber</a>,
+a collection of commandline programs that can (among other things)
+find missing AMBER force field parameters .
+<p>
+The plugin helps you to generate the molecule or the moleular fragment
+that should be parametrized and to set up the necessary
+quantumchemical calculations (you'll need Gaussian, later versions
+will also support GAMESS). 
+Paratool reads the logfiles of the QM simulations, computes force
+field parameters for bonds, angles dihedrals and impropers by
+transforming the Hessian into internal coordinates and converting all
+values into units based on kcal/mol, &Aring; and degrees. You can
+assign atom types and the corresponding VDW parameters from a list of
+already existing types or generates new types (all chemical elements
+H - Rn supported). The charges can be determined using restricted
+electrostatic potential fitting RESP (AMBER style) or CHARMM style
+charges using their supramolecular approach which requires another
+Gaussian calculation.
+<p>
+Paratool generates input for all necessary external programs collects
+and compiles all the necessary data, organizes and displays them
+neatly in lists and projects them onto your molecule in VMD. Finally 
+it will write the topology and parameter files you'll need to build
+the molecule using psfgen and run your simulation in your favourite
+simulation package, e.g. NAMD.
+
+<h3>Outline of the Parametrization Scheme</h3>
+In the following it will be assumed that you are familiar with
+the parametrization scheme of your favourite force field. It is highly
+recommended that you read the original publications <a
+href="#BESL98">[1-4]</a>. You can refresh your memory about the <a
+href="general_scheme.html">differences in the general parametrization
+scheme in CHARMM and AMBER here</a>. Another worthwile reading is <a
+href="#MACK2004">[5]</a> and the <a
+href="http://www.pharmacy.umaryland.edu/faculty/amackere/force_fields.htm"> 
+tutorials found here</a> and 
+<a href="http://www.pharmacy.umaryland.edu/faculty/amackere/param/force_field_dev.htm">
+here</a>. <b>An absolute must-read is <a
+href="http://www.psc.edu/general/software/packages/charmm/tutorial/mackerell/PARAM_00.pdf">
+Alex Mackerell's parameter development tutorial</a>!</b> 
+<p>
+Parametrizing a novel component requires the following steps
+which will be explained in detail further below: First a molecular
+model compound containing unparametrized parts has to be defined. Then
+the atom type and its according VDW parameters have to be chosen for
+each atom from a list of existing atom types of the selected force
+field. Further, all transferable parameters from the existing force
+field have to be assigned to the model. If missing parameters remain
+then these will be determined <i>de novo</i>. In that case the model
+compound is the starting point for a quantumchemical geometry
+optimization. A QM frequency calculation based on the optimized
+geometry yields the Hessian matrix which can be transformed into the
+set of internal coordinates describing the bonded interactions. The
+diagonal elements of this internal Hessian denote the force constants
+related to these coordinates. The basis for the charges is obtained
+from a QM single point calculation from which Mulliken charges,
+natural population analysis (NPA) charges <a href="#REED85">[7]</a>
+and an electrostatic potential (ESP) charge fit <a
+href="#BESL98">[1,8]</a> can be extracted. These raw data can
+subsequently be used to compute the CHARMM type charges according to
+the supramolecular approach or to setup a restricted electrostatic
+potential fit (RESP). Subsequently, the parameters should be refined
+in order to account for the implicit double accounting of
+electrostatics in 1-4 interactions. Finally the new parameters must be
+tested in a molecular dynamics simulation. 
+
+<h3>Limitations</h3>
+Force fields that are desiged for a wide range of purposes covering
+many different molecular entities like CHARMM and AMBER must be
+parametrized in a very thorough manner and with great care following a
+coherent protocol. For the parametrization of additional compounds one
+might deviate from these protocols but one should always keep in mind
+that the quality of the results can depend on the consistency with
+the other force field parameters. Thus a few important aspects of the
+parametrization strategy of CHARMM and AMBER will be metioned. For a
+complete discussion we refer the reader to the original publications
+<a href="#BESL98">[1-4]</a>.
+<p>
+The current version of Paratool only considers quantum chemical target
+data such as equilibrium geometry, vibrational frequencies,
+electrostatic field and dipole moment. Nevertheless, you can manually
+replace the quantum chemical equilibrium geometries and force
+constants for bonds, angles, dihedrals and impropers by experimental
+values.
+<p>
+Paratool does not yet implement the aforementioned automatic
+selfconsistent iterative fitting against these data but you can of
+course manually loop through several cycles of refinement and
+hand-tune the data any time. Though in many cases the first iteration will
+already yield satisfactory results.
+
+<h2>How to parametrize a new molecule in PARATOOL</h2>
+The very first thing you should do is visiting <a
+href="http://www.pharmacy.umaryland.edu/faculty/amackere/force_fields.htm">
+Alex Mackerell's website</a> and getting the latest CHARMM force
+field. Inspect the topology files and see if your molecule has been
+parametrized already. Paratool offers default top/par files
+<code>top_all27_prot_lipid_na.inp</code> and
+<code>par_all27_prot_lipid_na.inp</code> containing amino acids,
+nucleic acids, lipids and a few other common compounds. But there's
+more to find in the CHARMM files. Especially take a look at the file
+for the model compounds <code>top_all22_model.inp</code>.
+
+<h3>Defining a model compound</h3>
+While you're inspecting the molecules of the existing force field
+you'll most likely notice that some moieties of your molecule are the
+same as in one of the already parametrized molecules. We'll make use
+of that fact. The CHARMM and AMBER force fields are both designed for
+an additive approach. They consist of molecular building blocks, so
+called model compounds which can be combined into form bigger
+units. I.e. the parameters are meant to be transferable to similar 
+molecules. For instance take a look at aspartate:
+<pre>
+RESI ASP         -1.00
+GROUP
+ATOM N    NH1    -0.47  !     |
+ATOM HN   H       0.31  !  HN-N
+ATOM CA   CT1     0.07  !     |   HB1   OD1
+ATOM HA   HB      0.09  !     |   |    //
+GROUP                   !  HA-CA--CB--CG
+ATOM CB   CT2    -0.28  !     |   |    \
+ATOM HB1  HA      0.09  !     |   HB2   OD2(-)
+ATOM HB2  HA      0.09  !   O=C
+ATOM CG   CC      0.62  !     |
+ATOM OD1  OC     -0.76
+ATOM OD2  OC     -0.76
+GROUP
+ATOM C    C       0.51
+ATOM O    O      -0.51
+</pre>
+It is stitched together from two smaller model compounds acetate and glycine (found in
+<code>top_all22_model.inp</code> and <code>top_all27_prot_lipid.inp</code>) where H2 and HA2 are removed and C1 and CA are connected by a bond (C1 then become CB in the new compound etc.)
+The charges of the two removed hydrogens were simply added to their mother atoms. 
+<pre>
+RESI ACET       -1.00 ! acetate, K. Kuczera
+GROUP
+ATOM  C1  CT3   -0.37 !
+ATOM  C2  CC     0.62 !     H1    O1 (-)
+ATOM  H1  HA     0.09 !     |    /
+ATOM  H2  HA     0.09 ! H2--C1--C2
+ATOM  H3  HA     0.09 !     |    \\
+ATOM  O1  OC    -0.76 !     H3    O2
+ATOM  O2  OC    -0.76 !
+</pre>
+<pre>
+RESI GLY          0.00
+GROUP   
+ATOM N    NH1    -0.47  !     |
+ATOM HN   H       0.31  !     N-H
+ATOM CA   CT2    -0.02  !     |  
+ATOM HA1  HB      0.09  !     |  
+ATOM HA2  HB      0.09  ! HA1-CA-HA2
+GROUP                   !     |  
+ATOM C    C       0.51  !     |  
+ATOM O    O      -0.51  !     C=O
+                        !     |
+</pre>
+But where do the parameters for the peptide bonds that are formed when 
+the multiple residues are joined in a polypeptide come from? 
+They were obtained from the model compound N-methylacetamide. For CR 
+the peptide bond would be in N-terminal position for CL it would be C-terminal.
+<pre>
+RESI NMA         0.00 ! N-methylacetamide, Louis Kuchnir
+GROUP
+ATOM CL   CT3   -0.27           !      HR2          
+ATOM HL1  HA     0.09           !       |       
+ATOM HL2  HA     0.09           !  HR1--CR--HR3 
+ATOM HL3  HA     0.09           !	|   
+ATOM C    C      0.51           !	|   
+ATOM O    O     -0.51           !       N-H
+ATOM N    NH1   -0.47           !       |      
+ATOM H    H      0.31           !     O=C   	   
+ATOM CR   CT3   -0.11           !       |		   
+ATOM HR1  HA     0.09           !       |		   
+ATOM HR2  HA     0.09           !  HL1--CL--HL3
+ATOM HR3  HA     0.09           !       |
+                                !      HL2
+</pre>
+If one combines two NMA molecules the in the same manner we merged GLY 
+and ACET we obtain a model compound with two peptice bonds. Clipping out the middle amino acid at the 
+peptide bonds yields GLY as seen above.
+
+Try to split your molecule into fragments that are parametrized
+already! This saves a lot of time, you might end up with a much
+smaller and simpler molecule to parametrize which you then combine
+with the other pieces. This is also makes your parameters more
+CHARMM compliant. Unfortunately Paratool does not yet support
+automatic combining of model compounds so you'll have to do that last
+step manually.
+
+One thing has to be kept in mind when selecting the model
+compounds. When they are combined then parameters spanning the linkage
+like the link bond and the involved angles have to be present,
+too. However in most cases these links are something simple like a
+bond between two unpolar sp3 hybridized carbons for which numerous
+templates exist.
+
+<h3>Preparing a model compound (base molecule)</h3>
+<a href="paratool_main.png"><img src="paratool_main_small.png" align="right"></a>
+To begin a new Paratool project you can simply start Paratool from the
+Tkcon command line or from the Extensions Menu in VMD's Main window.
+In the GUI that pops up (see fig. 1), you'll see entries for IDs and file names for
+4 different molecules. The ID is the same as in the VMD Main window.
+The molecular model compound to which all further work will be related
+and into which all data will be displayed is the "base molecule". You
+can load it using the File menu. In the file open dialog you can
+choose between different file types. PDB is the default. XBGF is an
+internal file format derived from "biograf". It is similar to the PDB
+format, but is able to store additional info such as atom types, VDW
+parameters and partial charges. 
+<p>
+Throughout the parametrization process a quantum mechanically (QM) optimized
+structure of the base molecule and a QM single point calculation will
+be generated. They'll populate the last two entries.
+<p>
+The parent molecule is the molecule embedding the base molecule,
+e.g. the protein containing a nonstandard aminoacid or an organic
+substrate. The parent molecule is actually only needed if there are 
+covalent bonds or coordination complex bonds (e.g. metal complexes
+or iron-sulfur clusters) exist between the unparametrized part and
+the rest of the molecule. In this case the size of the environment
+which is added to the base molecule can be controlled interactively
+using the entry labelled with "Selection of atoms from parent
+molecule:" in the Paratool Main window. The parent molecule is set
+automatically if you start Paratool using <a
+href="http://www.ks.uiuc.edu/Research/vmd/plugins/autopsf/">
+AutoPSF</a>.
+<p>
+While it is probably a good idea to prepare the model compound
+beforehannd in your favourite molecule editor you can also edit your
+base molecule on the fly using VMD's built in editor   
+<a href="http://www.ks.uiuc.edu/Research/vmd/plugins/molefacture">
+Molefacture</a>. You can for example cap open valences where covalent
+bonds were chopped or delete atom groups that you want to parametrize
+separately. I'll repeat myself here: Generally you should try to split
+larger molecules into smaller fragments and parametrize these
+separately. You can save a lot of CPU time during the quantumchemical
+calculations and if the fragments are chosen properly you can generate
+transferable parameters for molecular building blocks. The CHARMM and
+AMBER force fields are both designed for this additive approach. These
+model compounds can finally be combined to real molecules again.
+<p>
+Note that whenever you change the selection of the base molecule or
+you modify it using Molefacture the previous base molecule will be
+deleted and a new one generated and loaded. Thus the molecule ID will
+not stay the same.
+
+<h3>Editing atom properties</h3>
+<a href="paratool_atomedit.png"><img src="paratool_atomedit_small.png" align="right"></a>
+Now that your model compound has been determined, you can already set
+many atom based properties. Use "Edit->Atom properties" to open the
+appropriate interface. You'll see a list of properties for each atom
+from which you can select single or multiple atoms to edit them using
+the entry fields at the bottom of the window. There are three ways of
+selecting atoms. 1) You can directly click on atoms in the OpenGL
+window, the atom becomes marked with an orange sphere and seleccted in
+the listbox. Holding the shift key while picking adds the atom to the
+selection rather that replacing it. 2) You can select atoms from the
+list using the mouse or the arrow keys. Dragging or shift selects
+contiguous groups from the list, holding the control key allows to
+select arbitrary atoms. 3) You can use VMD's atom selection language.
+<p>
+The first property you want to set is the residue name (Rname). Select
+all atoms and type a name in the adequate field, confirming with
+"Submit". Make sure that the residue name is unique among the topology
+files you are planning to use. 
+The residue number (Resid) and the segment ID (Segid) are only
+relevant for transition metal complexes and iron-sulfur clusters but
+they must be identical for all atoms of a model compound. 
+If you are unhappy with the default atom names from you can change
+them but each name must be unique in a residue. Also note that atom
+names and the aforementioned strings should be in capital letters.
+ 
+<h4>Assign atom types and VDW parameters</h4>
+<a href="paratool_choosetype.png"><img src="paratool_choosetype_small.png" align="right"></a>
+Next you have to choose the atom types. They describe a combination of
+periodic element and chemical environment. Thus equivalent atoms such
+as hydrogens in methyl groups of carboxylate oxygen have the same
+type. In simulations the parameters for all bonded and VDW
+interactions are looked up by the atom types.
+The user can choose types and VDW parameters from a list of atom types
+of the same chemical element existing in the current force field,
+i.e. that occur in the loaded parameter files. You'll get there
+pressing the "Choose type" button in the "Edit atom properties"
+window. It is up to you to decide which given atom type matches the
+chemical properties of the selected atom best. If you want these VDW
+params but need a different type, you can simply rename it. For
+elements that are not contained in the force field there are at the
+bottom of the list atom types from the Universal Force Field (UFF)
+<a href="#RAPP92">[6]<a/>. This asserts that there are VDW params for
+each chemical element from H-Rn. These will also be chosen when you
+autoassign VDW parameters from the "Edit" menu. 
+
+Here's a simple guideline for the assignments:
+Try to find an equivalent existing type of the same chemical element,
+Paratool lets you pick that from a list. Many of the types for a certain
+element have the same VDW params, e.g. CD and CC.
+<pre>
+C      0.000000  -0.110000     2.000000 ! ALLOW   PEP POL ARO
+                ! NMA pure solvent, adm jr., 3/3/93
+CA     0.000000  -0.070000     1.992400 ! ALLOW   ARO
+                ! benzene (JES)
+CC     0.000000  -0.070000     2.000000 ! ALLOW   PEP POL ARO
+                ! adm jr. 3/3/92, acetic acid heat of solvation
+CD     0.000000  -0.070000     2.000000 ! ALLOW  POL
+                ! adm jr. 3/19/92, acetate a.i. and dH of solvation
+</pre>
+The reason why there are two types is that they are used in different
+contexts so that you can for instance distinguish dihedrals including CC
+or CD.
+
+Which type to use has to be decided using chemical insight. Just try to
+find the most similar atomtype by comparing structures where it appears.
+Factors influencing this similarity are for example hybridization state,
+polarization, same neighboring atoms.
+
+Always try to use an existing atom type, unless you end up with bonded
+parameters that are not equivalent enough. In the latter case you just
+change the type name, but keeping the VDW params. In case there is no type
+for the atom's chemical element you can use VDW parameters from the
+Universal Force Field (they are at the end of the list). You can of course
+change the predefined typename if you want.
+
+Assinging types implies the automatic assignment of bonded parameters for
+which all types are known and for which a matching entry could be found in
+the currently loaded parameter files.
+
+<h3>Assigning bonded parameters</h3>
+<h4>Choosing internal coordinates</h4>
+<a href="paratool_intcoor.png"><img src="paratool_intcoor_small.png"
+align="right"></a>
+Before bonded parameters can be assigned it has to be specified for
+which internal coordinates, i.e. bonds, angles, dihedrals and
+impropers bonded interactions must be determined. For each of these
+coordinates parameters for bonded interaction will either be taken from
+existing model compounds, or, in case no equivalent exists, be derived
+from the Hessian matrix (see below). "Edit->Intenal coordinates" opens
+a window containing a (initially empty) list of defined internal coordinates
+and a plethora of buttons. A good starting point is to autogenerate the
+internal coordinates. In this procedure all covalent bonds of a
+molecule (as displayed in VMD) are defined as bonds. Then all possible
+angles and dihedrals that can be constructed from the given bonds are
+generated. In many cases this is already sufficient but you can add
+and delete arbitrary coordinates. You can for example add impropers to
+stabilize planar geometries. More info about the choice of internal
+coordinates can be found <a href="intcoor_info.html">here</a>.
+Note: After you have generated internal coordinates you can already write
+valid topology files using the accordant button in the main window.
+<p>
+<h4>Finding equivalent parameters</h4>
+As it was mentioned above already paratool tries to find known
+parameters automatically based on the type names. Assume you
+assign the type known CT3 to an atom then the according VDW params are
+already set automatically. But if you then assign the also known type
+CT2 to a neighboring atom then the CT3-CT2 parameters can be determind
+and are assigned to that bond. Similar things happen with angles and
+dihedrals if you continue assigning known atom types. 
+By the way, in case the given <u>atom name</u> is found in the
+topology of the given resname then we assume that we are using this
+RESI as a template and the correct type, VDW params and even the
+charge are assigned.
+<p>
+We can make even more use of the existing force field through
+<i>parametrization by analogy</i>. In other words we are utilizing
+parameters of parts that have a similar chemical environment. You must
+decide what is chemically equivalent using your chemical
+insight. Among the properties you should compare are periodic
+elementss of the involved atoms, charges, bond orders and polarity of
+bonds. This technique has been applied a lot within the force field
+already. This is the reason why you find so many identical parameter
+entries. Here's an example:
+<pre>
+CT1  CC    200.000     1.5220 ! ALLOW   POL
+CT2  CC    200.000     1.5220 ! ALLOW   POL
+CT3  CC    200.000     1.5220 ! ALLOW   POL
+</pre>
+Only the type names of the involved atoms differ but the
+chemical nature of this bond is considered the same. The different type
+names were needed to distinguish other properties like angles or dihedrals.
+<p>
+
+
+<h3>QM geometry optimization</h3>
+<a href="paratool_qmopt.png"><img src="paratool_qmopt_small.png"
+align="right"></a>
+For the calculation of partial charges and the parameters for bonded
+interactions we need the QM optimized structure of the base molecule.
+In the current version Paratool supports the autogeneration of input
+files for <a href="http://www.gaussian.com">Gaussian</a> but later
+versions will also provide an interface to 
+<a href="http://www.msg.ameslab.gov/GAMESS/GAMESS.html">GAMESS</a>.
+(For this task Paratool uses 
+<a href="http://www.ks.uiuc.edu/Research/vmd/plugins/qmtool">QMtool</a> 
+which you can also use stand-alone to setup and analyze QM simulations.)
+<p>
+You can obtain the respective interface through the "File->Setup QM
+optimization". The meaning of the buttons can be found 
+<a href="qmsetup.html">here</a>.
+In most cases the default values provided by Paratool should be
+fine, but it is important that you check the total charge and the
+multiplicity since these are difficult or impossible to guess
+automatically. a good choice for the simulation method and the basis
+set are RHF/6-31G* and UB3LYP/6-31+G* for metal containing molecules. 
+<p>
+After the Gausian setup file has been written you have to run it yourself.
+When you load the resulting logfile, the last frame denoting the optimized structure
+will be appended to the base molecule which makes it possible to
+easily switch the view between the original and the optimized
+geometry. Additionally, a new molecule containing all optimization
+steps, will be loaded in VMD. It will not be shown automatically but
+you can enable it by hand in the VMD Main window.
+
+
+<h3> Hessian and atomic charges from QM single point calculation</h3>
+Based on the optimized geometry another QM calculation has to
+be performed. (In future versions these two steps might be
+merged). Choose "Hessian->Setup QM single point calc. (Hessian, charges)"
+to open the same form as for the QM optimization but now with
+different default values. Again, after writing the setup file you must
+run the simulation manually and subsequently load the logfile using
+the appropriate entry in the "File" menu.
+<p>
+...
+
+
+<h3>Assigning charges</h3>
+Suppose you want charmm style charges:
+First you must use copy base charges (e.g. Mulliken) into the charge
+field in the "Edit atom properties" window. These charges will be
+scaled such that the force field interaction with TIP3 water matches
+the QM interaction energy. 
+
+<h4>CHARMM style charges</h4>
+Unfortunately Paratool does not support CHARMM type charge development 
+yet but the following gives an idea what you have to do. For more info refer to 
+<a
+href="http://www.pharmacy.umaryland.edu/faculty/amackere/supplem/ParamOpt_MacKerell.pdf">
+Alex Mackerell's parameter optimization tutorial</a>
+
+In the CHARMM protocol the charges for the polar groups are chosen
+such that the interaction energy in
+the force field between the molecule in question and a TIP3 water
+molecule is the same as the interaction energy determined by quantum
+mechanical calculations (HF/6-31G*).
+The interaction energy is determined by subtracting the energy of a
+water molecule and the energy of the system from the energy of the
+supramolecular complex:
+<pre>
+  E(system+water)
+- E(system)
+- E(water)
+----------------
+= E(interaction)
+</pre>
+Before comparision the QM interaction energy should be scaled with the 
+empirical factor of 1.16. At the same time the force field based optimal 
+distance should be 0.2A shorter that the HF/6-31G* value.
+The hydration sites are all polar subgroups of the model compound.
+One typically sets the charges of the direct interaction partner and 
+its mother atom(s).
+Further all nonpolar hydrogens should obtain a charge of 0.09e.
+If your model compound is designed properly there will be carbons to use
+to "neutralize" the entire charge; this could be aliphatic or aromatic
+carbons that are not involved in significant hydrogen bonding.
+
+<!--
+Select the CHARMM charges dialog from the menu.
+First you must define charge groups that shall finally have a total charge
+of -1, 0 or 1. (You can set the desired group charge.) If you define
+the charge group as unpolar, the hydrogen charges will be set to 0.09
+and the rest is scaled accordingly. For all polar or charged groups
+you'll need to set up a QM geometry optimization of the supramolecular
+complex of your molecule with water. Paratool includes Gaussian
+optimized water 
+logfiles for most of the common basis sets which will be loaded
+automatically. Otherwise you must provide it yourself. The water
+molecule will be placed in front of the first atom of the group and
+rotated depending on the initial charges of the group. You can adjust
+distance and orientation using the buttons, spinbox and slider. The
+better your starting conformation the the faster will be the QM
+optimization. 
+<p>
+Now you can setup the simulation. It is generally save to use the
+default parameters provided by Paratool. After you ran the gaussian setup file.
+you can load the logfile and the energy balance will be
+completed. Finally hitting the Scale button to scale the charges accoudingly. 
+
+The initial charges are set automatically, by default from the
+Mulliken field, but you can also request initialization from other
+fields. If you choose "None" then the current charges (in the "Charge"
+field) will be used. This allows you to hand tailor your initial
+charges if you don't like the defaults. 
+The hydrogens of neutral groups and in beta position to the
+interacting atom can be set automatically to 0.09 as demanded by the
+charmm protocol and their mother atom charge is adjusted
+accordingly. You should set the total group charge to an integer
+value. You can also setup the necessary charmm simulations of
+the system+water complex. When you load the logfiles the Interaction
+energy will be displayed. 
+-->
+
+<h4>AMBER style charges (RESP)</h4>
+Charges for the AMBER force field are based on the restricted
+electrostatic potential fit (RESP) method. The charges are fitted in
+two stages against the molecular electrostatic potential (MEP) that
+was determined before in the QM single point calculation:
+1) Fit to the potential is carried out with weak restraints (weight=0.0005au) but
+   without forced symmetry on groups with equivalent nonpolar hygrogens e.g. methyl
+   groups. The target charge of the restraint is normally zero, in order to
+   counteract the tendency of ESP to produce very high charge values on buried
+   atoms. No restraints on hydrogens because they are all well solvent exposed.
+   Equivalent atoms other than these nonpolar hydrogens are
+   constrained to have the same charge.
+
+2) Refit of only those nonpolar hydrogen bearing groups
+   (e.g. methyl, methylene, methine) but now using forced symmetry and
+   strong restraints (weight=0.001au). Charges of all other atoms
+   (e.g. polar groups) are fixed in the second state.
+
+<h3>Parameter refinement</h3>
+Another problem for automatic parametrization procedures is the the
+double accounting of electrostatics, especially in 1-4
+interactions. It is explicitly modeled in the Coulomb term but
+it's is also implicitely included in the bonded terms since the
+internal Hessian is an equilibrium approximation of the totality of
+all interactions. In order to account for this problem
+Paratool offers a method to correct the bonded terms. The
+difficulty here is that the corresponding terms are often mutually
+dependent. Paratool computes an effective target potential
+of each internal coordinate for the refinement process. This means
+that not all parameters have to be fitted simultaneously which would
+not be practicable but only linear dependent subgroups.
+
+<h3>To be continued...</h3>
+
+<h2>References</h2>
+<a NAME="BESL98">[1] Besler, B. H., K. M. Merz, and P. A. Kollman. 1990. 
+<i>Atomic charges derived from semiempirical methods.</i> J. Comp. Chem. <b>11</b>:431-439.</a>
+<p>
+<a NAME="CORN93">[2] Cornell, W. D., P. Cieplak, C. I. Bayly, and P. A. Kollman. 1993. 
+<i>Application of RESP charges to calculate conformational energies, hydrogen bond energies, 
+and free energies of solvation.</i> J. Am. Chem. Soc. <b>115</b>:9620-9631.</a>
+<p>
+<a NAME="MACK98">[3] MacKerell Jr., A. D., D. Bashford, M. Bellott, R. L. Dunbrack Jr., J. Evanseck, M. J. Field,
+S. Fischer, J. Gao, H. Guo, S. Ha, D. Joseph, L. Kuchnir, K. Kuczera, F. T. K. Lau, C. Mattos,
+S. Michnick, T. Ngo, D. T. Nguyen, B. Prodhom, I. W. E. Reiher, B. Roux, M. Schlenkrich,
+J. Smith, R. Stote, J. Straub, M.Watanabe, J. Wiorkiewicz-Kuczera, D. Yin, and M. Karplus.
+1998. <i>All-hydrogen empirical potential for molecular modeling and dynamics studies of proteins
+using the CHARMM22 force field.</i> J. Phys. Chem. B <b>102</b>:3586-3616.</a>
+<p>
+<a NAME="MACK95">[4] MacKerell Jr., A. D., J. Wiorkiewicz-Kuczera and M. Karplus 1995
+<i>An All-Atom Empirical Energy Function for the Simulation of Nucleic Acids</i>
+J. Am. Chem, Soc. <b>117</b>:11946-11975</a>
+<p>
+<a NAME="MACK2004">[5] Mackerell Jr., A. D. 2004.
+<i>Empirical Force Fields for Biological Macromolecules: Overview and Issues</i>
+ J. Comp. Chem. <b>25</b>:1584--1604</a>
+<p>
+<a NAME="RAPP92">[6] Rapp&eacute;, A. K., C. J. Casewit, K. S. Colwell, W. A. Goddard III, and W. M. Skiff. 1992. <i>UFF,
+a full periodic table force field for molecular mechanics and molecular dynamics simulations.</i>
+J. Am. Chem. Soc. <b>114</b>:10024-10035.</a>
+<p>
+<a NAME="REED85">[7] Reed, A., R. B. Weinstock, and F. Weinhold. 1985. <i>Natural population analysis.</i> 
+J. Chem. Phys. <b>83</b>:735-746.</a>
+<p>
+<a NAME="SING84">[8] Singh, U. C. and P. A. Kollman. 1984. 
+<i>An approach to computing electrostatic charges for molecules.</i> J. Comp. Chem. <b>5</b>:129.</a>
+
+<!--
+<pre>
+OLD STUFF .... Has to go away soon.
+
+             PARATOOL
+             --------
+
+---Easy generation of force field parameters---
+
+
+For the determination of torsional force constants it is not necessary
+to specify all dihedral angles that can be derived from the bondlist,
+because many of them describe the torsion around the same bond just
+with a different phase. Therefore it is sufficient to pick one
+quadruple of atoms describing the torsion and divide the value of the
+force constant by the number of contributing dihedrals.
+
+ 
+  A       B       A       B        A       D 
+   \     /  	   \     /          \     /  
+    O---O  	    O---O            O---O--E
+   	    	         \                \  
+  	    	          C                F 
+           	                            
+ 1 dihedral	 2 dihedrals      3 dihedrals
+
+
+  A       C       A       C        A       D
+   \     /         \     /          \     /
+    O---O           O---O--D      B--O---O--E
+   /     \         /     \          /     \
+  B       D       B       E        C       F
+                        
+ 4 dihedrals     6 dihedrals      9 dihedrals
+
+In CHARMM and AMBER the potential energy of torsions is described by 
+V(phi)  = sum_n[k_phi*(1-cos(n*phi-delta))], n=1,2,3,...
+   k_phi = force constant
+   n = multiplicity
+   delta = phase angle
+while the local harmonic approximation is
+U(phi) = k/2*phi^2
+
+Let's choose the reference so that delta=0 and compare the cosine
+ansatz with the harmonic ansatz:
+
+V(phi)  = k_phi*(1-cos(n*phi-delta));	U(phi)  = k/2*phi^2
+V'(phi) = k_phi*sin(n*phi)*n;		U'(phi) = k*phi
+V"(phi) = k_phi*n^2*cos(n*phi);		U"(phi) = k
+V"(0)   = k_phi*n^2                     U"(0)   = k
+
+  V"(0) = U"(0)
+  k_phi = k/n^2
+
+We see that the harmonic force constant is the same as the one from
+the periodic decscription as long as we are close to the equilibrium.
+Thus barrier height is not at all well determined.
+In case we want to describe molecular entities that deviate far from
+their torsional equilibrium, we have to do a potential energy scan in
+order to sample certain values of the energy profile. Unfortunately
+Paratool does not yet have any functionality for this last task.
+
+
+Paratool functionality
+======================
+
+
+Setting up Gaussian simulations
+-------------------------------
+
+Paratool provides aid in setting up input files for Gaussian
+simulations. You can choose various simulation parameters such as
+method and basis set via option menus but the most important feature
+is the specification of the input coordinates and of internal
+coordinates for the determination of force constants. Gaussian accepts
+different forms of input coordinates: Cartesian coordinates or a
+Z-matrix of 3*n-6 nonredundant internal coordinates. For geometry
+optimizations a set of redundant internal coordinates is often
+desireable. It can be autogenerated by Gaussian independently (keyword
+Opt=Redundant) thus we can use cartesian coordinates as the
+most convenient input format. These autogenerated coordinate set can
+be modified or extended by other coordinates in a special section
+in the input file (keyword Opt/Freq=ModRedundant). Paratool uses this
+feature to let you specify your own set of redundant internal
+coordinates. To achieve this Paratool generates a Gaussian setup file
+that uses cartesian coordinates as input, deletes all autogenerated
+internal coordinates and adds all coordinates that are defined in
+Paratools list. If the number of coordinates is less than 3*n-6,
+you'll get a warning message.
+
+
+
+Determine CHARMM type charges
+-----------------------------
+
+In the CHARMM protocol the charges for the polar groups are obtained
+by scaling the Mulliken charges such that the interaction energy in
+the force field between the molecule in question and a TIP3 water
+molecule is the same as the interaction energy determined by quantum
+mechanical calculations.
+The interaction energy is determined by subtracting the energy of a
+water molecule and the energy of the system from the energy of the
+supermolecule.:
+
+  E(system+water)
+- E(system)
+- E(water)
+----------------
+= E(interaction)
+
+Paratool can aid in setting up the necessary Gaussian files and it
+determines the energy difference.
+
+This is what you have to do:
+1) Load the optimized structure of your system
+2) Open the 'CHARMM type charges' window and pick the atoms comprising
+   the polar charge group you want to study
+3) Load the structure of the optimized water molecule
+4) Adjust the position and orientation of the water.
+5) Merge the system with the water, a new molecule will be loaded.
+6) Setup a Gaussian optimization with the supermolecule
+7) Load the optimization results
+
+-- To be completed --
+
+
+</pre>
+-->

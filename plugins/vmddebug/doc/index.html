@@ -1,0 +1,60 @@
+<!--#set var="TITLE" value="VMD Debug Plugin, Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+
+<p>
+<h3>Overview:</h3>
+<p>
+This <b>vmddebug</b> plugin provides a frontend to debugging and 
+tracing facilities for VMD. To activate the plugin, you have to
+<i>require</i> it from the VMD console prompt. This will add a
+new command, <tt>debug</tt>, to the Tcl interpreter that acts as
+interface to all included debug and tracing funtionality.</p>
+<p>
+The general syntax is:</p>
+<pre>
+  debug subcommand argument [more arguments]
+</pre>
+<p>Currently only one subcommand, <tt>atomselect</tt>, is supported.
+
+<p>
+<h3>atomselect:</h3>
+<p>
+A debug tool to monitor allocation and usage of atom 
+selection function created through Tcl scripting. Its
+most important use is help finding "selection leaks",
+i.e. when selections are created, but not correspondingly
+deleted. This happens most commonly when atom selections
+are created inside a loop or not assigned to a variable
+for bookkeeping and later deletion.</p>
+<h4>Automatic deletion of atom selections</h4>
+<p>VMD employs a special Tcl construct to give atom selections
+only local scope, i.e. the atom selection is tied to a local
+variable and automatically deleted, when that variable goes
+out of scope. However, this construct does not help when
+atom selections are created on the top level (e.g. on the 
+VMD console) or when new selections are created inside a
+(nested) loop of a procedure where the storage required
+for all created atom selections becomes too large before
+it goes out of scope. The deleting atom selections explicitly
+is therefore strongly recommended and the <tt>debug atomselect</tt>
+tool will print a warning whenever an atomselection is 
+automatically deleted through the local variable tie.
+</p>
+
+<pre>
+Usage: debug atomselect &lt;flag&gt;
+
+Available flags:
+  on      : enable tracing of atom selections
+  off     : disable tracing of atom selections
+  verbose : verbosely report atomselect operations
+  silent  : don't report atomselect operations
+  stats   : print statistics (active/added/deleted)
+  help    : print this message
+</pre>
+
+
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

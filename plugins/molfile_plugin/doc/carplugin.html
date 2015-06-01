@@ -1,0 +1,31 @@
+<!--#set var="TITLE" value="CAR Plugin, Version 0.5"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads molecular coordinate data stored in Insight II/Discover
+Cartesian Coordinate format. More information about this file format can be
+found here:
+<a href="http://hincklab.uthscsa.edu/~ahinck/html/soft_packs/msi_docs/insight980/insight/a_FF-CLASSIC.fcs.html">http://hincklab.uthscsa.edu/~ahinck/html/soft_packs/msi_docs/insight980/insight/a_FF-CLASSIC.fcs.html</a>.
+<!--
+<a href="http://instinct.v24.uthscsa.edu/~hincklab/html/soft_packs/msi_docs/insight980/formats980/File_Formats_1998.html#781840">http://instinct.v24.uthscsa.edu/~hincklab/html/soft_packs/msi_docs/insight980/formats980/File_Formats_1998.html#781840</a>.
+-->
+
+<h3>Notes:</h3>
+
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+writing this file type.</p>
+
+<p><b>Multiple molecules</b>
+<br>CAR files can contain multiple molecule entries; only the first of these
+is read by the plugin. Multiple molecule support may be available in the
+future.
+
+<p><b>Periodic Boundary Condition (PBC) information</b>
+<br>This plugin currently ignores any two-dimensional PBC information that
+may be present. 3D PBC info, however, is loaded into VMD.
+
+<p><b>Helix records</b>
+<br>These records are also ignored by VMD.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

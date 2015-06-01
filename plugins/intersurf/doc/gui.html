@@ -1,0 +1,49 @@
+<!--#set var="TITLE" value="Intersurf Plugin: GUI"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<img src="main.png" align="right">
+
+<p>Intersurf options are all accessible in the main windows: 
+
+</p><h3>Extract an interface</h3>
+
+<p> Define groups of atoms by their molecule ids and a "VMD selection".
+Then just press "Extract interface surface". Using "all" as selection
+will give an interface between the two molecules (A and B), and using
+the same molecule id with differant selection ("resid &lt; 5" and
+"resid &gt; 4" for example) will give an interface inside the molecule.
+</p><h3>Changing rendering options</h3>
+
+<p> Graphic options affects the current interface choosed in "Change
+current rendering mode" and the next interfaces to be created. If
+"auto_update" is activated the modified settings directly affects the
+surface (expet for "distance threshold") else, the "Update rendering
+mode" button must be pushed. </p><ul>
+  <li> <b>snapA, middle and snapB</b> determines where to
+place the interface: glued to the first selection, in the middle of the
+two selections or glued to the second selection. </li><li> <b>smooth surface</b> is an option that makes the surface less sharpy
+  </li><li> <b>show delaunay</b> shows the relations between nearest atoms around the surface. 
+  </li><li> <b>Coloring method</b> set the function that will be used to add color to the surface (see <a href="coloring.html">Coloring</a> to change it)
+  </li><li> <b>Distance threshold</b>
+is the maximal distance between the groups of atoms. Notice that
+"auto_update" is not enabled for this option since the scroll will
+update for all intermediary values. </li><li> <b>Transparent surface</b> is usefull to see both side of the interface.
+</li></ul> 
+
+
+<!--
+<h3>Load / save options</h3>
+
+<p> Using save and load options is just what it is supposed to be.
+Notice that the interface cannot be loaded if the corresponding
+molecules aren't also loaded.
+-->
+
+<!-- End OF CONTENT AREA -->
+	  </p><p> <br>
+        </p></td> 
+       </tr>
+      </tbody></table>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

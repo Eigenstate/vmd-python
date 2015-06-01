@@ -1,0 +1,3 @@
+Simple editor module for multiseq.  This glues stuff together to export seq into a 
+text file, invoke editor, and re-import the data when the editor exits.
+

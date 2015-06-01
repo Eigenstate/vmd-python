@@ -1,0 +1,588 @@
+*  NUCLEIC ACID PARAMETER FILE CREATION RUN
+*  ADDITIONS TO PARDNA4 TO ACCOMMODATE MODIFIED BASES PRESENT
+*  IN tRNA-Phe AS PATCHES.
+*  From PARMDNA8:
+*  Fits to normal mode spectra of Diethylphosphate, Uracil (and
+*  Tetrahydrofuran and Adenine) have been used for some forceconstants./LN
+*  Magnesium (fudge?) and spermine included.
+*  Version 10: van der Waals parameters back to PARDNA4 
+*  DIHEDRAL PARAMETERS FOR W.OLSON SUGAR MODEL, with some variations.
+* Alterations for compatability with CHARMM22, adm jr. 2/7/91
+*
+
+!reference
+!Nilsson, L. and Karplus,M. Empirical Energy Functions for Energy
+!Minimizations and Dynamics of Nucleic Acids J. Comp.  Chem.
+!7:591-616, 1986
+
+BONDS
+!         E(bond)= k(r-r0)**2
+!   
+!              k           r0 
+!
+BR   CS     300.0000    1.880
+C    CB     386.0000    1.4190
+C    CS     386.0000    1.4440
+C2   CH     201.0000    1.5250
+C2   C2     315.0000    1.5250 ! THF
+C3   C2     201.0000    1.5250 ! DEP
+C3   CH     201.0000    1.5250
+CA   CB     386.0000    1.4040 ! Infer. from URA
+CB   CB     550.0000    1.3700 ! similar to CF=CF
+CF   CF     684.0000    1.3500 ! URA
+CF   C      386.0000    1.4440 ! URA
+CF   CA     386.0000    1.4330
+CH   CH     201.0000    1.5250
+CS   CF     386.0000    1.3430
+CS   C3     201.0000    1.5250
+H    NH3    472.0000    1.04   ! -"- AND DISTANCE FROM PARAM7
+H    H      0.0         1.6329931
+H    OH2    450.0       0.96
+H    NA     472.0000    1.0100 ! URA
+H    NS     472.0000    1.0100 ! INFERENCE 
+H2   N2     472.0000    1.0100 ! Infer.
+HO   OH     450.0000    0.9600 ! PARAM7 (IR stretch 3400 cm-1)
+HO   OS     450.0000    0.9600
+HO   OSS    450.0000    0.9600
+HO   OST    450.0000    0.9600
+HT   HT     0.0         1.5139 !       For TIPS w/ shake
+N2   CA     400.0000    1.3330
+NA   C      337.0000    1.3880
+NA   CA     400.0000    1.3810
+NB   CB     400.0000    1.3910
+NB   CE     400.0000    1.3040
+NC   CA     400.0000    1.3390
+NC   CE     400.0000    1.3240
+NC   CB     400.0000    1.3540
+NC   C      400.0000    1.3580
+NH2E CH     422.0000    1.49  !         FROM PARAM3
+NS   CE     300.0000    1.3710
+NS   CF     337.0000    1.3650
+NS   C      337.0000    1.3830
+NS   CH     300.0000    1.4750
+NS   CB     337.0000    1.3740
+O    C      612.0000    1.2290 ! URA
+OH   C2     292.0000    1.4300
+OH   CH     292.0000    1.4300
+OH2  LP     450.0000    0.8000  ! ST2
+OS   CH     292.0000    1.4300 ! Infer.
+OS   C2     292.0000    1.4300 ! DEP
+OSS  CH     292.0000    1.4300 ! Infer.
+OSS  C2     292.0000    1.4300 ! DEP
+OST  CH     292.0000    1.4300 ! Infer.
+OST  C2     292.0000    1.4300 ! DEP
+OT   HT     450.0000    0.9572
+P    O2     528.0000    1.4800 ! DEP
+P    OS     237.0000    1.6100 ! DEP
+P    OH     237.0000    1.6100 ! Infer.
+! ADDITIONS FOR TRNA WORK/LN (MOSTLY GUESSED) START HERE
+
+C3   NB     400.0000    1.49   
+C3   N2     400.0000    1.45 
+C3   OS     292.0000    1.38   ! Infer. from DEP
+C3   OSS    292.0000    1.38   ! Infer. from DEP
+C3   OST    292.0000    1.38   ! Infer. from DEP
+C3   OH     292.0000    1.38   
+C3   NA     400.0000    1.49 
+C3   CA     386.0000    1.525  ! Infer. from DEP
+C3   NS     400.0000    1.49
+CA   C2     386.0000    1.525
+CA   NB     450.0000    1.391
+CA   CA     400.0000    1.37
+CA   CS     400.0000    1.44
+CA   NS     400.0000    1.37
+C2   C      337.0000    1.44
+C2   NS     337.0000    1.48
+C    CH     405.0000    1.52  ! From PARAM6
+C    OS     292.0000    1.43  ! Infer. DEP
+C    OSS    292.0000    1.43  ! Infer. DEP
+C    OST    292.0000    1.43  ! Infer. DEP
+CB   NA     325.0000    1.388
+CE   NA     300.0000    1.381
+C2   NA     300.0000    1.381
+C2   NH3    422.0       1.45  ! FROM PARAM7
+CE   N2     400.0000    1.333
+CE   CB     400.0000    1.404
+CF   NA     301.0000    1.365 ! URA
+CH   N2     422.0000    1.475 ! From PARAM6
+CH   NA     422.0000    1.45  !     "
+CH   CS     400.0000    1.525 !     "
+CH   CB     400.0000    1.525 !     "
+THETAS
+!            E(angle)=k((w-w0))**2   with w in radians
+!
+!                    k        v0 [degrees]
+!
+CB   C    NA      62.0000  111.3000
+CB   C    O       86.0000  128.8000
+CF   C    NA      62.0000  114.1000
+CF   C    O       86.0000  125.3000
+CS   C    NA      62.0000  114.1000
+CS   C    O       86.0000  125.3000
+NA   C    O       70.0000  120.6000
+NC   C    O       70.0000  122.5000
+NS   C    NA      62.0000  115.4000
+NS   C    O       70.0000  120.9000
+NS   C    NC      70.0000  118.6000
+C2   C2   C3      45.0     112.0
+C2   C2   C2      82.0     110.0    ! FROM THF
+C2   C2   NH3     65.0     109.5    ! FROM PARAM7
+CH   C2   CH      70.0000  112.0000
+OH   C2   CH      70.0000  112.0000
+OS   C2   C3     150.5000  111.0000  ! DEP
+OS   C2   CH      70.0000  112.0000
+OS   C2   C2      82.0000  112.0000  ! For THF
+OSS  C2   C3     150.5000  111.0000  ! DEP
+OSS  C2   CH      70.0000  112.0000
+OSS  C2   C2      82.0000  112.0000  ! For THF
+OST  C2   C3     150.5000  111.0000  ! DEP
+OST  C2   CH      70.0000  112.0000
+OST  C2   C2      82.0000  112.0000  ! For THF
+CB   CA   N2      70.0000  123.5000
+CB   CA   NC      70.0000  117.3000
+CF   CA   NC      70.0000  121.5000
+N2   CA   CF      70.0000  120.1000
+N2   CA   NA      70.0000  116.0000
+N2   CA   NB      70.0000  118.3000
+N2   CA   NC      70.0000  119.8000
+NC   CA   NA      70.0000  123.3000
+C    CB   CB     116.0000  119.2000
+C    CB   NB     116.0000  130.0000
+CA   CB   CB     116.0000  117.3000
+CA   CB   NB     116.0000  132.4000
+CB   CB   NA      70.0000  106.2000  ! WYE
+CB   CB   NB     116.0000  110.4000
+CB   CB   NS      70.0000  106.2000
+NC   CB   NS      70.0000  126.0000
+NC   CB   CB     116.0000  127.7000
+NC   CB   NA      70.0000  126.0000
+NB   CE   NA      70.0000  113.9000
+NB   CE   NS      70.0000  113.9000
+NC   CE   NC      70.0000  129.1000
+C    CF   CF     116.0000  120.7000
+CA   CF   CF     116.0000  117.0000 
+CS   CF   NS     116.0000  121.2000
+NA   CF   CF     116.0000  121.2000  ! URA
+NS   CF   CF     116.0000  121.2000
+C2   CH   NS      46.5000  111.0000
+C2   CH   NH2E    46.5000  111.0000! INFERENCE. FOR SUGAR MODEL
+C2   CH   OS      46.5000  111.0000
+C2   CH   OSS     46.5000  111.0000
+C2   CH   OST     46.5000  111.0000
+C2   CH   CH      46.5000  111.0000
+C2   CH   OH      46.5000  111.0000
+C3   CH   CH      46.5000  111.0000!
+C3   CH   OS      46.5000  111.0000
+C3   CH   OSS     46.5000  111.0000
+C3   CH   OST     46.5000  111.0000
+CH   CH   CH      46.5000  111.0000
+CH   CH   OH      46.5000  111.0000
+CH   CH   NH2E    46.5000  111.0000
+CH   CH   OS      46.5000  111.0000
+CH   CH   OSS     46.5000  111.0000
+CH   CH   OST     46.5000  111.0000
+CH   CH   NS      46.5000  111.0000
+OS   CH   NS      46.5000  111.0000
+OS   CH   NH2E    46.5000  111.0000
+OSS  CH   NS      46.5000  111.0000
+OSS  CH   NH2E    46.5000  111.0000
+OST  CH   NS      46.5000  111.0000
+OST  CH   NH2E    46.5000  111.0000
+BR   CS   CF      70.0000  119.7000
+BR   CS   CA      70.0000  119.7000
+C    CS   CF      70.0000  120.7000
+C    CS   C3      70.0000  119.7000
+C3   CS   CF      70.0000  119.7000
+CA   N2   H2      35.0000  120.0000
+H2   N2   H2      35.0000  120.0000
+C    NA   C      116.0000  126.4000  ! URA
+C    NA   H       35.0000  116.5000  ! URA
+C3   NA   CF      35.0     119.3
+C3   NA   C       70.0     119.3
+CA   NA   C      116.0000  125.2000  ! Infer.
+CA   NA   H       35.0000  119.3000  ! Infer.
+CE   NA   CB      116.0    105.4
+H    NA   CB      35.0     119.3
+H    NA   CE      35.0     119.3
+CB   NB   CE      70.0000  103.8000
+C    NC   CA      70.0000  120.5000
+CA   NC   CE      70.0000  118.6000
+CA   NC   CB      70.0000  112.2000
+CB   NC   CE      70.0000  111.0000
+C2   NH3  C2      35.0     109.5    
+H    NH3  C2      35.0     109.5    
+H    NH3  H       35.0     109.5    ! FROM PARAM7
+C    NS   CF     116.0000  121.6000  ! Infer.
+C    NS   H       35.0000  119.3000
+C    NS   CH      70.0000  117.6000
+CB   NS   H       35.0000  119.3000
+CB   NS   CE     116.0000  105.4000  ! Infer.
+CE   NS   H       35.0000  119.3000
+CF   NS   H       35.0000  119.3000
+CF   NS   CH      70.0000  121.2000
+CH   NS   CE      70.0000  128.8000
+CH   NS   CB      70.0000  125.8000
+HO   OH   P       46.5000  107.3000
+HO   OH   C2      46.5000  107.3000
+HO   OH   CH      46.5000  107.3000
+H    OH2  H       55.0     109.47122! EXPERIMENTAL GEOMETRY, BEND 1650 CM 1
+LP   OH2  LP      55.0     109.47122! From PARAM6/LN
+LP   OH2  H       55.0     109.47122
+C2   OS   C2      82.0000  111.5000   ! For THF
+CH   OS   CH      46.5000  111.5000
+HO   OS   CH      46.5000  107.3000
+HO   OS   C2      46.5000  107.3000
+C2   OSS  C2      82.0000  111.5000   ! For THF
+CH   OSS  CH      46.5000  111.5000
+HO   OSS  CH      46.5000  107.3000
+HO   OSS  C2      46.5000  107.3000
+C2   OST  C2      82.0000  111.5000   ! For THF
+CH   OST  CH      46.5000  111.5000
+HO   OST  CH      46.5000  107.3000
+HO   OST  C2      46.5000  107.3000
+P    OS   C2      47.6000  120.5000   ! DEP
+P    OS   CH      46.5000  120.5000
+P    OS   C3      47.6000  120.5000   ! Guess (inferred from P-OS-C2) /LN
+HT   OT   HT      55.0     104.52   ! TIPS water from PARAM6/LN
+O2   P    O2     140.5000  119.9000  ! DEP
+OH   P    OS      48.1000  102.6000
+OH   P    O2      98.9000  108.2300
+OS   P    O2      98.9000  108.2300  ! DEP
+OS   P    OS      48.1000  102.6000  ! DEP
+! TRNA PATCH ADDITIONS/LN:
+
+CH   OS   C3      46.5     107.3
+CH   OSS  C3      46.5     107.3
+CH   OST  C3      46.5     107.3
+CH   OH   C3      46.5     107.3 
+C    OS   C3      46.5     120.5 !?Angle     ...
+C    OSS  C3      46.5     120.5 !?Angle     ...
+C    OST  C3      46.5     120.5 !?Angle     ...
+CH   NA   C3      70.0     116.5 
+CH   NA   H       35.0     116.5 ! URA
+C2   NA   H       35.0     116.5 ! Infer.
+CB   NA   CA     116.0     110.4
+CF   NA   H       30.0     121.2 ! URA
+CE   NA   CH     116.0     118.6
+CE   NA   C3     116.0     120.7   
+C    NA   CF     116.0     121.6
+CH   NA   C      116.0     121.0 !?Angle
+C2   NA   C      116.0     121.0 !?Angle
+CB   NB   C3      70.0     128.5
+CE   NB   C3      70.0     128.5
+CA   NB   CB      70.0     105.4
+CB   NS   CB      70.0     112.2
+CB   NA   CB      70.0     112.2 ! WYE
+CB   NS   C3      70.0     117.6
+CB   NA   C3      70.0     117.6 ! WYE
+CH   NS   C2      70.0     121.2
+C    NS   C2      70.0     121.6
+C    NS   CA      70.0     121.6 !?Angle
+C    NS   CB      70.0     121.6 !?Angle
+C    NA   CB      70.0     121.6 !WYE
+CB   NS   CA      70.0     112.0   
+C3   N2   CA      70.0     120.0
+C3   N2   C3      70.0     120.0
+C3   N2   H2      35.0     120.0
+CH   N2   H2      35.0     120.0
+CE   N2   H2      35.0     120.0
+NS   C    CB      70.0     111.3
+NA   C    C2      70.0     114.1
+O    C    C2      70.0     125.3
+O    C    OS      70.0     120.0
+O    C    OSS     70.0     120.0
+O    C    OST     70.0     120.0
+CH   C    O       70.0     125.3 !?Angle
+CH   C    OS      70.0     125.3 !?Angle
+NA   C    OS      70.0     120.0 !?Angle 
+CH   C    OSS     70.0     125.3 !?Angle
+NA   C    OSS     70.0     120.0 !?Angle 
+CH   C    OST     70.0     125.3 !?Angle
+NA   C    OST     70.0     120.0 !?Angle 
+NA   C    NA      62.0     115.4 ! URA
+NS   CA   NS      70.0     110.0 !?Angle
+NS   CA   C2      70.0     120.0 !?Angle
+NA   CA   CA      70.0     110.4
+NB   CA   C3      70.0     123.0
+NC   CA   NC      70.0     129.1 
+CA   CA   C2      70.0     125.0 !?Angle
+CA   CA   C3      70.0     125.0 !?Angle
+NA   CA   C2      70.0     125.0 !?Angle
+NB   CA   CA      70.0     110.0
+NC   CA   CS      70.0     121.5
+N2   CA   CS      70.0     120.1
+NS   CA   CA      70.0000  116.0000
+NS   CB   NS      70.0000  126.0000
+NA   CB   NA      70.0000  126.0000 ! WYE
+NS   CB   NA      70.0     123.3
+NS   CB   NB      70.0     126.0
+NA   CB   NB      70.0     126.0    ! WYE
+CE   CB   CB      70.0     117.3
+CE   CB   NB      70.0     132.4
+CH   CB   CB      70.0     117.3
+CH   CB   NB      70.0     132.4
+NC   CE   NA      70.0     129.1
+NC   CE   CB      70.0     117.3
+CS   CF   NA      70.0     121.2
+NA   CH   CB      46.5     117.3
+C2   CH   NA      46.5     111.0
+C2   CH   C       46.5     111.0
+NA   CH   N2      46.5     116.0
+N2   CH   CB      46.5     123.5
+OS   CH   CS      46.5     111.0
+OSS  CH   CS      46.5     111.0
+OST  CH   CS      46.5     111.0
+CH   CH   CS      46.5     111.0    
+CA   C2   C2      46.5     112.0
+C    C2   NA      70.0     114.0
+C    C2   C2      46.5     112.0 !?Angle
+NS   C2   C2      46.5     112.0 !?Angle
+C2   C2   CH      46.5     112.0
+CF   CS   CH      70.0000  120.7 !           ...
+CA   CS   CF      70.0     117.0 !           ...
+CA   CS   C3      70.0     119.7 !           ...
+C    CS   CH      70.0000  120.7 ! END TRNA PATCHES
+
+PHI
+!     E(dihedral)= 1/ if col2 > 0:  k(1+cos(nv+d)
+!                  2/ if col2=0  :  k(w-w0)**2   with w and w0 in radians
+!     Same goes for impropers.
+!
+!                          k      n      d (or v0 if n=0) [degrees]
+!
+X    C2   CH   X        1.4000    3    0.0000   ! WO
+X    C2   C2   X        1.6000    3    0.0000   ! PARAM7
+X    CH   CH   X        1.4000    3    0.0000   ! WO
+X    CH   OS   X        0.9000    3    0.0000   ! WO
+X    CH   OSS  X        0.9000    3    0.0000   ! WO
+X    CH   OST  X        0.9000    3    0.0000   ! WO
+X    CH   OH   X        0.5000    3    0.0000
+X    C2   OH   X        0.5000    3    0.0000
+X    C2   OS   X        0.5000    3    0.0000
+X    C2   OSS  X        0.5000    3    0.0000
+X    C2   OST  X        0.5000    3    0.0000
+X    OS   P    X        0.7500    3    0.0000
+X    OH   P    X        0.7500    3    0.0000
+X    CH   NS   X        0.3000    2    0.0000
+X    CA   N2   X        6.0000    2  180.0000
+CA   CB   CB   NA       2.5       2  180.0
+X    C2   NH3  X        0.6       3    0.0   !SPERMINE,E/BOND 3 BONDS
+! "WILMA OLSON SUGAR MODEL":
+OS   CH   CH   OS       0.5000    2    0.0000 ! NOTE: TWOFOLD FIRST 
+!OS   CH   CH   OS       1.4000    3    0.0000 !
+OH   CH   CH   CH       0.5000    2    0.0000 ! ONLY AS GAUCHE 
+OS   CH   CH   CH       0.5000    2    0.0000 ! 
+!OS   CH   CH   CH       1.4000    3    0.0000
+OH   CH   CH   OS       0.5000    2    0.0000 !
+!OH   CH   CH   OS       1.4000    3    0.0000 !
+OS   CH   C2   CH       1.0000    2    0.0000 ! incr from WO
+!OS   CH   C2   CH       1.4000    3    0.0000
+OS   CH   CH   C2       1.4000    3    0.0000 ! NOTE THREEFOLD FIRST
+!OS   CH   CH   C2       0.5000    2    0.0000
+OS   C2   C2   C2       1.4       3    0.0    ! FOR THF
+!OS   C2   C2   C2       0.5       2    0.0    ! FOR THF
+! OSS SUGAR TERMS
+OSS  CH   CH   OS       0.5000    2    0.0000 ! NOTE: TWOFOLD FIRST 
+!OSS  CH   CH   OS       1.4000    3    0.0000 !
+OH   CH   CH   OSS      0.5000    2    0.0000 !
+!OH   CH   CH   OSS      1.4000    3    0.0000 !
+OSS  CH   CH   CH       0.5000    2    0.0000 ! 
+OSS  CH   CH   CH       1.4000    3    0.0000
+OSS  CH   C2   CH       1.0000    2    0.0000 ! incr from WO
+OSS  CH   C2   CH       1.4000    3    0.0000
+OSS  CH   CH   C2       1.4000    3    0.0000 ! NOTE THREEFOLD FIRST
+OSS  CH   CH   C2       0.5000    2    0.0000
+OSS  C2   C2   C2       1.4       3    0.0    ! FOR THF
+OSS  C2   C2   C2       0.5       2    0.0    ! FOR THF
+! OST SUGAR TERMS
+OST  CH   CH   OS       0.5000    2    0.0000 ! NOTE: TWOFOLD FIRST 
+OST  CH   CH   OS       1.4000    3    0.0000 !
+OH   CH   CH   OST      0.5000    2    0.0000 !
+OH   CH   CH   OST      1.4000    3    0.0000 !
+OST  CH   CH   CH       0.5000    2    0.0000 ! 
+OST  CH   CH   CH       1.4000    3    0.0000
+OST  CH   C2   CH       1.0000    2    0.0000 ! incr from WO
+OST  CH   C2   CH       1.4000    3    0.0000
+OST  CH   CH   C2       1.4000    3    0.0000 ! NOTE THREEFOLD FIRST
+OST  CH   CH   C2       0.5000    2    0.0000
+OST  C2   C2   C2       1.4       3    0.0    ! FOR THF
+OST  C2   C2   C2       0.5       2    0.0    ! FOR THF
+! out of the sugar
+OS   P    OS   C2       0.7500    3    0.0000
+OS   P    OS   C2       0.7500    2    0.0000 
+OS   P    OS   C3       0.7500    3    0.0000 ! Added by inference
+OS   P    OS   C3       0.7500    2    0.0000 ! Added by inference
+OS   P    OS   CH       0.7500    3    0.0000
+OS   P    OS   CH       0.7500    2    0.0000 
+! Keeping purine rings parallel (from PARAM6):
+CE   CB   CB   NC       5.0       2   180.00
+CE   CB   CB   CE       5.0       2   180.00
+CE   CB   CB   CA       5.0       2   180.00
+CE   CB   CB   NA       5.0       2   180.00
+NC   CB   CB   NB       2.5       2   180.00
+CA   CB   CB   NS       2.5       2   180.00
+C    CB   CB   NS       2.5       2   180.00
+
+! WYE AND PATCHED RESIDUES/LN:
+CE   CB   CB   NS       5.0       2   180.00 
+CE   CB   CB   CB       5.0       2   180.00
+NS   CB   CB   CH       2.5       2   180.00
+NA   CB   CB   NB       2.5       2   180.00
+NA   CB   NA   CA       2.5       2   180.00
+C    NA   CB   NB       2.5       2   180.00
+CA   CB   NA   CB       2.5       2   180.00
+CA   NA   CB   CB       2.5       2   180.00
+
+NA   C    C2   C2       1.5       3     0.00
+C2   C2   NS   C        0.3       2     0.00
+C2   NS   C    NA       6.0       2   180.00
+
+OS   CH   CS   CF       1.5       3       0.0
+OSS  CH   CS   CF       1.5       3       0.0
+OST  CH   CS   CF       1.5       3       0.0
+NA   C2   C    NA       1.5       3       0.0
+C2   CH   NA   C        0.3       2       0.0
+C    C2   NA   C        0.3       2       0.0
+C2   CH   NA   H        0.3       2       0.0
+CB   CH   N2   H2       6.0       2       180.00
+X    CA   C2   X        1.5       3       0.0
+C2   CH   C    OS       1.5       3       0.0
+C2   CH   C    OSS      1.5       3       0.0
+C2   CH   C    OST      1.5       3       0.0
+X    C    OS   X        1.8       2       180.00 ! INFERRED FROM C-OH1 IN PARAM8
+X    C    OSS  X        1.8       2       180.00 ! INFERRED FROM C-OH1 IN PARAM8
+X    C    OST  X        1.8       2       180.00 ! INFERRED FROM C-OH1 IN PARAM8
+X    NA   C    X        6.0       2       180.00
+
+IMPHI
+!     E(dihedral)= 1/ if col2 > 0:  k(1+cos(nv+d)
+!                  2/ if col2=0  :  k(w-w0)**2   with w and w0 in radians
+!     Same goes for normal dihedrals.
+!
+!                          k      n      d (or v0 if n=0) [degrees]
+!
+C2   X    X    CH      31.5000 0  35.2600
+C3   X    X    CH      31.5000 0  35.2600 ! ADDED WITHOUT CHECKING
+OH   X    X    CH      31.5000 0  35.2600
+OS   X    X    CH      31.5000 0  35.2600
+OSS  X    X    CH      31.5000 0  35.2600
+OST  X    X    CH      31.5000 0  35.2600
+CH   OS   C2   NS      31.5000 0  35.2600
+CH   OS   CH   NS      31.5000 0  35.2600
+CH   OS   C2   NH2E    31.5000 0  35.2600
+CH   OS   CH   NH2E    31.5000 0  35.2600
+CH   OSS  C2   NS      31.5000 0  35.2600
+CH   OSS  CH   NS      31.5000 0  35.2600
+CH   OSS  C2   NH2E    31.5000 0  35.2600
+CH   OSS  CH   NH2E    31.5000 0  35.2600
+CH   OST  C2   NS      31.5000 0  35.2600
+CH   OST  CH   NS      31.5000 0  35.2600
+CH   OST  C2   NH2E    31.5000 0  35.2600
+CH   OST  CH   NH2E    31.5000 0  35.2600
+H    X    X    NA      43.0000 0   0.0000  ! URA
+H    X    X    NS      43.0000 0   0.0000  ! INFERENCE
+H2   X    X    N2      43.0000 0   0.0000
+C    X    X    CB       4.5000 0   0.0000  ! PLANAR IMPROPERS FROM URA FIT
+C    X    X    CS       4.5000 0   0.0000  !  (OR INFERRED FROM IT)
+C    X    X    CF       4.5000 0   0.0000
+C    X    X    O      113.3000 0   0.0000  ! URA
+C    X    X    NC       4.5000 0   0.0000
+C    X    X    NS       4.5000 0   0.0000
+CA   X    X    CB       4.5000 0   0.0000
+CA   X    X    NC       4.5000 0   0.0000
+CA   X    X    N2      43.0000 0   0.0000
+CA   X    X    NS       4.5000 0   0.0000
+CB   X    X    CE       4.5000 0   0.0000
+CB   X    X    NA       4.5000 0   0.0000
+CB   X    X    NB       4.5000 0   0.0000
+CB   X    X    NC       4.5000 0   0.0000
+CB   X    X    NS       4.5000 0   0.0000
+CF   X    X    NC       4.5000 0   0.0000
+CF   X    X    NA       4.5000 0   0.0000
+CH   X    X    NS       4.5000 0   0.0000
+C3   X    X    CS      43.0000 0   0.0000
+NB   X    X    NS       4.5000 0   0.0000
+BR   X    X    CS       4.5000 0   0.0000
+C3   X    X    NS      43.0000 0   0.0000 ! TRNA PATCH ADDITIONS/LN:
+C3   X    X    CA      43.0000 0   0.0000 !       ...
+C3   X    X    NA      43.0000 0   0.0000 !       ...
+C3   X    X    NB      43.0000 0   0.0000 !       ...
+C3   X    X    N2      43.0000 0   0.0000
+C3   X    X    CB      43.0000 0   0.0000
+C3   X    X    CE      43.0000 0   0.0000
+CA   X    X    NA       4.5000 0   0.0000
+CB   X    X    CB       4.5000 0   0.0000
+CA   X    X    NB       4.5000 0   0.0000
+NB   X    X    NA       4.5000 0   0.0000
+NC   X    X    CE       4.5000 0   0.0000
+C2   X    X    CA       4.5000 0   0.0000
+C2   X    X    C        4.5000 0   0.0000
+C2   X    X    NA       4.5000 0   0.0000
+CS   X    X    CH       4.5000 0   0.0000
+CH   X    X    CB       4.5000 0   0.0000
+CH   X    X    N2      43.0000 0   0.0000
+CH   X    X    NC       4.5000 0   0.0000
+C    X    X    NA       4.5000 0   0.0000 ! END ADDITIONS
+
+NONBONDED NBXM 5 CUTNB 11.5 CTOFNB 10.5 CTONNB 9.5 E14F 1.0 EPS 1.0 - 
+          ATOM RDIEL SHIFT VATOM VSWITCH VDISTANCE 
+! Taken from PARMDNA4
+!   
+!  E(nonb)= 1/ if col2>0: Slater-Kirkwood combintation rule with
+!          alfa    Neff    Rmin/2   (Rmin(i,j)=Rmin(i)/2+Rmin(j)/2)
+!           2/ if col2=0: 
+!          dummy   -Emin   Rmin/2   (Rmin(i,j) as above, 
+!                                    Emin(i,j)**2=Emin(i)*Emin(j))
+! and E(i,j)=A*r**-12 - B*r**-6
+! 
+C        1.6500    5.0     1.8
+CA       1.6500    5.0     1.8
+CB       1.6500    5.0     1.8
+CS       1.6500    5.0     1.8
+CH       1.3500    6.0     1.85
+C2       1.7700    7.0     1.90
+C3       2.1700    8.0     1.95
+CF       2.0700    6.0     1.9
+CE       2.07      6.0     1.9
+H*       0.0440    1.0       0.8000 ! H, H2, HT, HO
+N*       1.1500    6.0       1.6500 !N2,  NS, NA,  NH3
+NB       1.1500    6.0       1.6500 
+NC       1.1500    6.0       1.6500 
+NH2E     1.7000    8.0       1.7000  
+O        0.8400    7.0       1.6000  
+O2       2.14      7.0       1.6
+OS       0.64      7.0       1.6
+OSS      0.64      7.0       1.6
+OST      0.64      7.0       1.6
+OH2      0.8400    7.0       1.6000
+OH       0.5900    7.0       1.6000
+
+OT       0.8400    6.0       1.6000  
+LP       0.044     0.0       0.0100 ! LONE PAIR FOR ST2'S
+P        3.0000   14.0000    1.9000
+BR       0.8000   -0.8000    2.0000 ! 2nd value is well depth in Kcals/mole
+SD       1.0       8.0       1.5    ! Guess for sodium; from PARAM6(?)/LN
+MG       0.000    -0.2       1.6    ! G U E S S
+
+NBFIX                    ! FROM PARAM6
+!           -Emin    Rmin
+H*   O*     -0.05    1.0
+H*   NB     -0.05    1.0
+H*   NC     -0.05    1.0
+OT   OT     -0.152073   3.5365 ! From PARAM6 TIPS water/LN
+HT   OT     -0.05    1.0
+LP   X      -0.05    1.0
+
+HBOND AEXP 4 REXP 6 HAEX 4 AAEX 2 ACCE HBNOEX ALL -
+      CUTHB 7.5 CTOFHB 7.0 CTONHB 4.0 CUTHA 120.0 CTOFHA 90.0 CTONHA 90.0
+! cf PARAM7
+!     Exponents: Attractive, repulsive and angular dependence
+! "all" possible combinations of HB-pairs in nucleic acids:
+!            -EMin      Rmin
+N*   N*      -3.0       3.0
+N*   O*      -3.5       2.9
+O*   N*      -4.0       2.85
+O*   O*      -4.25      2.75
+
+END
+

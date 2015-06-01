@@ -1,0 +1,96 @@
+
+
+===
+android configuration:
+
+You need to at least SDK version 15, and you need to have the package
+
+Android | Extras | Android Support Package
+
+(might be called Android Compatibility package, depending on your OS)
+
+=======
+
+this code is compiled on a machine with adequate versions of ant and java
+
+( On TCBG systems, to configure the right versions of ant/java:
+source ~collab/.collabcshrc  )
+
+ant debug
+
+This generates an apk file in the bin/ directory which can then be copied to a
+webserver and loaded onto an android phone.
+
+Then, go to the webserver location where you put the APK
+in a phone browser to load onto phone.
+
+===================================
+Alternatively, you can run the android emulator on your computer.  For
+me, I run 'android', click on the Tools | Manage AVDs and start up an AVD. 
+You want one that is targeting api level 15 or so..  Something targeting a
+nexus 4 approximately should work.
+
+
+If you run the android emulator, 
+
+Getting the error:
+
+..../android-sdk-linux_86/tools/ant/main_rules.xml:236:
+com.android.sdklib.build.ApkCreationException: Debug Certificate expired on
+7/16/11 6:57 PM
+
+
+?
+
+rm ~/.android/debug.keystore
+
+
+and rerun the 'ant debug'
+
+
+============================================================
+Screenshots:
+
+Connect the device to the computer using USB.  Make sure that USB debugging
+is turned on on the device.  From the android directory on the computer,
+run  
+
+tools/ddms
+
+From there, select the device and the 'Device' menu has a Screen capture 
+option.
+
+
+===============================================================
+Debugging:
+
+from a command prompt from the android directory, run 
+
+platform-tools/adb logcat
+
+to see debugging from the android session.  Running tools/ddms also shows
+the debug messages (as well as other info)
+
+================================================================
+to allow packets to be sent to the emulator:
+
+telnet localhost 5554
+redir add udp:4141:4141
+
+will send packets sent to 4141 on the host machine to go to 4141 on the emu
+
+-- On the Mac, ctrl + fn + f11   rotates the screen (portrait/landscape)
+
+============================
+Kindle Fire USB debugging:
+
+Edit file ~/.android/adb_usb.ini
+
+and add:
+
+0x1949
+
+Then, restart the 'adb' process, and the Kindle Fire
+should show up in DDMS
+
+

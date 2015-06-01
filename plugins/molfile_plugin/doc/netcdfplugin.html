@@ -1,0 +1,22 @@
+<!--#set var="TITLE" value="NetCDF Plugin, Version 0.10"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+The NetCDF plugin reads structure and trajectory data written as
+<a href=http://www.unidata.ucar.edu/software/netcdf/>NetCDF files</a>, by 
+<a href=http://amber.scripps.edu/>AMBER 9</a> and
+<a href=http://dirac.cnrs-orleans.fr/MMTK/>MMTK</a>.  
+  
+<p>
+<h3>Notes:</h3>
+<ul>
+<li>The routines for reading 
+    <a href="http://amber.scripps.edu/formats.html#netcdf">AMBER 9 NetCDF files</a> 
+    accept a subset of the possible combinations of data fields.  
+    In particular, VMD doesn't currently read the AMBER velocity data.
+<li>The MMTK routines currently parse atom data with a simple method that
+    ignores atom grouping information and other high level organization stored
+    in the "description" data.
+</ul>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

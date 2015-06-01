@@ -1,0 +1,45 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%cr                                                                       
+%cr            (C) Copyright 1995 The Board of Trustees of the            
+%cr                        University of Illinois                         
+%cr                         All Rights Reserved                           
+%cr                                                                       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: vmd_paraminst.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.6 $      $Date: 2000/05/11 16:25:37 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%
+% multiple GUIDEs : installation parameters
+% 	NOTE: should be NO blank line between last comment and begin
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{itemize}
+  \TTLISTITEM{INSTALLBINDIR (default=/usr/local/bin)}
+The directory where scripts
+and utility programs are installed.  This should be a directory which
+is in the path of all users interested in running \VMD.
+
+  \TTLISTITEM{INSTALLLIBDIR (default=/usr/local/lib/vmd)}
+A directory in which \VMD\ data
+files and architecture-specific executables are placed.  This
+directory should {\em not} be in the path of users running \VMD.
+
+  \TTLISTITEM{INSTALLNAME (default=vmd)}
+\VMD\ uses a shell script to run the proper \VMD\ executable for the given version of Unix (the
+script also sets some environment variables and starts an {\tt
+xterm} running to act as the \VMD\ console).  {\tt INSTALLNAME}
+is the name given to this shell script, and will be the command users
+type to run \VMD.  When the program is
+installed, the file {\tt bin/vmd} is then copied to the file
+{\tt INSTALLBINDIR/INSTALLNAME}.
+
+\end{itemize}
+
+
+

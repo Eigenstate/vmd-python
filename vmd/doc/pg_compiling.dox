@@ -1,0 +1,71 @@
+/*! \page compiling Compiling VMD from source code
+
+\section pluginfiles Plugins and libraries required by VMD
+<p>
+Before you can successfully build VMD itself, several other things
+must be compiled and installed.  At a bare minimum, a normal build of
+VMD requires that Tcl/Tk 8.4.x, FLTK 1.1.7, and OpenGL libraries be 
+compiled and linkable from within the <b>lib</b> area of the VMD source 
+tree or from the system libraries.  Without these libraries and their 
+associated header files, compilation of the VMD source code and some 
+plugins will fail almost immediately.  Additionally, if you're compiling 
+on a Linux system, you may have out-of-date OpenGL header files.  
+In order to compile VMD, you may have to update your system's OpenGL 
+header files either with an updated RPM, or by getting the most recent 
+headers from
+<a href="http://oss.sgi.com/projects/ogl-sample/sdk.html">the OpenGL SDK web site</a>
+
+<p>
+VMD also supports various optional components such as Python, VRPN, and
+other packages.  They must be linkable in a manner similar to the Tcl/Tk
+and FLTK.  VMD has been tested with Python 2.2 and later, and Numeric 24.2.
+VMD should be buildable with any version of VRPN from 6.00 up to 7.03.
+
+<p>
+VMD uses several external programs for various tasks, these include
+the \ref stride "STRIDE secondary structure prediction" program,
+the \ref surf   "SURF solvent accessible surface" program, and various
+other optional external rendering programs.
+
+<p>
+Once all of these libraries have been built and installed where the 
+Makefiles and configure scripts expect to find them, 
+<a href="http://www.ks.uiuc.edu/Research/vmd/plugins/doxygen/compiling.html">compilation of the VMD plugins</a>
+is the next step.  Since some of the plugins link against the
+Tcl libraries, they can't be built until Tcl is built.  The Tcl version
+used for the plugins and VMD itself must be consistent or very strange
+problems can occur at dynamic loading time.  The plugins are stored in a
+separate source tree from VMD itself, though they are packaged along with 
+VMD source distributions.  Once the plugins are compiled, and installed into 
+a distribution target area where VMD can find them, you can proceed to 
+compiling VMD itself.  
+<a href="http://www.ks.uiuc.edu/Research/vmd/plugins/doxygen/">Click here to read documentation on compiling and developing plugins</a>.
+
+\section topmakefile The top level VMD Makefile
+<p>
+The top level 
+\ref buildscripts "Makefile" 
+found in the main VMD distribution directory
+includes default configuration options for all of the supported target
+platforms for which the VMD development team provides precompiled
+binary versions.  These defaults make it easy for someone at a remote
+site to use one of our standard targets to produce a binary that should
+be functionally identical to the binaries we produce, from 
+source code on their own machine.  Typing the 'make' command with 
+no arguments will list the available target configurations.  
+Typing a command such as the example below will setup the build environment 
+to compile for one of the pre-defined targets.  An example architecture is:
+<pre>
+make solaris.opengl
+</pre>
+The top level VMD Makefile is just a more compact and easy-to-use 
+method of specifying options to the VMD \ref configure "configure script".
+In cases where one wants to build a custom version of VMD with various
+optional features disabled, it is best to work with the configure script
+directly.  
+\ref configure "More information about working with the configure script".
+
+<p>
+$Id: pg_compiling.dox,v 1.10 2008/03/04 20:15:49 johns Exp $
+
+ */

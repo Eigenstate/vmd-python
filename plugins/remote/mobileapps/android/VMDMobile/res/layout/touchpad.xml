@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/mainLayout"
+    >
+
+<TextView  android:id="@+id/ipinfo" 
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content" />
+
+<TextView  android:id="@+id/console" 
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content" 
+    android:layout_below="@id/ipinfo" />
+
+<LinearLayout 
+    android:id="@+android:id/buttonBar"
+    android:orientation="horizontal"
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    android:layout_below="@id/console"
+    />
+
+
+
+<edu.uiuc.ks.vmdmobile.MultiTouchPad android:id="@+id/touchPad"
+      android:layout_width="wrap_content" 
+      android:layout_height="wrap_content"
+      android:layout_below="@android:id/buttonBar"
+
+      android:layout_alignParentLeft="true"
+android:layout_alignParentRight="true"
+android:layout_alignParentBottom="true"
+
+/>
+
+</RelativeLayout>
+

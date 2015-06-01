@@ -1,0 +1,105 @@
+<!--#set var="TITLE" value="Salt Bridges Plugin, Version 1.1"-->
+<!--#include virtual="/include/header-over.shtml"-->
+
+<!-- CONTENT STARTS HERE -->
+
+    <a href="saltbr.png"><img style="border: 0; padding: 0 0 1em 1em"
+	src="saltbr.png" align="right"></a>
+
+    <p>The Salt Bridges plugin searches for salt bridges formed in a protein
+      throughout a trajectory. The search can be restricted to a selection
+      and/or a frame range given by the user.</p>
+
+    <h3>Criteria for the formation of a salt bridge</h3>
+    
+    <p>A salt bridge is considered to be formed if the distance between
+    <i>any</i> of the oxygen atoms of acidic residues and the nitrogen atoms of
+    basic residues are within the cut-off distance (default 3.2
+    Angstroms) in at least one frame. The default distance cut-off can
+    be changed by the user.  This plugin does not attempt to identify
+    hydrogen bonds.</p>
+    
+    <p>An additional distance cut-off between the centers of mass of the
+    side-chain heavy atoms of oppositely charged residues can be
+    specified.</p>
+    
+    <h3>Acidic and basic residues</h3>
+
+    <p>The Salt Bridges plugin searches for salt bridges between amino acid
+      residues identified with the VMD keywords <tt>acidic</tt> and
+      <tt>basic</tt>, which are defined in the following way:</p>
+
+
+<!--<ul>
+    <li type=circle><tt>atomselect macro acidic "resname ASP GLU"</tt></li>
+    <li type=circle><tt>atomselect macro basic "resname ARG HIS LYS HSP"</tt></li>
+</ul>-->
+
+    <p><tt>atomselect macro acidic "resname ASP GLU"</tt></p>
+    <p><tt>atomselect macro basic "resname ARG HIS LYS HSP"</tt></p>
+
+    <p>In particular, this means that if all the histidine residues have resname
+      HIS (often the case in original PDB files), all of them will be considered
+      in the salt bridges calculation. On the other hand, if the histidine
+      residues have resnames HSP, HSD, or HSE (as specified in the CHARMM force
+      field), only the protonated histidines HSP will  be considered in
+      the calculation.</p>
+
+<h3>Update selections every frame</h3>
+
+<p style="margin: 0 0 -1.0em 0">This plugin uses atom selections based on
+the atom selection given by the user. There are some cases in which the
+atom selection might change in time, such as:</p>
+
+<ul>
+  <li type=circle><tt>within</tt> or <tt>exwithin</tt> are used</li>
+  <li type=circle>any one of the coordinates are used in a comparison (e.g., "<tt>x &gt;
+3</tt type=circle>"), or say "<tt>sqrt(sqr(x-50) + y*y + z*z) &gt; 25)</tt>"</li>
+  <li type=circle>the selection is based on atoms next to specific voxel values</li>
+  <li type=circle>the "user" field is used in a selection (time varying)</li>
+</ul>
+
+<p>If the selection used does not change in time, the option "update
+selections every frame" can safely be disabled, which will increase the
+efficiency of the calculation.</p>
+
+<h3>Output files</h3>
+
+<p>By default, a file is written for each salt bridge, containing the frame
+      number and the distance between the center of mass of the oxygens in the
+      acidic side chain and center of mass of the nitrogens in the basic
+      side chain. Note that this distance is slightly different than the 
+      criteria used to identify salt bridges (see above).
+      </p>
+
+<h3>Command-line interface</h3>
+
+<p>All the functionalities of the plugin are also available through the
+command line interface.</p>
+
+<p>Usage: <tt>saltbr -sel &lt;atom selection&gt; &lt;option1&gt;
+  &lt;option2&gt; ...</tt></p>
+
+<p style="margin: 0 0 -1.0em 0">Options:</p>
+
+<ul>
+  <li type=circle><tt>-upsel &lt;yes|no&gt; (update atom selections every
+    frame? default: yes)</tt></li>
+  <li type=circle><tt>-frames &lt;begin:end&gt; or &lt;begin:step:end&gt; or all or now (default: all)</tt></li>
+  <li type=circle><tt>-ondist &lt;cutoff distance between oxygen and
+    nitrogen atoms&gt; (default: 3.2)</tt></li>
+  <li type=circle><tt>-comdist &lt;cutoff distance between centers of mass of side chains&gt; (default: none)</tt></li>
+  <li type=circle><tt>-writefiles &lt;yes|no&gt; (default: yes)</tt></li>
+  <li type=circle><tt>-outdir &lt;output directory&gt; (default:
+    current)</tt></li>
+  <li type=circle><tt>-log &lt;log filename&gt; (default: none)</tt></li>
+</ul>
+
+<h3>Authors</h3>
+
+<p><a href="http://www.ks.uiuc.edu/~ltrabuco">Leonardo Trabuco</a> and
+<a href="http://www.ks.uiuc.edu/~villa">Elizabeth Villa</a>.</p>
+
+
+<!--#include virtual="/include/footer-over.shtml"-->
+</BODY></HTML>

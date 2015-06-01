@@ -1,0 +1,20 @@
+-------------------
+VMD PBCTools plugin
+-------------------
+
+For documentation of the plugin, please refer to the docs in either of
+the following files
+
+    doc/pbctools.tex 
+    doc/pbctools.html 
+    doc/pbctools.pdf
+
+(the latter two only exist if you downloaded a tarball).
+
+or to the plugin's home page at
+
+   http://www.ks.uiuc.edu/Research/vmd/plugins/pbctools/
+
+The plugin's development page can be found at
+
+   http://github.com/olenz/pbctools

@@ -1,0 +1,32 @@
+
+This directory contains topology and parameter files that are
+compatible with CHARMM but are not part of the CHARMM force field
+development efforts.  The parameters have been approved by the
+original developers, or individuals closely associated with those
+developers.  However, they have not been exhaustively tested in the
+context of CHARMM and are not supported.  Please carefully read the
+header sections of the respective files to obtain information on their
+proper use along with the appropriate references.
+
+BMS nucleic acid force field
+
+par_bms_dec03.prm
+top_bms_dec03.rtf
+
+
+AMBER Cornell 94 force field for proteins and nucleic acids and the
+1998 variant of the nucleic acid parameters. Requires CHARMM compiled
+with AMBER keyword in pref.dat.  Note that such versions of CHARMM can
+NOT be used with the CHARMM force field.
+
+top_amber_cornell.inp
+par_amber_cornell.inp
+par_amber_98.inp
+
+
+OPLS AA protein force field along with ligand parameters. Requires
+CHARMM compiled with OPLS keyword in pref.dat.
+
+top_opls_aa.inp
+par_opls_aa.inp
+par_opls_ligand.inp

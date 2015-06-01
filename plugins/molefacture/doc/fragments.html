@@ -1,0 +1,37 @@
+<!--#set var="TITLE" value="Molefacture Plugin, Version 1.1"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+In cases where the fragment libaries included with molefacture are not sufficient, it is relatively straightforward to add new fragments to the parent or child menus. In either case, one may generate an arbitrary number of fragment files, and then a single fragment database file specifying which fragments should be loaded into molefacture.
+
+<p>
+Fragment database files (extension .mdb) consist of one or more lines containing two space-delimited fields each:
+Name file
+
+<p>
+Here "Name" is the name of the fragment that will appear in the molefacture menu, and "file" is the path to the corresponding fragment file, relative to the database file. Note that underscore (_) characters in the "Name" field will be replaced with spaces.
+
+<p>
+The fragment files have a slightly more complicated format, and are best generated using a script included with molefacture in the plugins/molefacture/lib subdirectory of the VMD distribution. The molecule to be converted into fragments should be built in molefacture and saved as an xbgf file. The script convert_xbgf_to_frags.tcl should then be sourced. A mother fragment file can be generated with
+
+<p>
+<code>
+  convert_xbgf_to_mfrag XBGFFILE FRAGPREFIX LONGNAME SHORTNAME
+</code>
+
+<p>
+The output file will then be named FRAGPREFIX.mfrag; LONGNAME and SHORTNAME are, respectively, a one word name and an abbreviated (four characters or less) residue name for the fragment. Similarly, a child fragment can be made with
+
+<p>
+<code>
+  convert_xbgf_to_afrag XBGFFILE FRAGPREFIX FRAGNAME DELH CONATOM
+</code>
+
+<p>
+Most of the options are the same as in the parent fragment case. DELH is the (0-based) index of the hydrogen atom that should be deleted to form the child fragment (it will be replaced with a bond to the existing molecule in molefacture when this fragment is used), and CONATOM is the atom through which the fragment should be bonded to the existing molecule (in almost all cases this will be the heavy atom to which DELH is bound.
+
+<p>
+Once the fragment and database files are set up, they can be loaded into molefacture using the "Add custom..." options in the appropriate Build menu entries.
+
+
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

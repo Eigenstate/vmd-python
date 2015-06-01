@@ -1,0 +1,126 @@
+############################################################################
+#cr                                                                       
+#cr            (C) Copyright 1995-2006 The Board of Trustees of the            
+#cr                        University of Illinois                         
+#cr                         All Rights Reserved                           
+#cr                                                                       
+############################################################################
+
+
+############################################################################
+# RCS INFORMATION:
+#
+# 	$RCSfile: atomselmacros.dat,v $
+# 	$Author: johns $	$Locker:  $		$State: Exp $
+#	  $Revision: 1.5 $	$Date: 2015/05/19 03:46:02 $
+#
+############################################################################
+# DESCRIPTION:
+# This file defines many standard atom-selection macros. Most of these ("Old 
+# macros" and "hydrogen") used to be hard-coded in the AtomSel.C source file 
+# and have been moved here for added flexibility to the user (Tcl-defined 
+# macros are readable and writeable).
+#
+############################################################################
+
+
+#############################################################################
+############################# OLD MACROS ####################################
+#############################################################################
+
+### Rasmol keywords  -- note they are all lowercase!
+
+# rasmol sets (the ones that are built into VMD are marked *)
+#    AT              Acidic          Acyclic
+#    Aliphatic       Alpha           Amino
+#    Aromatic      * Backbone        Basic
+#    Bonded          Buried          CG
+#    Charged         Cyclic          Cystine
+#  * Helix           Hetero          Hydrogen
+#    Hydrophobic     Ions            Large
+#    Ligand          Medium          Neutral
+#  * Nucleic         Polar         * Protein
+#    Purine          Pyrimidine      Selected
+#  * Sheet         * Sidechain       Small
+#    Solvent         Surface       * Turn
+#  * Water
+
+at resname ADE A THY T
+acidic resname ASP GLU
+cyclic resname HIS PHE PRO TRP TYR
+acyclic protein and not cyclic
+aliphatic resname ALA GLY ILE LEU VAL
+alpha protein and name CA
+amino protein
+aromatic resname HIS PHE TRP TYR
+basic resname ARG HIS LYS HSP
+bonded numbonds > 0
+buried resname ALA LEU VAL ILE PHE CYS MET TRP
+cg resname CYT C GUA G
+charged basic or acidic
+hetero not (protein or nucleic)
+
+# APD's hydrophobic residue list, from Branden and Tooze (pp6-7).
+hydrophobic resname ALA LEU VAL ILE PRO PHE MET TRP
+
+small resname ALA GLY SER
+medium resname VAL THR ASP ASN PRO CYS ASX PCA HYP
+large protein and not (small or medium)
+neutral resname VAL PHE GLN TYR HIS CYS MET TRP ASX GLX PCA HYP
+polar protein and not hydrophobic
+purine resname ADE A GUA G
+pyrimidine resname CYT C THY T URA U
+surface protein and not buried
+
+### Rasmol sets which are not defined here:
+
+#hydrogen "" ;# defined later
+#ions "" ;# defined later
+#ligand ""
+#selected "" ;# cannot implemented (different philosophy)
+#solvent "" ;# defined later
+
+
+
+#############################################################################
+############################# NEW MACROS ####################################
+#############################################################################
+
+
+### Molecule categories (from CHARMM topology files)
+
+lipid resname DLPE DMPC DPPC GPC LPPC PALM PC PGCL POPC POPE
+lipids lipid
+ion resname AL BA CA CAL CD CES CLA CL CO CS CU CU1 CUA HG IN IOD K LIT MG MN3 MO3 MO4 MO5 MO6 NA NAW OC7 PB POT PT RB SOD TB TL WO4 YB ZN ZN1 ZN2
+ions ion
+sugar resname AGLC
+solvent not (protein or sugar or nucleic or lipid)
+glycan resname NAG BGLN FUC AFUC MAN AMAN BMA BMAN
+
+### Atomic element names
+
+carbon name "C.*" and not ion
+hydrogen name "[0-9]?H.*"
+nitrogen name "N.*"
+oxygen name "O.*"
+sulfur name "S.*" and not ion
+
+### Shorthand notation
+
+noh not hydrogen
+
+### Common hetero structures
+
+heme resname HEM HEME
+
+### PDB 'altloc' conformation selection macros
+conformationall altloc ""
+conformationA altloc "" or altloc "A"
+conformationB altloc "" or altloc "B"
+conformationC altloc "" or altloc "C"
+conformationD altloc "" or altloc "D"
+conformationE altloc "" or altloc "E"
+conformationF altloc "" or altloc "F"
+
+# CHARMM Drude polarizable force field Drude particles and lone pairs
+drude type DRUD or type LP

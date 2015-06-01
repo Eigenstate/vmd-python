@@ -1,0 +1,99 @@
+/*! \page compiling Compiling plugins from source code
+<p>
+Compiling the plugin tree involves following a few simple steps:
+<ul>
+<li>Getting the source code (via CVS, or from a VMD source distribution)
+<li>Compiling an appropriate Tcl if it is not already available on your
+    computer system.
+<li>Compiling the plugin source tree 
+<li>Generating a plugin distribution directory, including documentation.
+</ul>
+
+\section pluginfiles Libraries required by plugins
+<p>
+Before you can successfully build plugins, several other things
+must be compiled and installed.  At a bare minimum, a normal plugin
+build requires <a href="http://www.tcl.tk/>Tcl</a> to be compiled 
+and linkable from within the directories referenced by the 
+TCLINC and TCLLIB environment variables.
+Without these libraries and their associated header files, 
+compilation of the plugin source code will fail.
+
+<p>
+If you wish to build the plugins for AMBER 9, and MMTK NetCDF trajectories,
+then the NETCDFLIB and NETCDFINC environment variables must be set.
+In order to link the static plugins with VMD, CatDCD or other software
+packages, you'll need to remember to add the NetCDF library to the linkage
+flags for the executable being build.  In the case of CatDCD this is done
+automatically by the Make-arch script.  For VMD, you will need to enable
+the "NETCDF" configure option.  For other packages, you'll want to add
+the same NETCDFLDFLAGS macro used in Make-arch to your link flags. 
+
+
+\section compilefromsrc Compiling the plugin source tree
+<p>
+What follows is a simple example of how we compile one of the
+plugin architectures on our local machines here at UIUC.  
+Note that you must use GNU make to compile the VMD plugin tree
+as we use various Makefile features that are not provided by some
+Unix vendor implementations of Make:
+
+<pre>
+## MacOS X 10.2 framework paths used at UIUC
+setenv TCLINC -I/Projects/vmd/vmd/lib/tcl/include
+setenv TCLLIB -F/Projects/vmd/vmd/lib/tcl
+
+cd /to/your/work/area/plugins/
+gmake MACOSX TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_MACOSX
+</pre>
+
+\section makeworld Customizing builds and concurrent compilation on multiple machines
+<p>
+If one wants to compile the plugin tree on multiple target platforms 
+concurrently, or customize the build script for ease of repeated 
+compilations, a shell script named <b>build.csh</b> is provided which
+is invoked by the '<b>make world</b>' build target.  The build script recognizes
+machines by their hostname, and sets the TCLINC and TCLLIB environment
+variables appropriately, and runs the necessary build commands to build
+on as many target machines as is desired at the site.  The VMD development
+team uses this script to automate compilation on all of the standard
+supported target platforms.  You can edit build.csh by changing the 
+switch statement to recognize your local build machine or by replacing
+the settings in the "default" switch statement target with your own.
+
+
+\section makedistrib Making a plugin distribution directory
+<p>
+Once the plugin tree has been succesfully compiled, the next step is
+to build a distribution directory.  This step populates a target directory
+with all of the compiled plugin binaries, as well as the platform-independent
+plugin scripts, documentation and other data files used by the installed 
+plugins.  This step is the final step required before one can succesfully
+<a href="http://www.ks.uiuc.edu/Research/vmd/doxygen/compiling.html">build VMD itself from source code</a>, 
+as VMD uses the plugin distribution 
+directory as the source for vmdplugin.h and other source files, as well
+as statically-linked plugin libraries.
+<p>
+Before you run the '<b>make install</b>' command, you must first set the
+PLUGINDIR environment variable to the name of your distribution 
+target directory, using the appropriate shell command.  Here's a 
+simple example:
+<pre>
+cd /to/your/work/area/plugins/
+setenv PLUGINDIR /final/desitation/directory/for/compiled/plugins
+gmake distrib
+</pre>
+
+<p>
+Assuming that everying goes as it should, the '<b>make distrib</b>' 
+command will copy all of the required plugin binaries, support files, and 
+documentation to the target directory specified by the PLUGINDIR
+environment variable.  Once this is done, you can proceed with 
+<a href="http://www.ks.uiuc.edu/Research/vmd/doxygen/compiling.html">compiling VMD</a>, 
+or using the final target directory to update your
+local installation of VMD's dynamically loaded plugins.
+
+<p>
+$Id: plg_compiling.dox,v 1.7 2008/03/31 19:40:25 johns Exp $
+
+*/

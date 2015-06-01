@@ -1,0 +1,69 @@
+<!--#set var="TITLE" value="Paratool Plugin, Version 1.5"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+<a href="paratool_main.png"><img src="paratool_main_small.png" align="right"></a>
+
+<h3>Easy generation of force field parameters</h3>
+<p>
+Paratool provides a graphical interface for force field parametrizations of
+molecules that are not contained in your force field. It is designed
+to generate CHARMM or AMBER compliant parameters (while it is more 
+specialized on CHARMM).
+</p>
+<p>
+The plugin helps you to generate the molecule or the moleular fragment
+that should be parametrized and to set up the necessary
+quantumchemical calculations (you'll need Gaussian, later versions
+will also support GAMESS). 
+Paratool reads the logfiles of the QM simulations, computes force
+field parameters for bonds, angles dihedrals and impropers by
+transforming the Hessian into internal coordinates and converting all
+values into units based on kcal/mol, &Aring; and degrees. You can
+assign atom types and the corresponding VDW parameters from a list of
+already existing types or generates new types (all chemical elements
+H - Rn supported). The charges can be determined using restricted
+electrostatic potential fitting RESP (AMBER style) or CHARMM style
+charges using their supramolecular approach which requires another
+Gaussian calculation.
+</p>
+<p>
+Paratool generates input for all necessary external programs collects
+and compiles all the necessary data, organizes and displays them
+neatly in lists and projects them onto your molecule in VMD. Finally 
+it will write the topology and parameter files you'll need to build
+the molecule using psfgen and run your simulation in your favourite
+simulation package, e.g. NAMD.
+</p>
+<h3>Download</h3>
+<p>
+Paratool is part of 
+<a href="http://www.ks.uiuc.edu/Research/vmd/">VMD</a>,
+which you can download <a href="http://www.ks.uiuc.edu/Research/vmd/">here</a>.
+</p>
+<h3>Documentation</h3>
+<p>
+Even though Paratool simplifies force field parametrization a lot
+you'll still need to know what you are doing.
+We are currently preparing a manuscript that will give a detailed
+overview over the complete force field parametrization process. Please
+check back! 
+</p>
+<p>
+<a href="usersguide.html">Paratool's user guide</a> is a practical guide
+through the parametrization procedure but also also contains a
+reasonable amount of background information.
+</p>
+<h3>Citation</h3>
+<p>
+Manuscript in preparation.
+</p>
+<h3>Author:</h3>
+<p>
+<a href="http://bioinf.charite.de/biophys/people/saam">Jan Saam</a> with contributions from 
+<a href="http://www.ks.uiuc.edu/~petefred/">Peter Freddolino</a> and 
+<a href="http://www.ks.uiuc.edu/~jeargle/">John Eargle</a>.
+</p>
+
+
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

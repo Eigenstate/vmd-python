@@ -1,0 +1,26 @@
+<!--#set var="TITLE" value="GRO Plugin, Version 0.9"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads and displays molecular structure files in 
+<a href="http://www.gmd.de/SCAI/europort-1/H1.HTM">Gromos87</a> 
+format, as recognized by 
+<a href="http://www.gromacs.org/">GROMACS</a>. 
+More information can be found at 
+<a href="http://www.gromacs.org/documentation/reference_3.1/online/gro.html">http://www.gromacs.org/documentation/reference_3.1/online/gro.html</a>.</p>
+
+<h3>Notes:</h3>
+
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+writing this file type.</p>
+
+<p><b>Unused data</b>
+<br>GRO files may contain an optional "velocity" block. This data is not
+used by VMD.</p>
+
+<p><b>Compressed files</b>
+<br>Compressed files will need to be expanded before this plugin can read
+them.</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

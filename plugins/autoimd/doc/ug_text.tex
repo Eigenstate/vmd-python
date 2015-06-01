@@ -1,0 +1,255 @@
+
+\section{Introduction to AutoIMD}
+
+\descr {AutoIMD is a means of quickly starting a NAMD molecular dynamics 
+simulations from atomic coordinates in VMD. The simulation can then be visualized in
+real-time on the VMD graphics screen. With the appropriate devices (such
+as a VRPN tracker), the user can also interact with a running simulation
+and apply forces to individual atoms or residues. Such an interaction is 
+extremely useful when building and modeling systems, and can also be used
+to gain precious insights by tinkering with key residues and atoms.}
+
+\descr {While the \htmladdnormallink {\emph{Interactive\ Molecular Dynamics}} {http://www.ks.uiuc.edu/Research/vmd/imd/} (IMD) technology that enables 
+all of this is an intrinsic part of VMD, AutoIMD makes it much more
+ accessible and useful. In general terms, AutoIMD adds the following capabilities:}
+\vspace{-1\baselineskip}
+\begin{itemize}
+\item The user can instantaneously get a simulation running for a subset of his/her system which is specified through a VMD atom selection. 
+\item Instead of a full-blown simulation, AutoIMD can also be used to quickly 
+minimize the energies of parts of a system ({\em e.g.}: on which external 
+manipulations have been performed, for example).
+\item It provides a graphical user interface for setting basic simulation parameters as well as for specifying which machine or cluster to run the simulation on.
+\end{itemize}
+
+\screenshot{autoimd-diagram}{An example AutoIMD session. The molten zone is in the center, surrounded by the fixed zone and then by the excluded zone. A pointer is being used to interact with the system in real-time.}{fig:autoimd-diagram}
+
+\descr {Fig.~\ref{fig:autoimd-diagram} is an example of an AutoIMD session.  When using
+AutoIMD, you can divide up your system into three distinct regions,
+shown in the figure:\footnote{ The ``molten zone'' method used here
+was first discussed in the context of IMD in J.~Prins {et~al.}
+{A~virtual environment for steered molecular dynamics.} {\sl Future
+Generation Computer Systems} {\bf 15}, 485--495 (1999).}}
+\vspace{-1\baselineskip}
+\begin{itemize}
+\item The {\em molten zone} is the region where the atoms are allowed
+to move freely, typically surrounded on all sides by the fixed zone.
+This is the part of the system that you are interested in interacting
+with (typically using a {\em pointer} as shown). You can refer to this
+region through the {\tt imdmolten} atomselect macro.
+\item The {\em fixed zone} is included in the simulation, but its
+atoms are held fixed. Forces from atoms in the fixed zone will
+affect the moving atoms and constrain their motion. You can refer to this
+region through the {\tt imdfixed} macro.
+\item The {\em excluded zone} is removed from your system before
+the simulation is started and are ignored by the simulation (in order to speed it up).
+You can refer to this region through the {\tt imdexcluded} macro.
+\end{itemize}
+
+
+\section{AutoIMD Requirements}
+
+\descr {To get started using AutoIMD with your system, you will need the following:}
+\vspace{-1\baselineskip}
+\begin{enumerate}
+\item A computer running VMD. Computers running MS Windows are supported as of VMD 1.8.4.
+\item An installed copy of NAMD, preferably in the default path {\tt /usr/local/bin} (if not, you will get a prompt). 
+If you wish to run your simulations on a local cluster, you 
+need to perform some additional steps which are detailed later, in section
+ \ref{par:customize}.
+\item If you wish to use a haptic device, you must also set up VMD
+ accordingly (see the VMD documentation).
+\item Atomic coordinates (from a PDB, DCD file, etc.) and a PSF file
+ describing your system.
+\item A CHARMM parameter file for your simulation if your system requires non-standard parameters. The standard parameters are included in AutoIMD, but can also be downloaded here: \\ \htmladdnormallink{http://www.pharmacy.umaryland.edu/faculty/amackere/force\_fields.htm}{http://www.pharmacy.umaryland.edu/faculty/amackere/force\_fields.htm}.
+\end{enumerate}
+
+
+%\section{An example system}
+
+%\descr {You may also want to get {\tt autoimd-example.tar.gz}, a set of PSF
+%and PDB files for the aquaglyceroporin GlpF.  These are example files
+%that you can use to try out AutoIMD. To read more about the system,
+%see the IMD-GlpF page at \htmladdnormallink{{\tt http://www.ks.uiuc.edu/Research/smd\_imd/imd-glpf/}}{http://www.ks.uiuc.edu/Research/smd_imd/imd-glpf/}.}
+
+\section{How to Run an AutoIMD session}
+
+\nitem {Start VMD, load your system (make sure to include a PSF file), and start AutoIMD
+from the {\gui Extensions~$\to$ autoimd} menu item (in the VMD main window). The AutoIMD window 
+(Fig.~\ref{fig:autoimd-GUI}) should appear.}
+
+\screenshot{autoimd-GUI}{The AutoIMD main window.}{fig:autoimd-GUI}
+
+
+\nitem {\emph{[OPTIONAL]} Select the {\gui Settings$\to$Simulation Parameters...} menu item from 
+the AutoIMD window. The dialog box shown in Fig.~\ref{fig:simsettings-GUI} should pop up. Use this dialog box to tell AutoIMD the location of your scratch directory.
+You may also specify an alternate set of CHARMM parameter files, if your system contains non-standard residues.}
+
+\screenshot{simsettings-GUI}{The AutoIMD Simulation Parameters dialog box.}{fig:simsettings-GUI}
+
+
+
+\nitem {Specify the molten zone by entering a VMD atom selection into the text box.}
+
+\descr {\emph{NOTE: Because
+of the way that AutoIMD currently works, you should avoid referencing atoms by their {\tt index} 
+or {\tt residue} number (since they will change in the simulated system), instead, refer to 
+atoms using their {\tt name}, {\tt resid} and {\tt segname} or {\tt chain}, \emph{etc}.}} 
+
+\nitem {Optionally, you can also change the fixed zone that is used to hold the molten zone into place, although the default should work. 
+Note that the fixed zone that you specify might later be adjusted by AutoIMD to include complete
+residues instead of residue fragments, this is normal.}
+ 
+
+\nitem {Pick a server and adjust the number of processors. If you want to run the simulation on the same
+computer that VMD is running on, you would pick ``Local" and ignore the processors field.}
+
+\nitem {Click the {\gui Submit} button to start your NAMD simulation.}
+
+\descr {\emph{NOTE: If this is your first time running AutoIMD, it will prompt you to create 
+a scratch directory in which AutoIMD will store its temporary files. 
+The scratch directory needs to be accessible on both
+your local machine and the host on which NAMD will run. Do not store your own files in this directory.}}
+
+\descr {\emph{NOTE: If you get an error message saying ``Unable to
+    open psf file xxx.psf.", you need to reload your PSF file
+    on top of your current molecule one more time and click  Submit again.}} 
+  
+\nitem {Click {\gui Connect} to connect to the simulation with IMD.
+You should see the atoms start to move. }
+
+\descr {\emph{NOTE: It might take a few seconds for the NAMD
+    simulation to get started. During this time, VMD will not be able
+    to connect and you will see some error messages of the type: 
+      Error connecting to host on port xxxx. This is
+    normal, and these errors can usually be ignored. VMD will connect as soon
+    as NAMD is ready.}} 
+    
+\descr {\emph{NOTE: If after waiting a long time, AutoIMD still does not connect, your
+simulation may have had trouble starting properly. Make sure that your simulation is actually running.
+ If not, your NAMD job may have aborted. Check the NAMD output in the  autoimd.log file in your scratch directory to 
+find the reason (NAMD will say there why it crashed, etc.). Once this is fixed, you can click on Discard and then Submit, to try again.}} 
+    
+\nitem {Interact with your system for a while.  You can use the {\gui Mouse~$\to$ Force} menu items, or a 3D tracker to pull on your atoms. Alternatively, just can also just watch your system equilibrate. At any
+point during your simulation, you can save a PDB snapshot of your system by
+choosing the {\gui File~$\to$ Save Full PDB As...} menu item.}
+
+\nitem {When you are done, click {\gui Finish}.  The coordinates
+of your atoms in your originally loaded molecule will updated, and the
+simulation will stop. {\gui Discard} also stops the simulation, but
+does not update the coordinates and you will be brought back to your initial state. 
+Use this button it if anything goes wrong.}
+
+\section{AutoIMD Adjustable Parameters}
+\label{par:params}
+
+AutoIMD allows you to set a number of adjustable parameters, through the Simulation Parameters window ({\gui Settings~$\to$ Simulation~Parameters} menu item). These options are described here:
+
+\paragraph {scratch directory} The directory in which AutoIMD will store its temporary files needed to run the NAMD simulation. Do not store your own files it it.
+
+\paragraph {CHARMM params} The list of CHARMM parameters files used by NAMD. You will need to modify this if your system contains non-standard residues for which you have created parameters.
+
+\paragraph {temperature} - The temperature at which the simulation dynamics will be run, in degrees Kelvin.
+
+\paragraph {NAMD config template} - AutoIMD runs a NAMD simulation using a pre-defined template which contains all the instructions to be followed by NAMD. If you wish to create a custom simulation, e.g. use different NAMD settings and protocols than what AutoIMD offers, you should copy the template provided by AutoIMD, edit it, and specify it here.
+
+\paragraph {initial minimization} The number of minimization steps performed before the equilibration starts.
+
+\paragraph {DCD save frequency} The frequency at which simulation steps are saved to disk. These will be located in a DCD file called autoimd.dcd in the scratch directory. To load and view this trajectory in VMD, you will also need to load the autoimd.psf file in the same directory.
+
+\paragraph {VMD keep frequency} The frequency at which simulation steps are kept in VMD's memory. You can view these by using the trajectory animation slider.
+
+\paragraph {IMD communication rate} If this is set to something greater than 1, NAMD will not send every computed step to VMD, but will skip steps and only send coordinates to VMD at a set interval.
+
+
+
+\section{Making your settings permanent and adding new servers}
+\label{par:customize}
+
+\descr {If you use AutoIMD a lot, you might wish that could set your default settings 
+in a startup script and not have to worry about typing them in each time. Almost
+everything in AutoIMD is customizable.}
+
+\descr {To set your default scratch directory and CHARMM parameter file, you can include 
+the following lines (provided as an example only) in your {\tt .vmdrc} startup file. Be sure to use absolute paths!}
+\vspace{-1\baselineskip}
+\begin{verbatim}
+    package require autoimd
+
+    autoimd set scratchdir  /home/user/scratchdir
+    autoimd set parfiles    {/home/par_paramfile1.inp  /home/par_paramfile2.inp  ...}
+    [...]
+\end{verbatim}
+
+\descr {For more advanced customization, it is recommended that you copy the file 
+{\tt autoimd-settings.tcl} that is distributed with the AutoIMD package, to your local
+directory. You can then edit it to suit your needs (it is self-documented). Have it be run at
+ startup by adding the following line to your {\tt .vmdrc} file (be sure to use the right path):}
+\vspace{-1\baselineskip}
+\begin{verbatim}
+    source autoimd-settings.tcl
+\end{verbatim}
+
+
+\descr {If you have access to a local cluster for running NAMD, this file is also where you would tell
+ AutoIMD how to access it.}
+
+\section{Customizing the representations used during AutoIMD}
+
+\descr {AutoIMD uses multiple representations to help you keep track of the
+molten, fixed, and excluded zones in your simulation.  When a
+simulation is submitted, two molecules are used at once: one
+containing the original, complete structure and one containing just
+the atoms needed for IMD.  To avoid showing the same atoms twice,
+AutoIMD displays only the excluded and fixed zone of the original molecule. 
+To accomplish this, the atomselection macros {\tt imdexclude},
+{\tt imdfixed}, and {\tt imdmolten} are defined to correspond to
+the three regions of the simulation. You can take advantage of them to 
+select desired parts of your simulations.}
+
+\descr {You can customize both molecules' representations with the VMD
+Graphics Form, just as in a normal VMD session. AutoIMD saves the
+representation used for the IMD molecule when ending a simulation and
+reloads it when a new simulation is submitted.  The default IMD representation
+can be permanently customized through AutoIMD's {\tt imdrep} variable. 
+Here is an example of how it can be used:}
+\vspace{-1\baselineskip}
+\begin{verbatim}
+    autoimd set imdrep {
+        mol representation Bonds 0.300000 6.000000
+        mol color Name
+        mol selection "imdmolten and not hydrogen and not water"
+        mol material Opaque
+        mol addrep $imdmol
+
+        mol representation VDW 1.000000 8.000000
+        mol color Name
+        mol selection "imdmolten and numbonds 0"
+        mol material Opaque
+        mol addrep $imdmol
+
+        mol representation Bonds 0.300000 6.000000
+        mol color Name
+        mol selection "imdmolten and water"
+        mol material Opaque
+        mol addrep $imdmol
+
+        mol representation Tube 0.400000 6.000000
+        mol color ColorID 12
+        mol selection "imdfrozen"
+        mol material Opaque
+        mol addrep $imdmol
+    }
+\end{verbatim}
+
+
+\descr {To view the current IMD representation, you would type (at the VMD prompt):}
+\vspace{-1\baselineskip}
+\begin{verbatim}
+    puts $AutoIMD::imdrep
+\end{verbatim}
+
+
+\section{Getting Additional Help}
+
+\descr {For additional help, as well as to provide feedback, contact us as {\tt vmd\@ks.uiuc.edu}.}
+

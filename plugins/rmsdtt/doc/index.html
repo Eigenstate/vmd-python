@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xml:lang="en-us" xmlns="http://www.w3.org/1999/xhtml" lang="en-us">
+<head>
+  <link rel="stylesheet" href="http://physiology.med.cornell.edu/resources/physbio.css" type="text/css"/>
+  <link rel="stylesheet" href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/vmd.css" type="text/css"/>
+  <link rel="stylesheet" href="vmdbackup.css" type="text/css"/>
+  <link rel="alternate" type="application/rss+xml" href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/rmsdtt/rss.xml" title="RSMDTT plugin feed"/>
+  <meta http-equiv="CONTENT-TYPE" content="text/html; charset=iso-8859-1"/>
+  <meta name="author" content="Luis Gracia"/>
+  <title>RMSDTT plugin for VMD</title>
+</head>
+
+<body lang="en-US" xml:lang="en-US">
+
+<table style="margin-left:auto;margin-right:auto" width="750" summary="Main container">
+<tr><td><a href="http://physiology.med.cornell.edu/"><img style="border:0" src="http://physiology.med.cornell.edu/images/header.jpg" alt="physiology"/></a></td></tr>
+<tr><td>
+
+<h4><a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins">VMD plugins at WMC Physiology &amp; Biophysics</a></h4>
+<h1>RMSDTT: RMSD Trajectory Tool</h1>
+
+<h3>
+<a href="#description">Description</a> |
+<a href="#manual">Manual</a> |
+<a href="#download">Download</a> |
+<a href="#install">Installation</a> |
+<a href="#author">Author</a>
+</h3>
+
+<h2><a name="news">News</a> <a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/rmsdtt/rss.xml" type="application/rss+xml" ><img style="border:0" src="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/rss-icon.png" alt="rss feed" title="rss feed"/></a></h2>
+
+<ul>
+  <li><b>5 Aug '10</b>. New version 3.0 available (also included in next VMD release 1.8.8).</li>
+</ul>
+
+<h2><a name="description">Description</a></h2>
+
+<p>The RMSDTT plugin original goal was to add support for rmsd calculations and alignment of trajectories to the <a href="http://www.ks.uiuc.edu/Research/vmd/plugins/rmsd/">RMSD Tool</a> plugin. It has since evolved to:</p>
+<ul>
+  <li>Calculate rmsd in trajectories, skip frames and do an all-to-all rmsd (all molecules/frames against each other).</li>
+  <li>Calculate weighted rmsd.</li>
+  <li>Align frames in trajectories.</li>
+  <li>Plot results via the Multiplot VMD plugin (in all systems), Xmgrace (on unix systems) or MS Excel (on windows).</li>
+  <li>Save results to file.</li>
+  <li>Swap equivalent atoms (i.e. Glu OE1 and OE2) to reduce rmsd (if <a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/swap">Swap</a> plugin is available).</li>
+  <li>Generate basic statistics (average, standard deviation, minima and maxima).</li>
+  <li>Multi-line atoms selection with support for comments.</li>
+  <li>Highlight equivalent atoms of the rmsd selection.</li>
+</ul>
+
+<p>The RMSDTT plugin is distributed as part of <a href="http://www.ks.uiuc.edu/Research/vmd">VMD</a> (RMSDTT 3.0 since version 1.8.8, RMSDTT 2.0 since version 1.8.4). Most recent information can be found at:</p>
+<p style="text-align:center"><a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/rmsdtt">http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/rmsdtt/</a></p>
+
+<p>As an example, the following figure shows the use of RMSDTT to calculate the rmsd of a single frame structure (<em>min</em>) and two trajectories (<em>equil</em> and <em>md</em>) with the <em>xray</em> structure as reference (<em>top</em> molecule). The trace (CA atoms) of the whole protein is used for the calculation.  Note how lines can be commented in the atom selection box. Statistics for each molecule/trajectory and totals are shown in the table. In addition a plot was requested (plot not shown).</p>
+
+<p style="text-align:center"><img src="rmsdtt_3.0.png" name="rmsdtt" alt="RMSDTT GUI" title="RMSDTT GUI" border="0"/></p>
+
+<div class="Manual">
+<h2><a name="manual">Manual</a></h2>
+
+<p>RMSDTT has been enhanced quite a bit since it was first introduced back in 2004. Here is a short manual including all new options.</p>
+
+<ul style="list-style-type:none; padding-left:0px">
+  <li><b><em>Menu</em></b>
+  <ul>
+    <li><b><em>File:</em></b> Rmsd values are usually plotted or saved to file during the calculation using the <em>plot</em> and <em>save to file</em> options in the main window. Both options can also be triggered using <b><em>Save data</em></b> and <b><em>Plot data</em></b> from this menu. However, all <em>trajectory</em> options in the main window, except for <em>Time</em>, will not take effect when using <b><em>Save data</em></b> and <b><em>Plot data</em></b> from this menu, because the data is precalculated. <b><em>Save summary</em></b> will save to file a summary of the data as it appears in the table.</li>
+    <li>The <b><em>Options</em></b> menu allows you to change the definition of the backbone, select different programs for plotting, switch on/off the statistics in the table, and color the table by molecule number (only if this switch in on and the plot option is on during the calculation).</li>
+  </ul>
+  </li>
+
+  <li><b><em>Atoms Selection</em></b><br/>
+  The selection can be split in different lines. The character <b><em>'#'</em></b> can be used to comment out a portion of the selection from the '#' to the end of the line (see figure above).
+  <ul>
+    <li><b><em>Trace</em></b> will add 'and name CA' to the atoms selection.</li>
+    <li><b><em>Backbone</em></b> will add 'and name C CA N' (default) or 'and name C CA N O' to the atoms selection. The backbone definition can be selected from menu (<em>Options | Backbone def...</em>).</li>
+    <li><b><em>noh</em></b> will exclude hydrogens from the atoms selection (adds 'and noh' to the atoms selection).</li>
+    <li><b><em>History</em></b> is a drop down menu of previously used selections. It is updated only upon successful completion of <em>RMSD</em> or <em>ALIGN</em> calculations.</li>
+  </ul>
+  </li>
+
+  <li><b><em>Equivalent Atoms</em></b><br/>
+  This option draws yellow discontinued lines between pair of equivalent atoms.
+  <ul>
+    <li><b><em>byres</em></b> highlights only one atom per residue.</li>
+    <li><b><em>atom</em></b> specifies the atom name when using option <em>byres</em> If the atom is not found the first atom in the residue is used.</li>
+  </ul>
+  </li>
+
+  <li><b><em>Swap Atoms</em></b><br/>
+  This option tries to swap equivalent atoms to reduce the rmsd. Sets of equivalent atoms can be selected from the drop down menu (defaults to <b><em>All</em></b> defined pairs). How to define or delete new pairs is explained in the <a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/swap">Swap</a> plugin webpage. You need to have the Swap plugin installed to see these options. It does not work with <em>ALIGN</em>.
+  <ul>
+    <li><b><em>verbose</em></b> will print the out the status of the swapped atoms during the RMSD calculations to the console.</li>
+    <li><b><em>List</em></b> will print out the current definitions to the console.</li>
+  </ul>
+  </li>
+
+  <li><b><em>Weights</em></b><br/>
+  Calculated a weighted rmsd or alignment using weights for each atom in the selection. Weight can be taken from different <em>fields</em> stored in one of the molecules:
+  <ul>
+    <li><b><em>Mol</em></b> Select the molecule storing the weights. <em>Ref</em> is the current molecule selected as reference (see below).</li>
+    <li><b><em>Field</em></b> Select the field storing the weights. Five fields can be used: <em>user</em>, <em>mass</em>, <em>charge</em>, <em>beta</em>, <em>occupancy</em>. Some are filled by VMD when loading the molecule, while others can be inputed using tcl.</li>
+  </ul>
+  </li>
+
+  <li><b><em>Calculation Type</em></b>
+  <ul>
+    <li><b><em>RMSD</em></b> will calculate the rmsd using the reference molecule defined in <em>Reference Mol</em> and the structures in the table as targets. Note that the <em>RMSD</em> button has to be pressed again to obtain the new rmsd values after alignment.</li>
+    <li><b><em>ALIGN</em></b> will align the structures in the table using the molecule defined in <em>Reference Mol</em> as reference. <em>ALIGN</em> is not available if the <em>All</em> in the trajectory options is active, <em>Average</em> is used as reference or <em>Swap atoms</em> is active.</li>
+  </ul>
+  </li>
+
+  <li><b><em>Reference Molecule</em></b><br/>
+  Selects the molecule to use as reference for all rmsd and alignment calculations.
+  <ul>
+     <li><b><em>Top</em></b> uses the actual top molecule as reference (it doesn't need to be one included in the table).</li>
+     <li><b><em>Average</em></b> uses the average structure calculated from all the molecules in the table (and all frames if <em>trajectory</em> is activated) as reference. It does not work for <em>ALIGN</em> calculations.</li>
+     <li><b><em>Selected</em></b> uses the molecule selected in the table as reference. If more than one molecule is selected, only the first one will be used as reference.</li>
+  </ul>
+  </li>
+
+  <li><b><em>Trajectory Options</em></b><br/>
+  Include frames from trajectories of one or more molecules in the rmsd or alignment calculation.
+  <ul>
+    <li><b><em>Frame ref</em></b> sets the frame of reference for the reference molecule. if the reference molecule is set to <em>Average</em>, all frames are used.</li>
+    <li><b><em>All</em></b> activates the calculation of the rmsd of all frames in the selected structures against all frames in the reference molecule.</li>
+    <li><b><em>Skip</em></b> allows to skip frames, starting from <em>Start</em> and skipping every <em>Steps</em>.</li>
+    <li><b><em>Time</em></b> activates the use of time units. <em>Start</em> is the initial time, and <em>Step</em> is the time between frames. This changes will be reflected in the plot and the output file.</li>
+    <li><b><em>Plot</em></b> uses the <em>Multiplot VMD plugin</em> (available in all systems), <em>Xmgrace</em> (only on unix) or <em>MS Excel</em> (only windows) to plot the data <em>rmsd vs frame/time</em> during the calculation. This options is not available if the <em>All</em> option is on. The same plot can be obtained from the <em>File</em> menu after the calculation has finished(see above). Xmgrace or MS Excel have to be installed on the system by the user. MS Excel needs the tcom tcl library (see <a href="#install">installation instructions</a>). VMD gives a warning message when exiting on windows systems if MS Excel is open with data from VMD, but you still can continue using MS Excel.</li>
+    <li><b><em>Save</em></b> saves the data to the specified file during the calculation. Data can also be saved after the calculation has finished from the <em>File</em> menu (see above). The format of the data depends on the status of the <em>All</em> option. If it is off, the format is a table in which each row represents a frame and each column represents a molecule or trajectory. If <em>All</em> is on, the data is a table in which each row represents the rmsd between the corresponding ref_mol/ref_frame and target_mol/target_frame pairs. If the trajectories have differing numbers of frames, <em>NA</em> (not available) is used. The data can also be saved from the <em>File</em> menu.
+
+<table style="margin-left:auto;margin-right:auto" summary="Example results">
+  <tr>
+    <td align="center"><em>All</em> off</td>
+    <td width="50"></td>
+    <td align="center"><em>All</em> on</td>
+  </tr>
+  <tr>
+    <td><pre>
+frame   mol 1   mol 2   mol 3
+    0   0.652   2.828   0.652
+    1      NA      NA   0.659
+    2      NA      NA   0.674
+    3      NA      NA   0.692
+    4      NA      NA   0.722
+    5      NA      NA   0.743
+  ...     ...     ...     ...</pre></td>
+    <td></td>
+    <td><pre>
+ref_mol ref_frame       mol     frame      rmsd
+      0         0         1         0     0.652
+      0         0         2         0     2.828
+      0         0         3         0     0.652
+      0         0         3         1     0.659
+      0         0         3         2     0.674
+      0         0         3         3     0.692
+    ...       ...       ...       ...       ...</pre></td>
+  </tr>
+</table>
+</li>
+  </ul>
+  </li>
+
+  <li><b><em>Table of target molecules:</em></b>
+  This table shows the results by molecule. It presents the average, standard deviation, minimum, maximum and number of frames used (note this number is different from the number of frames in the molecule when the reference molecule/frame is not included in the calculation). The <em>Overall</em> row shows the overall values as if all frames were independent of each other, i. e., it is not an average of the averages.
+  <p>The following buttons can be used to add/remove molecules from the table (and further calculations):</p>
+  <ul>
+     <li><b><em>Erase all</em></b> deletes all molecules from the list.</li>
+     <li><b><em>Erase selected</em></b> deletes the selected molecules from the list.</li>
+     <li><b><em>Add all</em></b> adds all molecules to the list.</li>
+     <li><b><em>Add active</em></b> adds only the active molecules to the list.</li>
+  </ul>
+  </li>
+
+</ul>
+</div>
+
+<h2><a name="download">Download</a></h2>
+
+Subscribe to the news <a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/rmsdtt/rss.xml" type="application/rss+xml" >feed</a> or contact the <a href="#author">author</a> if you would like to be informed about new developments.
+
+<table width="650" class="plugin" summary="Version download">
+  <tr>
+    <td class="vertit"><b><a name="last">version 3.0</a> (5 Aug '10)</b></td>
+    <td class="verdown">[<a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/rmsdtt/versions/rmsdtt-v3.0.tgz">download</a>]</td>
+  </tr><tr>
+    <td class="verlog" colspan="2">Change log:
+      <ul>
+	<li>Included in VMD 1.8.8.</li>
+	<li>New options to highlight equivalent atoms in the selection.</li>
+	<li>New options to do weighted rmsd and alignment.</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<table width="650" class="plugin" summary="Version download">
+  <tr>
+    <td class="vertit"><b>version 2.01 (24 Apr '06)</b></td>
+    <td class="verdown">[<a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/rmsdtt/versions/rmsdtt-v2.01.tgz">download</a>]</td>
+  </tr><tr>
+    <td class="verlog" colspan="2">Change log:
+      <ul>
+	<li>Using <em>Average</em> as the reference molecule was not working. Syntax of VMD command <em>measure avpos</em> updated (thanks to Christopher Lanci for reporting this bug).</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<table width="650" class="plugin" summary="Version download">
+  <tr>
+    <td class="vertit"><b>version 2.0 (3 Apr '06)</b></td>
+    <td class="verdown">[<a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/rmsdtt/versions/rmsdtt-v2.0.tgz">download</a>]</td>
+  </tr><tr>
+    <td class="verlog" colspan="2">Change log:
+      <ul>
+	<li>Included in VMD 1.8.4.</li>
+	<li>Complete rewrite to speed up the calculations, add Multiplot support and redesign the gui.</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<p>Previous versions can be found <a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/rmsdtt/v1.html">here</a></p>
+
+<h2><a name="install">Installation</a></h2>
+
+<p>Many people seem to have problems installing these plugins. To help with this issue I have written a <a href="http://physiology.med.cornell.edu/faculty/hweinstein/vmdplugins/installation.html">small guide</a> on how to install third party VMD plugins in a central location without modifying the VMD installation.</p>
+
+<p>The RMSDTT plugin v2.0 has been included in the VMD distribution since VMD 1.8.4, RMSDTT v3.0 since VMD 1.8.8. If you have a previous VMD version I recommend you upgrade. If you still need the RMSDTT plugin in a previous VMD version or if you want to update to a most recent version of the RMSDTT plugin, follow this instructions:</p>
+
+<ol>
+<li><b>Download</b> the plugin from <a href="#download">here</a> to the directory where you store your VMD plugins.</li>
+<li>Add the following to your <b><em>.vmdrc</em></b> startup file (or create one) (for unix the path should be <em>$HOME/.vmdrc</em>, and for windows <em>%USERPROFILE%\vmd.rc</em>):
+  <ol type="a">
+  <li><b>For VMD 1.8.4 and up</b> (will be used instead of the RMSDTT plugin version distributed with VMD 1.8.4):
+<pre>
+set auto_path [linsert $auto_path 0 {/path/to/your/plugins/directory}]
+</pre>
+  </li>
+  <li><b>For VMD 1.8.3</b>
+<pre>
+lappend auto_path {/path/to/your/plugins/directory}
+vmd_install_extension rmsdtt rmsdtt_tk_cb "WMC PhysBio/RMSDTT"
+</pre>
+  </li>
+  <li><b>For VMD 1.8.2 and down</b>
+<pre>
+lappend auto_path {/path/to/your/plugins/directory}
+if { [catch "package require rmsdtt" msg] } {
+  puts "VMD RMSDTT package could not be loaded:\n$msg"
+} elseif { [catch {menu tk register "rmsdtt" rmsdtt} msg] } {
+  puts "VMD RMSDTT could not be started:\n$msg"
+}
+</pre>
+  </li>
+  </ol>
+<p>Remember to use the correct path to your plugins directory; i.e, if you saved the plugin in <em>/home/user/myplugins</em>, write that same path in the <em>auto_path</em> line.</p>
+<p><b>Note:</b> If you created the <em>.vmdrc</em> file, remember to add <b><em>menu main on</em></b> to get the main menu back.</p>
+</li>
+<li>To be able to use <b>MS Excel on Windows</b> you will need the <em>tcom tcl library</em>. <a href="http://www.vex.net/~cthuang/tcom/">Download</a> the library and install it (i.e. in your plugins directories) (in general, only the <em>tcom/lib/tcom</em> directory is needed). Then add the following to your vmd.rc file:
+<pre>
+lappend auto_path {/path/to/tcom/lib/tcom}
+if { [catch "package require tcom" msg] } {
+  puts "VMD tcom package could not be loaded:\n$msg"
+}
+</pre>
+</li>
+<li><b>Start</b> VMD. The RMSDTT plugin should be accessible from the <em>Extensions menu</em>.</li>
+</ol>
+
+<h2><a name="author">Author</a></h2>
+
+<em>Luis Gracia, PhD
+<br/>Weill Cornell Medical College
+<br/>1300 York Ave, New York, 10065 NY</em>
+
+<p>Send comments and feedback to <a href="mailto:lug2002@med.cornell.edu">Luis Gracia</a>.</p>
+
+</td></tr>
+
+<tr><td class="footer">Copyright &copy; 2004-2010, Weill Cornell Medical College. All Rights Reserved</td></tr>
+
+<tr><td class="address">
+<address>
+<a href="mailto:lug2002@med.cornell.edu">Luis Gracia</a>
+| last updated: Thursday, August 5 2010
+<!--#config  timefmt="%A %e/%m/%y"--><!--#echo var="LAST_MODIFIED"-->
+</address>
+</td></tr>
+
+</table>
+</body>
+</html>

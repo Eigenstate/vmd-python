@@ -1,0 +1,145 @@
+<!--#set var="TITLE" value="VolMap Plugin, Version 1.1"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<img src="volmapgui.png" align=right>
+
+<p>The VolMap plugin provides a graphical front-end for VMD's <i>volmap</i>
+command. The VolMap plugin creates volumetric maps (3D grids containing a value
+at each grid point) based on the atomic coordinates and properties of a
+specified atom selection. The generated maps can then be visualized in VMD using
+the Isosurface and VolumeSlice representations or using the Volume coloring
+mode. <br>
+
+<H2>Map Generation Parameters</H2>
+
+The plugin allows you to specify the following:
+
+<ul>
+<li> <b>selection</b>: only use the selected atoms for the volmap computation.
+<li> <b>molecule</b>: the selected atoms will be taken from the specified molecule.
+<li> <b>volmap type</b>: this is the type of map that will be generated. Each map type has its own set of options. See the Volumetric Map Types section further down for a description of these.
+<li> <b>compute for all frames</b>: you can choose whether to compute a map using only the current frame, or to combine the frames over an entire trajectory. VolMap allows you to specify how the frames will be combine: by averaging, or by useing a min or max rule, <i>etc.</i> Certain map types, such as density and occupancy make more sense when they are averaged. Other map types such as distance make more sense for the current frame. Be aware that computing maps for every frame of a trajectory may take a lot of time during which VMD will be unresponsive.
+</ul>
+
+In order to generate a new volumetric map, fill in the desired paramters and click on the "Create Map" button.
+
+
+<H2>Map Types</H2>
+
+The various volumetric data map types currently supported by VolMap are listed
+as follows. Please note that when a map type refer's to an atoms radius or beta
+field, <i>etc.</i>, that these values will be read directly from VMD's
+associated fields for that atom. In certain cases, you may want to adjust the
+atom selections fields (such as radius, beta, <i>etc.</i>) before performing
+the volmap analysis. <br>
+
+
+<H3>density</H3>
+
+<p> <i>Description:</i>
+
+<p> Creates a map of the weighted atomic density at each
+  gridpoint. This is done by replacing each atom in the selection with a
+  normalized gaussian distribution of width (standard deviation) equal to its
+  atomic radius. The gaussian distribution for each atom is then weighted using
+  an optional weight read from one of the atoms' numerical properties, and
+  defaults to a weight of one. The various gaussians are then additively
+  distributed on a grid. The meaning of final map will depend of the weights
+  chosen. For example, choosing a weight of "none" will copmpute the number
+  density, a weight of "mass" will compute the mass density, <i>etc.</i>
+  
+  
+<p><i>Options:</i>
+
+<ul>
+<li> <b>resolution</b>: resolution of the grid in Angstroms.
+<li> <b>atom size</b>: a factor to multiply to each atomic radius before computing the map. This is often used to make the map look smoother.
+<li> <b>weights</b>: the weights for each atom will be read from the property selected in the pop-up menu. "None" refers to a uniform weight of one.
+</ul>
+  
+
+<H3>distance</H3>
+
+<p><i>Description</i>
+
+<p>Creates a map for which each gridpoint contains the distance between that
+  point and the edge of the nearest atom (defined by its VdW sphere). In other
+  words, each gridpoint specifies the maximum radius of a sphere centered at
+  that point which does not intersect with the spheres of any other atoms. All
+  atoms are treated as spheres using the atoms' VMD radii.
+
+<p><i>Options:</i>
+
+<ul>
+<li> <b>resolution</b>: resolution of the grid in Angstroms.
+<li> <b>cutoff</b>: this is the maximum distance that is probed, in Angstroms. Distances above the cutoff will be set to the cutoff value. Increasing the cutoff will provide maps that are accurate at larger distances but may be much slower to compute.
+</ul>
+
+<H3>mask</H3>
+
+<p> <i>Description:</i>
+
+<p> Creates a map which is set to 0 or 1 depending on whether they are within a
+  specified cutoff distance of any atoms in the selection. The mask map is
+  typically used in combination with other maps in order to hide/mask data that
+  is far from a region of interest.
+  
+<p><i>Options:</i>
+
+<ul>
+<li> <b>resolution</b>: resolution of the grid in Angstroms.
+<li> <b>cutoff</b>: this is the radius to be used for each atom, in Angstroms.
+</ul>
+
+
+<H3>occupancy</H3>
+
+<p> <i>Description:</i>
+
+<p> Each grid point is set to either 0 or 1, depending on
+  whether it contains onbe or more atoms or not. When averaged over many frames,
+  this will provide the fractional occupancy of that grid point. By default,
+  atoms are treated as spheres using the atomic radii and a gridpoint is
+  considered to be "occupied" if it lies inside that sphere. 
+
+<p><i>Options:</i>
+
+<ul>
+<li> <b>resolution</b>: resolution of the grid in Angstroms.
+<li> <b>use point particles</b>: check this if you wish to treat particles as points. Only the grid cell in which the center of the atom lies will be marked as occupied.
+</ul>
+
+  
+  <!-- Use the {\tt
+  -points} argument to treat atoms as points (a grid point is "occupied" if its
+  grid cube contains an atom's center).
+  -->
+  
+  <!-- 
+  <b>ligand</b>: creates a map of the estimated potential of mean force (in
+  units of k$_B$T at 300~K) of placing a weakly-interacting gas monoatomic or
+  diatomic ligand at every gridpoint. These results will only be valid when
+  averaging over a large set of frames using the {\tt -combine pmf} option. Like
+  {\tt slowligand} but uses an optimized algorithm (for example, it calculates
+  far-away interactions less often). Unlike slow ligand, it can also computes
+  many samples per gridpoint, which makes the pmf map more accurate. Please
+  refer to and cite: Cohen, J., A. Arkhipov, R. Braun and K. Schulten,  "Imaging the
+  migration pathways for O$_2$, CO, NO, and Xe inside myoglobin", Biophysical Journal, 2006 (Submitted). See additional information about the ligand map type below.
+
+  <b>slowligand</b>: Like {\tt ligand}, but uses a slower and more
+  rigourous algorithm. It is used to test the validity of {\bf ligand} under
+  unusual conditions. See additional information about the ligand map type below.
+-->
+
+<H2>Map Output Parameters</H2>
+
+You may choose how to output the result of your computations.
+
+<ul>
+<li> <b>append to molecule</b>: the map will be appended to the specified molecule in VMD. You will then be able to display Isosurfaces or query the map's contents, etc.
+<li> <b>write to file</b>: the map will be written to disk as a DX-formatted file, which can then later be imported into any VMD molecule.
+</ul>
+  
+  
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

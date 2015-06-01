@@ -1,0 +1,255 @@
+<!--#set var="TITLE" value="Multiplot Plugin, Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<table border="0">
+<tr>
+  <td>
+  <p>
+  The utilities plugin provides a number of general purpose functions and algorithms.
+  The commands are found in the ::util:: namespace.
+  <p>
+  <h3>Author:</h3>
+  Jan Saam<br>
+  Institute of Biochemistry<br>
+  Charite Berlin<br>
+  Germany<br>
+  saam@charite.de<br>
+
+  <p>
+  <h2>Commands</h2>
+  <TABLE>
+  <TR>
+    <TD colspan="2"><b>Simple stuff:</b></TD>
+  </TR>
+  <TR>
+    <TD width=25%><code>::util::deg2rad deg</code></TD>
+    <TD>Converts degree to radians. </TD>
+  </TR>
+  <TR>
+    <TD><code>::util::rad2deg rad</code></TD>
+    <TD>Converts radians to degree.</TD>
+  </TR>
+  <TR>
+    <TD><code>::util::min a b</code></TD>
+    <TD>Returns the smaller of two values.</TD>
+  </TR>
+  <TR>
+    <TD><code>::util::max a b </code></TD>
+    <TD>Returns the larger of two values.</TD>
+  </TR>
+  <TR>
+    <TD><code>::util::roundup val </code></TD>
+    <TD>Rounds positive values up and negative values down to
+        the next integer.</TD>
+  </TR>
+  <TR>
+    <TD><code>::util::rounddown val </code></TD>
+    <TD>Rounds positive values down and negative values up to
+        the next integer.</TD>
+  </TR>
+  <TR>
+    <TD colspan="2"><b>Argument parsing:</b></TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::getargs arglist tag deflt ?n?</code></TD>
+    <TD>
+        Extracts the arguments of an option from a list and
+        returns them. If the option $tag was not found the	   
+        default value $deflt is returned. The number of arguments
+	that will be returned is specified with $n.<br>
+	Example:<br>
+	<code>::util::getargs {-a arg1 -b -c arg2 arg3 -d} "-c" {} 2 <br>
+	--> arg1 arg2 </code>
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::getswitch arglist tag</code></TD>
+    <TD>
+        Checks if a certain switch $tag occurs in $taglist.<br>
+        Example:<br>
+	<code>::util::getswich {-a 5 -b -c} "-b" <br> --> 1</code>
+    </TD>
+  </TR>
+  <TR>
+    <TD colspan="2"><b>List processing:</b></TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::lmin list </code></TD>
+    <TD>
+        Returns the min value of a list of real or integer numbers.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::lmax list </code></TD>
+    <TD>
+        Returns the max value of a list of real or integer numbers.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::ldiff list1 list2 </code></TD>
+    <TD>
+        Returns the difference of lists $list1 and $list2, 
+        i.e all elements that occur in $list1, but not in $list2.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::lnand list1 list2 </code></TD>
+    <TD>
+        Returns the opposite of the intersection of two lists,
+	i.e. all elements that occur only in one of both lists.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::lintersect list1 list2 </code></TD>
+    <TD>
+        Returns the intersection of two lists, i.e. all elements
+	that occur at least once in both lists.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::lcontains list1 list2 ?-all?</code></TD>
+    <TD>
+        Returns the first sublist of $list2 that is contained in $list1.
+	If -all is specified, then all sublists are returned.<br>
+	Example:<br>
+	<code>::util::lcontains {a b c d e f g} {x b c y e f z} -all<br>
+	--> {b c} {e f}</code>
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::lrevert list </code></TD>
+    <TD>
+        Returns the given list in reverse order.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::lincr listname ?val?</code></TD>
+    <TD>
+        Increases each element in the list specified by its variable name by $val. 
+        (I.e. lincr modifies the original list not a copy.)
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::sort_alike list1 list2 ?args?</code></TD>
+    <TD>
+        Sorts elements in list1 in the same way as list2 would
+	be sorted using the rules given in args. The options in $args are passed
+	on to the underlying TCL lsort command.<br>
+	Example:<br>
+	<code>::util::sort_alike {a b c d} {3 2 4 1} -integer<br>
+	--> c b d a </code>
+    </TD>
+  </TR>
+  <TR>
+    <TD colspan="2"><b>Rings:</b></TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::find_rings molid</code></TD>
+    <TD>
+ 	Finds rings in the molecule.                         
+	For each ring a list of atom indices describing the
+	ring is returned.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::unique_rings ringlist</code></TD>
+    <TD>
+ 	Removes rings that enclose other rings from the given 
+	list of rings.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::compare_rings ring1 ring2</code></TD>
+    <TD>
+ 	 Compare two rings, return the longest common chain.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::reorder_ring ring ind1 ?ind2?</code></TD>
+    <TD>
+        Return the ring, which is a list of atoms, in a different   
+	order, beginning with atom $ind1. If the second atom $ind2 is 
+	given then the ring is returned in the according order starting
+	with $ind1 $ind2.
+    </TD>
+  </TR>
+  <TR>
+    <TD colspan="2"><b>Topology:</b></TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::clear_bondlist molid</code></TD>
+    <TD>
+ 	 Clear VMD's bondlist, no bond will be drawn on the screen 
+	 anymore.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::addbond molid atom0 atom1</code></TD>
+    <TD>
+ 	 If the bond does not yet exist in VMD's bond list then add it.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::delbond molid atom0 atom1</code></TD>
+    <TD>
+ 	 Remove specified bond from VMD's bond list.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::bondlist ?-molid molid? ?-sel selection?</code></TD>
+    <TD>
+        Returns a list of bonded atom pairs. You can specify an atom selection, 
+	otherwise all atoms are considered.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::anglelist ?-molid molid? ?-sel selection?</code></TD>
+    <TD>
+        Returns a list of triples defining bond angles that can be  
+	constructed from the existing bonds.  You can specify an atom selection,
+	otherwise all atoms are considered.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::anglelist ?-molid molid? ?-sel selection?</code></TD>
+    <TD>
+        Returns a list of triples defining bond angles that can be  
+	constructed from the existing bonds.  You can specify an atom selection,
+	otherwise all atoms are considered.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::dihedlist ?-molid molid? ?-sel selection? ?-bonds bondlist?</code></TD>
+    <TD>
+        Returns a list of quadruples defining dihedral angles that can be  
+	constructed from the existing bonds. You can specify an atom selection,
+	otherwise all atoms are considered. If you already have a bondlist as
+	created by ::util::bondlist, you can provide it via -bonds, thus enabling
+	faster computation. If you don't specify -all then only one dihedral 
+	angle will be generated per bond.
+    </TD>
+  </TR>
+  <TR>
+    <TD valign="top"><code>::util::bondedsel molid atom0 atom1 ?-maxdepth n? ?-all?</code></TD>
+    <TD>
+        Returns a list of atoms describing the tree of bonded
+	atoms starting with root $atom0 and continuing towards $atom1.
+	If $atom1 is omitted or empty then the in each direction are 
+	followed until $maxdepth is reached, respectively. If -all is
+	specified, for instance in conjunction with -maxdepth 4, then
+	the atoms bonded 1-2 and 1-3 to $atom0 are also returned.<br>
+	Example:<br>
+	<code> ::util::bondedsel top 8 9 -maxdepth 3</code><br>
+	--> Returns all atoms that are bonded exactly in 1-3 distance to
+	atom 8 in the direction of the bond 8--9.
+    </TD>
+  </TR>
+
+  </TABLE>
+  </td>
+</tr>
+
+</table>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

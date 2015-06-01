@@ -1,0 +1,17 @@
+<!--#set var="TITLE" value="NAMDBin Plugin, Version 0.2"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads and writes NAMD binary restart files produced by 
+   all versions of NAMD dating all the way back to NAMD 1.x. 
+
+<h3>Notes:</h3>
+<p><b>Floating Point Precision</b>
+<p>
+This plugin reads and writes NAMD binary coordinate files, however
+the full precision of coordinates are not maintained in either
+the read or write processes, since the plugin interface currently uses 
+single precision floating point numbers for atom coordinates.
+</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

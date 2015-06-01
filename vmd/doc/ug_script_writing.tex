@@ -1,0 +1,830 @@
+\chapter{Advanced Script Writing}
+\label{ug:topic:script:writing}
+
+The biggest improvement in \VMD\ 1.1 has been the addition of  
+commands for analyzing atomic and molecular information.  This 
+chapter describes through examples how to put those commands 
+together to write scripts.  We assume at this point you 
+already read through the other chapters which describe the various 
+commands, including:
+\begin{itemize}
+  \item	how to use Tcl 
+(see Chapter \ref{chapter:ug:text})
+  \item	which commands are/are not ``core'' commands 
+(see section \ref{ug:section:text})
+  \item	the Tcl vector and matrix extensions 
+(see Chapter \ref{ug:topic:vectors})
+  \item the atomselect, molinfo, and colinfo commands 
+(see Chapter \ref{ug:topic:molinfo} and 
+section \ref{ug:ui:text:colorinfo})
+\end{itemize}
+
+The examples used will not be described in detail, but will only 
+explain some of the more unusual or novel features of the \VMD\ 
+scripting language.  The source of the examples can be found
+in the VMD script library at
+\verb!http://www.ks.uiuc.edu/Research/vmd/script_library/!.
+
+Many of these scripts use the {\tt trace} command from Tcl.
+This does not mean all good scripts must use that command,
+but rather that putting a trace on a variable is a nice way
+to add an automatic action.
+
+\section{Drawing a distance matrix}
+\index{distance!matrix}
+
+	This example creates a distance matrix made of the distance
+between the CAs of two residues.  The only input value is selection
+used to find the CAs.  The distances are stored in the 2D array
+``dist'', which is indexed by the atom indices of the CAs (remember,
+atom indices start at 0).
+
+	The distance matrix is a new graphics molecule.  It consists
+of two triangles for each element of the matrix (to make up a square).
+The color for each pair is one of the 1024 elements in the color scale
+and is determined so the range of distance values fits linearly
+between 34 and 66 (excluding 66 itself).  The name of the graphics is
+``CA\_distance(n)'' where ``n'' is the molecule id of the selection
+used to create the matrix.
+
+\index{graphics!command}
+	The first graphics command, ``materials off'' is to keep the
+lights from reflecting off the matrix (otherwise there is too much
+glare).  At the end, the corners of the matrix are labeled in yellow
+with the resid values of the CAs.
+
+	One extra procedure, ``vecdist'', is created.  This computes
+the difference between two vectors of length 3.  It is not as general
+as the normal method ({\tt vecnorm [vecsub \$v1 \$v2]}) but is almost
+twice as fast, which speeds up the overall subroutine by almost 10\%.
+The script is not very fast; after all, for a 234 residue protein,
+27495 distance calculations are made and 54756*2 triangles generated.
+Nearly all of that is done in Tcl.  In terms of times, about 1/3 is
+spent in the distance calculations, another 1/3 in the math to make
+the triangles, and another 1/3 in the three ``graphics'' calls.
+
+	Example usage:
+\begin{verbatim}
+	mol new $env(VMDDIR)/proteins/alanin.pdb
+	set sel [atomselect top all]
+	ca_distance $sel
+\end{verbatim}
+
+\index{example scripts!Tcl!calculation!distance}
+\begin{verbatim}
+# Input: two vectors of length three (v1 and v2)
+# Returns: ||v2-v1||
+proc vecdist {v1 v2} {
+    lassign $v1 x1 x2 x3
+    lassign $v2 y1 y2 y3
+    return [expr sqrt(pow($x1-$y1,2) + pow($x2-$y2,2) + pow($x3-$y3, 2))]
+}
+
+
+\index{atom!coordinates}
+\index{atomselect!command}
+\index{example scripts!Tcl!drawing!CA distance grid}
+# Input: a selection
+# Does: finds the CAs in the selection then computes and draws the
+#   CA-CA distance grid with colors based on the color scale
+# Returns: the id of the new graphics molecule containing the grid
+proc ca_distance {main_sel} {
+    # get the CA atoms from the selection
+    set mol [$main_sel molindex]
+    set sel [atomselect $mol "@$main_sel and name CA"]
+
+    # find distances between each pair
+    set coords [$sel get {x y z}]
+    set max 0
+    set list2 [$sel list]
+
+    foreach atom1 $coords id1 [$sel list] {
+        foreach atom2 $coords id2 $list2 {
+            set dist($id1,$id2) [vecdist $atom2 $atom1]
+            set dist($id2,$id1) $dist($id1,$id2)
+            set max [max $max $dist($id1,$id2)]
+        }
+        lvarpop list2
+        lvarpop coords
+    }
+
+
+    # draw the pretty graphic
+    puts "Distances calculated, now drawing the distance map ..."
+    mol new
+    mol rename top "CA_distance($mol)"
+    set gmol [molinfo top]
+    # turn material characteristics off
+    graphics $gmol materials off
+    # i1 and j1 are i+1 and j+1; this speeds up construction of x{01}{01}
+    set i 0
+    set i1 1
+    # preset the scaling factor (1023.95 instead of 1024 ensures there will be
+    # no color 66 (for the max color), which is transparent)
+    set scale [expr 1023.95 / ($max + 0.)]
+    set list2 [$sel list]
+    foreach id1 [$sel list] {
+       set j 0
+       set j1 1
+       set x00 "$i $j 0"
+       set x10 "$i1 $j 0"
+       set x11 "$i1 $j1 0"
+       set x01 "$i $j1 0"
+       foreach id2 $list2 {
+          set col [expr int($scale * $dist($id1,$id2)) + 34]
+          graphics $gmol color $col
+          graphics $gmol triangle $x00 $x10 $x11
+          graphics $gmol triangle $x00 $x11 $x01
+          incr j
+          incr j1
+          set x00 $x01
+          set x10 $x11
+          set x11 "$i1 $j1 0"
+          set x01 "$i $j1 0"
+       }
+       incr i
+       incr i1
+    }
+    # put some numbers down to give an idea of what is where
+    set resids [$sel get resid]
+    set num [llength $resids]
+    set start [lindex $resids 0]
+    set end [lindex $resids [expr $num - 1]]
+    graphics $gmol color yellow
+    graphics $gmol text "0 0 0" "$start,$start"
+    graphics $gmol text "$num 0 0" "$end,$start"
+    graphics $gmol text "0 $num 0" "$start,$end"
+    graphics $gmol text "$num $num 0" "$end,$end"
+    return $gmol
+}
+\end{verbatim}
+
+\section{Analysis of PDB files}
+\index{molecule!analysis}
+
+	The \VMD\ atom selection commands were prototypes in two 
+in-house programs developed previously, {\tt pdblang}, which showed the need 
+for an easy-to-use language for manipulating structures, and 
+{\tt parse} which tested the usefulness of Tcl for analyzing large numbers 
+of structures.
+
+	Specifically, the goal of the second project was to find what 
+features were needed to write a script to analyze the propensity of 
+various residues to be located near metal ions.  Such a script would 
+need to do the following:
+\begin{itemize}
+ \item given a list of representative PDB files, get them from the PDB
+ \item find if a metal ion is present
+ \item find the residues within 3, 5, and 7 \AA\ from the ion
+ \item keep track of the results
+\end{itemize}
+
+
+The hardest part of the script is determining if a metal ion is
+present, as it is hard to distinguish between a CA calcium and a CA
+alpha carbon.  That still hasn't been solved, though the method below
+should work for nearly all cases, except when ions are inadvertently
+bonded to other atoms.  The new PDB definition has a new field for
+element type, but \VMD\ does not yet recognize it.
+
+\index{example scripts!Tcl!calculation!find nearby residues}
+\index{example scripts!Tcl!calculation!metal ion propensity}
+\begin{verbatim}
+# adds the given (floating point) value to the value
+# if the value doesn't exist, sets it to 0
+# This procedure is used because "incr" fails if the variable doesn't exist
+proc myincr {var val} {
+  regexp {^[^(]*} $var prefix
+  global $prefix
+  if {![info exists $var]} {
+    set $var 0
+  }
+  set $var [eval "expr $var + $val"]
+}
+
+# given the atom index, find the ions within the given distance
+# return 
+proc find_nearby_residues {index ion distance} {
+  set nearby [atomselect top "(within $distance of index $index) \
+			and not index $index"]
+ 
+ # I need to count each residue once, but I need to distinguish
+ # two successive residues, so using just the residue name is not
+ # enough.  "resname residue" is unique and, since atoms on the
+ # same residue have successive indices, the luniq gets just one
+ # of them.
+ foreach res_pair [luniq [$nearby get {resname residue}]] {
+   lassign $res_pair resname
+   myincr count($ion,$distance,$resname) 1
+ }
+}
+
+
+proc analyze_ion_propensity {pdblist metals} {
+  global count
+  # get each of the entries from the list of PDB files
+  foreach entry $pdblist {
+    # load them from the PDB ftp site
+    mol new $entry
+    # go through the search list of metal names
+    foreach ion $metals {
+      set sel [atomselect top "name $ion and numbonds == 0"]
+      foreach atom [$sel list] {
+        # find neighbors for each of the test ranges
+        find_nearby_residues $atom $ion 3
+        find_nearby_residues $atom $ion 5
+        find_nearby_residues $atom $ion 7
+      }
+      # save memory space by forcing the deletion of the 
+      # temporary selection.  (Otherwise they wouldn't be purged
+      # until the end of the procedure.)
+      $sel delete
+    }
+    mol delete top
+  }
+  # the array ``count'' contains the data in the form
+  # (ion name,distance,residue name)
+  # For now just print the values for the normal residues within
+  # 7A of a Zn.  Use a histogram of '*'
+  set resnames {ALA ARG ASN ASP CYS GLN GLU GLY HIS ILE LEU LYS MET \
+          PHE PRO SER THR TRP TYR VAL}
+  foreach resname $resnames {
+    puts -nonewline "$resname :"
+    myincr count(ZN,7,$resname) 0
+    puts [replicate * $count(ZN,7,$resname)]
+  }
+}
+
+\end{verbatim}
+
+   For the example, the files 1TRZ, 1LND, and 1EZM contain zincs.
+
+\begin{verbatim}
+vmd> unset count
+vmd> analyze_ion_propensity {1trz 1lnd 1ezm} ZN
+ALA :****
+ARG :***
+ASN :****
+ASP :***
+CYS :**
+GLN :
+GLU :******
+GLY :
+HIS :***********
+ILE :
+LEU :*
+LYS :**
+MET :
+PHE :*
+PRO :
+SER :****
+THR :
+TRP :
+TYR :***
+VAL :****
+\end{verbatim}
+
+  As expected, histidines were one of the most common zinc
+neighbors. Of course, there will still be problems of missampling (for
+instance, overcounting molecules with zinc finger dimers) so you
+should be very sure of what you are doing when using this type of
+automated analysis.
+
+\section{Currently picked molecule/atom}
+\index{picking}
+
+Every time an atom is picked, the Tcl variables {\tt vmd\_pick\_mol} and
+\index{variables!vmd\_pick\_mol}
+{\tt vmd\_pick\_atom} 
+\index{variables!vmd\_pick\_atom}
+are set to the molecule id and atom index of the picked
+atom.  This is useful for scripts that need to act on used defined
+atom.
+
+For example, the following procedure takes the picked atom and
+finds the molecular weight of residue it is on.
+
+\index{example scripts!Tcl!calculation!mass of picked residue atoms}
+\index{mass!of residue atoms}
+\begin{verbatim}
+proc mol_weight {} {
+      # use the picked atom's index and molecule id
+      global vmd_pick_atom vmd_pick_mol
+      set sel [atomselect $vmd_pick_mol "same residue as index $vmd_pick_atom"]
+      set mass 0
+      foreach m [$sel get mass] {
+            set mass [expr $mass + $m]
+      }
+      # get residue name and id
+      set atom [atomselect $vmd_pick_mol "index $vmd_pick_atom"]
+      lassign [$atom get {resname resid}] resname resid
+      # print the result
+      puts "Mass of $resname $resid = $mass"
+}
+\end{verbatim}
+      Once an atom has been picked, run the command {\tt mol\_weight}
+to get output like:
+\begin{verbatim}
+Mass of ALA 7 : 67.047
+\end{verbatim}
+
+\section{Trace on the pick variables}
+\index{picking!tracing variables}
+Tcl has the ``trace'' command which registers a procedure to be called
+when a variable is read, changed, or deleted.  (Please see one of
+the various Tcl books for examples on how to use this.)
+
+Since \VMD\ sets the vmd\_pick\_atom and vmd\_pick\_mol variables, they
+can be traced.  
+
+\subsection {Information about the picked atom}
+
+As a simple example, the following procedure calls the
+``mol\_weight'' command (in the previous section).
+
+\index{example scripts!Tcl!tracing!picked atoms}
+\begin{verbatim}
+proc mol_weight_trace_fctn {args} {
+      mol_weight
+}
+\end{verbatim}
+(This function is needed because the functions registered with
+trace take three arguments, but ``mol\_weight'' only takes one.)
+
+The trace function is registered as:
+\begin{verbatim}
+trace variable vmd_pick_atom w mol_weight_trace_fctn
+\end{verbatim}
+And now the residue masses will be printed automatically
+when an atom is picked.  To turn this off,
+\begin{verbatim}
+trace vdelete vmd_pick_atom w mol_weight_trace_fctn
+\end{verbatim}
+
+\subsection {Making a sphere appear when an atom is picked}
+\index{trace!variables}
+\index{variables!vmd\_pick\_atom}
+\index{variables!vmd\_pick\_mol}
+
+
+Similarly, you can use the callback to generate a sphere
+when an atom is picked.
+
+\begin{verbatim}
+proc pick_sphere {args} {
+      global vmd_pick_atom vmd_pick_mol
+      # get the coordinates
+      lassign [[atomselect $vmd_pick_mol "index $vmd_pick_atom"] \
+            get {x y z}] x y z
+      # draw the sphere
+      draw sphere "$x $y $z" radius 1
+}
+\end{verbatim}
+and establish the trace:
+
+\begin{verbatim}
+trace variable vmd_pick_atom w pick_sphere
+\end{verbatim}
+
+Whenever you click on an atom, a sphere will appear at the same
+location.  Since the graphics and the molecule aren't the same
+graphics object, you may need to reset view to make them aligned.
+
+To turn the trace off:
+
+\begin{verbatim}
+trace vdelete vmd_pick_atom w pick_sphere
+\end{verbatim}
+
+
+\subsection{Drawing a line from the eye to the picked atom}
+\index{{\tt eye\_line}}
+
+This last example of a trace on the picked atom draws a line from the
+picked atom to the user's eye.  It is a good example of how to use
+matrices in \VMD.  The limitation to the following procedure is that
+it doesn't understand perspective viewing, so to make it work, use the
+orthographic mode.
+
+  This was used to find the direction to pull a ligand from its bound
+position out of the protein.  The molecule was rotated until the user
+could look straight down to the ligand.  The user then picked an atom
+on the ligand, causing a line (actually, a cylinder) 
+to be drawn from the atom past the eye location,
+and the start and end points of the cylinder were printed for
+later use.
+
+\index{example scripts!Tcl!drawing!eye-line to picked atom}
+\begin{verbatim}
+proc eye_line {} {
+  global vmd_pick_atom vmd_pick_mol
+  set sel [atomselect $vmd_pick_mol "index $vmd_pick_atom"]
+
+  # coordinates of the atom
+  set coords [lindex [$sel get {x y z}] 0]
+
+  # position in world space
+  set mat [lindex [molinfo $vmd_pick_mol get view_matrix] 0]
+  set world [vectrans $mat $coords]
+
+  # since this is orthographic, just get the projection on z
+  lassign $world x y
+  # get a coordinate behind the eye
+  set world2 "$x $y 5"
+
+  # convert back to molecule space
+  # (need an inverse, which is only available with the 
+  #  measure command)
+  set inv [measure inverse $mat]
+  set coords2 [vectrans $inv $world2]
+
+  # and draw the line
+  draw cylinder $coords $coords2 radius 0.3
+
+  puts "Start: $coords"
+  puts "End: $coords2"
+}
+\end{verbatim}
+
+\section{Trajectory frames}
+\index{animation}
+\index{variables!vmd\_timestep}
+\index{variables!vmd\_frame}
+
+This section shows examples of how to use {\tt vmd\_frame(\$molecule)}
+and {\tt vmd\_timestep(\$molecule)}. 
+%(see ???).  
+They both depend
+on trajectory information, but one is set during playback of an
+animation while the other is set only when a new coordinate
+set has been received from the remote simulation.
+
+
+\subsection{Animating the secondary structure}
+\index{animation!of secondary structure}
+\index{{\tt sscache}}
+\index{trace!variables}
+
+The secondary structure definitions for the molecules in \VMD\ don't
+change during an animation but they can be made to do so with a trace
+on the {\tt vmd\_frame(\$molecule)} Tcl variable.  The simplest way
+is to call {\tt vmd\_calculate\_structure(molecule)} every time the
+frame changes, e.g.,
+
+\index{example scripts!Tcl!tracing!trajectory frame updates}
+\begin{verbatim}
+proc structure_trace {name index op} {
+      vmd_calculate_structure $index
+}
+
+trace variable vmd_frame w structure_trace
+\end{verbatim}
+but this isn't the fastest solution for a couple of reasons.  First
+off, the secondary structure code is somewhat slow (and about 2/3 of
+the time is spent in the Tcl interface; mostly in writing a temporary
+PDB file).  If you don't plan to modify the coordinates, it is possible to
+store, or {\it cache}, the secondary structure from one frame to the
+next.  Second, if there are multiple molecules loaded and animated,
+the secondary structures of all of them are computed.
+
+  The following script, sscache (for ``secondary structure cache'')
+addresses those two problems.  It is turned on with the command {\tt
+start\_sscache} followed by the molecule number of the molecule whose
+secondary structure should be saved (the default is ``top'', which
+gets converted to the correct molecule index).  Whenever the frame for
+that molecule changes, the procedure {\tt sscache} is called.
+
+  {\tt sscache} is the heart of the script.  It checks if a secondary
+structure definition for the given molecule number and frame already
+exists in the Tcl array sscache\_data(molecule,frame).  If so, it uses
+the data to redefine the ``structure'' keyword values (but only for
+the protein residues).  If not, it calls the secondary structure
+routine to evaluate the secondary structure based on the new
+coordinates.  The results are saved in the sscache\_data array.
+
+  Once the secondary structure values are saved, the molecule can be
+animated rather quickly and the updates can be controlled by the
+animation controls in the VMD Main window.
+
+  To turn off the trace, use the command {\tt stop\_sscache}, which
+also takes the molecule number.  There must be one {\tt stop\_sscache}
+for each {\tt start\_sscache}.  The command {\tt clear\_sscache} resets
+the saved secondary structure data for all the molecules and all the
+frames.
+
+\index{example scripts!Tcl!calculation!secondary structures caching}
+\begin{verbatim}
+# Cache secondary structure information for a given molecule
+
+# reset the secondary structure data cache
+proc reset_sscache {{molid top}} {
+    global sscache_data
+    if {! [string compare $molid top]} {
+      set molid [molinfo top]
+    }
+    if [info exists sscache_data($molid)] {
+        unset sscache_data
+    }
+}
+
+# start the cache for a given molecule
+proc start_sscache {{molid top}} {
+    if {! [string compare $molid top]} {
+      set molid [molinfo top]
+    }
+    global vmd_frame
+    # set a trace to detect when an animation frame changes
+    trace variable vmd_frame($molid) w sscache
+    return
+}
+
+# remove the trace (need one stop for every start)
+proc stop_sscache {{molid top}} {
+    if {! [string compare $molid top]} {
+      set molid [molinfo top]
+    }
+    global vmd_frame
+    trace vdelete vmd_frame($molid) w sscache
+    return
+}
+
+
+# when the frame changes, trace calls this function
+proc sscache {name index op} {
+    # name == vmd_frame
+    # index == molecule id of the newly changed frame
+    # op == w
+    
+    global sscache_data
+
+    # get the protein CA atoms
+    set sel [atomselect $index "protein name CA"]
+
+    ## get the new frame number
+    # Tcl doesn't yet have it, but VMD does ...
+    set frame [molinfo $index get frame]
+
+    # see if the ss data exists in the cache
+    if [info exists sscache_data($index,$frame)] {
+        $sel set structure $sscache_data($index,$frame)
+        return
+    }
+
+    # doesn't exist, so (re)calculate it
+    vmd_calculate_structure $index
+    # save the data for next time
+    set sscache_data($index,$frame) [$sel get structure]
+
+    return
+}
+\end{verbatim}
+
+\subsection{Viewing selections which change during an animation}
+\index{display!update}
+\label{ug:topic:scripts:anim}
+\index{animation!viewing changes}
+
+One of the researchers here needed a way to see which waters bridged
+between a protein and a nucleic acid during a trajectory.  The
+specific waters change during the simulation, so the static method
+used in the graphics window doesn't work.  Instead, the {\tt vmd\_frame}
+variable and a caching method similar to the sscache of the previous
+section was used for the following solution:
+
+The cache data is stored in the array {\tt bridging\_waters}.  Unlike
+{\tt sscache}, this array is indexed only by the frame number; you'll
+have to modify it to analyze multiple changing selections.
+
+When the frame number changes, the cache is checked and, if no data
+exists, the selection is rebuilt.  Since the selection is created in a
+procedure, it must be given by the {\tt global} command to make it exist
+outside that procedure's context.
+
+The global Tcl variable {\tt bridging} is set to the selection for
+this frame.
+
+The first text selection in the graphics window is set to {\tt
+@bridging}.  This is one of the special extensions to the selection
+language which enable the selections to reference a Tcl variable.
+Note also that the display updates are temporarily turned off.  This
+is used to keep the display from being drawn an additional time by the
+call to {\tt mol modselect}.  This is done every time the frame
+changes since that's the only way to tell \VMD\ the graphics have
+changed; forcing it to recalculate that representation's display.
+
+\index{example scripts!Tcl!calculation!bridging waters}
+\begin{verbatim}
+# start the trace
+proc start_bridging {{molid top}} {
+ global vmd_frame bridging_molecule
+ if {![string compare $molid top]} {
+    set molid [molinfo top]
+  }
+  trace variable vmd_frame($molid) w calc_bridging
+  set bridging_molecule $molid
+}
+
+# stop the trace
+proc stop_bridging {} {
+  global bridging_molecule vmd_frame
+  trace vdelete vmd_frame($bridging_molecule) w calc_bridging
+}
+
+# do the actual calculation
+proc calc_bridging {args} {
+  global bridging_waters bridging_molecule bridging
+  # get the current frame number
+  set frame [molinfo $bridging_molecule get frame]
+
+  # has the selection already been made?
+  if {! [info exists bridging_waters($frame)]} {
+    puts "Calculating frame $frame for $bridging_molecule"
+    set bridging_waters($frame) [atomselect $bridging_molecule 
+       {(water within 4 of segname DNA) and (water within 4 of segname PRO1)} 
+       frame $frame]
+  }
+  # set things up for the graphics window to use the precomputed selection
+  set bridging $bridging_waters($frame)
+  # do this since otherwise the selection is deleted when the proc ends
+  $bridging global
+  # update the 0th element of the graphics molecule
+  # Note: if the display wasn't turned off, there would be an extra
+  # update of the animation ... very bad
+  display update off
+  mol modselect 0 $bridging_molecule {@bridging}
+  display update on
+}
+
+\end{verbatim}
+
+Since the selections are available in the global scope, you can analyze
+the results at any time.  This simple function prints how many atoms
+are in each selection of the cache.
+
+\begin{verbatim}
+proc num_bridging {} {
+  global bridging_waters
+  set nums [lsort -integer [array names bridging_waters]]
+  foreach num $nums {
+    set num_atoms [$bridging_waters($num) num]
+    puts "Frame $num has $num_atoms atoms"
+  }
+}
+\end{verbatim}
+
+It would be nice to change the text selection used, support multiple
+selections, have the ``@'' variables in more complicated expressions
+in the graphics selections, and be able to use this script for
+multiple molecules.  These are left to the student as an exercise
+{\tt :)}.
+
+
+
+\subsection{Simulation frames}
+\index{simulation!parameters}
+\index{variables!vmd\_timestep}
+\index{trace!variables}
+\index{example scripts!Tcl!tracing!trajectory frame updates}
+When a new simulation timestep arrives, the Tcl variable {\tt
+vmd\_timestep(molecule)} is set to the value of the new frame.  You
+guessed it -- this can be used along with the {\tt trace} command.
+
+One simple case prints the temperature of the new timestep.
+
+\begin{verbatim}
+proc timestep_temp_trace {name id op} {
+      set temp [molinfo $id get temperature]
+      puts "Temp. of molecule $id is $temp"
+}
+
+trace variable vmd_timestep w timestep_temp_trace
+
+\end{verbatim}
+
+Of course, why do textually what you can do graphically?  The
+following makes a plot of the last ten temperatures.  For simplicity,
+only one plot is allowed.
+
+\index{plot!temperature}
+The {\tt begin\_temp\_plot} sets up the temperature plot variables and
+calls the {\tt trace}.  The trace calls {\tt timestep\_temp\_trace}
+which adds the new temperature to the storage list and then calls the
+graphics routine.  (A list was used here because, while slower than an
+array, the lvarpop was handy.)  There is nothing new or unusual about
+the plotting procedure ({\tt draw\_temps\_plot}) or the routine to
+finish the real-time plotting ({\tt end\_temp\_plot}).
+
+\index{example scripts!Tcl!drawing!plot temperature}
+\begin{verbatim}
+proc begin_temp_plot {molid} {
+   # make sure the molecule exists
+   molinfo $molid get frame
+
+   global temps temps_mol temps_trace_mol vmd_timestep
+   # create a new graphics molecule
+   mol new
+   mol rename top "Temp.of_$molid"
+   set temps_mol [molinfo top]
+   set temps [ldup 10 0]
+   # the molecule to watch
+   set temps_trace_mol $molid
+   # start the trace
+   trace variable vmd_timestep($molid) w timestep_temp_trace
+}
+
+proc end_temp_plot {} {
+   global temps_trace_mol
+   # remove the trace
+   trace vdelete vmd_timestep($temps_trace_mol) w timestep_temp_trace
+}
+
+proc draw_temps_plot {} {
+   global temps temps_mol
+   graphics $temps_mol delete all
+   graphics $temps_mol color red
+   set tmp $temps
+   set pt0 [lvarpop tmp]
+   set x0 0
+   set x1 10
+   foreach pt1 $tmp {
+      graphics $temps_mol line "$x0 $pt0 0" "$x1 $pt1 0"
+        set x0 $x1
+        incr x1 10
+        set pt0 $pt1
+   }
+   graphics $temps_mol color green
+   graphics $temps_mol line {0 0 0} {100 0 0}
+   graphics $temps_mol line {0 0 0} {0 500 0}
+}
+
+proc timestep_temp_trace {args} {
+   global temps temps_mol temps_trace_mol
+   # delete old and add newest value to temps
+   lvarpop temps
+   set new_t [molinfo $temps_trace_mol get temp]
+   set temps "$temps $new_t"
+   draw_temps_plot
+}
+\end{verbatim}
+
+
+Needless to say, many more options can be added to this for plotting
+different variables, autoscaling, adding text, etc.  
+
+By the way, though it has not yet been tested out, we envision that a
+trace on the {\tt vmd\_timestep} variable could be used to modify the
+user forces as the simulation progresses.  This makes the linear force
+controls emulate a harmonic well, or let you apply the forces along a
+path.  You could even make two atoms come towards each other, or draw
+apply the forces to the atoms on a selection such that the center of
+mass of the selection is the important term.  If you want to try it out, good
+luck!
+
+\section{Tcl Logging}
+\index{logging tcl commands}
+
+Every issued command which changes the state of \VMD\ (loading a
+molecule, rotation, opening a window, etc.) can be saved to a file via
+the \htmlref{log command}{ug:text:log}.  In addition, if the Tcl
+command {\it vmdlog} exists, it is called with the issued command as
+its only term.  One use for this is to filter out some of the
+commands.
+
+One practical use of this feature is to filter out the {\tt menu}
+commands so they don't constantly disappear and reappear on playback.
+In addition, this adds {\tt wait} command if the time between
+succesive commands was more than a second so the playback will emulate
+the timings of original actions.
+
+\index{example scripts!Tcl!filtered command logging}
+\begin{verbatim}
+        # set things up to record commands to the file ``session_log.vmd''
+        proc start_recording {} {
+             global recording_fileid
+             set recording_fileid [open session_log.vmd w]
+        }
+
+        # set up the vmdlog proc
+
+        proc vmdlog s {
+             if {[regexp {^menu } $s] != 1} {
+                 global recording_fileid
+                 global recording_time
+                 set now [getclock]
+                 set delay [expr $now - $recording_time]
+                 if {$delay > 1} {
+                   puts $recording_fileid "wait $delay"
+                 }
+                 puts $recording_fileid $s
+                 flush $recording_fileid
+                 set recording_time $now
+             }
+        }
+
+        proc stop_recording {} {
+             global recording_fileid
+             unset recording_fileid -1
+             rename vmdlog {}
+        }
+\end{verbatim}
+

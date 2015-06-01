@@ -1,0 +1,71 @@
+<!--#set var="TITLE" value="XYZ Plugin, Version 1.3"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>
+This plugin reads and writes XYZ files, a minimalistic plain text format for
+storing molecular coordinates. The format basically follows the format,
+that was read and written by the old XMol program, but also tries to
+be as compatible as possible to other variations of the XYZ format.
+
+<p>
+A brief summary of the format, as read by VMD follows:
+<pre>
+    XYZ molecule file format:
+      XYZ files are a simple molecule file format suitable for output
+      by homegrown software since they are very minimalistic.  They don't
+      even include bonding information.
+  
+    [ # optional comment line ] comment line (can be blank)
+                                ^^^ NOTE: comment lines aren't supported by 
+                                    the current version of this plugin.
+    [ N                       ] # of atoms, required by this xyz reader plugin
+    [ molecule name           ] name of molecule (can be blank)
+    atom1 x y z [optional data] atom name followed by xyz coords
+    atom2 x y z [ ...         ] and and (optionally) other data.
+    ...                         instead of atom name the atom number in
+    atomN x y z [ ...         ] the PTE can be given.
+                        
+    Note that this plugin currently ignores everything following the z 
+    coordinate (the optional data fields).
+</pre>
+
+<h3>Notes:</h3>
+
+<p><b>Trajectories</b>
+<br>XYZ files can contain multiple timesteps. All timesteps, however 
+have to have the same number of atoms (VMD does not support this
+currently anyways). Also the elements have to always be in the same
+order, only the first timestep will be used to read the element names.
+From all successive timesteps only the coordinates will be read.
+</p>
+
+<p><b>Unused Data</b>
+<br>This plugin only reads the label and coordinates for each atom. Any
+additional data recorded for an atom is ignored.</p>
+
+<p><b>Atom Count</b>
+<br>VMD requires that the first non-comment line of the file contain the
+number of atoms.</p>
+
+<p><b>Ordinal Numbers</b>
+<br>Atoms in an XYZ file can be labeled with either the atom name or ordinal
+number.</p>
+
+<p><b>Atom Masses</b>
+<br>The plugin assigns masses to the atoms according to the 
+natural isotope distribution of the elements (see e.g.
+<a href="http://www.webelements.com/">http://www.webelements.com/</a>).
+If an element name could not been recognized, a mass of 0 is assigned.
+To set the mass for those elements or assign a different mass for
+the other atoms, you have to use to create a selection with
+<b>atomselect</b> and then use the selection subcommands to set
+the mass.
+
+<p><b>Incompatibilities</b>
+<br>XYZ file as they are produced by the <a href="http://dasher.wustl.edu/tinker/">Tinker</a> package are <b>not</b> compatible to this plugin. Also some other
+XYZ format versions, that are missing the atom count or the title line
+will not work. You have to either convert them to a different format,
+that is understood by VMD or add the missing information.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

@@ -1,0 +1,117 @@
+<!--#set var="TITLE" value="Automatic PSF Generation Plugin, Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<h1>AutoPSF Technical Documentation</h1>
+<p>
+AutoPSF provides a streamlined interface for building complete structures for molecular dynamics simulations. To save work on the part of the user, many assumptions are made by the program to allow structure building with a minimum of user input. The procedures used by AutoPSF to determine how the structure should be built are detailed below.
+</p> 
+
+<h2>Steps in an AutoPSF run</h2>
+<p>
+AutoPSF runs roughly the same sequence of procedures in GUI or command line mode; in GUI mode, though, there is an opportunity for user input after stages 1 and 3.
+
+<ol>
+	<li>Check for valid input files</li>
+	<li>Run <a href="#checkpsf">checkpsf</a> to produce a valid composite topology file</li>
+	<li>Split the input structure into separate chains using AutoPSF's built-in <a href="#chains">criteria</a></li>
+	<li>Load the temporary topology file</li>
+	<li>Apply AutoPSF's <a href="#aliases">default aliases</a></li>
+	<li>Properly alter the protonation state of <a href="#his">histidine residues</a> near metal ions</li>
+	<li>Build the identified chains using psfgen</li>
+	<li>Modify <a href="#cys">cysteine</a> residues with disulfide patches or hydrogen removal patches if they are close enough to another cysteine or a metal ion</li>
+	<li>Ensure that there are no <a href="#unpar">unparameterized</a> residues in the structure, or provide the user with steps to deal with them if there are</li>
+	<li>Write the final output psf and pdb files</li>
+</ol>
+
+<h2>Details of the AutoPSF procedure</h2>
+
+<h3><a name="checkpsf">Checkpsf</a></h3>
+<p>Prior to building a structure, psfgen will run the internal program checkpsf on the input structure and topology files. This program first combines all of the input topology files into one (temporary) monolithic topology file, and then ensures that every residue present in the input structure is defined in the specified topology files. If there are residues missing, a set of dummy entries is added to the temporary topology file that will allow psfgen to run. These dummy entries are flagged so that these <a href="#unpar">unparameterized</a> fragments will be detected later.</p>
+
+<h3><a name="chains">Criteria for splitting chains</a></h3>
+<p>
+AutoPSF attempts to properly guess the chain boundaries in the input structure; note that this is critical both for distinguishing protein chains from each other (so that they are properly named and terminated) and for separating protein, nucleic acid, and other components of the system. The first residue of the structure (obviously) begins a new chain; after that point, chain breaks are placed at any position where one of the following occurs:<br />
+<ul>
+	<li>The segid of a residue is different from the segid of the previous residue</li>
+	<li>The previous residue was a protein residue (identified by one of the three letter designations of the 20 standard amino acids) and the current residue is not</li>
+	<li>The previous residue was a nucleic acid residue (identified by having resname GUA,CYT,THY,ADE, or URA) and the current residue is not</li>
+	<li>The current residue is protein or nucleic acid and the previous residue was not of the same type</li>
+	<li>The resid of the current residue is more than one greater than the resid of the previous residue</li>
+</ul>
+<br />
+In addition, AutoPSF will assign start and end patches to each chain. Nucleic acid chains are assigned 5PHO and 3TER patches, protein chains are assigned NTER and CTER patches (with GLYP or PROP used as the first patch if the N terminal residue is glycine or proline, respectively), and other chains are assigned NONE for their first and last patches.
+</p>
+<p>
+Although these steps will correctly predict the chain breakdown for many common proteins, they are not foolproof; most notably, the presence of nonstandard amino acids or bases, missing residues, or unusual numbering can lead to errors. It is generally preferrable to use the AutoPSF gui in any case where this might be an issue, as the gui provides an interface for editing the chain boundaries and patches set by AutoPSF.</p>
+
+<h3><a name="aliases">Default Aliases</a></h3>
+<p>AutoPSF will apply a number of <tt>psfgen</tt> aliases to correct common clashes between PDB and CHARMM nomenclature. This is generally safe, although it could in theory cause a problem if you want to use a residue with a name that clashes with the PDB name for something fairly common. The alias lines applied by AutoPSF are as follows:</p>
+<pre>
+  pdbalias residue G GUA
+  pdbalias residue C CYT
+  pdbalias residue A ADE
+  pdbalias residue T THY
+  pdbalias residue U URA
+
+  foreach bp { GUA CYT ADE THY URA } {
+     pdbalias atom $bp "O5\*" O5'
+     pdbalias atom $bp "C5\*" C5'
+     pdbalias atom $bp "O4\*" O4'
+     pdbalias atom $bp "C4\*" C4'
+     pdbalias atom $bp "C3\*" C3'
+     pdbalias atom $bp "O3\*" O3'
+     pdbalias atom $bp "C2\*" C2'
+     pdbalias atom $bp "O2\*" O2'
+     pdbalias atom $bp "C1\*" C1'
+  }
+
+  pdbalias atom ILE CD1 CD
+  pdbalias atom SER HG HG1
+  pdbalias residue HIS HSD
+
+# Heme aliases
+  pdbalias residue HEM HEME
+  pdbalias atom HEME "N A" NA
+  pdbalias atom HEME "N B" NB
+  pdbalias atom HEME "N C" NC
+  pdbalias atom HEME "N D" ND
+
+# Water aliases
+  pdbalias residue HOH TIP3
+  pdbalias atom TIP3 O OH2
+
+# Ion aliases
+  pdbalias residue K POT
+  pdbalias atom K K POT
+  pdbalias residue ICL CLA
+  pdbalias atom ICL CL CLA
+  pdbalias residue INA SOD
+  pdbalias atom INA NA SOD
+  pdbalias residue CA CAL
+  pdbalias atom CA CA CAL
+
+# Other aliases
+  pdbalias atom LYS 1HZ HZ1
+  pdbalias atom LYS 2HZ HZ2
+  pdbalias atom LYS 3HZ HZ3
+
+  pdbalias atom ARG 1HH1 HH11
+  pdbalias atom ARG 2HH1 HH12
+  pdbalias atom ARG 1HH2 HH21
+  pdbalias atom ARG 2HH2 HH22
+
+  pdbalias atom ASN 1HD2 HD21
+  pdbalias atom ASN 2HD2 HD22
+</pre>
+
+<h3><a name="his">Treatment of Histidines</a></h3>
+<p>
+Histidine residues tend to require special treatment because of their ability to take on any of three protonation states (delta protonated, epsilon protonated, or the charged form with both nitrogens protonated). In the current version of AutoPSF, all histidines are assigned delta protonation, although an interface to change this will be added in the near future. Any histidines bonded to metal ions will have their protonation state adjusted to keep the protion away from the metal.</p>
+
+<h3><a name="cys">Treatment of Cysteines</a></h3>
+<p>As with histidine, cysteine residues require special treatment because they can form disulfide bonds with other cysteines, and may also lost their sulfur hydrogen if they are involved in ligation of a metal. AutoPSF will automatically form a disulfide bond between any cysteine pair where the sulfur atoms are within three angstroms of each other (this is accomplished by putting a DISU patch on these residues). In addition, any cysteine bonded to a metal will be deprotonated, since it is likely involved as a ligand.  </p>
+
+<h3><a name="unpar">Unparameterized residues</a></h3>
+<p>AutoPSF will assume that any residue not defined in the input topology files is unparameterized. When a structure containing such residue is built, AutoPSF will detect the unparameterized fragment and display a dialogue box detailing possible solutions.</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

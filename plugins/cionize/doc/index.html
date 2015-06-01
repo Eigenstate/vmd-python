@@ -1,0 +1,94 @@
+<h1>CIONIZE 0.2 README </h1>
+
+<h2>Overview: </h2>
+
+<p>CIonize  (short for "coulombic ionize") is a threaded program for placing
+counterions near a biological molecule in preparation for molecular
+dynamics simulations. In this case, placement is performed by calculating
+the coulombic potential due to the molecule in the nearby volume, and
+placing ions at points of minimal energy. After each ion is placed, the
+potential is updated, so that subsequent ions will be placed in response
+to this. Unlike some ion placement tools, ionize should be used <em>prior</em> to
+solvation so that the potential from unequilibrated water does not interfere
+with it (the addition of water would also make the energy calculations even
+more time consuming). Ionize is designed to be used on multiple processors;
+it uses a pthreads parallel implementation to run on shared memory machines
+(any traditional multiprocessor machine, or shared memory clusters such as an
+SGI Altix). After ionize is finished, you should solvate your system normally.</p>
+
+<h2>Compiling: </h2>
+
+<p>CIonize is now built as part of the VMD plugin distribution.</p>
+
+<h2>Contact: </h2>
+
+<p>
+Please contact <a href="mailto:vmd@ks.uiuc.edu">the
+authors</a> with any questions or comments.</p>
+
+<h2>Usage: </h2>
+
+<p>CIonize requires as input a file of the molecule to have ions added 
+in a format that includes charges, and will output a file containing
+the ion coordinates.  Running the ionize executable with no arguments will
+bring up a short list of possible options, which is reproduced below:</p>
+
+<pre><code>cionize: Place ions by finding minima in a coulombic potential
+Usage: cionize (-p numprocs) (-i configfile) (-m calctype) (-f inputformat) inputfile
+    -i inputfile (stdin)
+    -p max_processors (1)
+    -m calctype (Defaults to single precision; can be <tt>double</tt> for double precision or <tt>multigrid</tt> to use multilevel summation)
+    -f Input file format (guesses from extension if not given)
+</code></pre>
+
+<p>Note that the -p switch specifies the maximum number of processors to be
+used by ionize, but it will not try to exceed the maximum number available
+(for example, the number allocated on an Altix run).</p>
+
+<p>Once cionize has been started, commands may be either read from an input
+file (specified by the -i switch) or from standard input (in which case the
+ionize run will be interactive). Any given ionize run consists of two phases:
+before and after the calculation of a coulombic energy grid. At any point
+the user may enter the command <code>HELP</code> to get a list of current options (these
+options are also outlined below). In the initial phase of the program, which
+lasts until the <code>BEGIN</code> keyword is entered, the parameters of the calculation
+may be modified, and a previously calculated energy grid (in the dx format)
+may be specified. When the <code>BEGIN</code> keyword is given, the energy grid will be
+calculated (unless a previously calculated grid was input), and the program
+will pass to a mode where ions will be placed.</p>
+
+<p>When in this second mode, users may place ions, save the previous batch of
+ions to a pdb file, or save the current energy grid (which incorporates the
+effects of ions placed up until that point) to a dx file. Note that placing
+ions <em>does not</em> automatically save them; a separate command is required for
+this. The ion placement mode will last until the <code>EXIT</code> keyword is specified
+or the program encounters an EOF in the input.</p>
+
+<h2>Recognized keywords:</h2>
+
+<p>In all cases, <code>value</code> represents a required argument, and <code>(value)</code>
+and optional argument. Input keywords are not case sensitive, but arguments
+such as filenames are.</p>
+
+<h3>Before energy grid calculation</h3>
+
+<ul>
+<li><code>R_ION_SOLUTE r</code> -- Minimum ion-solute distance</li>
+<li><code>R_ION_ION r</code>--Minimum ion-ion distance</li>
+<li><code>BORDERSIZE distance</code>--Distance beyond solute to extend calculations</li>
+<li><code>GRIDSPACING spacing</code>--Grid density in angstroms</li>
+<li><code>GRIDFILE file</code>--Use energy grid from the specified file instead of calculating a new one</li>
+<li><code>XYZDIM xmin ymin zmin xmax ymax zmax</code>--Override molecule dimensions and calculate grid between the specified points</li>
+<li><code>SHOWOPT</code>--Show the values of current settings</li>
+<li><code>BEGIN</code>--Calculate the energy grid with the existing parameters</li>
+</ul>
+
+<h3>After energy grid calculation</h3>
+
+<ul>
+<li><code>SAVEGRID file</code>--Save current energy grid to a dx file</li>
+<li><code>PLACEION ionname n ioncharge</code>--Place a set of n ions using the current grid</li>
+<li><code>SAVEION (filetype) file</code>--Save the most recently placed batch of ions
+to a file. If <code>filetype</code> is ommitted, it is guessed from the extension. of <code>file</code></li>
+</ul>
+

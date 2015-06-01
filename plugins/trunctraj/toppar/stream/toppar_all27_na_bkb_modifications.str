@@ -1,0 +1,920 @@
+* CHARMM27 All-Hydrogen Nucleic Acid Force Toppar Stream File
+* Collection of residues and patches for miscellaneous backbone
+* modifications, including some modified backbones with "aliphatic"
+* base mimics
+* A.D. MacKerell, Jr., July 2001
+*
+
+!Parent files that have to be read prior to streaming this file
+!top_all27_na.rtf
+!par_all27_na.prm
+!
+!Testcase
+!test_all27_na_bkb_modifications.inp
+
+!References
+!
+!These residues and the associated parameters are not yet published
+!though they all were carefully parameterized.  Please reference
+!the Foloppe and MacKerell Charmm27 nucleic acid paper.
+!
+
+read rtf card append
+* residues and patches for modified backbone
+*
+31  1
+
+PRES 25P1      -1.00   ! patch to convert a 3'-5' phosphodiester RNA
+                       ! linkage to a 2'-5' phosphodiester linkage
+                       ! Note that this can be used for DNA, just don't convert
+                       ! the 5' base to RNA (via PRES DEO1) prior to invoking
+                       ! this patch
+                       ! Use AUTOgenerate ANGLes DIHEdrals following application
+DELE ATOM 1O3'
+DELE ATOM 1H2'  ! previous O2' hydroxyl H
+GROUP
+ATOM 1C3'  CN8  -0.18
+ATOM 1H3'  HN8   0.09
+ATOM 1H3'' HN8   0.09
+GROUP
+ATOM 1C2'  CN7B  0.01
+ATOM 1H2'' HN7   0.09
+ATOM 1O2'  ON2  -0.57
+ATOM 2P    P     1.50
+ATOM 2O1P  ON3  -0.78
+ATOM 2O2P  ON3  -0.78
+ATOM 2O5'  ON2  -0.57
+ATOM 2C5'  CN8B -0.08
+ATOM 2H5'  HN8   0.09
+ATOM 2H5'' HN8   0.09
+
+bond 1c3'  1h3''
+bond 1o2'  2p
+
+ic 1C2' 1C4'  *1C3' H3''    0.0000  000.00 -124.08  000.00  0.0000
+
+RESI BPET        -2.00  ! Bis-methylphosphate-ethane 
+                        ! adm jr., w/Daniel Barsky
+GROUP                   !
+ATOM C1   CN9    -0.17  !           H11
+ATOM H11  HN9     0.09  !            |
+ATOM H12  HN9     0.09  !       H13-C1-H12
+ATOM H13  HN9     0.09  !             \
+ATOM O2   ON2    -0.57  !         O31  O2
+ATOM P3   P       1.50  !          \\ /
+ATOM O31  ON3    -0.78  !      (-)   P3
+ATOM O32  ON3    -0.78  !          // \
+ATOM O4   ON2    -0.57  !         O32  O4
+ATOM C5   CN8    -0.08  !             /
+ATOM H51  HN8     0.09  !        H51-C5-H52
+ATOM H52  HN8     0.09  !            |
+ATOM C6   CN8    -0.08  !        H51-C6-H52
+ATOM H61  HN8     0.09  !             \
+ATOM H62  HN8     0.09  !        O81   O7
+ATOM O7   ON2    -0.57  !          \\ /
+ATOM P8   P       1.50  !       (-)  P8
+ATOM O81  ON3    -0.78  !          // \
+ATOM O82  ON3    -0.78  !        O82   O9
+ATOM O9   ON2    -0.57  !             /
+ATOM C10  CN9    -0.17  !      H101-C10-H102
+ATOM H101 HN9     0.09  !            |
+ATOM H102 HN9     0.09  !          H103
+ATOM H103 HN9     0.09  !
+
+BOND C1   O2     O2   P3    P3   O4    O4   C5    C5   C6    C6   O7
+BOND O7   P8     P8   O9    O9   C10   P3   O31   P3   O32   
+BOND P8   O81    P8   O82 
+BOND C1   H11    C1   H12   C1   H13   C5   H51   C5   H52
+BOND C6   H61    C6   H62   C10  H101  C10  H102  C10  H103
+!from IC generate
+IC H11   C1    O2    P3     0.0000    0.00  180.00    0.00   0.0000
+IC C1    O2    P3    O4     0.0000    0.00  180.00    0.00   0.0000
+IC H11   O2    *C1   H12    0.0000    0.00  120.00    0.00   0.0000
+IC H11   O2    *C1   H13    0.0000    0.00 -120.00    0.00   0.0000
+IC O4    O2    *P3   O31    0.0000    0.00  120.00    0.00   0.0000
+IC O4    O2    *P3   O32    0.0000    0.00 -120.00    0.00   0.0000
+IC O2    P3    O4    C5     0.0000    0.00  180.00    0.00   0.0000
+IC P3    O4    C5    C6     0.0000    0.00  180.00    0.00   0.0000
+IC C6    O4    *C5   H51    0.0000    0.00  120.00    0.00   0.0000
+IC C6    O4    *C5   H52    0.0000    0.00 -120.00    0.00   0.0000
+IC O4    C5    C6    O7     0.0000    0.00  180.00    0.00   0.0000
+IC O7    C5    *C6   H61    0.0000    0.00  120.00    0.00   0.0000
+IC O7    C5    *C6   H62    0.0000    0.00 -120.00    0.00   0.0000
+IC C5    C6    O7    P8     0.0000    0.00  180.00    0.00   0.0000
+IC C6    O7    P8    O9     0.0000    0.00  180.00    0.00   0.0000
+IC O9    O7    *P8   O81    0.0000    0.00  120.00    0.00   0.0000
+IC O9    O7    *P8   O82    0.0000    0.00 -120.00    0.00   0.0000
+IC O7    P8    O9    C10    0.0000    0.00  180.00    0.00   0.0000
+IC P8    O9    C10   H101   0.0000    0.00  180.00    0.00   0.0000
+IC H101  O9    *C10  H102   0.0000    0.00  120.00    0.00   0.0000
+IC H101  O9    *C10  H103   0.0000    0.00 -120.00    0.00   0.0000
+
+RESI ABNS         0.00  ! abasic deoxyribose nucleoside (susil)
+                        ! adm jr., w/Daniel Barsky
+GROUP                   !
+ATOM H5T  HN5     0.43  !
+ATOM O5'  ON5    -0.66  !
+ATOM C5'  CN8B    0.05  !       H5T
+ATOM H51' HN8     0.09  !        \
+ATOM H52' HN8     0.09  !   H51'  O5'
+ATOM C4'  CN7     0.16  !      \ /
+ATOM H42' HN7     0.09  ! H52'--C5'  O4'   H11'
+ATOM O4'  ON6    -0.50  !        \  /  \  /
+ATOM C1'  CN8B    0.07  !    H42'-C4'   C1'-H12'
+ATOM H11' HN8     0.09  !          |    |
+ATOM H12' HN8     0.09  !         C3'---C2'-H21'
+ATOM C2'  CN8    -0.18  !        / |     \
+ATOM H21' HN8     0.09  !     O3' H31'   H22'
+ATOM H22' HN8     0.09  !      |
+ATOM C3'  CN7     0.14  !     H32'
+ATOM H31' HN7     0.09
+ATOM O3'  ON5    -0.66
+ATOM H32' HN5     0.43
+
+BOND O4'  C4'       O4'  C1'       C4'  C5'       C4'  H42'      C4'  C3'
+BOND C1'  H11'      C1'  H12'      C1'  C2'       C2'  H21'      C2'  H22'
+BOND C3'  H31'      C3'  O3'       O3'  H32'      C5'  O5'       C5'  H51'
+BOND C5'  H52'      O5'  H5T       C2'  C3'
+
+BILD O4'  C1'  C2'  C3'    1.433   104.1    41.2   100.9    1.525
+BILD C1'  C2'  C3'  C4'    1.521   100.9   325.1   102.6    1.533
+BILD C2'  C3'  C4'  C5'    1.525   102.6   257.8   113.7    1.513
+BILD C3'  C4'  C5'  O5'    1.534   113.7    46.5   108.2    1.428
+BILD C4'  C5'  O5'  H5T    1.513   108.2   170.4   107.7    0.971
+BILD C3'  C4'  C5'  H52'   1.534   113.7   167.5   108.4    1.098
+BILD C3'  C4'  C5'  H51'   1.534   113.7   285.5   109.1    1.101
+BILD C2'  C3'  C4'  H42'   1.525   102.6   135.9   108.6    1.099
+BILD C1'  C2'  C3'  H31'   1.521   100.9   204.2   113.0    1.097
+BILD C1'  C2'  C3'  O3'    1.521   100.9    78.3   111.7    1.434
+BILD C2'  C3'  O3'  H32'   1.525   111.7    65.4   107.1    0.973
+BILD O4'  C1'  C2'  H22'   1.433   104.1   162.1   113.9    1.096
+BILD O4'  C1'  C2'  H21'   1.433   104.1   285.5   110.1    1.093
+BILD O4'  C1'  C2'  H11'   1.433   104.1   243.2    26.8    2.209
+BILD O4'  C1'  C2'  H12'   1.433   104.1   119.0    28.2    2.173
+
+PRES ABNP         0.00  ! patch to convert a standard base into an abasic furanose 
+                        ! adm jr., w/Daniel Barsky
+                        !
+                        ! Note 1) apply patch PRES DELB prior to this patch
+GROUP
+ATOM C4'  CN7     0.16 
+ATOM H4'  HN7     0.09 
+ATOM O4'  ON6    -0.50 
+ATOM C1'  CN8B    0.07
+ATOM H1'  HN8     0.09
+ATOM H1'' HN8     0.09
+BOND C1'  H1''
+!BILD H1''  C2'  *C1' H1'    0.0       0.0  -115.0     0.0     0.9 !orig
+!BILD H1'' *C1' C2'  H1'    0.0       0.0  -115.0     0.0     0.9 !<-new db(3/11/99)
+BILD H1''  C2'  *C1' H1'    0.0       0.0   115.0     0.0     0.9 !adm attempt
+
+
+PRES ABPQ         0.00  ! patch to substitute 2-(aminobutyl)-1,3-propanediol
+                        ! for a standard base
+                        ! adm jr., w/Daniel Barsky
+                        !
+                        ! Note 1) apply patch PRES DELB prior to this patch
+                        !
+                        ! Note 2) apply patch and ic build after reading unmodified
+                        ! DNA/RNA coordinates otherwise positions of deleted base atoms
+                        ! will be assigned to the amino-alkane chain
+!delete unneeded sugar atoms
+DELE ATOM C1'
+DELE ATOM H1'
+DELE ATOM C2'
+DELE ATOM H2'
+DELE ATOM H2''
+DELE ATOM O2'
+DELE ATOM O4'
+ATOM P    P       1.50
+ATOM O1P  ON3    -0.78
+ATOM O2P  ON3    -0.78
+ATOM O5'  ON2    -0.57
+ATOM C5'  CN8    -0.08
+ATOM H5'  HN8     0.09
+ATOM H5'' HN8     0.09 !              H11 H12 H31 H32   H51
+GROUP                  !                 \ /   \  /     / 
+ATOM C4'  CN7    -0.09 ! O1P    H5' H4'   C1    C3    N5-H52 (+)
+ATOM H4'  HN7     0.09 !  |      |    \  /  \  /  \  /  \
+GROUP                  ! -P-O5'-C5'---C4'    C2    C4   H53
+ATOM C1   CN8    -0.18 !  |      |     |    /  \  /  \
+ATOM H11  HN8     0.09 ! O2P    H5''   | H21 H22 H41 H42
+ATOM H12  HN8     0.09 !               |
+GROUP                  !          H3'-C3'-H3''
+ATOM C2   CN8    -0.18 !               |
+ATOM H21  HN8     0.09 !              O3'
+ATOM H22  HN8     0.09 !               |
+GROUP                 
+ATOM C3   CN8    -0.18
+ATOM H31  HN8     0.09
+ATOM H32  HN8     0.09
+GROUP                 
+ATOM C4   CN8     0.21
+ATOM H41  HN8     0.05
+ATOM H42  HN8     0.05
+ATOM N5   NN6    -0.30
+ATOM H51  HN1     0.33
+ATOM H52  HN1     0.33
+ATOM H53  HN1     0.33
+GROUP                 
+ATOM C3'  CN8    -0.08
+ATOM H3'  HN8     0.09
+ATOM H3'' HN8     0.09
+ATOM O3'  ON2    -0.57
+
+BOND C3' H3'' C4' C1  C1  C2  C2  C3  C3  C4  C4  N5
+BOND C1  H11  C1  H12 C2  H21 C2  H22 C3  H31 C3  H32
+BOND C4  H41  C4  H42 N5  H51 N5  H52 N5  H53
+
+IC O3'   C4'   *C3'  H3'    0.0000    0.00 -120.00    0.00   0.0000
+IC O3'   C4'   *C3'  H3''   0.0000    0.00  120.00    0.00   0.0000
+IC C3'   C5'   *C4'  C1     0.0000    0.00 -120.00    0.00   0.0000
+IC C3'   C5'   *C4'  H4'    0.0000    0.00  120.00    0.00   0.0000
+IC C5'   C4'   C1    C2     0.0000    0.00  180.00    0.00   0.0000
+IC C2    C4'   *C1   H11    0.0000    0.00  120.00    0.00   0.0000
+IC C2    C4'   *C1   H12    0.0000    0.00 -120.00    0.00   0.0000
+IC C4'   C1    C2    C3     0.0000    0.00  180.00    0.00   0.0000
+IC C3    C1    *C2   H21    0.0000    0.00  120.00    0.00   0.0000
+IC C3    C1    *C2   H22    0.0000    0.00 -120.00    0.00   0.0000
+IC C1    C2    C3    C4     0.0000    0.00  180.00    0.00   0.0000
+IC C4    C2    *C3   H31    0.0000    0.00  120.00    0.00   0.0000
+IC C4    C2    *C3   H32    0.0000    0.00 -120.00    0.00   0.0000
+IC C2    C3    C4    N5     0.0000    0.00  180.00    0.00   0.0000
+IC N5    C3    *C4   H41    0.0000    0.00  120.00    0.00   0.0000
+IC N5    C3    *C4   H42    0.0000    0.00 -120.00    0.00   0.0000
+IC C3    C4    N5    H51    0.0000    0.00  180.00    0.00   0.0000
+IC H51   C4    *N5   H52    0.0000    0.00  120.00    0.00   0.0000
+IC H51   C4    *N5   H53    0.0000    0.00 -120.00    0.00   0.0000
+
+PRES ABQU         0.00  ! patch to substitute 2-(aminobutyl)-1,3-propanediol
+                        ! for a standard base in the "Up" position -db(12/1/98)
+                        ! adm jr., w/Daniel Barsky
+                        !
+                        ! Note 1) apply patch PRES DELB prior to this patch
+                        !
+                        ! Note 2) apply patch and ic build after reading unmodified
+                        ! DNA/RNA coordinates otherwise positions of deleted base atoms
+                        ! will be assigned to the amino-alkane chain
+!delete unneeded sugar atoms
+DELE ATOM C1'          !
+DELE ATOM H1'          !
+DELE ATOM C2'          !
+DELE ATOM H2'          !
+DELE ATOM H2''         !
+DELE ATOM O2'          !
+DELE ATOM O4'          !
+ATOM P    P       1.50 !
+ATOM O1P  ON3    -0.78 !
+ATOM O2P  ON3    -0.78 !
+ATOM O5'  ON2    -0.57 !                H11 H12 H31 H32   H51
+ATOM C5'  CN8    -0.08 !                  \ /   \  /     /  
+ATOM H5'  HN8     0.09 !                   C1    C3    N5-H52 (+)
+ATOM H5'' HN8     0.09 !                  /  \  /  \  /  \
+GROUP                  !                 /   C2    C4   H53 
+ATOM C4'  CN7    -0.09 ! O1P    H5'     /   /  \   / \ 
+ATOM H4'  HN7     0.09 !  |      |     /  H21 H22 H41 H42
+GROUP                  ! -P-O5'-C5'---C4' 
+ATOM C1   CN8    -0.18 !  |      |     |\
+ATOM H11  HN8     0.09 ! O2P    H5''   | H4'
+ATOM H12  HN8     0.09 !               |
+GROUP                  !          H3'-C3'-H3''
+ATOM C2   CN8    -0.18 !               |
+ATOM H21  HN8     0.09 !              O3'
+ATOM H22  HN8     0.09 !               |
+GROUP                 
+ATOM C3   CN8    -0.18
+ATOM H31  HN8     0.09
+ATOM H32  HN8     0.09
+GROUP                 
+ATOM C4   CN8     0.21
+ATOM H41  HN8     0.05
+ATOM H42  HN8     0.05
+ATOM N5   NN6    -0.30
+ATOM H51  HN1     0.33
+ATOM H52  HN1     0.33
+ATOM H53  HN1     0.33
+GROUP                 
+ATOM C3'  CN8    -0.08
+ATOM H3'  HN8     0.09
+ATOM H3'' HN8     0.09
+ATOM O3'  ON2    -0.57
+
+BOND C3' H3'' C4' C1  C1  C2  C2  C3  C3  C4  C4  N5
+BOND C1  H11  C1  H12 C2  H21 C2  H22 C3  H31 C3  H32
+BOND C4  H41  C4  H42 N5  H51 N5  H52 N5  H53
+
+IC O3'   C4'   *C3'  H3'    0.0000    0.00 -120.00    0.00   0.0000
+IC O3'   C4'   *C3'  H3''   0.0000    0.00  120.00    0.00   0.0000
+IC C3'   C5'   *C4'  C1     0.0000    0.00 -120.00    0.00   0.0000
+IC C3'   C5'   *C4'  H4'    0.0000    0.00  120.00    0.00   0.0000
+IC C5'   C4'   C1    C2     0.0000    0.00  180.00    0.00   0.0000
+IC C2    C4'   *C1   H11    0.0000    0.00  120.00    0.00   0.0000
+IC C2    C4'   *C1   H12    0.0000    0.00 -120.00    0.00   0.0000
+IC C4'   C1    C2    C3     0.0000    0.00  180.00    0.00   0.0000
+IC C3    C1    *C2   H21    0.0000    0.00  120.00    0.00   0.0000
+IC C3    C1    *C2   H22    0.0000    0.00 -120.00    0.00   0.0000
+IC C1    C2    C3    C4     0.0000    0.00  180.00    0.00   0.0000
+IC C4    C2    *C3   H31    0.0000    0.00  120.00    0.00   0.0000
+IC C4    C2    *C3   H32    0.0000    0.00 -120.00    0.00   0.0000
+IC C2    C3    C4    N5     0.0000    0.00  180.00    0.00   0.0000
+IC N5    C3    *C4   H41    0.0000    0.00  120.00    0.00   0.0000
+IC N5    C3    *C4   H42    0.0000    0.00 -120.00    0.00   0.0000
+IC C3    C4    N5    H51    0.0000    0.00  180.00    0.00   0.0000
+IC H51   C4    *N5   H52    0.0000    0.00  120.00    0.00   0.0000
+IC H51   C4    *N5   H53    0.0000    0.00 -120.00    0.00   0.0000
+
+PRES ABPR        -1.00  ! patch to substitute an abasic propyl linkage
+                        ! for a standard base
+                        ! adm jr., w/Daniel Barsky
+                        !
+                        ! Note 1) apply patch PRES DELB prior to this patch
+                        !
+                        ! Note 2) apply patch and ic build after reading unmodified
+                        ! DNA/RNA coordinates otherwise positions of deleted base atoms
+                        ! will be assigned to the amino-alkane chain
+!delete unneeded sugar atoms
+DELE ATOM C1'
+DELE ATOM H1'
+DELE ATOM C2'
+DELE ATOM H2'
+DELE ATOM H2''
+DELE ATOM O2'
+DELE ATOM O4'
+ATOM P    P       1.50
+ATOM O1P  ON3    -0.78
+ATOM O2P  ON3    -0.78
+ATOM O5'  ON2    -0.57
+ATOM C5'  CN8    -0.08
+ATOM H5'  HN8     0.09
+ATOM H5'' HN8     0.09
+GROUP                  ! O1P    H5'   H4'   H3'
+ATOM C4'  CN8    -0.18 !  |      |     |     |
+ATOM H4'  HN8     0.09 ! -P-O5'-C5'---C4'---C3'---O3'-
+ATOM H4'' HN8     0.09 !  |      |     |     |
+GROUP                  ! O2P    H5''  H4''  H3''
+ATOM C3'  CN8    -0.08 !
+ATOM H3'  HN8     0.09 !
+ATOM H3'' HN8     0.09 !
+ATOM O3'  ON2    -0.57 !
+
+BOND C4' H4'' C3' H3''
+IC C3'  C5'   *C4'  H4'    0.0000    0.00  120.00    0.00   0.0000
+IC C3'  C5'   *C4'  H4''   0.0000    0.00 -120.00    0.00   0.0000
+IC O3'  C4'   *C3'  H3''   0.0000    0.00  120.00    0.00   0.0000
+IC O3'  C4'   *C3'  H3'    0.0000    0.00 -120.00    0.00   0.0000
+
+
+PRES ABET        -1.00  ! patch to substitute an abasic ethyl linkage
+                        ! for a standard base
+                        ! adm jr., w/Daniel Barsky
+                        !
+                        ! Note 1) apply patch PRES DELB prior to this patch
+                        !
+                        ! Note 2) apply patch and ic build after reading unmodified
+                        ! DNA/RNA coordinates otherwise positions of deleted base atoms
+                        ! will be assigned to the amino-alkane chain
+!delete unneeded sugar atoms
+DELE ATOM C1'
+DELE ATOM H1'
+DELE ATOM C2'
+DELE ATOM H2'
+DELE ATOM H2''
+DELE ATOM O2'
+DELE ATOM O4'
+DELE ATOM C4'
+DELE ATOM H4'
+ATOM P    P       1.50 ! O1P    H5'   H3'
+ATOM O1P  ON3    -0.78 !  |      |     |
+ATOM O2P  ON3    -0.78 ! -P-O5'-C5'---C3'---O3'-
+ATOM O5'  ON2    -0.57 !  |      |     |
+ATOM C5'  CN8    -0.08 ! O2P    H5''  H3''
+ATOM H5'  HN8     0.09 !
+ATOM H5'' HN8     0.09
+GROUP                 
+ATOM C3'  CN8    -0.08
+ATOM H3'  HN8     0.09
+ATOM H3'' HN8     0.09
+ATOM O3'  ON2    -0.57
+
+BOND C3'  C5' C3' H3''
+IC C3'  O5'   *C5'  H5'    0.0000    0.00  120.00    0.00   0.0000
+IC C3'  O5'   *C5'  H5''   0.0000    0.00 -120.00    0.00   0.0000
+IC O3'  C5'   *C3'  H3''   0.0000    0.00  120.00    0.00   0.0000 !<- swapped H3' and
+IC O3'  C5'   *C3'  H3'    0.0000    0.00 -120.00    0.00   0.0000 ! H3'' --db(3/8/99)
+
+!phosphoramidate related model compounds and patches
+!reference
+!Banavali, N.B. and MacKerell, Jr., A.D. "Reexamination of the
+!Intrinsic, Dynamic, and Hydration Properties of Phosphoramidate DNA,"
+!Nucleic Acids Research, 2001, 29:3219-3230.
+RESI PHA        -1.00   ! Phosphoramidate (backbone for DNA)
+GROUP                    !
+ATOM P1   P       1.570  !
+ATOM O3   ON3    -0.820  !
+ATOM O4   ON3    -0.820  !
+ATOM O2   ON2    -0.560  !           H11
+ATOM N1   NN1    -0.860  !            |
+ATOM H1   HN2     0.330  !       H13- C1-H12
+                         !             \
+ATOM C1   CN8B   -0.190  !     (-)O3   N1-H1
+ATOM H11  HN8     0.090  !          \ /
+ATOM H12  HN8     0.090  !           P1(+1)
+ATOM H13  HN8     0.090  !           / \
+                         !      (-)O4   O2
+ATOM C2   CN7    -0.190  !             /
+ATOM H21  HN7     0.090  !        H23-C2-H22
+ATOM H22  HN7     0.090  !            |
+ATOM H23  HN7     0.090  !           H21
+
+BOND P1   N1     P1   O2    P1   O3    P1   O4    N1   C2   N1   H1   O2   C1
+BOND C1   H11    C1   H12   C1   H13   C2   H21   C2   H22   C2   H23
+! IC FOR THE g,g crystal conformation (6-31G* opt. structure)
+IC O3   P1   N1   C2   1.4816  107.70  342.80  123.13   1.4559
+IC O3   P1   N1   H1   1.4816  107.70  171.10  119.02   0.9986
+IC O4   P1   O2   C1   1.4812  105.80   43.90  118.08   1.4331
+IC N1   P1   O2   C1   1.6728   99.90  158.10  118.08   1.4331
+IC O2   P1   N1   C2   1.6480   99.90   96.20  123.13   1.4559
+IC H11  C1   O2   P1   1.0913  113.30  253.00  123.13   1.6728
+IC H12  C1   O2   P1   1.0790  106.20   12.40  123.13   1.6728
+IC H13  C1   O2   P1   1.0898  111.90  131.00  123.13   1.6728
+IC H21  C2   N1   P1   1.0841  108.20  196.00  118.08   1.6480
+IC H22  C2   N1   P1   1.0805  109.90  316.40  118.08   1.6480
+IC H23  C2   N1   P1   1.0862  111.20   76.70  118.08   1.6480
+patc firs none last none
+
+RESI TPHC      -1.00  ! monoanionic 3'phosphoramidate-tetrahydrofuran
+! used to fit epsilon
+! Charges and atom types for the monoanionic phosphate groups were
+! transfered from residue PHA
+
+! Atom types for aliphatic hydrogens are a mess
+
+GROUP
+ATOM O4'  ON6    -0.50          !         H41' O4'  H11'
+ATOM C1'  CN7B    0.07          !           \  / \  /
+ATOM H11' HN7     0.09          !       H42'-C4'  C1'-H12'
+ATOM H12' HN7     0.09          !            |    |
+ATOM C4'  CN7     0.07          !       H31'-C3'-C2'-H21'
+ATOM H41' HN7     0.09          !            /     \
+ATOM H42' HN7     0.09          !        H1-N1  O3  H22'
+GROUP                           !            \ /
+ATOM C2'  CN8   -0.18          !             P1
+ATOM H21' HN8     0.09          !            / \
+ATOM H22' HN8     0.09          !          O2   O4
+GROUP                           !          |
+ATOM C3'  CN7    -0.01          !     H51'-C5-H52'
+ATOM H31' HN7     0.09          !          |
+ATOM N1   NN1    -0.86          !          H53'
+ATOM H1   HN2     0.33          !
+ATOM P1   P       1.57
+ATOM O3   ON3    -0.82
+ATOM O4   ON3    -0.82
+ATOM O2   ON2    -0.56
+ATOM C5'  CN8B   -0.19
+ATOM H51' HN8     0.09
+ATOM H52' HN8     0.09
+ATOM H53' HN8     0.09
+
+BOND C1'  O4'  C1'  C2'  C2'  C3'  C3'  C4'  C4'  O4'  C3'  N1
+BOND N1   H1   C1'  H11' C1'  H12' C2'  H21' C2'  H22' C3'  H31'
+BOND C4'  H41' C4'  H42' N1   P1   P1   O3   P1   O4   P1   O2
+BOND O2   C5'  C5'  H51' C5'  H52' C5'  H53'
+IC   C4'     O4'     C1'     C2'    1.4055  108.09   23.45  106.18   1.5457
+IC   O4'     C1'     C2'     C3'    1.4127  106.18    3.96  103.11   1.5346
+IC   C1'     C2'     C3'     C4'    1.5457  103.11  -26.93  100.86   1.5211
+IC   C2'     C3'     C4'     O4'    1.5346  100.86   41.73  103.15   1.4055
+IC   C3'     C4'     O4'     C1'    1.5211  103.15  -41.62  108.09   1.4127
+IC   O4'     C2'    *C1'     H11'   0.0000    0.00  120.00    0.00   0.0000
+IC   O4'     C2'    *C1'     H12'   0.0000    0.00 -120.00    0.00   0.0000
+IC   C1'     C3'    *C2'     H21'   0.0000    0.00  120.00    0.00   0.0000
+IC   C1'     C3'    *C2'     H22'   0.0000    0.00 -120.00    0.00   0.0000
+IC   C2'     C4'    *C3'     H31'   0.0000    0.00  120.00    0.00   0.0000
+IC   C3'     O4'    *C4'     H41'   0.0000    0.00  120.00    0.00   0.0000
+IC   C3'     O4'    *C4'     H42'   0.0000    0.00 -120.00    0.00   0.0000
+IC   H11'    C1'     C2'     C3'    1.0856  111.62  123.53  103.11   1.5346
+IC   H12'    C1'     C2'     C3'    1.0818  113.32 -114.11  103.11   1.5346
+IC   H21'    C2'     C3'     C4'    1.0846  110.65   91.68  100.86   1.5211
+IC   H22'    C2'     C3'     C4'    1.0822  110.88 -148.45  100.86   1.5211
+IC   H31'    C3'     C4'     O4'    1.0806  113.53  162.89  103.15   1.4055
+IC   H41'    C4'     O4'     C1'    1.0891  110.89   77.76  108.09   1.4127
+IC   H42'    C4'     O4'     C1'    1.0808  108.72 -162.12  108.09   1.4127
+IC   N1      C3'     C4'     O4'    1.4028  110.98  -77.39  103.15   1.4055
+IC   O3      P1      N1      H1     1.4816  107.70  171.10  119.02   0.9986
+IC   P1      N1      C3'     C4'    1.7190  119.98  185.77  110.95   1.5332
+IC   O3      P1      N1      C3'    1.4771  109.35   14.75  120.00   1.4525
+IC   O4      P1      N1      C3'    1.4818  105.19  150.42  120.00   1.4525
+IC   O2      P1      N1      C3'    1.6379  101.65  263.47  120.00   1.4525
+IC   C5'     O2      P1      N1     1.3955  119.61  286.08  101.65   1.7190
+IC   H51'    C5'     O2      P1     1.0859  107.43  179.85  119.61   1.6379
+IC   H52'    C5'     O2      P1     1.0835  111.18  299.56  119.61   1.6379
+IC   H53'    C5'     O2      P1     1.0868  111.29   60.84  119.61   1.6379
+
+PATC  FIRS NONE LAST NONE
+
+RESI THNI        0.00  ! tetrahydrofuran with 3'-NH2, 5'-CH2OH, 1'-imidazole
+GROUP                  ! 
+ATOM O4'  ON6    -0.50
+ATOM C4'  CN7     0.16
+ATOM H42' HN7     0.09
+ATOM C1'  CN7B    0.16
+ATOM H12' HN7     0.09
+GROUP
+ATOM C2'  CN8    -0.18
+ATOM H21' HN8     0.09
+ATOM H22' HN8     0.09
+GROUP   ! Imidazole: transferred from isolated imidazole (IMIA)
+ATOM CG  CPH1    -0.05 !              HE1
+ATOM HG  HR3      0.09 !              /
+ATOM CD2  CPH1    0.22 !       ND1---CE1
+ATOM HD2  HR3     0.10 !      /       |
+ATOM ND1  NR1    -0.04 ! HG-CG        |
+ATOM CE1  CPH2    0.25 !      \       |
+ATOM HE1  HR1     0.13 !      CD2---NE2
+ATOM NE2  NR2    -0.70 !       |
+                       !      HD2
+GROUP ! Hydroxyl group on C3'
+ATOM H31' HN7     0.09
+ATOM C3'  CN7     0.14
+ATOM N1   NN1    -0.91
+ATOM H1   HN2     0.34
+ATOM H2   HN2     0.34
+GROUP ! Methyl group on C4'
+ATOM C5'  CN8B   -0.17
+ATOM H51' HN8     0.09
+ATOM H52' HN8     0.09
+ATOM O5'  ON2    -0.10
+ATOM H5'  HN8     0.09
+
+BOND C1'  O4'  C1'  C2'  C2'  C3'  C3'  C4'  C4'  O4'  C4'  C5'
+BOND C3'  N1   N1   H1   N1   H2   C1'  H12' C2'  H21' C2'  H22'
+BOND C3'  H31' C4'  H42'
+BOND C5'  H51' C5'  H52' C5'  O5'  O5'  H5'
+BOND C1'  ND1  ND1  CE1  CE1  NE2  NE2  CD2  CD2  CG  CG  ND1
+BOND CE1  HE1  CD2  HD2  CG  HG
+! This IC table is only an initial guess:
+IC      C1'     C2'     C3'     C4'     0.0 0.0 324.92 0.0 0.0
+IC      C2'     C3'     C4'     O4'     0.0 0.0 33.390 0.0 0.0
+IC      H12'    C1'     C2'     C3'     0.0 0.0 268.35 0.0 0.0
+IC      H21'    C2'     C3'     C4'     0.0 0.0 82.530 0.0 0.0
+IC      H22'    C2'     C3'     C4'     0.0 0.0 204.06 0.0 0.0
+IC      N1      C3'     C4'     O4'     0.0 0.0 -93.14 0.0 0.0
+IC      H1      N1      C3'     C2'     0.0 0.0 -60.00 0.0 0.0
+IC      H2      N1      C3'     C2'     0.0 0.0  60.00 0.0 0.0
+IC      H31'    C3'     C4'     O4'     0.0 0.0 147.80 0.0 0.0
+IC      H41'    C4'     O4'     C1'     0.0 0.0 132.30 0.0 0.0
+IC      H42'    C4'     O4'     C1'     0.0 0.0 220.70 0.0 0.0
+IC      C4'     O4'     C1'     ND1     0.0 0.0 256.98 0.0 0.0
+IC      O4'     C1'     ND1     CE1     0.0 0.0 180.00 0.0 0.0
+IC      C1'     ND1     CE1     NE2     0.0 0.0 181.56 0.0 0.0
+IC      ND1     CE1     NE2     CD2     0.0 0.0   0.34 0.0 0.0
+IC      CE1     NE2     CD2     CG      0.0 0.0   0.00 0.0 0.0
+IC      HE1     CE1     NE2     CD2     0.0 0.0 180.40 0.0 0.0
+IC      CE1     NE2     CD2     HD2     0.0 0.0 179.83 0.0 0.0
+IC      NE2     CD2     CG      HG      0.0 0.0 178.45 0.0 0.0
+IC      C5'     C4'     O4'     C1'     0.0 0.0 144.82 0.0 0.0
+IC      H51'    C5'     C4'     O4'     0.0 0.0 -179.98 0.0 0.0
+IC      H52'    C5'     C4'     O4'     0.0 0.0  -59.66 0.0 0.0
+IC      O5'     C5'     C4'     O4'     0.0 0.0   59.68 0.0 0.0
+IC      H5'     O5'     C5'     C4'     0.0 0.0   59.68 0.0 0.0
+PATC  FIRS NONE LAST NONE
+
+RESI THNP       -1.00  ! Tetrahydrofuran with 3'-NH-PO2-OCH3, 5'-CH2OH, 1'-imidazole
+GROUP                  ! 
+ATOM O4'  ON6    -0.50
+ATOM C4'  CN7     0.16
+ATOM H42' HN7     0.09
+ATOM C1'  CN7B    0.16
+ATOM H12' HN7     0.09
+GROUP
+ATOM C2'  CN8   -0.18
+ATOM H21' HN8     0.09
+ATOM H22' HN8     0.09
+GROUP   ! Imidazole: transferred from isolated imidazole (IMIA)
+ATOM CG  CPH1    -0.05 !              HE1
+ATOM HG  HR3      0.09 !              /
+ATOM CD2  CPH1    0.22 !       ND1---CE1
+ATOM HD2  HR3     0.10 !      /       |
+ATOM ND1  NR1    -0.04 ! HG-CG        |
+ATOM CE1  CPH2    0.25 !      \       |
+ATOM HE1  HR1     0.13 !      CD2---NE2
+ATOM NE2  NR2    -0.70 !       |
+                       !      HD2
+GROUP ! phosphoramidate group on C3'
+ATOM H31' HN7     0.09
+ATOM C3'  CN7     0.14
+ATOM N1   NN1    -0.86
+ATOM P1   P       1.570  !
+ATOM H1   HN2     0.33
+
+GROUP ! Methyl group on C4'
+ATOM C5'  CN8B   -0.17
+ATOM H51' HN8     0.09
+ATOM H52' HN8     0.09
+ATOM O5'  ON2    -0.59
+ATOM H5'  HN8     0.43
+
+ATOM O3   ON3    -0.820  !
+ATOM O4   ON3    -0.820  !
+ATOM O5   ON2    -0.560  !
+ATOM C5   CN8B   -0.190  !
+ATOM H51  HN8     0.090  !
+ATOM H52  HN8     0.090  !
+ATOM H53  HN8     0.090  !
+
+BOND C1'  O4'  C1'  C2'  C2'  C3'  C3'  C4'  C4'  O4'  C4'  C5'
+BOND C3'  N1   N1   H1   C1'  H12' C2'  H21' C2'  H22'
+BOND C3'  H31' C4'  H42'
+BOND C5'  H51' C5'  H52' C5'  O5'  O5'  H5'
+BOND C1'  ND1  ND1  CE1  CE1  NE2  NE2  CD2  CD2  CG  CG  ND1
+BOND CE1  HE1  CD2  HD2  CG   HG
+BOND P1   N1   P1   O5   P1   O3   P1   O4   O5   C5
+BOND C5   H51  C5   H52  C5   H53
+! This IC table is only an initial guess:
+IC   C4'     O4'     C1'     C2'    1.4055  108.09   23.45  106.18   1.5457
+IC   O4'     C1'     C2'     C3'    1.4127  106.18    3.96  103.11   1.5346
+IC   C1'     C2'     C3'     C4'    1.5457  103.11  -26.93  100.86   1.5211
+IC   C2'     C3'     C4'     O4'    1.5346  100.86   41.73  103.15   1.4055
+IC   C3'     C4'     O4'     C1'    1.5211  103.15  -41.62  108.09   1.4127
+IC   ND1     C1'     C2'     C3'    1.0856  111.62  123.53  103.11   1.5346
+IC   H12'    C1'     C2'     C3'    1.0818  113.32 -114.11  103.11   1.5346
+IC   H21'    C2'     C3'     C4'    1.0846  110.65   91.68  100.86   1.5211
+IC   H22'    C2'     C3'     C4'    1.0822  110.88 -148.45  100.86   1.5211
+IC   H31'    C3'     C4'     O4'    1.0806  113.53  162.89  103.15   1.4055
+IC   C5'     C4'     O4'     C1'    1.0891  110.89   77.76  108.09   1.4127
+IC   H42'    C4'     O4'     C1'    1.0808  108.72 -162.12  108.09   1.4127
+IC   N1      C3'     C4'     O4'    1.4028  110.98  -77.39  103.15   1.4055
+IC   P1      N1      C3'     C4'    0.0000  000.00  180.00  000.00   0.0000
+IC   C3'     N1      P1      O5     0.0000  000.00  -95.22  000.00   0.0000
+IC   O5      N1      *P1     O3     0.0000  000.00 -115.82  000.00   0.0000
+IC   O5      N1      *P1     O4     0.0000  000.00  115.90  000.00   0.0000
+IC   O3      P1      N1      H1     1.4816  107.70  171.10  119.02   0.9986
+IC   C5      O5      P1      N1     0.0000  000.00  -46.90  000.00   0.0000
+IC   H51     C5      O5      P1     0.0000  000.00  180.00  000.00   0.0000
+IC   H52     C5      O5      P1     0.0000  000.00   60.00  000.00   0.0000
+IC   H53     C5      O5      P1     0.0000  000.00  -60.00  000.00   0.0000
+IC      O4'     C1'     ND1     CE1     0.0 0.0 180.00 0.0 0.0
+IC      C1'     ND1     CE1     NE2     0.0 0.0 181.56 0.0 0.0
+IC      ND1     CE1     NE2     CD2     0.0 0.0   0.34 0.0 0.0
+IC      CE1     NE2     CD2     CG      0.0 0.0   0.00 0.0 0.0
+IC      HE1     CE1     NE2     CD2     0.0 0.0 180.40 0.0 0.0
+IC      CE1     NE2     CD2     HD2     0.0 0.0 179.83 0.0 0.0
+IC      NE2     CD2     CG      HG      0.0 0.0 178.45 0.0 0.0
+IC      H51'    C5'     C4'     O4'     0.0 0.0 -179.98 0.0 0.0
+IC      H52'    C5'     C4'     O4'     0.0 0.0  -59.66 0.0 0.0
+IC      O5'     C5'     C4'     O4'     0.0 0.0   59.68 0.0 0.0
+IC      H5'     O5'     C5'     C4'     0.0 0.0   59.68 0.0 0.0
+PATC  FIRS NONE LAST NONE
+
+! patches for phosphoramidate
+
+PRES N5TR         0.00  ! 5'-terminal phosphoramidate patch
+                        ! use in generate statement
+                        ! thni charges used for NH2
+DELETE ATOM O5'
+DELETE ATOM H5T
+!
+GROUP
+ATOM H5T1 HN2     0.34
+ATOM H5T2 HN2     0.34
+ATOM N5'  NN1    -0.91
+ATOM C5'  CN8B    0.05
+ATOM H5'  HN8     0.09
+ATOM H5'' HN8     0.09
+!
+BOND H5T1  N5'  H5T2  N5'   N5'  C5'
+DONO H5T1  N5'  
+DONO H5T2  N5'
+BILD N5'   C5'   C4'  C3'   0.0000  000.00   51.00  000.00   0.0000
+BILD H5T1  N5'   C5'  C4'   0.9600  114.97  148.63  111.92   1.5284
+BILD H5T2  N5'   C5'  C4'   0.9600  114.97  260.00  111.92   1.5284
+
+PRES N3TR         0.00  ! 3'terminal phosphoramidate patch
+                        ! use in generate statement
+                        ! thni charges used for NH2
+DELETE ATOM O3'
+DELETE ATOM H3T
+
+GROUP
+ATOM C3'  CN7     0.14
+ATOM H3'  HN7     0.09
+ATOM N3'  NN1    -0.91
+ATOM H3T1 HN2     0.34
+ATOM H3T2 HN2     0.34
+!
+BOND N3'   C3'    N3'   H3T1   N3'  H3T2
+DONO H3T1  N3'    
+DONO H3T2 N3'
+BILD N3'   C3'    C4'  C5'   1.4582  109.38  139.71  114.90   1.5185
+BILD N3'   C3'    C4'  O4'   1.4582  109.38  258.76  106.51   1.4149
+BILD H3T1  N3'    C3'  C4'   1.0257  109.42  165.51  115.52   1.5470
+BILD H3T2  N3'    C3'  C4'   1.0260  109.82  284.55  115.52   1.5470
+BILD H3T1  N3'    C3'  C2'   1.0257  109.42   47.49  110.08   1.5071
+BILD H3T2  N3'    C3'  C2'   1.0260  109.82  166.53  110.08   1.5071
+
+PRES TN3T         0.00  ! 3'-NH2 patch to generate thymine nucleoside analog
+                        ! to be applied to NUST
+
+DELETE ATOM O3'
+DELETE ATOM H32'
+
+GROUP
+ATOM C3'  CN7     0.14
+ATOM H31' HN7     0.09
+ATOM N3'  NN1    -0.91
+ATOM H3T1 HN2     0.34
+ATOM H3T2 HN2     0.34
+!
+BOND N3'   C3'    N3'   H3T1   N3'  H3T2
+DONO H3T1  N3'    
+DONO H3T2 N3'
+BILD N3'   C3'    C4'  C5'   1.4582  109.38  139.71  114.90   1.5185
+BILD N3'   C3'    C4'  O4'   1.4582  109.38  258.76  106.51   1.4149
+BILD H3T1  N3'    C3'  C4'   1.0257  109.42  165.51  115.52   1.5470
+BILD H3T2  N3'    C3'  C4'   1.0260  109.82  284.55  115.52   1.5470
+BILD H3T1  N3'    C3'  C2'   1.0257  109.42   47.49  110.08   1.5071
+BILD H3T2  N3'    C3'  C2'   1.0260  109.82  166.53  110.08   1.5071
+
+PRES N3PA        -1.00  ! 3' phosphoramidate patch
+DELETE ATOM 1O3'         ! necessary due to auto-generate dihedrals
+
+! use the following statement to apply this patch to O3' of resid1
+! also changes charges of C5',O5' of resid2, so resid2 HAS TO BE
+! immediately 3' to resid1 :
+! patch n3pa segid resid1 segid resid2 setup warn
+
+GROUP ! To correct backbone charges near NH, total charge -0.53
+ATOM 2P    P       1.570  !
+ATOM 2O1P  ON3    -0.820  !
+ATOM 2O2P  ON3    -0.820  !
+ATOM 2O5'  ON2    -0.560  !          
+ATOM 2C5'  CN8B   -0.08   !
+ATOM 2H5'  HN8     0.09   !
+ATOM 2H5'' HN8     0.09   !
+
+GROUP                    ! Total charge -0.47
+ATOM 1C3'  CN7    -0.03
+ATOM 1H3'  HN7     0.09
+ATOM 1N3'  NN1    -0.860  ! Atom added in patch
+ATOM 1HN3' HN2     0.330  ! Atom added in patch
+
+BOND 1N3'  1HN3' 1N3' 2P    1N3'  1C3'
+DONO HN3'   N3'
+!
+BILD 1C5'  1C4'  1C3'  1N3'  0.0000  000.00   80.00  000.00   0.0000
+BILD 2C4'  2C3'  1N3'  1HN3' 0.0000  000.00   80.00  000.00   0.0000
+BILD 2O1P  2P    1N3'  1C3'  0.0000  000.00   60.00  000.00   0.0000
+BILD 2O1P  2P    1N3'  1HN3' 0.0000  000.00  180.00  000.00   0.0000
+BILD 1N3'  2P    2O5'  2C5'  0.0000  000.00  100.00  000.00   0.0000
+BILD 2O5'  2P    1N3'  1C3'  0.0000  000.00   60.00  000.00   0.0000
+BILD 1H3'  1C3'  1N3'  2P    0.0000  000.00   40.00  000.00   0.0000
+
+PRES N5PA        -1.00  ! 5' phosphoramidate patch
+DELETE ATOM 2O5'        ! necessary due to auto-generate dihedrals
+
+! use the following statement to apply this patch to O5' of resid2
+! also changes charges of C3',O3' of resid1, so resid1 HAS TO BE
+! immediately 5' to resid2 :
+! patch n5pa segid resid1 segid resid2 setup warn
+
+GROUP ! To correct backbone charges near NH, total charge -0.53
+ATOM 2P    P       1.570  !
+ATOM 2O1P  ON3    -0.820  !
+ATOM 2O2P  ON3    -0.820  !
+ATOM 2N5'  NN1    -0.860  ! Atom added in patch
+ATOM 2H5N' HN2     0.330  ! Atom added in patch
+ATOM 2C5'  CN8B   -0.11   !
+ATOM 2H5'  HN8     0.09   !
+ATOM 2H5'' HN8     0.09   !
+GROUP
+ATOM 1C3'  CN7     0.00
+ATOM 1H3'  HN7     0.09
+ATOM 1O3'  ON2    -0.56
+
+BOND 2N5'  2H5N'   2N5'  2P    2N5'  2C5'
+DONO 2H5N' 2N5'
+!
+BILD 2C3'  2C4'  2C5'  2N5'  0.0000  000.00   50.00  000.00   0.0000
+BILD 2C4'  2C5'  2N5'  2H5N' 0.0000  000.00   60.00  000.00   0.0000
+BILD 2O1P  2P    2N5'  2C5'  0.0000  000.00  180.00  000.00   0.0000
+BILD 2O2P  2P    2N5'  2H5N' 0.0000  000.00   60.00  000.00   0.0000
+BILD 2N5'  2P    1O3'  1C3'  0.0000  000.00   70.00  000.00   0.0000
+BILD 1O3'  2P    2N5'  2C5'  0.0000  000.00   60.00  000.00   0.0000
+BILD 2H5'  2C5'  2N5'  2P    0.0000  000.00   60.00  000.00   0.0000
+BILD 2H5'' 2C5'  2N5'  2P    0.0000  000.00  130.00  000.00   0.0000
+
+END
+
+read param card append
+
+BONDS
+!
+!atom types  Kb          b0
+!
+NN1  CN8B   360.0      1.462  !
+NN1  P      180.0      1.792  !
+NN1  HN2    432.5      1.025  !
+NN1  CN7    360.0      1.462  !
+ON2  HN8    545.0      0.960  !copied from RIBOSE, MeOH for thni
+ON5  HN7    545.0      0.960  !copied from RIBOSE, MeOH for n5ph
+
+ANGLES
+!
+!atom types     Ktheta    Theta0   Kub     S0
+!
+HN2  NN1  CN8B   35.000   109.00  !
+NN1  CN8B HN8    48.000   110.00  !
+CN8B NN1  P     110.0     118.3  35.0  2.33 !
+HN2  NN1  P      30.0     123.6  40.0  2.35 !
+NN1  P    ON2    60.0     103.2   !
+NN1  P    ON3   140.0     110.6   !
+NN1  CN8B CN7B   43.70    110.00  !
+NN1  P    ON4    60.0     103.2   !
+HN7  CN7  NN1    48.00    110.00  !
+CN7  NN1  P     110.0     118.3  35.0  2.33 !
+HN2  NN1  CN7    35.00    109.00  !
+NN1  CN7  CN7    43.70    110.00  !
+NN1  CN7  CN7B   43.70    110.00  !
+NN1  CN7  CN8    43.70    110.00  !
+NN1  CN8B CN7    43.70    110.00  !
+HN2  NN1  HN2    39.0     106.0   !thni
+CN8B ON2  HN8    60.0     114.7   !thni
+CN7  ON5  HN7    60.0     114.7   !n5ph
+!included in NA param file due to use in multiple toppar stream files
+!ON5  CN7  CN8B   90.0     108.2   !n5ph
+
+DIHEDRALS
+!
+!atom types             Kchi    n   delta
+!
+P    NN1  CN7  HN7      0.15    3     0.0  !DMP, ADM Jr. (P ON2 CN7 HN7)
+P    NN1  CN8B HN8      0.15    3     0.0  !DMP, ADM Jr. (P ON2 CN7 HN7)
+!N-P-Oes-C
+NN1  P    ON2  CN7      0.40    1     0.0  !
+NN1  P    ON2  CN7      0.40    2    50.0  !
+NN1  P    ON2  CN7      0.35    3     0.0  !
+NN1  P    ON2  CN8B     0.40    1     0.0  !
+NN1  P    ON2  CN8B     0.40    2    50.0  !
+NN1  P    ON2  CN8B     0.35    3     0.0  !
+!Oes-P-N-C
+ON3  P    NN1  CN7      0.40    3     0.0  !
+ON3  P    NN1  CN7      0.80    2   120.0  !
+ON3  P    NN1  CN7      0.50    4     0.0  !
+ON2  P    NN1  CN7      1.50    2     0.0  !
+ON3  P    NN1  CN8B     0.40    3     0.0  ! for 5' phosphoramidate
+ON3  P    NN1  CN8B     0.80    2   120.0  ! for 5' phosphoramidate
+ON3  P    NN1  CN8B     0.50    4     0.0  ! for 5' phosphoramidate
+ON2  P    NN1  CN8B     1.50    2     0.0  ! for 5' phosphoramidate
+
+HN2  NN1  CN7  HN7      0.01    3     0.0  !
+HN2  NN1  CN8B HN8      0.01    3     0.0  !
+HN2  NN1  P    ON2      0.05    3     0.0  !
+HN2  NN1  P    ON3      0.05    3     0.0  !
+
+HN2  NN1  CN7  CN7      0.30    1     0.00 !tphc
+HN2  NN1  CN7  CN7B     0.30    1     0.00 !tphc
+HN2  NN1  CN7  CN8      0.30    1     0.00 !tphc
+HN7  CN7  CN7  NN1      0.195   3     0.0  !tphc
+HN7  CN7B CN7  NN1      0.195   3     0.0  !tphc
+HN8  CN8  CN7  NN1      0.195   3     0.0  !for dna
+ON6B CN7  CN7  NN1      0.20    3     0.0  !tphc
+ON6  CN7  CN7  NN1      0.20    3     0.0  !for dna
+HN2  NN1  P    ON4      0.05    3     0.0  !tphc
+!epsilon tphc parameters, Nilesh
+P    NN1  CN7  CN7      0.65    2   180.0  !
+P    NN1  CN7  CN7      1.5     1   180.0  !
+P    NN1  CN7  CN7      1.0     3     0.0  !
+P    NN1  CN7  CN7B     1.4     1   220.0  !
+P    NN1  CN7  CN7B     0.4     5   180.0  !
+P    NN1  CN7  CN8      1.4     1   220.0  !
+P    NN1  CN7  CN8      0.4     5   180.0  !
+CN7  CN8B ON2  HN8      0.5     3     0.0  !thni
+CN7  CN8B ON2  HN8      1.0     1     0.0  !thni
+HN8  CN8B ON2  HN8      0.1     3     0.0  !thni
+! Sugar pucker parameters for phosphoramidate
+NN1  CN7  CN7B CN7B     1.5     1   180.0  ! for rna
+NN1  CN7  CN7B CN7B     1.5     2     0.0  ! for rna
+NN1  CN7  CN7B CN7B     1.1     3   180.0  ! for rna
+NN1  CN7  CN8  CN7B     1.35    1   180.0  ! for dna
+NN1  CN7  CN8  CN7B     1.0     2     0.0  ! for dna
+NN1  CN7  CN8  CN7B     0.2     3   180.0  ! for dna
+NN1  CN7  CN7  CN8B     0.5     2   180.0  !
+! Parameters for n5' phosphoramidate
+P    NN1  CN8B CN7      0.245   1   120.0  !bet C4'-C5'-O5'-P, adm jr.
+CN7  CN7  CN8B NN1      0.20    4   180.0  !gam adm jr.
+CN7  CN7  CN8B NN1      0.80    3   180.0  !gam C3'-C4'-C5'-O5'
+CN7  CN7  CN8B NN1      0.40    2     0.0  !gam
+CN7  CN7  CN8B NN1      2.50    1   180.0  !gam
+HN7  CN7  CN8B NN1      0.195   3     0.0  !gam H-C4'-C5'-O5'
+HN2  NN1  CN8B CN7      0.26    1     0.0  !tphc
+ON6B CN7  CN8B NN1      3.4     1   180.0  !gam, N5' RNA
+ON6  CN7  CN8B NN1      3.4     1   180.0  !gam , for dna
+CN7  CN7  ON5  HN7      0.5     3     0.0  !n5ph
+CN7  CN7  ON5  HN7      1.0     1     0.0  !n5ph
+CN8B CN7  ON5  HN7      0.5     3     0.0  !n5ph
+CN8B CN7  ON5  HN7      1.0     1     0.0  !n5ph
+HN7  CN7  ON5  HN7      0.1     3     0.0  !n5ph
+ON5  CN7  CN8B NN1      3.4     1   180.0  !n5ph
+
+end
+
+return

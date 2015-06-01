@@ -1,0 +1,40 @@
+<!--#set var="TITLE" value="SymmetryTool Plugin, Version 1.3"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+<img src="symm_coronene_small.png">
+<img src="symm_phenanthrene_small.png">
+
+<p>
+The Symmetry Tool plugin provides an easy-to-use graphical interface to the 
+"measure symmetry" command.   It determines the
+symmetry pointgroup of a given selection and displays the symmetry elements
+(inversion center, mirror planes, rotation axes, rotary reflection axes).
+The underlying algorithm is fairly robust and can handle molecules whose 
+coordinates deviate to a certain extent (controlled by the tolerance 
+parameter) from the ideal symmetry. The closest match with the highest 
+symmetry is returned. 
+</p>
+<p>
+<h2>Explanation of the GUI elements</h2>
+<img src="symm_gui_labeled_small.png">
+<ul>
+<li> <b>(A)</b> Chosse the molecule you want to work with </li>
+<li> <b>(B)</b> The selection for which the symmetry shall be determined </li>
+<li> <b>(C)</b> Pressing the button causes the symmetry to be analyzed and the guessed
+     point group will be updated. The tolerance of the algorithm when
+     considering wether something is symmetric or not can be controlled.
+     A smaller value signifies a lower tolerance. </li>
+<li> <b>(D)</b> If this flag is set then the bond order (if specified in the structure)
+     and orientation of bonds are considered when comparing structure the 
+     structure with its images. </li>
+<li> <b>(E)</b> Highlight a set of connected, symmetry unique atoms. </li>
+<li> <b>(F)</b> Snap atoms into idealized symmetric positions. </li>
+<li> <b>(G)</b> Display the principle axes of inertia a arrows. Non-unique axes of
+     inertia are shown as small arrows only. They can be arbitrarily rotated
+     around the unique principal axis. </li>
+<li> <b>(H)</b> Lists of found symmetry elements. If you select an element in the list
+     it will be highlighted in the structure. </li>
+</ul>
+</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

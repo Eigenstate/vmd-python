@@ -1,0 +1,312 @@
+<!--#set var="TITLE" value="VMD Remote"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+<IMG ALIGN=RIGHT SRC="img_0164_resized.jpg">
+<CODE>VMD Remote</CODE> is a App for Android-powered devices that allows remote
+control of a VMD session.
+
+<P>
+<h3>Requirements:</h3>
+<UL>
+<LI>VMD 1.9.2 beta or later.  
+<LI>An Android device running Android 4.0.3 or higher
+<LI>Wi-Fi.  Ideally you will be connected to the same 'subnet' as the VMD
+server computer that you are wanting to control.  If the two are far-removed,
+network-wise, from each other, your experience may be sub-optimal.
+</UL>
+
+<P>
+<h3>Installation:</h3>
+<UL>
+
+<LI>If you are on an Android device that has access to the Google Play
+Store, just
+go to <A HREF="https://play.google.com/store/apps/details?id=edu.uiuc.ks.vmdmobile">The
+Market Page For The VMD Remote Control App</A> and install.  This is the
+preferred way to install the app.  You will automatically have access to the
+latest version.
+
+<LI>If you are on a device that doesn't have access to the Google Play Store:
+<UL>
+
+<LI>Make sure that your Android device is configured to allow third party
+applications.  On the Kindle Fire, for instance, you need to click on the
+Settings Wheel at the top right corner of the home screen, then click on
+<CODE>More</CODE> and then click on <CODE>Device</CODE>.  From the Device menu,
+make sure that the option to <CODE>Allow Installation of Applications</CODE> is
+ON.  On other devices, on the home screen, go to <CODE>Settings |
+Applications</CODE> and make sure that "Unknown sources" is checked/enabled to
+allow the installation of non-Market applications.  
+
+<LI>Download and install the application.  <A
+HREF="VMDMobile-release.apk">VMDMobile-release.apk</A> is the current app file.  
+</UL>
+<LI>Before running the application, make sure that you have Wi-Fi turned on and
+that you are properly connected to a Wi-Fi network. 
+</UL>
+
+<P>
+<h3>Running and using the App:</h3>
+<P>
+On the VMD desktop/laptop computer:
+<UL>
+<LI>Run VMD.
+<IMG ALIGN=RIGHT SRC="pluginMain.png">
+
+<LI>From the Extensions menu, you can go to Visualizations | Remote Control to
+bring up a window where you can configure the session.  (Note:  If you are on a
+later version of Windows or have other firewall software installed, you might
+get a warning about network access.  You will need to allow access for the
+plugin to work properly)  The highlighted user in the 'User In Control' list is
+the only user who can remote control the session.  You can select a different
+user to be in control if you wish.
+
+<P>
+Alternatively, there is a text command, <CODE>mobile</CODE>, that you use to mobile-enable VMD.
+If you just type '<CODE>mobile</CODE>' into the console you will be presented
+with usage instructions:
+<PRE>
+vmd &gt; mobile
+mobile usage:
+mobile mode &lt;mode&gt;
+   modes: off, move, animate, tracker, user
+mobile port &lt;incoming network port number&gt;
+mobile get  &lt;mode/port/clientList&gt;
+mobile set activeClient NickName IP
+</PRE>
+Mode descriptions:
+<UL>
+<LI><B>off</B>: configure VMD to not accept incoming
+connections.  
+<LI><B>move</B>: The android device will allow you to rotate, translate, and
+scale your molecular view.   This is the default when you open the plugin
+window.
+<LI><B>animate</B>: The android device will act as a 'scrub' to
+move through a trajectory. 
+<LI><B>tracker</B>: The android device will act as tracker.
+<LI><B>user</B>: Can be used, in conjunction with a user script, to do whatever you can
+imagine and write the code for.
+</UL>
+<P>
+By default, VMD will listen on port 3141. If you need to change this, you can do
+so.
+<P>
+<CODE>get</CODE> can be used to retrieve, for use in a script, the currently set mode,
+port, and list of clients that are connected.
+</UL>
+
+<P>
+You can set the current user in control by calling <CODE>set activeClient</CODE>
+like:
+
+<PRE>
+  mobile set activeClient "Kindle Fire" "192.168.0.1"
+</PRE>
+
+where the name (Kindle Fire) and IP (192.168.0.1) match the nickname and IP
+given for a specific user via the <CODE>mobile get clientList</CODE> command.
+
+<P>
+Want to automatically be able to connect to your VMD session without needing to
+remember to go the Extension menu every time?  Just add:
+
+<PRE>
+  mobile mode move
+</PRE>
+
+to your VMD startup script.
+
+<HR>
+On the Android device:
+<UL>
+<LI>Launch the app.
+
+<LI>If this is the first time running, you will first be asked what VMD server
+you wish to connect to.  You need to 'Add A New Server...' and give the
+fully-qualified domain name of the machine running VMD (it can be a numeric IP
+address or a domain name).  If you are not sure about the name of the VMD
+server, the plugin window on the desktop will give a possible IP address that
+you can try.  What will end up working really depends on how the various routers
+and firewalls are configured for your location.  While not likely needed, you
+can also change the port numbers that the connections between the mobile device
+and the VMD server utilize.
+
+<LI>Go to <CODE>Menu | Settings</CODE> and set <CODE>Nickname</CODE> to a
+descriptive 16 character (or less) name for your device.  The Nickname will show
+up in the VMD mobile plugin window.
+</UL>
+
+<IMG WIDTH=200 ALIGN=RIGHT SRC="twoFingers_resized.png">
+
+On the main screen, the color of the area behind the buttons tells the current
+connection status:
+<UL>
+<LI>Red - The app is not connected to a VMD desktop.  In technical terms,
+the app has not received any network traffic from a running VMD.  It is 
+technically possible, depending on firewall settings, that the app is
+sucessfully sending information TO the VMD desktop, but isn't seeing anything
+back.
+<LI>Yellow - The app is connected to a VMD desktop, but is not currently
+in control of the VMD session.
+<LI>Green - The app is connected to a VMD desktop, and is currently
+in control of the VMD session.
+</UL>
+
+<HR WIDTH=50%>
+<P>
+If you have the VMD server plugin configured to <B>move</B> mode:
+<UL>
+<LI>Pressing a finger on the Android screen and then moving from that spot will cause the
+molecular system to start rotating in that direction.  The farther you move from
+the initial spot, the faster the rotation.
+<LI>Pinch to zoom in and out.
+<LI>If you touch two fingers to the screen (right next to each other; touching) and 
+drag both fingers in a direction, you will translate the system.
+<LI>If you touch two fingers to the screen and rotate both of them clockwise or
+counterclockwise, the system will similarly rotate (can be combined with pinch
+to zoom).
+</UL>
+
+<P>
+If you have the VMD server plugin configured to <B>translate</B> mode:
+<P>
+
+<UL>
+
+<LI>If you apply a finger to the Android screen and scrub/move to the right, you
+will increase the trajectory frame you are viewing.  Scrubbing/moving to the
+left will decrease the trajectory frame you are viewing.
+
+</UL>
+
+<P>
+Android App Menu options:
+<UL>
+
+<LI><B>Take Snapshot</B> - This will take a snapshot image of the current
+VMD OpenGL screen and download it to your device.  The snapshot image will 
+show up in a tab that you can select from the top of the screen.
+
+<P>Once you have the image on the mobile screen you can pinch to zoom and 
+drag the viewport around.  Remember that this is just a static image.  No
+rotating!  You can, however, choose to share the image.  By pressing the 
+'share' button you can use any app on your mobile device that supports
+JPEG images.  This will typically include, at a minimum, your email program
+and any social media sites that you might have an app for.
+
+<LI><B>Reset VMD View</B> - The equivalent of pressing the equals
+('<CODE>=</CODE>') key from within VMD.  If you somehow manage to 'lose' the
+molecule, this is handy.
+
+<LI><B>Stop/Start Sending Touchpad</B> - A toggle that will allow you to send or
+stop sending information about pressing the touchpad.  The App starts in a mode
+of 'send'.  
+
+<IMG ALIGN=RIGHT SRC="settingsScreen_resized.png">
+
+<LI><B>Select New Server</B> - If you wish to change the server you are
+connected to, this will bring up the screen to choose a previously used
+or new server.
+
+<LI><B>Choose Buttons</B> - Configure which button set you wish to see on the
+screen.  The Default button set is Aux-0 through Aux-3.  But, other button
+configurations can be downloaded from the VMD server.  See the section below
+on Button Configuration for more information.
+
+<LI><B>Settings</B> - Configure Nickname, Sensitivities, and other settings.
+
+<UL>
+
+<LI><B>Nickname</B> - A descriptive 16 character (or less) name for your device.
+The Nickname will show up in the VMD mobile plugin window. 
+If you do not set a Nickname, VMD will show a default name 
+(Anonymous User) for your device.
+
+<LI><B>Sensitivity</B> - Mobile devices send information to the server at
+different rates depending on their speed.
+
+</UL>
+
+<P> You can turn on additional debugging statements that will show on the second
+line of the main display, and you choose whether or not you wish to see the VMD
+remote message in the background of the touchpad area.  
+
+</UL>
+
+<P>
+Button Configuration:
+<P>
+
+The buttons at the top of the screen can be configured with VMD on the desktop
+via scripting.  There are four default buttons: 0, 1, 2, and 3.  Lets say you have
+created a TCL script, called <CODE>button1Pressed</CODE> that you wanted to be
+called whenever Button 1 (called Aux-1 in the mobile window) is pressed.  Typing
+the following into the console will do this:
+
+<PRE>
+proc button1Pressed { } {
+  puts "The Aux-1 button was pressed"
+}
+
+user add key Aux-1 { button1Pressed }
+</PRE>
+
+This script will then be called each time that Button 1 is pressed (and would
+print the above text to the VMD console).  Similarly, you can add a script for
+Aux-0 or Aux-2, or Aux-3.  
+
+<P>
+A more useful way to use the buttons is to create a button group for your
+desired activity.
+
+<P>
+To do this you add desired button commands to the group using 'addButton' and
+then you push the new buttons out to the mobile device by using
+'sendButtonConfiguration'.
+
+<PRE>
+# -------------------------------------------------------------------------
+proc ::remote::configureRepresentations {} {
+   addButton Representations CPK { mol modstyle 0 0 CPK } 1
+   addButton Representations VDW { mol modstyle 0 0 VDW } 1
+   addButton Representations NewCar { mol modstyle 0 0 NewCartoon } 1
+   addButton Representations NewRib { mol modstyle 0 0 NewRibbons } 1
+   addButton Representations QuickSurf { mol modstyle 0 0 QuickSurf } 1
+
+}
+# -------------------------------------------------------------------------
+proc ::remote::configurePlugins {} {
+
+   # No spaces in names! for now
+
+   # view change renderer
+   addButton ViewChangeRenderer Prev { ::VCR::goto_prev } 1
+   addButton ViewChangeRenderer Prev0.5 { ::VCR::goto_prev 0.5 } 1
+   addButton ViewChangeRenderer Next { ::VCR::goto_next } 1
+   addButton ViewChangeRenderer Next0.5 { ::VCR::goto_next 0.5 } 1
+
+   # view master
+   addButton ViewMaster Prev { ::ViewMaster::do_restore_prev } 1
+   addButton ViewMaster Next { ::ViewMaster::do_restore_next } 1
+   addButton ViewMaster SaveView { ::ViewMaster::do_save } 1
+
+   sendButtonConfiguration
+
+}
+# ----------------------
+</PRE>
+
+If you wish to run these procedures to load these button groups you could type
+the following into the VMD console:
+
+<PRE>
+::remote::configureRepresentations
+::remote::configurePlugins
+</PRE>
+
+Once you have pushed the new button configurations to the mobile device, on the
+device itself you can go to the menu and choose the button group that you wish
+to see on the screen.
+
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

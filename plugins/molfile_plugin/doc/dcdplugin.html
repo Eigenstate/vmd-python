@@ -1,0 +1,62 @@
+<!--#set var="TITLE" value="DCD Plugin, Version 1.11"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>
+This plugin reads and writes the "DCD" binary trajectory file format
+used by 
+<a href="http://www.charmm.org/">CHARMM</a>,
+<a href="http://www.ks.uiuc.edu/Research/namd/">NAMD</a>, 
+and 
+<a href="http://atb.csb.yale.edu/xplor/">X-PLOR</a>.
+
+The plugin performs automatic byte
+swapping to correctly read files written on machines with different endianness.
+The plugin supports reading of X-PLOR files, Charmm with fixed atoms
+and unit cell information, and NAMD files with fixed atoms and unit
+cell information.  The DCD plugin writes trajectories in Charmm 24 format
+with unit cell data and without fixed atoms.
+
+<p>
+<h3>Some basic DCD binary trajectory format specifications:</h3>
+<p>
+There's a description of the
+<a href="http://atb.csb.yale.edu/xplor/">X-PLOR</a>
+variation of the
+<a href="http://www.lrz-muenchen.de/~heller/ego/manual/node93.html">DCD format here</a>:
+<p>
+The DCD format is structured as follows (FORTRAN UNFORMATTED, with Fortran
+data type descriptions):
+<pre>
+HDR     NSET    ISTRT   NSAVC   5-ZEROS NATOM-NFREAT    DELTA   9-ZEROS
+`CORD'  #files  step 1  step    zeroes  (zero)          timestep  (zeroes)
+                        interval
+C*4     INT     INT     INT     5INT    INT             DOUBLE  9INT
+==========================================================================
+NTITLE          TITLE
+INT (=2)        C*MAXTITL
+                (=32)
+==========================================================================
+NATOM
+#atoms
+INT
+==========================================================================
+X(I), I=1,NATOM         (DOUBLE)
+Y(I), I=1,NATOM         
+Z(I), I=1,NATOM         
+==========================================================================
+</pre>
+
+<p>
+and the following describes the difference between X-PLOR
+<a href="http://www.ocms.ox.ac.uk/mirrored/xplor/manual/htmlman/node230.html">and CHARMM formats</a>:
+<p>
+Binary Trajectory Files
+<p>
+The file format is identical to the CHARMm-DCD format (Brooks et al. 1983,
+which can be read by QUANTA  and a variety of other programs. The only
+exception is that the number of coordinate sets written to the trajectory
+file is explicitly written into the header of CHARMm-DCD files, whereas  
+XPLOR writes a zero instead.
+<a href="http://www.bio.unizh.ch/docu/acc_docs/doc/charmm_principles/Ch04_mol_dyn.FM5.html#678927">Brief CHARMm format description</a>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

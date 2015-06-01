@@ -1,0 +1,117 @@
+<!--#set var="TITLE" value="ViewChangeRender Plugin, Version 1.5"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<a href="vcr_screen.gif"><img src="vcr_screen_small.gif" align="right"></a>
+The ViewChangeRender plugin can be found in the Extension->Visualization menu
+and provides an easy-to-use interface for 
+managing sets of VMD viewpoints, and performing camera moves between
+the views. Provided is the interface you see to the right that allows you to
+store and manage viewpoints, as well as move between them. Also provided is an interface to the <a href="/Research/vmd/plugins/vmdmovie/">Movie Maker</a> plugin via its <i>user-defined script</i> movie option. With the combination of these two plugins, it is easy to make movies that can change views while progressing through a dcd file.
+<br><br>
+The top half of the window is dedicated to managing viewpoints, while the
+bottom half of the window is dedicated to constructing and editing the movie. 
+<br><br>
+The shortest steps to making a movie is as follows:<br>
+1. Load a molecule into VMD.<br>
+2. Open ViewChangeRender.<br>
+3. Save two viewpoints and add them to the movie list.<br>
+4. Change the movie duration with the <b>Set Total Time</b> button.<br>
+5. Open the <b>Extension->Visualization->Movie Maker</b> plugin<br>
+6. In the Movie Settings menu (in the Movie Maker window), select
+User-Defined Procedure.<br>
+7. Click the <b>Enable</b> button in the ViewChangeRender window.<br>
+8. Click <b>Make Movie</b> in the Movie Maker window.<br>
+<br>
+Below the specific function avialable in ViewChangeRender is detailed.
+<h2>Viewpoint Management</h2>
+<p> A viewpoint is defined as the collection of variables that specify the
+camera angle and position, as well as the frame number for all molecules. This
+means that any given viewpoint could be used with any given trajectory. It is
+thus important to remember which files were loaded for a given set of
+viewpoints. The currently saved viewpoints are numbered in the viewpoint list labelled "Viewpoint #".
+For viewpoint management, the following functions are available</p>
+
+<p>
+<b> Save Viewpoint </b><br>
+This stores the present viewpoint, as seen in the VMD Display, as a new entry in the viewpoint list.<br>
+<br>
+<b> Replace Viewpoint </b><br>
+This replaces the presently selected viewpoint in the viewpoint list with
+that currently shown in the VMD Display. <br>
+<br>
+<b> Insert Viewpoint </b><br>
+This inserts a viewpoint after the presently selected viewpoint in the
+viewpoint list. Proceeding viewpoint numbers will increase to account for the
+newly inserted viewpoint.<br>
+<br>
+<b> Delete Viewpoint</b><br>
+This removed the selected viewpoint from the viewpoint list.<br>
+<br>
+<b> Renumber Viewpoint</b><br>
+Using this button you can change the number of a selected viewpoint. Note you
+can only change to an unused number.
+</p>
+<h2> Displaying Viewpoints </h2>
+<p>
+There are two buttons to change to any selected viewpoint in the viewpoint
+list:
+<br><br>
+<b> Retrieve Viewpoint </b><br>
+Clicking this button will change the current view in the VMD Display
+window to the selected viewpoint in the viewpoint list.<br>
+<br>
+<b>Move To Viewpoint</b><br>
+Using this button, you can move smoothly from the current view in the VMD
+Display window to the one selected in the viewpoint list. If the selected
+viewpoint is associated to a different frame, the frames will be animated
+through.
+</p>
+<h2> Movie Control</h2>
+<p>
+Using the <b>Add Viewpoint to Movie</b> or <b>Add All Viewpoints to Movie</b>
+you can add viewpoint into the movie list (the list in the lower half of the
+windowd). The time that appears next to a frame number in the movie list is the
+time in seconds it will take to transition from that frame to the next one down
+in the list. When a viewpoint is added the default transition time is the
+difference in the trajectory frames x the framerate. I.e. if viewpoint #1 is at frame 0 and viewpoint #2 is at frame 240, then the transition time from 1->2 will be 240/24 = 10 secs (the default framerate is 24 fps and can be changed in the Movie Maker plugin). If the difference in the trajectory frames of the viewpoints is 0, then a default transition time of 0.5 seconds is assigned. <br>
+<br>
+Changing the total time sets a scaling factor such that any editing that is
+dobe to the movie (viewpoint order or the addition or removal of viewpoints)
+the transitions times are changed appropriately. If, however, you change a
+specific transition time, this will be lost in any editing changes that
+involve the specific transition.<br>
+<br>
+The function of each button is detailed below:</p>
+<br>
+<b> Remove From Movie </b><br>
+This removes the viewpoint selected in the movie list from the list of movies.
+Transition times are update appropriately as detailed above.<br>
+<br>
+<b>Move Up</b><br>
+This button moves the selected viewpoint up in the movie list. Note that this will
+re-calculate the transition times for the transitions affected.<br>
+<br>
+<b>Move Down</b><br>
+This button moves the selected viewpoint down in the movie list. Note that this will
+re-calculate the transition times for the transitions affected.<br>
+<br>
+<b>Clear List</b><br>
+This will clear the list allowing you to create a new movie.<br>
+<br>
+<b>Change Transition Time</b><br>
+This button will alter the transition time of the selected transition in the
+movie list. The total duration of the movie will be updated accordingly<br>
+<br>
+<b>Set Total Time</b><br>
+This button is used to change the total duration of the movie. Note that this
+will update all the transitions to reflect their new transition times such that
+their total is the newly entered time.<br>
+<br></p>
+<h2>Movie Maker Connection</h2>
+The <a href="/Research/vmd/plugins/vmdmovie/">Movie Maker</a> plugin is used to
+render a movie from the movie list. Clicking the <b>Enable</b> button will
+allow ViewChangeRender to set the movie duration in movie maker, and will
+enable Movie Maker to process the movie list when the User Defined Procedure
+setting is selected in Movie Maker. 
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

@@ -1,0 +1,32 @@
+/*! 
+
+\mainpage VMD Plugin Programmer's Guide 
+
+<p>
+The Plugin Programmer's Guide describes the structure and organization of the 
+VMD plugin system, and provides information on how to write your own plugins.
+
+<h3>Plugin development topics</h3>
+<ul>
+<li> \ref intro          "Introduction to VMD plugins"
+<li> \ref filestruct     "Plugin source files and directory structure"
+<li> \ref compiling      "Compiling plugins from source code"
+<li> \ref bestpractices  "Plugin development best practices guide"
+<li> \ref tcltkplugins   "Writing Tcl/Tk based plugins and extensions for VMD"
+<li> \ref pythonplugins  "Writing Python based plugins and extensions for VMD"
+<li> \ref molfileplugins "Writing C/C++ based molecule file reader/writer plugins for VMD"
+<li> \ref sharedlibs     "Writing C/C++ plugins with shared libraries"
+<li> \ref callmolfileplugins "Calling molecule file reader/writer plugins from other C/C++/Fortran software"
+</ul>
+
+<p>
+<h3>Related topics:</h3>
+<ul>
+<li><a href="http://www.ks.uiuc.edu/Research/vmd/plugins">Plugin-specific documentation and usage notes</a> 
+<li><a href="http://www.ks.uiuc.edu/Research/vmd/doxygen/">VMD Programmer's Guide</a>
+</ul>
+
+<p>
+$Id: plg_mainpage.dox,v 1.11 2008/04/01 19:16:36 johns Exp $
+
+*/

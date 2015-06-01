@@ -1,0 +1,115 @@
+<!--#set var="TITLE" value="Exectool Plugin and BioCoRE"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<A HREF="http://www.ks.uiuc.edu/Research/vmd/">VMD</A> can use 
+<A HREF="http://www.ks.uiuc.edu/Research/biocore/">BioCoRE</A> to 
+run external programs used by some plugins on different computers. This can be useful if your machine doesn't have that particular external program installed
+or if you prefer to use a faster machine to get your results sooner.
+
+<P>Running jobs via BioCoRE does require some initial setup, such as to create
+an account, join a project, and to create a job account, that tells BioCoRE how
+to run jobs on the remote machine you want to use. Below are some instructions
+for configuring BioCoRE to run jobs.
+
+<P>
+<A NAME="login"></A>
+<H3>Logging in</H3> 
+<P>
+To use the various BioCoRE enhancements, you must first login to BioCoRE.  Further information on doing this is available on the
+BioCoRE plugin <a href="../biocore/index.html#login">help page</a>.
+
+<P>
+<A NAME="joinproject"></A>
+<H3>Joining a Project</H3>
+<P>
+To use BioCoRE you must also be a member of a BioCoRE Project. Members of an 
+existing project might invite you to join, or you can create your own project.
+Many public projects are available for you to join, however, users who
+create public projects may not have enabled job management for those projects.
+<ul>
+<li>To find out how to join an existing project, read about the <a href="../biocore/index.html#utilities">BioCoRE utilities plugin.</a>
+<li>To find out how to create a new project, <a href="http://www.ks.uiuc.edu/Research/biocore/">log in</a> to BioCoRE via the
+web and click on the "Create Project" link in the sidebar.
+</ul>
+
+<P>
+<A NAME="jobaccount"></A>
+<P>
+<H3>Telling BioCoRE about your remote computer account</H3>
+<P>
+To run a job via BioCoRE, you have to tell BioCoRE how to log in to the 
+machine where you want to run your job. You can do this by <a href="http://www.ks.uiuc.edu/Research/biocore/">loging in</a> to
+BioCoRE via the web page, selecting the Job Management link in the sidebar,
+and then clicking on the "Set up new account" button to tell BioCoRE about
+your account.
+<p>
+BioCoRE will ask you to select an account type. Options include:
+<ul>
+<li>Interactive login: Log in to any machine (thats accessible via SSH) and
+run the job at the command line.
+<li>Various supercomputer/cluster accounts: The other account types require you to have an account on the particular machine. If you do, BioCoRE will submit
+your job to the queue on that machine
+</ul>
+If you select "Interactive login", BioCoRE will ask for an account name and
+description, the host name of the machine you want to log in to, and your
+user name and password on that machine. BioCoRE does not store your user name
+and password permanently. Instead, it sets up an SSH key so that it can log
+in and run jobs on your behalf.
+
+<P>
+After clicking Continue, BioCoRE will attempt to connect to your machine and
+set up the SSH login key. If its successful, it will test the connection,
+and if that succeeds, you can immediately start using your account from VMD.
+If you have a problem setting up your machine, the problem might be that due
+to firewalls or other network configuration details, the BioCoRE server cannot
+connect to your machine, or that there's a problem connecting via SSH. 
+For troubleshooting help, please contact the BioCoRE developers via the
+BioCoRE Help (Public) project, or send email to <a href="mailto:biocore@ks.uiuc.edu">biocore@ks.uiuc.edu</a>.
+
+<P>
+<A NAME="troubleshooting"></A>
+<P>
+<H3>Troubleshooting</H3>
+<P>
+Why do I never get any results back from my job?
+<P>BioCoRE jobs are submitted in the background, so the plugin cannot
+immediately deterimine whether the job has started. BioCoRE will later
+inform VMD when the job has finished successfully, or if it fails, but 
+in some cases, the job will fail silently and BioCoRE won't detect it.
+
+<P>
+A few of the reasons your job might fail include:
+<ul>
+<li>The external program that the plugin is trying to run is not properly
+installed on the remote machine. In this case, BioCoRE will usually detect
+that the job has finished, but no results will be returned. Logging in to 
+the remote machine manually and running test jobs may help track down the
+problem. You can find the script that BioCoRE tried to run by looking in
+the "Remote work directory" specified when the job was submitted.
+
+<li>BioCoRE expects the external program to be in your Unix path by default.
+If it can't find the program, the job will terminate with no output. If the
+program is not in the path, you can fill in an absolute path in the
+Command field of the job form.
+
+<li>Sometimes, the external program may run, but the output files will not be
+generated correctly. In this case, BioCoRE will still bring back files with
+the expected names, but the files will be empty. This may result from a
+lack of disk space or a permission problem on the remote machine, or some
+problem with running the program. Look in the work directory on the remote
+machine to try to determine the source of the problem.
+</ul>
+
+<H3>Other resources:</H3>
+<UL>
+<LI>
+<A HREF="http://www.ks.uiuc.edu/Research/biocore/">BioCoRE Home Page</A>
+
+</LI>
+<LI>
+<A HREF="http://www.ks.uiuc.edu/Research/biocore/overviewpage.shtml">Getting started with BioCoRE</A>
+</LI>
+</UL>
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+</BODY>
+</HTML>

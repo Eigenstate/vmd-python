@@ -1,0 +1,72 @@
+
+CUDAHOME    = /usr/local/encap/cuda-1.0
+CUDACC      = $(CUDAHOME)/bin/nvcc
+CUDAINCS    = -I.
+CUDACCFLAGS = -DCUDA -O3 -Xcompiler "-m32" $(CUDAINCS)
+#CUDACCFLAGS = -DCUDA -g -Xcompiler "-m32" $(CUDAINCS)
+
+
+.SUFFIXES: .C .c .cu .i .o .cubin .ptx
+
+.cu.o: $<
+	$(CUDACC) $(CUDACCFLAGS) -c $<
+
+.cu.cubin: $<
+	$(CUDACC) $(CUDACCFLAGS) -cubin $<
+
+.cu.ptx: $<
+	$(CUDACC) $(CUDACCFLAGS) -ptx $<
+
+.C.o :
+	$(CXX) $(CXXFLAGS) -c $<
+
+BINS = fmtool
+OBJS = frap.o \
+	make_psf.o \
+	psf_from_file_xy_to_r.o \
+	psf_from_file.o \
+	read_conf.o \
+	time_steps_xy_to_r.o \
+	write_psf.o
+
+CUDAOBJS = time_steps_xy_to_r_cuda.o cudamgr.o dmabufalloc.o
+
+cubin : time_steps_xy_to_r_cuda.cubin
+
+ptx : time_steps_xy_to_r_cuda.ptx
+
+default :
+	@echo "Pick from one of the following builds:"
+	@echo "linux-gcc"
+	@echo "linux-icc"
+	@echo "linux-cuda"
+
+all : $(BINS)
+
+fmtool : $(OBJS)
+	$(CXX) $(CXXFLAGS) $(OBJS) -o fmtool $(CXXLFLAGS)
+
+gpufmtool : $(OBJS) $(CUDAOBJS)
+	$(CXX) $(CXXFLAGS) $(OBJS) $(CUDAOBJS) -o fmtool $(CXXLFLAGS)
+
+clean : 
+	rm -f $(BINS) gpufmtool $(OBJS) $(CUDAOBJS) *.cubin
+
+linux-gcc:
+	$(MAKE) -f Makefile.specialbuilds fmtool \
+	"CXX = g++" \
+	"CXXFLAGS = -O -ffast-math" \
+	"CXXLFLAGS = -lm" 
+
+linux-icc:
+	$(MAKE) -f Makefile.specialbuilds fmtool \
+	"CXX = icpc" \
+	"CXXFLAGS = -i-static -axW -fno-exceptions -fomit-frame-pointer -fno-math-errno -no-prec-sqrt -pc32 -vec-report=3 -O3 -msse3" \
+	"CXXLFLAGS = -lm"
+
+linux-cuda:
+	$(MAKE) -f Makefile.specialbuilds gpufmtool \
+	"CXX = g++ -m32" \
+	"CXXFLAGS = -O -ffast-math -DCUDA" \
+	"CXXLFLAGS   = -L$(CUDAHOME)/lib -lcuda -lcudart -Wl,-rpath-link,$(CUDAHOME)/lib"
+

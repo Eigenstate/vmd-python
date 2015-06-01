@@ -1,0 +1,61 @@
+<!--#set var="TITLE" value="SSRestraints Plugin, Version 1.1"-->
+<!--#include virtual="/include/header-over.shtml"-->
+
+<!-- CONTENT STARTS HERE -->
+
+The ssrestraints plugin generates an extraBonds file to apply harmonic
+restraints to secondary structure elements using NAMD. The extraBonds
+feature of NAMD allows
+a user to define additional bonds, angles, dihedrals or impropers.
+
+<h3>Restraining protein secondary structure</h3>
+
+In order to restrain protein secondary structure, ssrestraints creates
+additional dihedrals corresponding to phi and psi angles. The
+equilibrium value for the dihedral angles are set to the values in the
+given structure. By default, every protein residue that is part of a
+helix or a beta sheet is restrained, but an arbitrary selection can be
+restrained instead. Protein backbone H-bonds can also be restrained
+with the option -hbonds. If the option -hbonds is used, backbone H-bonds
+found in helices or beta sheets are restrained by default, but an 
+arbitrary selection for H-bond donors and acceptors can be given instead.
+
+<h3>Restraining nucleic acid secondary structure</h3>
+
+To restrain RNA secondary structure, ssrestraints uses the <a href="http://www.ks.uiuc.edu/Research/vmd/plugins/rnaview">RNAView plugin</a> to identify and classify base pairs. Harmonic restraints are defined based on the base pairing information as described in
+
+<!--#include virtual="/cgi-bin/pubs.cgi?TRAB2008"-->
+
+<!-- <h3>Visualizing restraints</h3> -->
+
+<h3>Usage information</h3>
+
+<pre>
+Usage: ssrestraints -psf &lt;input psf&gt; -pdb &lt;input pdb&gt; -o &lt;output file&gt; ?options?
+Options:
+  -sel &lt;selection text&gt; (default: helix or extended_beta or nucleic)
+  -k_prot &lt;force constant for protein dihedrals&gt; (default: 200)
+  -k_na_bond &lt;force constant for the nucleic acid bonds&gt; (default: 200)
+  -k_na_dih &lt;foce constant for the nucleic acid dihedrals&gt; (default: 200)
+  -ideal -- reference to ideal alpha helices, 3-10 helices, and beta strands
+  -labels -- add labels for visualization of restraints
+  -hbonds -- restrain H-bonds
+  -hbdonorsel &lt;H-bond donor selection text&gt; (default: name N and backbone and (helix or extended_beta))
+  -hbaccsel &lt;H-bond acceptor selection text&gt; (default: name O and backbone and (helix or extended_beta))
+  -hbbondk &lt;force constant for H-bonds&gt; (default: 20.0)
+  -hbanglek &lt;force constant for H-bonds&gt; (default: 20.0)
+  -hbdcut &lt;H-bond distance cut-off in Angstroms&gt; (default: 3.5)
+  -hbacut &lt;H-bond angle cut-off in degrees&gt; (default: 35.0)
+  -na &lt;restraints for nucleic acid&gt; (default: 3)
+      0: dihedrals of all residues
+      1: dihedrals of base-paired residues
+      2: two bonds between base paired residues
+      3: both options 1 and 2
+</pre>
+
+<h3>Authors</h3>
+
+<p><a href="http://www.ks.uiuc.edu/~ltrabuco">Leonardo Trabuco</a> and <a href="http://www.ks.uiuc.edu/~villa">Elizabeth Villa</a>.</p>
+
+<!--#include virtual="/include/footer-over.shtml"-->
+</BODY></HTML>

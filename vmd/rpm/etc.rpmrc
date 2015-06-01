@@ -1,0 +1,10 @@
+require_vendor: 1
+distribution: Extreme Linux
+require_distribution: 1
+topdir: /home/johns/vmd/rpm/
+vendor: University of Illinois at Urbana/Champaign
+packager: VMD <vmd@ks.uiuc.edu>
+optflags: i386 -O2 -m486 -fno-strength-reduce
+optflags: alpha -O2
+optflags: sparc -O2
+tmppath: /usr/tmp

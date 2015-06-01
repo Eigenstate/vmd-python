@@ -1,0 +1,38 @@
+<!--#set var="TITLE" value="Dipole Watcher Plugin, Version 1.0"-->
+<!--#include virtual="/include/header-over.shtml"-->
+
+<!-- CONTENT STARTS HERE -->
+    <p>
+    <a href="dipwatch.png"><img alt="DipWatch GUI" src="dipwatch_small.png" style="border: 0pt none ; padding: 0pt 0pt 1em 1em; width: 252px; height: 129px;" align="right"></a>
+      The DipWatch plugin provides functionality to monitor dipole
+      moments of molecules or parts thereof via the VMD atom selection
+      syntax. It provides a GUI to manage up to six dipoles and allows
+      to set several aspects of them.</p> 
+
+    <p>DipWatch uses the charge information stored internally
+      in VMD when you load a supported topology file or load
+      charge information from a script. The actual computation
+      of the dipole moment is delegated to the 'measure dipole'
+      command, and the position of the center of the dipole is
+      determined via 'measure center'.</p>
+
+
+<h3>Graphical Interface:</h3>
+
+    
+    <p><img alt="DipWatch Screenshot" src="dipwatch_screen_small.png" style="width: 320px; height: 256px;" align="right">
+      The graphical user interface consists of a table where each row
+      contains the settings for one dipole representation. The checkbutton
+      in the first column allows to en- or disable the representation.
+      The subsequent columns allow selection of the molecule id, 
+      atom selection string, color, scaling factor or the arrow length
+      and its radius. If you change any of the fields, the display
+      should be updated as soon as the focus changes or a button is
+      pressed.</p>
+
+    <h3>Author</h3>
+
+    <p><a href="http://sites.google.com/site/akohlmey/">Axel Kohlmeyer</a>.</p>
+
+<!--#include virtual="/include/footer-over.shtml"-->
+</BODY></HTML>

@@ -1,0 +1,578 @@
+<!--#set var="TITLE" value="CGTools Plugin, Version 0.1"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<h2>Coarse Graining using the Coarse Grain Builder</h2>
+
+<p>
+CG Builder provides a simple set of tools for transforming 
+structures between coarse grained and all-atom representations. 
+
+</p>
+
+<p>CG Builder supports two methods of creating a coarse grained model:
+<OL>
+
+<LI>A residue-based method, in which two or more particles from
+an all atom representation map onto a single "bead". A given bead will
+be placed at the center of mass of the atomic group defining it.  Any atoms
+not defined as part of a CG Bead will be left alone. Prior to coarse graining,
+CG bead definitions are read from a file using the format specified below. 
+
+<LI>A shape-based method, where a neural network learning algorithm is
+used to determine the placement of neurons (or CG beads).  The CG beads 
+have masses
+correlated to the clusters of atoms which the beads are representing.
+The shape-based method can be applied to molecules in PDB form, or to electron
+density maps where a full atom PDB might not even be available.
+</OL>
+
+
+<P>
+<IMG ALIGN=RIGHT SRC="select.jpg">
+The graphical interface is available under <CODE>Extensions | Modeling | CG
+Builder</CODE> from within VMD.  First, you choose what you want to do:  convert
+an all atom model to a coarse-grained one (and the particular method to use), or
+you can convert a previously converted coarse-grained model <i>back</i> to
+all-atom.
+
+<P>
+First, you will need to convert an all-atom representation to a coarse grained
+representation.  
+
+<H3>Residue-based Coarse Graining (RBCG)</H3>
+
+This method has been originally reported in the following publications:
+
+<P>
+<li> <a href='http://www.ks.uiuc.edu/Publications/Papers/abstract.cgi?tbcode=SHIH2006'>Coarse grained
+protein-lipid model with application to lipoprotein particles.</a>
+Amy&nbsp;Y. Shih, Anton Arkhipov, Peter&nbsp;L. Freddolino, and Klaus Schulten.
+<em>Journal of Physical Chemistry&nbsp;B</em>, 110:3674-3684, 2006. </li>
+
+<li> <a href='http://www.ks.uiuc.edu/Publications/Papers/abstract.cgi?tbcode=SHIH2007'>Assembly of
+lipoprotein particles revealed by coarse-grained molecular dynamics
+simulations.</a>
+Amy&nbsp;Y. Shih, Peter&nbsp;L. Freddolino, Anton Arkhipov, and Klaus Schulten.
+<em>Journal of Structural Biology</em>, 157:579-592, 2007. </li>
+
+<P>
+The sample coarse-graining scheme provided for the RBCG method in the CG Builder
+follows that reported in the two publications above, and, for lipids, water, and
+ions, that of the Marrink's CG model (Marrink et al., J. Phys. Chem. B,
+108:750-760 (2004); and Marrink et al., J. Phys. Chem. B, 111:7812-7824 (2007)).
+This scheme employs a correspondence of about 10 atoms per CG bead. For example,
+a DOPC lipid is represented by 14 CG beads: one for the choline group, one for
+the phosphate group, two for each of the glycerol groups, and ten to represent
+the two hydrocarbon tails. Four water molecules are represented by a single CG
+bead; an ion together with its first hydration shell (six water molecules) is
+represented by one CG bead.  Each amino acid is represented by two CG beads, one
+for the backbone and one for the side-chain (glycine is represented by a single
+backbone CG bead).
+
+<P>
+However, when using the residue-based coarse-graining in the CG Builder, one
+does not have to follow the sample CG scheme.  As explained <A
+HREF="#beadDatabaseFormat">below</A>, one can create arbitrary definitions of
+which atoms correspond to which CG bead, and use those to create their own RBCG
+models with the CG Builder.
+
+
+<H4>Create a RBCG Model</H4>
+
+The CG Builder requires you to have the appropriate all-atom
+molecule loaded into VMD.  You can then choose the correct VMD molecule from
+the dropdown list.  If you don't have the molecule loaded, you can load it
+in VMD and then choose it from this dropdown.  If the molecular information
+(in the PDB file or whatever source you have) does not include a segment ID,
+the entire molecule is assumed to be in the same segment.
+<P>
+<IMG ALIGN=LEFT SRC="aaToCg.jpg">
+
+You must define the relationship between the desired CG beads and the atoms
+in your all atom representation.  Sample relationships (database files) are
+given for proteins and for water.  If you want to use these, you can just
+click the 'Add' button next to the file and it will be used for the CG
+mapping.
+
+<P>
+You can also create your own bead database definitions.
+Instructions are given <A HREF="#beadDatabaseFormat">below</A>.
+
+Once you have a file(s) with these custom bead definitions, you can load them
+into the interface.  Browse to the bead definition file and then select
+'Add' next to the Browse button.  VMD will load the bead definitions and
+the number of 'Bead Definitions Currently Loaded' should increase by the
+expected amount.
+
+<P>
+The Residue-based CG Builder produces two output files.  The first is the
+revised PDB file reflecting the coarse grained beads instead of all-atom.  A
+sample filename is given based on the molecule name loaded, but you can change
+it as desired.
+
+<P>
+To be able to properly return to an all-atom representation, CG Builder will
+needs a work file that is a 'Reverse Coarse Graining File'. Again, a sample
+filename is given. The important thing is that this file isn't lost, because it
+will be needed when you want to convert the coarse-grained system back to the
+all-atom representation.
+
+<P>
+Once the Residue-Based CG PDB file is produced, one can prepare the
+Residue-Based CG system for a simulation in essentially the same way as it is
+done for all-atom systems. VMD provides a sample RBCG topology file,
+<CODE>rbcg-2007.top</CODE>, in the cgtools directory in your plugin path which
+can be used with <A
+HREF="http://www.ks.uiuc.edu/Research/vmd/plugins/psfgen/">psfgen</A> or <A
+HREF="http://www.ks.uiuc.edu/Research/vmd/plugins/autopsf/">AutoPSF</A> to
+create the complete PDB and PSF pair for a simulation. The simulation can be
+performed using the RBCG parameter file provided with VMD,
+<CODE>rbcg-2007.par</CODE> (also in the cgtools directory in your plugin path).
+For the details on the simulation settings, please see the following
+publications that employed the Residue-Based CG model:
+
+<li> <a href='http://www.ks.uiuc.edu/Publications/Papers/abstract.cgi?tbcode=SHIH2007'>
+Assembly of lipoprotein particles revealed by coarse-grained molecular dynamics
+simulations.</A> Amy Y. Shih, Peter L. Freddolino, Anton Arkhipov, and Klaus
+Schulten. <em>Journal of Structural Biology</em>, 157:579-592, 2007.</LI>
+
+<li> <a
+href='http://www.ks.uiuc.edu/Publications/Papers/abstract.cgi?tbcode=SHIH2007A'>
+Assembly of lipids and proteins into lipoprotein particles.</A> Amy Y. Shih, Anton
+Arkhipov, Peter L. Freddolino, Stephen G. Sligar, and Klaus Schulten. <em>Journal of
+Physical Chemistry B</em>, 111:11095-11104, 2007.</LI>
+
+<li> <a href='http://www.ks.uiuc.edu/Publications/Papers/abstract.cgi?tbcode=ARKH2008'>
+Four-scale description of membrane sculpting by BAR domains.</A> Anton Arkhipov,
+Ying Yin, and Klaus Schulten. <em>Biophysical Journal</em>, 95:2806-2821, 2008.</LI>
+
+
+<H4>Reverse Previously RBCG Model Back To All-Atom</H4>
+<P>
+After running the simulations, you will likely have coarse grained molecules
+that you need to convert back to all-atom.  The CG Builder plugin currently
+supports reverse coarse graining for Residue-based coarse graining.
+
+This implementation of the reverse coarse-graining has been first
+reported in: 
+<li> <a
+href='http://www.ks.uiuc.edu/Publications/Papers/abstract.cgi?tbcode=SHIH2007B'>Disassembly
+of nanodiscs with cholate.</a> Amy&nbsp;Y. Shih, Peter&nbsp;L. Freddolino,
+Stephen&nbsp;G. Sligar, and Klaus Schulten. <em>Nano Letters</em>, 7:1692-1696,
+2007. </li>
+
+
+<IMG ALIGN=LEFT SRC="cgToAa.jpg">
+
+The coarse grained molecule that you wish to convert back to all-atom
+needs to be loaded in VMD and selected as the Coarse-Grained Molecule.  
+In addition, CG Builder needs to have the <i>original</i> all-atom
+molecule available and loaded into VMD.  Select this molecule as the
+All-Atom Molecule.  You will need to specify the work file that was saved
+in the earlier step as the Rev CG File.  And, the reconstructed all-atom
+representation molecule will be saved as PDB file with the given name.
+
+<P>
+A simulated annealing run from NAMD will usually need to be run after 
+reconstruction of the all-atom model.  The annealing run needs to be run in a
+specific way, so the CG builder tool can create the proper NAMD configuration
+files to use.  By default the CHARMM parameter file (used by several other
+VMD plugins) will be used for the config file, but you can alter this as
+desired.  In addition, the PSF filename will be needed for the NAMD simulation.
+
+<HR>
+<H3>Shape-based Coarse Graining (SBCG)</H3>
+
+This method was first reported in the following publications:
+
+<P>
+<li> <a href='http://www.ks.uiuc.edu/Publications/Papers/abstract.cgi?tbcode=ARKH2006'>Stability and
+dynamics of virus capsids described by coarse-grained modeling.</a>
+Anton Arkhipov, Peter&nbsp;L. Freddolino, and Klaus Schulten.
+<em>Structure</em>, 14:1767-1777, 2006. </li>
+
+<li> <a href='http://www.ks.uiuc.edu/Publications/Papers/abstract.cgi?tbcode=ARKH2006A'>Coarse-grained
+molecular dynamics simulations of a rotating bacterial flagellum.</a>
+Anton Arkhipov, Peter&nbsp;L. Freddolino, Katsumi Imada, Keiichi Namba, and
+Klaus Schulten. <em>Biophysical Journal</em>, 91:4589-4597, 2006. </li>
+
+<li> <a href='http://www.ks.uiuc.edu/Publications/Papers/abstract.cgi?tbcode=ARKH2008'>
+Four-scale description of membrane sculpting by BAR domains.</A> Anton Arkhipov,
+Ying Yin, and Klaus Schulten. <em>Biophysical Journal</em>, 95:2806-2821, 2008.</LI>
+
+<li> <a href='http://www.ks.uiuc.edu/Publications/Papers/abstract.cgi?tbcode=YIN2009'>
+Simulations of membrane tubulation by lattices of amphiphysin N-BAR domains.</A> Ying Yin, Anton Arkhipov, and Klaus Schulten. <em>Structure</em>, 2009.</LI>
+
+<P>
+Shape-based coarse graining uses a neural network algorithm to learn
+the best location in which to place the CG beads. The placement is then
+adjusted (usually slightly) based on the centers of mass of the atomic
+clusters comprising each bead. A technical description of what the
+shape-based CG algorithm does is available at the TCBG's 
+<a href="http://www.ks.uiuc.edu/Research/CG/sbcg.html">Shape-based CG
+web page</a>.
+
+<h4>Create a SBCG Model</H4>
+
+<P>
+<IMG ALIGN=RIGHT SRC="aaToCgShape.jpg"> 
+Shape-based coarse graining can act upon either a molecule loaded in PDB/PSF
+form, or an electron density map.  Choosing the proper option will slightly
+modify which elements of the form need to be given.
+
+<P>
+<I>Starting From A Molecule</I> - If you have a molecule, the CG Builder
+requires you to have the appropriate all-atom molecule loaded into VMD.  You can
+then choose the correct VMD molecule from the dropdown list.  If you don't have
+the molecule loaded, you can load it in VMD and then choose it from this
+dropdown.  In addition, you will want to load in an appropriate PSF file for the
+molecule, as certain values from the PSF file are used for the placement and
+assignment of properties for the CG beads. Specifically, the PSF file contains
+information about the mass and charge of every atom. If the PSF file is not
+provided, VMD will guess masses of the atoms (usually, VMD's guess is quite
+good), but all charges will be assumed to be 0.0. In this case, the CG model
+will reflect the mass distribution well, but it will not contain any information
+about the charge distribution.
+
+<P>
+<I>Starting From An Electron Density Map</I> - If using an electron 
+density map, you will need to choose the location on your
+disk of a SITUS or .DX file that contains the map.
+
+<P>
+<I>Mass of the CG model</I> - If you choose to do so, you can specify the
+desired total mass of the resulting CG model (which will get put into the
+topology file).  When starting with a molecule, this typically won't be
+necessary.  The molecule will contain enough information about the atoms that
+the mass can be properly determined.  If, for whatever reason, you want to scale
+the masses of the CG beads you might want to specify the final mass, though.
+
+<P>
+When starting with an electron density map, being able to specify the total mass
+of the CG model is much more useful, though.  After calculating the location of
+each CG bead and how much of the density maps that is being represented by each
+bead, the algorithm will take the total mass value that you have provided and
+scale each CG bead accordingly.
+
+
+
+<H5> Learning Parameters</H5>
+<P>
+<I>Number of Beads</I> - Choose the number of beads that you want to create
+from the original molecule.  If you choose a number that is too large, you stand
+a good chance of having some beads created which don't have any actual real
+atoms associated with them.  If this happens, rerun the model creation with
+fewer beads.  The plugin will default to number of atoms divided by 500
+if using a molecule as input.  If using an electron density map you
+will need to provide a reasonable value (the default number of beads will 
+be the number of density points divided by 550).
+
+<P>
+<I>Number of Learning Steps</I> - By default, this is 200 times the number of
+desired beads.  You can set it to anything that you wish, though.
+
+<P>
+"Lambda" and "eps" are parameters used by the learning algorithm. The default
+values for Initial/Final eps and Initial/Final Lambda in the plugin are a
+reasonable choice that will work in most cases. You can change these values
+if needed. By default, the initial value for lambda will be 0.2 times the
+number of desired beads. Other default values are independent of the number
+of beads.
+
+<P>
+<I>Bond Cutoff</I> -  Cut-off distance for establishing bonds between
+beads (in angstroms).
+
+<P>
+<I>Frac Cutoff</I> -  This parameter (only used when working with density
+maps) should be a number between zero and one. Regions of the map with 
+density values below this number (times the maximum density value in the
+current map) will be neglected. 
+
+<P>
+<I>CG Residue Name</I> - Three characters or fewer.  This residue name will be
+printed in the output files.
+
+<P>
+<I>CG Name Prefix</I> - For naming the CG atoms and types.  This should be a
+single character.  If 'A' is used, atom names will be A1, A2, etc.
+
+
+<P>
+<I>Output Files</I> - The Coarse-Grained PDB file, the topology file, and the
+parameter file will contain information about the beads, their locations,
+connections, charges, etc.  The All-Atom Reference PDB (which only applies if
+you are starting from a molecule and not an electron density map) 
+will be the same
+as the original molecule, but the beta field for each atom will contain
+the index number of the bead to which the atom was assigned.  
+
+<P>
+After building the coarse grain model, one would normally run psfgen
+(can be conveniently done by using AutoPSF plugin of VMD:
+<CODE>Extensions | Modeling | Automatic PSF builder</CODE>)
+on the coarse grained structure (using a coarse grain topology file) and
+then be ready to begin simulations.
+<P>
+<H4>Map A Previously Generated SBCG Model To An All-Atom Model</H4>
+<P>
+<IMG ALIGN=RIGHT SRC="sbcg-mapping.jpg">
+
+When one works with multiple copies of the same molecule, e.g., protein units in
+a virus capsid, it is often desirable to construct a CG model for a single copy,
+and then use exactly the same model for all other copies.  For each copy, the CG
+model should be translated and rotated to match the position and orientation of
+the copy. This can be achieved using the ``Map Shape-Based CG to All-Atom''
+interface. In addition to translation and rotation, the interface can also
+distort the CG model, if the all-atom molecule copy is in a different
+conformation than the originally coarse-grained all-atom molecule.
+
+
+
+Each CG bead in a coarse grained molecule has a respective domain in an all-atom
+reference molecule. Atoms from each domain of the reference molecule can
+correspond to atoms of an all-atom molecule that we want to map onto (for two
+atoms to be declared identical, segname, resid, and name should match).  A bead
+that represents the center of mass of a given all-atom reference molecule domain
+should be moved to the center of mass of the corresponding domain in the
+molecule we wish to map onto.
+
+
+<P>
+The script takes three molecules loaded in VMD as input.
+
+<P>
+<I>Coarse-Grained Molecule</I>: CG model of the reference molecule.
+
+<P>
+<I>Reference Molecule</I>: An all-atom reference PDB for the CG model.
+(Best to have a PSF file loaded into this molecule so that atom masses
+are correctly taken into account)
+
+<P>
+<I>All-Atom Molecule To Map Onto:</I> The copy of the reference all atom
+molecule, which you want to map the CG molecule onto.
+
+<P>
+Note: The all-atom molecule to map onto does not have to be exactly the same as
+the reference all-atom molecule. For example, it may miss some atoms that are
+present in the reference molecule, such as hydrogen atoms in a model of a
+protein.  The mapping plugin still should be able to do a good job of mapping
+the CG model onto the all-atom molecule, unless there are too many atoms
+missing, or the conformation is too distant from the reference molecule.
+
+<P>
+To enable the flexibility described above, each bead is placed into the center
+of mass of the corresponding all-atom domain, rather than aligning the whole CG
+structure with the all-atom structure.
+
+<P>
+<I>Output PDB Filename:</I> Desired filename for newly mapped CG molecule.
+
+<P>
+<H4>Assign Lennard-Jones Parameters For SBCG Model From All-Atom Model</H4>
+
+<P>
+<IMG ALIGN=RIGHT SRC="sbcg-ljPotential.jpg">
+When one creates an SBCG model using the shape-based coarse-graining tool of the
+CG Builder, a CHARMM-style parameter file is prepared that reflects the topology
+of the SBCG model. However, parameters in this file are assigned very
+simplistically, using only structural considerations (such as the size of an
+all-atom domain represented by each CG bead). These parameters can be further
+refined to introduce more realism and specificity into the model, as described
+in the following for the case of non-bonded interations.
+
+<P>
+This tool extracts solvent accessible surface area (SASA) for each atomic domain
+representing a CG bead from an all-atom structure corresponding to the CG
+structure.  The values extracted are SASA for the whole domain (in the context
+of the rest of the structure) and SASA for hydrophobic residues only. These
+values are used to assign the LJ well depths E<SUB>i</SUB> to individual CG
+beads, as E<SUB>i</SUB> = ELJ *
+(SASA<SUB>i</SUB>[hydrophobic]/SASA<SUB>i</SUB>[total])<SUP>2</SUP>, where ELJ
+is an adjustable constant.  Radius of gyration is used to compute LJ radii; LJ
+radius R<SUB>i</SUB> is obtained as R<SUB>i</SUB> = r_gyr<SUB>i</SUB> + RLJ,
+where r_gyr<SUB>i</SUB> is the radius of gyration for all atoms represented by
+the i<SUP>th</SUP> CG bead and RLJ is an adjustable constant.
+
+<P>
+Input: The <I>Original CG Param File</I> is the parameter file that is created
+when creating a shape-based CG model.
+
+<P>
+Input: The <I>all-atom reference structure</I> should be loaded in VMD already;
+this structure should have beta values filled with numbers corresponding to the
+CG beads' numbers; since radius of gyration is computed, it is better to load
+the PSF file into the structure too, so that correct masses are used.
+
+<P>
+Input: The <I>maximum energy value for the Lennard-Jones well depth</I>, (ELJ) in
+kcal/mol.
+
+<P>
+Input: an <I>addition to the Lennard-Jones radius </I> (RLJ) in Angstroms.
+
+<P>
+Output: The <I>Output Parameter Filename</I> will store the newly 
+assigned Lennard-Jones parameters.
+
+<P>
+<H4>Extract Bond/Angle Parameters of CG Model from the All-Atom Simulation</H4>
+
+<P>
+<IMG ALIGN=RIGHT SRC="sbcg-baExtract.jpg">
+Better bond and angle parameters of a CG molecule can be obtained by doing
+a brief (the longer the better, though) all-atom simulation and analyzing 
+the results.  These results can then be used to improve the CG model.
+
+<P>
+Input: The <I>CG PSF File</I> is the PSF file from the CG model.  This might
+have been created with psfgen.
+
+<P>
+Input: The <I>CG PDB File</I> is the PDB file from the CG model.  This might
+be a byproduct of psfgen.
+
+<P>
+Input: The <I>AA PDB File</I> is the all-atom PDB file.  This pdf file needs
+to have beta values that indicate the CG bead IDs of each atom.  This 
+information will be an automatic result of using the 'Create SBCG Model' 
+option of this tool.
+
+<P>
+Input: The <I>AA DCD File</I> is the trajectory from the short all-atom 
+simulation.  
+
+<P>
+Input: The <I>Simulation Temperature</I> is the temperature that was 
+specified in the NAMD configuration file for the short all-atom simulation.
+
+<P>
+Output: The <I>Parameter output filename</I> will store the new CG
+parameters.
+
+<P>
+Output: The <I>Bond Data output filename</I> doesn't contain additional
+information above what the output parameter file contains.  It just doesn't
+have all of the extra comments that a parameter file typically has.  If you
+do multiple short all-atom trajectories you can run this option on each 
+trajectory.  The bond/angle files can be used to compare the calculated
+parameters across these trajectories.  (xmgrace works well on these files)
+
+<P>
+Output: The <I>Angle Data output filename</I> doesn't contain additional
+information above what the output parameter file contains.  It just doesn't
+have all of the extra comments that a parameter file typically has.  If you
+do multiple short all-atom trajectories you can run this option on each 
+trajectory.  The bond/angle files can be used to compare the calculated
+parameters across these trajectories.  (xmgrace works well on these files)
+
+
+
+<P>
+<H4>Scale Bond and/or Angle Spring Constants In A Parameter File</H4>
+
+<P>
+<IMG ALIGN=RIGHT SRC="sbcg-scaleBA.jpg">
+Sometimes you might find that you need to scale the spring constants of
+bonds and/or angles that you  have in a parameter file.  This module
+can easily do this for you.
+
+<P>
+Input: The <I>Input Parameter File</I> is the parameter file that needs to
+have the constants scaled.
+
+<P>
+Input: The <I>Bond/Angle Spring Constant Scaling</I> is the multiplier that 
+you want applied to the bond/angle spring constants in the file.  If you 
+have a value of 1 here, the constants will not be modified.  If you have a 
+value of 2, the constants will be doubled (see cutoff, below).
+
+<P>
+Input: The <I>Bond/Angle Spring Constant Cutoff</I> is a minimum value 
+for bond/angle constants that you 
+wish to scale.  If you  have a value of 1.5 here, constants with a value below
+1.5 won't be modified.  Constants above will be multiplied by the scaling factor
+given above.
+
+<P>
+Output: The <I>Output Parameter File</I> is the name of the parameter file that
+will be created with the modified spring constant values.
+
+<HR>
+<P>
+<H3>Residue-Based Coarse Graining Text Interface</H3>
+<P>
+To access the plugin via the text interface, the relevant commands for coarse
+graining a system are:
+
+<ul>
+  <li><tt>read_db dbfile</tt> -- Read a set of cg definitions from a specified database file</li>
+  <li><tt>apply_database molid outputfile revcgfile</tt> -- Applies the current cg database to molecule <tt>molid</tt>. The finished structure is output to the file <tt>outputfile</tt>, and data used for reversing the coarse graining is placed in <tt>revcgfile</tt>.
+</ul>
+
+It is also useful in some CG schemes to include water in the system as it is coarse-grained. To make sure waters are properly assigned to CG beads (if one uses a cgc entry such as the water entry below) they must have consecutive residue numbers, which can be assigned using the function 
+
+<ul>
+  <li><tt>prepare_water molid simple</tt> -- Waters in molid will be made part of one chain and consecutively numbered. If simple is not equal to 0, the numbering will be assigned such that blocks of waters that are close to each other will have consecutive resids.</li>
+</ul>
+
+To reverse the coarse-graining procedure, one must first load the original molecule and the coarse-grained timestep that is to be reversed. The relevant commands are then:
+
+<ul>
+
+<li><tt>apply_reversal cgmolid revcgfile origmolid outputfile do_rotations</tt>
+-- Take the CG timestep in <tt>cgmolid</tt>, and apply the reversals read from
+<tt>revcgfile</tt> assuming that the initial structure is in <tt>origmolid</tt>.
+The modified coordinates are written to <tt>outputfile</tt>. If
+<tt>do_rotations</tt> is non zero, attempts will be made to keep atoms with
+inter-bead bonds as close as possible to their original positions by applying
+rotations.  If 0, rotations will not be done.  Note that you will almost
+certainly want to perform some sort of annealing or refinement on the resulting
+structure.
+
+</ul>
+
+</p>
+
+<A NAME="beadDatabaseFormat"></A>
+<h4>CG database file format</h4>
+
+<P>
+<p>The current bead definition database format (which is subject to change) is a
+single file with a set of one or more bead blocks, each of which starts with a
+CGBEGIN statement and ends with a CGEND statement. Any lines outside of a
+CGBEGIN ... CGEND block will be ignored, as will blank lines or lines starting
+with a <tt>#</tt> character. Each line within a bead block contains three
+whitespace delimited pieces of information: A residue name, atom name, and resid
+offset (relative to that of the key atom). The first line in the block contains
+the information that will be applied to the newly created CG bead, the second
+line of the block is the "key" atom, which will be used to identify clusters of
+atoms that should be turned into a bead, and all subsequent lines are component
+atoms of the bead. Note that one bead will be created for each key atom found
+(unless it has been previously incorporated into another bead), but that missing
+component atoms will be ignored. The following block is an example CG block for
+coarse graining of TIP3 water; application of this block would map every cluster
+of four consecutively numbered TIP3 water residues onto a single CG bead with
+resname TIP3 and name H2O.</p>
+
+<pre>
+CGBEGIN
+TIP3 H2O 0
+TIP3 OH2 0
+TIP3 H1  0
+TIP3 H2  0
+TIP3 OH2 1
+TIP3 H1  1
+TIP3 H2  1
+TIP3 OH2 2
+TIP3 H1  2
+TIP3 H2  2
+TIP3 OH2 3
+TIP3 H1  3
+TIP3 H2  3
+CGEND
+</pre>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

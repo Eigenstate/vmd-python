@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+        <PreferenceCategory android:title="@string/prefsSettingsHeading">
+
+           <EditTextPreference
+                android:name="@string/nickLabel"
+                android:summary="@string/nickDescript"
+                android:defaultValue="Anonymous User"
+                android:maxLength="16"
+                android:title="@string/nickLabel"
+                android:key="nickEntry" />
+
+           <EditTextPreference
+                android:name   ="@string/rotScaleLabel"
+                android:title  ="@string/rotScaleLabel"
+                android:summary="@string/rotScaleDescript"
+                android:inputType="numberDecimal"
+                android:defaultValue="1.0"
+                android:key="rotScale" />
+
+           <EditTextPreference
+                android:name   ="@string/zoomScaleLabel"
+                android:title  ="@string/zoomScaleLabel"
+                android:summary="@string/zoomScaleDescript"
+                android:inputType="numberDecimal"
+                android:defaultValue="1.0"
+                android:key="zoomScale" />
+
+           <EditTextPreference
+                android:name   ="@string/tranScaleLabel"
+                android:title  ="@string/tranScaleLabel"
+                android:summary="@string/tranScaleDescript"
+                android:inputType="numberDecimal"
+                android:defaultValue="1.0"
+                android:key="tranScale" />
+
+           <CheckBoxPreference
+                android:title="@string/showBackgroundImageLabel"
+                android:summary="@string/showBackgroundImageDescript"
+                android:defaultValue="true"
+                android:key="showBackgroundImage" />
+
+        </PreferenceCategory>
+
+        <PreferenceCategory android:title="@string/advancedSettingsHeading">
+           <CheckBoxPreference
+                android:title="@string/showDebugLabel"
+                android:summary="@string/showDebugDescript"
+                android:defaultValue="false"
+                android:key="showDebug" />
+
+        </PreferenceCategory>
+
+
+
+</PreferenceScreen>

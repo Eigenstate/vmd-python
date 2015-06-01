@@ -1,0 +1,73 @@
+<!--#set var="TITLE" value="Automatic Atom Typing Plugin (IDATM), Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+IDATM provides a method for automatically typing atoms in a molecule based on geometric information. When run, it can apply atom types and, in combination with molefacture, properly add hydrogens when necessary. IDATM is based on the algorithm presented by Meng and Lewis (JCC 12(7):891-898), with a few minor modifications.
+
+<h3>Usage</h3>
+
+IDATM can be used directly from the command line, or accessed through the Molefacture GUI. To use IDATM from the command line, use the commands
+
+<pre>
+  package require IDATM
+  runtyping SELECTION
+</pre>
+
+Where SELECTION is the selection to be typed. Proper atoms types will be applied, and proper bond orders set, for all atoms in SELECTION.
+
+By default, IDATM uses the atom types listed below. The builtin type names can be overloaded with the command
+
+<pre>
+  read_idatm_types FILE
+</pre>
+
+Here FILE contains a set of type definitions, one per line, where the first entry is the builtin IDATM name for a type, and the second entry is the new type name. For example, to type all IDATM C3 atoms as C.3 (useful, for example, for SYBYL-compatible mol2 files), one would use a file including the line
+
+<pre>
+  C3 C.3
+</pre>
+
+A sample conversion file to map between IDATM types and SYBIL types is shown <a href="mol2.idatm.in">here</a>.
+
+<h3>Builtin atom types</h3>
+
+The following atom type definitions are included in IDATM (mostly taken from Meng and Lewis, 1991):
+
+<pre>
+    C3 - sp3 carbon
+    C2 - sp2 carbon
+    C1 - sp carbon
+    Cac - carboxylate carbon
+    N3p - Quaternary amine nitrogen
+    N3 - Uncharged sp3 nitrogen
+    Npl - sp2 nitrogen
+    N1 - sp nitrogen
+    Nox - Nitrogen bound to oxygen
+    Ntr - NO2 nitrogen
+    Ngp - guanidinium nitrogen
+    O3 - sp3 oxygen
+    O2 - sp2 oxygen
+    Om - carboxylate or nitro oxygen
+    S3p - Positively charged sulfur
+    S3 - sp3 sulfur
+    S2 - sp2 sulfur
+    Sac - Sulfate sulfur
+    Sox - Sulfoxide sulfur
+    S - Generic sulfur
+    Bac - Borate boron
+    Box  - Oxidized boron
+    B - Boron
+    Pac - Phosphate phosphorus
+    Pox - P-oxide phosphorus
+    P3p - Positively charged sp3 phosphorus
+    P - Other phosphorus
+    HC - Hydrogen bonded to carbon
+    H - Other hydrogen
+    DC - Deuterium bonded to carbon
+    D - Other deuterium
+</pre>
+  
+
+
+
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

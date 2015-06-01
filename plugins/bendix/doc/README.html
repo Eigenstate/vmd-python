@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+Based on Free CSS Templates
+http://www.freecsstemplates.org
+
+Title      : Bendix Homepage 
+Version    : 0.1
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>Bendix</title>
+<meta name="keywords" content="curvature, protein visualization, protein visualisation, heatmap, geometry analysis, helix representation, coarse grain, coarsegrain, coarse-grain, VMD, helix axis, alpha helix, helix analysis, helix geometry, molecular dynamics, MD, bendices, atomistic representation, helix display, MD trajectory" />
+<meta name="description" content="Webpage of Bendix: Bendix is a software that graphs and characterizes the helix secondary structure axis with the choice of uniform or heatmap coloring according to local geometry. Bendix supports static, dynamic (MD) atomistic and coarse grain input." />
+<link href="default.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="jquery/jquery-1.4.2.min.js"></script>
+<script type="text/javascript" src="jquery/jquery.slidertron-0.1.js"></script>
+<style type="text/css">
+@import "gallery.css";
+</style>
+</head>
+<body>
+<div id="wrapper">
+<div id="header">
+	<div id="logo">
+		<h1><a href="http://sbcb.bioch.ox.ac.uk/Bendix/index.html">Bendix</a></h1>
+		<h2><a href="http://sbcb.bioch.ox.ac.uk/currentmembers/dahl.php"></a></h2>
+	</div>
+</div>
+<div>
+	<div id="page">
+		<div id="page-bgtop">
+			<div id="content">
+			
+			<!-- <a href="#QA">Go directly to the Q&A</a> -->
+			
+				<div class="post">
+					<div class="post-bgtop">
+						<div class="post-bgbtm">
+							<h1 class="title">Step-by-step installation instructions</h1>
+							 <div class="entry"> Bendix is written in tcl and works on most operating systems, including Windows, Linux and Mac. To run Bendix, please decompress the files and follow the instructions below. You may also run Bendix without installing it, but please note that you will miss out on a couple of Help-features. It is recommended that you install Bendix.</div>
+                            <h2 class="title" id="1">Integrate Bendix into VMD's native plugin directory (may require root/administrator priviliges)</h2>
+								<div class="entry">
+								<p><li><B>1.</B> Identify the path to your installed VMD package, e.g. /Computer/Programs/VMD/
+                                <p><li><B>2.</B> Save the bendix1.1 folder in a special VMD plugin subdirectory:
+                                <br>     /Computer/Programs/VMD/plugins/noarch/tcl/
+                                <br><li>     On Macs: right-click the VMD icon in <FONT FACE="courier">Applications</FONT>, choose <FONT FACE="courier">Show Package Contents</FONT> and navigate to <FONT FACE="courier">Contents > vmd > plugins > noarch > tcl</FONT>
+                                <p><li><B>3.</B> Identify (or create) and open the the vmd startup file <i>vmdrc</i>
+                                <br>     By default, VMD ships with a vmdrc file that you find where you installed VMD,
+								<br>     e.g. /Computer/Programs/VMD/
+                                <br>     (N.B. this is a hidden file in Linux and Mac distributions)
+                                <p><li><B>4.</B> Append this to vmdrc:
+                                <br>     vmd_install_extension bendix bendix "Analysis/Bendix"
+								<br>     menu main on
+                                <p><li><B>5.</B> Start VMD.
+                                <br>     Bendix appears under the VMD Main window tab
+                                <br>     Extensions > Analysis > Bendix</br>
+                            </div>
+                            
+                            <h2 class="title" id="2">Integrate Bendix with VMD using a path of your choice</h2>
+							<div class="entry">
+                                <p><li><B>1.</B> Save Bendix anywhere you like, e.g. /Computer/Programs/bendix1.1
+                                <p><li><B>3.</B> Identify (or create) and open the the vmd startup file <i>vmdrc</i>
+                                <br>     By default, VMD ships with a vmdrc file that you find where you installed VMD,
+								<br>     e.g. /Computer/Programs/VMD/
+								<br>     (N.B. this is a hidden file in Linux and Mac distributions)
+                                <p><li><B>3.</B> Append this to vmdrc:
+                                <br>set auto_path [linsert $auto_path 0 [file join /Computer/Programs/bendix1.1]]
+                                <br>     vmd_install_extension bendix bendix "Analysis/Bendix"
+								<br>     menu main on
+                                <p><li><B>4.</B> Start VMD.
+                                <br>     Bendix appears under the VMD Main window tab
+                                <br>     Extensions > Analysis > Bendix</br>
+                            </div>
+                            
+                            <h2 class="title" id="3">Run Bendix from VMD's terminal</h2>
+							<div class="entry">
+                                <p><li><B>1.</B> Save Bendix anywhere you like, e.g. /Computer/Programs/bendix1.1
+                                <p><li><B>2.</B> Start VMD and locate the terminal (alternatively use the Tk Console in the VMD Main window, under Extensions > Tk Console)
+                                <p><li><B>3.</B> Type
+                                <br>source /dir/where/you/saved/bendix1.1/bendix.tcl
+                                <br>bendix
+                                <br><br>N.B. You will need to do these steps every time you restart VMD, and supplied Bendix GIFs may not work.
+                                <br>Integrating Bendix with VMD, on the other hand, makes it permanently available under Extensions.</p>
+                            </div>
+
+							<h1 class="title" id="QA">Q&A</h1>
+                            <div class="entry">
+                                <p>
+								<li><B>Q: Bendix doesn't appear under VMD Extensions > Analysis, or doesn't run.</B><br>
+								<li><B>A:</B> Here are four ways to troubleshoot:<br>
+<B>1.</B> Check what version of VMD you're running. Bendix is written in Tcl and requires tcl 8.5 or above, which comes with the latest VMD versions (Bendix was developed using VMD 1.9). If you have an old VMD version, consider upgrading. <br>
+<B>2.</B> If your VMD version is up to date, VMD might not have found <i>vmdrc</i>, the tcl startup file that you edited to point VMD in Bendix' direction. VMD looks for vmdrc in three directories; first your current directory, then your home directory and lastly where you installed VMD, and uses the first vmdrc file that it finds. Launch VMD and type 
+<br><FONT FACE="courier">pwd</FONT> </br>
+in the vmd terminal that opens by VMD startup. VMD will definitely search that directory, so try saving vmdrc there.<br>
+<B>3.</B> If neither of the above works, verify that the downloaded, unzipped Bendix package contains the following files: pkgIndex.tcl bendix.tcl Monsieur_Bendix_smaller_still.gif GUI-tips.gif<br>
+<B>4.</B> Check that the variable pck_pkdir points to the directory where you keep the bendix1.1 folder.
+</p>
+								<p>
+<li><B>Q: I tried Bendix on a coarse-grained protein file, but I get the error-message 'No helices? Bendix could not detect any helicity in your protein...'. What should I do?</B><br>
+								<li><B>A:</B> Because software does not currently exist for prediction of secondary structure for coarse-grained proteins, Bendix text-mines your input file for particle types, and uses these to tell what secondary structure to depict.
+This will, of course, only work if the particle type reveals the local secondary structure, which the MARTINI coarse-grain particles do. There are therefore three possible reasons for this error message: <br>
+								<B>1.</B> Your protein does not feature helices! <br>
+								<B>2.</B> Your input file does not feature the MARTINI force field. You can supply helicity for your protein using the "Helices:" field under the Helix features box, that you reach by clicking the Settings button. Either type in your own helicity, working your way through your protein, or draw bendices for the original atomistic protein or a MARTINI version, and save this helicity (under File > Save helix assignment...). Reload it for your coarse-grained protein to generate helices (under File > Load helix assignment...).<br>
+								<B>3.</B> Your MARTINI input file has insufficient space for particle names, or particle names have become scrambled (some MD software do this). If this is the case, Bendix can't work on your file. Bendix mines your file for particle names that start with <FONT FACE="courier">BH</FONT>, <FONT FACE="courier">BBh</FONT>, <FONT FACE="courier">BE</FONT> or <FONT FACE="courier">BBe</FONT>. Check that your file contains these. If it does not, load an alternate file that does. Bendix users that use GROMACS say that any sort of MD treatment to your system, where you use the MARTINI forcefield to generate a .gro file (e.g. a very short energy minimisation) will correct the input file.
+								</p>
+								
+								<p>
+								<li><B>Q: I have a coarse-grained system and ERROR> messages appear in the VMD terminal. What is wrong?</B><br>
+								<li><B>A:</B> Nothing is wrong - do not worry. VMD runs STRIDE behind the scenes to generate secondary structure for your protein. When STRIDE attempts to decipher your protein, it fails, as it was not built to analyse CG proteins. No STRIDE output file is created, and you receive an error message from the VMD script that expects this file. This does not affect the operating of Bendix, which is autonomous from STRIDE when it deals with CG input.
+
+								<p>
+								<li><B>Q: I have heatmap-coloured my helix and want to analyse a loaded trajectory, but I get the error message "No trajectory loaded? bendix does not detect frames!..".
+How can I fix this?</B><br>
+								<li><B>A:</B> Bendix saves axis coordinates as you play your trajectory, and erase this data every time you reach the end of your trajectory and it restarts on the first frame.
+Therefore, in order to analyse a complete trajectory, you need to Play it from the start to the very last frame, without allowing it to go back to the first frame again.
+								<p>
+									
+								<li><B>Q: I'm in the Surf module and hit Surf, and I think that it is done drawing, but I see nothing on my screen! Where is my surf graph?</B><br>
+								<li><B>A:</B> If this happens, the first thing to try is to display the graph axes. To do this, tick the 'Show axes' box. The axes will give you a good idea about the surf graph. It might be evident now that you need to zoom in or out to see your graph (click 's' in the VMD Display window and scale by click-and-dragging your mouse), or rotate the scene a bit to get a better angle. If you are still struggling to see anything, the graph may be occluded by VMD's default Depth Cueing (the fog that lets you distinguish between near and far objects) or it may be poorly resolved against your VMD background colour. To disable Depth Cueing, go to VMD Main > Display and untick Depth Cueing. To change the VMD Display background colour, go to VMD Main > Graphics > Colors... and choose Category Display, Name Background and a new Color. For clarity, we suggest white.
+									
+								<p>	
+								<li><B>Q: The surf graph of my trajectory is uneven (high resolution for some frames and low resolution elsewhere), or data is only displayed for some frames. Why is this?</B><br>
+								<li><B>A:</B> As mentioned in the Answer above, Bendix records helix data as you play your trajectory. If your surf graph resolution is uneven, you have jumped through your trajectory either manually using the scrollbar, or using a Play step higher than 1. Exit the surf window and replay your trajectory using step 1.
+
+								<p>
+								<li><B>Q: Bendix takes a lot of time drawing my surf graph! Why does this happen?</B><br>
+								<li><B>A:</B> The surf graphs are made of many, many graphics primitives, all of which needs to be drawn to the screen. If you want your data to be drawn faster, consider reducing the resolution or graphing every, say, 10th frame. Since Bendix only saves data for played frames, you can graph every 10th frame by putting step 10 in the VMD Main Window.
+								Alternatively you can export the data (File > Save surf data...) to a dedicated graphing suite such as MatLab, without first drawing it in Bendix.
+								<p>								
+
+								<p>
+								<li><B>Q: I tried the Surf analysis tool and my protein disappeared! How do I get it back?</B><br>
+								<li><B>A:</B> Your protein is still there, but Bendix temporarily hid it so that the Surf graph could be displayed without interfering with your protein. Your protein will automatically be revealed and the perspective shifted back to your 'pre-surf' perspective when you hit Return in the Surf module.
+								<p>
+									
+								<p>
+								<li><B>Q: I use Bendix for my paper. How do I cite you?</B><br>
+								<li><B>A:</B> We're pleased to hear that Bendix is useful to you! If Bendix contributes towards your publication, please use the following reference:
+								<li>Dahl ACE, Chavent M and Sansom MSP (2012) Bendix: Intuitive helix geometry analysis and abstraction. Bioinformatics doi: 10.1093/bioinformatics/bts357</p>
+<p>The paper can be found <a href="http://bioinformatics.oxfordjournals.org/cgi/content/abstract/bts357?ijkey=HOmiKCIgVkhB9bg&keytype=ref">here</a>.</p>
+                                <p>
+								<br> </br>
+								<li><B>More help is available from Bendix under the Help menu. Alternatively <a href="http://sbcb.bioch.ox.ac.uk/Bendix/contact.html">contact us</a>.</B>
+                                </p>
+                            </div>
+						</div>
+					</div>
+				</div>
+				
+			</div>
+
+			
+			<div style="clear: both; height: 1px"></div>
+		</div>
+	</div>
+	<!-- end div#page -->
+</div>
+<!-- end div#wrapper -->
+<div id="footer-wrapper">
+	<div id="footer">
+		<p id="legal">Copyright &copy; 2012-2013 University of Oxford. All Rights Reserved. By <a href="http://sbcb.bioch.ox.ac.uk/currentmembers/dahl.php"> Caroline Dahl</a>, Oxford 2nd of February 2013.</p>
+	</div>
+</div>
+<!-- end div#footer -->
+</body>
+</html>

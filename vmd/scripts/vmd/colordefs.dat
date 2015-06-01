@@ -1,0 +1,206 @@
+#
+# VMD default color assignments
+#
+# color category name, category item name, color name 
+#
+Name   H   white
+Name   O   red
+Name   N   blue
+Name   C   cyan
+Name   S   yellow
+Name   P   tan
+Name   Z   silver
+
+Type   H   white
+Type   O   red
+Type   N   blue
+Type   C   cyan
+Type   S   yellow
+Type   P   tan
+Type   Z   silver
+
+# Drude names
+Name   LPA   green
+Name   LPB   green
+Type   LP    green
+Type   DRUD  pink
+
+Element Ac ochre
+Element Ag ochre
+Element Al ochre
+Element Am ochre
+Element Ar ochre
+Element As ochre
+Element At ochre
+Element Au ochre
+Element B  ochre
+Element Ba ochre
+Element Be ochre
+Element Bh ochre
+Element Bi ochre
+Element Bk ochre
+Element Br ochre
+Element C  cyan
+Element Ca ochre
+Element Cd ochre
+Element Ce ochre
+Element Cf ochre
+Element Cl ochre
+Element Cm ochre
+Element Co ochre
+Element Cr ochre
+Element Cs ochre
+Element Cu ochre
+Element Db ochre
+Element Ds ochre
+Element Dy ochre
+Element Er ochre
+Element Es ochre
+Element Eu ochre
+Element F  ochre
+Element Fe ochre
+Element Fm ochre
+Element Fr ochre
+Element Ga ochre
+Element Gd ochre
+Element Ge ochre
+Element H  white
+Element He ochre
+Element Hf ochre
+Element Hg ochre
+Element Ho ochre
+Element Hs ochre
+Element I  ochre
+Element In ochre
+Element Ir ochre
+Element K  ochre
+Element Kr ochre
+Element La ochre
+Element Li ochre
+Element Lr ochre
+Element Lu ochre
+Element Md ochre
+Element Mg ochre
+Element Mn ochre
+Element Mo ochre
+Element Mt ochre
+Element N  blue
+Element Na ochre
+Element Nb ochre
+Element Nd ochre
+Element Ne ochre
+Element Ni ochre
+Element No ochre
+Element Np ochre
+Element O  red
+Element Os ochre
+Element P  tan
+Element Pa ochre
+Element Pb ochre
+Element Pd ochre
+Element Pm ochre
+Element Po ochre
+Element Pr ochre
+Element Pt ochre
+Element Pu ochre
+Element Ra ochre
+Element Rb ochre
+Element Re ochre
+Element Rf ochre
+Element Rg ochre
+Element Rh ochre
+Element Rn ochre
+Element Ru ochre
+Element S  yellow
+Element Sb ochre
+Element Sc ochre
+Element Se ochre
+Element Sg ochre
+Element Si ochre
+Element Sm ochre
+Element Sn ochre
+Element Sr ochre
+Element Ta ochre
+Element Tb ochre
+Element Tc ochre
+Element Te ochre
+Element Th ochre
+Element Ti ochre
+Element Tl ochre
+Element Tm ochre
+Element U  ochre
+Element V  ochre
+Element W  ochre
+Element X  purple
+Element Xe ochre
+Element Y  ochre
+Element Yb ochre
+Element Zn silver
+Element Zr ochre
+
+
+Resname  ALA   blue
+Resname  ARG   white
+Resname  ASN   tan
+Resname  ASP   red
+Resname  CYS   yellow
+Resname  GLY   white
+Resname  GLU   pink
+Resname  GLN   orange
+Resname  HIS   cyan
+Resname  ILE   green
+Resname  LEU   pink
+Resname  LYS   cyan
+Resname  MET   yellow
+Resname  PHE   purple
+Resname  PRO   ochre
+Resname  SER   yellow
+Resname  THR   mauve
+Resname  TRP   silver
+Resname  TYR   green
+Resname  VAL   tan
+Resname  ADE   blue
+Resname  CYT   orange
+Resname  GUA   yellow
+Resname  THY   purple
+Resname  URA   green
+Resname  TIP   cyan
+Resname  TIP3  cyan
+Resname  WAT   cyan
+Resname  SOL   cyan
+Resname  H2O   cyan
+Resname  LYR   purple
+Resname  ZN    silver
+Resname  NA    yellow
+Resname  CL    green
+
+# Alternate names for the above
+Resname  HSE   cyan
+Resname  HSD   cyan
+Resname  HSP   cyan
+Resname  CYX   yellow
+
+Restype  Unassigned    cyan
+Restype  Solvent       yellow
+Restype  Nucleic_Acid  purple
+Restype  Basic         blue
+Restype  Acidic        red
+Restype  Polar         green
+Restype  Nonpolar      white
+Restype  Ion           tan
+
+Highlight Proback  green
+Highlight Nucback  yellow
+Highlight Nonback  blue
+
+Structure {Alpha Helix} purple
+Structure 3_10_Helix    blue
+Structure Pi_Helix      red
+Structure Extended_Beta yellow
+Structure Bridge_Beta   tan
+Structure Turn          cyan
+Structure Coil          white
+
+Surface   Grasp  gray
+
+

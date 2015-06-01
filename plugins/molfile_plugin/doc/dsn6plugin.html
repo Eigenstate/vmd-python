@@ -1,0 +1,23 @@
+<!--#set var="TITLE" value="DSN6 Plugin, Version 0.6"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads electron density maps stored in the DSN6 format. More
+information on this file format can be found at <a
+  href="http://www.uoxray.uoregon.edu/tnt/manual/node104.html">http://www.uoxray.uoregon.edu/tnt/manual/node104.html</a>.</p>
+  
+<h3>Notes:</h3>
+
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+writing this file type.</p>
+
+<p><b>Unused data</b>
+<br>The DSN6 file format does not contain any data that is not read and used by
+VMD.</p>
+
+<p><b>Byte-order</b>
+<br>DSN6 files are created using the native byte-order (e.g., "little-endian"
+or "big-endian") of the machine used to create them. This plugin can read DSN6
+maps created with either byte-order.</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

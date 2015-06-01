@@ -1,0 +1,35 @@
+
+This directory contains example proteins for use with VMD.  
+
+Some brief descriptions:
+
+alanin -- a simple (66 atom) system.  
+  files: alanin.pdb alanin.psf alanin.dcd alanin2.dcd 
+  The pdb file determines the coordinates.  The psf determines the 
+  bond topology (but is optional), and the dcd files are binary trajectory 
+  formats common to CHARMm, XPlor, and NAMD.  One is in little-endian 
+  format, the other is in big-endian format.
+
+bacteriorhodopsin (brH) -- a realistic system ; 
+  files: brH.pdb brH.psf
+People here did research on it.  This has about 4,000 atoms.  The special
+parts of it are "resid 216" (or "resname LYR") and "water".
+Please contact us about using this structure in anything other
+than educational purposes.
+
+Others:
+  The three files "deoxy", "mbco" and "star" are different
+states of myoglobin contributed by Joel Berendzen (see Nature,
+v. 371, Oct. 27, 1994, p808).  We modified the files somewhat
+so they all have the same number of atoms in the structure.
+
+Bovine trypsin inhibitor (IIRC)
+  files: bpti.pdb  
+
+A small DNA section we created by truncating a larger structure
+  files: dna.pdb dna.psf
+
+Enjoy,
+  The VMD Developers
+  vmd@ks.uiuc.edu
+  October 29, 2001

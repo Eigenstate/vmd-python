@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html><head><meta content="text/html; charset=ISO-8859-1" http-equiv="content-type"><title>truncate_trajectory_doc</title></head><body>
+
+
+	<meta http-equiv="CONTENT-TYPE" content="text/html; charset=utf-8"><title></title><meta name="GENERATOR" content="OpenOffice.org 2.3  (Linux)">
+	
+	
+	<style type="text/css">
+	<!--
+		@page { margin: 2cm }
+		PRE.western { font-family: "Nimbus Mono L", "Courier New", monospace }
+		PRE.cjk { font-family: "Nimbus Mono L", "Courier New", monospace }
+		PRE.ctl { font-family: "Nimbus Mono L", "Courier New", monospace }
+		P { margin-bottom: 0.21cm }
+		TT { font-family: "Nimbus Mono L", "Courier New", monospace }
+	-->
+	</style>
+
+<pre class="western"></pre><h1><font face="Times New Roman, serif">Truncate Trajectory</font></h1>
+<p><font style="font-family: Times New Roman,Times,serif;" class="western cjk ctl">Large trajectories have a lot of redundant hetero compounds which augments
+their size and make calculations cumbersome. Truncate Trajectory
+will help you get rid of these compounds. It currently works only
+with parallelepiped unit cells and periodic boundary conditions as it detects periodic contacts with hetero compounds from the
+26 nearest cells, and incorporates these compounds to the final
+trajectory. So don't be surprised if you see a bunch of isolated
+waters in the truncated trajectory. The dimensions and angles (</font><font class="ctl"><span style="font-family: Times New Roman,Times,serif;" class="western cjk">a</span></font><font style="font-family: Times New Roman,Times,serif;" class="western cjk ctl">,
+</font><font class="ctl"><span style="font-family: Times New Roman,Times,serif;" class="western cjk">b</span></font><font style="font-family: Times New Roman,Times,serif;" class="western cjk ctl">,
+</font><font class="ctl"><span style="font-family: Times New Roman,Times,serif;" class="western cjk">c</span></font><font style="font-family: Times New Roman,Times,serif;" class="western cjk ctl">,
+</font><font class="ctl"><span style="font-family: Times New Roman,Times,serif;" class="western cjk">alpha</span></font><font style="font-family: Times New Roman,Times,serif;" class="western cjk ctl">,
+</font><font class="ctl"><span style="font-family: Times New Roman,Times,serif;" class="western cjk">beta</span></font><font style="font-family: Times New Roman,Times,serif;" class="western cjk ctl">,
+and </font><font class="ctl"><span style="font-family: Times New Roman,Times,serif;" class="western cjk">gamma</span></font><font style="font-family: Times New Roman,Times,serif;" class="western cjk ctl">)
+should be also provided in the original trajectory files. </font></p>
+
+<p><font style="font-family: Times New Roman,Times,serif;" class="western cjk ctl">You
+can define how many water molecules to keep and optionally the kind
+and number of non-water hetero compounds. The program will create in
+the designated work directory two files, truncated_trajectory.psf and
+truncated_trajectory.dcd which comprise the truncated trajectory.</font></p>
+<pre class="western"></pre><h3><font face="Times New Roman, serif">EXAMPLE 1</font></h3><p><span style="font-family: Times New Roman,Times,serif;">Set
+the paths to your .psf and .dcd files. In the macromolecule selection
+field type &#8220;protein&#8221; -provided your trajectory contains a protein-, </span><span style="font-family: Times New Roman,Times,serif;" class="western cjk">in
+the atomselection field type &#8220;all&#8221;, and in the constant number of
+waters field &#8220;1000&#8221;. Click on the first or second radio button, set the
+path to catdcd executable and the work directory where the process will
+take place. In this example your macromolecule -which will be retained
+in the truncated trajectory- is a protein so the default topology file
+should work, otherwise select the appropriate one inside toppar folder.
+Then submit. The total computation time will depend on the size of your
+trajectory. At the end 2 files will be created,
+truncated_trajectory.psf and truncated_trajectory.dcd. These files
+comprise the truncated trajectory so make sure to rename them if you
+intend to conduct another such process in the same work directory.</span></p><font face="Times New Roman, serif"><img style="width: 551px; height: 570px;" alt="GUI_Example1" src="GUI1.png"><img style="width: 551px; height: 596px;" alt="whole_frame" src="whole.png"><br><img style="width: 551px; height: 600px;" alt="truncate_frame" src="truncated.png"><br></font><br><font style="font-family: Helvetica,Arial,sans-serif;" face="Times New Roman, serif"><span style="font-weight: bold;">Figue 1. (top left)</span> How the GUI should look, <span style="font-weight: bold;">(top right)</span> trajectory frame before processing, <span style="font-weight: bold;">(bottom)</span> trajectory frame after processing.</font><p></p><font face="Times New Roman, serif"><br></font><h3><font face="Times New Roman, serif">EXAMPLE 2</font></h3><p><font style="font-family: Times New Roman,Times,serif;" face="Times New Roman, serif">Now
+lets say you want to keep specific types of non-water hetero compounds.
+Provided your trajectory contains sulphur and chlorine ions with atom
+type representations SOD and CLA respectively, the follow the same
+steps as in example 1, apart from those regarding the atomselection
+field and radio buttons. This time type &#8220;resid 1 to 30&#8221; -provided you
+protein has at least some of these residues- and then click on the 3</font><sup style="font-family: Times New Roman,Times,serif;">rd</sup><font style="font-family: Times New Roman,Times,serif;" face="Times New Roman, serif">
+radio button. In the segname, number, type fields write &#8220;ION&#8221;, 3, &#8220;SOD&#8221;
+and then click on add button. Then write &#8220;ION&#8221;, 2, &#8220;CLA&#8221; and click on
+add button again. If you have made any mistake you can remove the wrong
+entry by selecting it and then clicking on the remove button. If you
+wish to add other non-water hetero compounds with more than one atom
+types, then write those atom types in the type field separated by ONE
+space character.</font><font face="Times New Roman, serif"><span style="font-family: Times New Roman,Times,serif;">At
+the end click on submit button and wait till the process is finished.
+The program will keep only the closed 1000 waters, 3 sulphur and 2
+chlorine ions, to residues 1 to 30 of your protein.</span></font></p><p><img style="width: 562px; height: 581px;" alt="GUI_example2" src="GUI2.png"></p><font face="Times New Roman, serif"><img style="width: 565px; height: 611px;" alt="truncate_frame2" src="truncated2.png"><br><br></font><font style="font-family: Helvetica,Arial,sans-serif;" face="Times New Roman, serif"><span style="font-weight: bold;">Figue 2. (left)</span> How the GUI should look,<span style="font-weight: bold;"></span> <span style="font-weight: bold;">(bottom)</span>
+trajectory frame after processing, residues 1 to 30 are shown as
+NewCartoon whereas the rest of the protein as transparent tube (note
+that the protein is a homodimer).</font><br><font face="Times New Roman, serif"><br></font><h3><font face="Times New Roman, serif">REMARKS:</font></h3>
+<p><font face="Times New Roman, serif"><font size="2">I'm not sure if the
+program works with composite atomselection keywords. i.e. "protein
+or nucleic" if your system contains protein residues and nucleic
+acid residues. The plugin may not also work with other types of
+macromolecules as a different topology file may be required (the
+default is top_all22_prot.inp and works for proteins). In that case
+select the appropriate topology file from toppar folder which
+is provided along with the source code, and if you still encounter
+problems please email me.  Finally tcllib (Tcl Standard Library)
+should be installed -I guess you have done that already.</font></font></p>
+<pre class="western"><font face="Times New Roman, serif"><br></font></pre><address><font face="Times New Roman, serif">Thomas Evangelidis (te8624@mbg.duth.gr)</font></address><p class="western" style="margin-bottom: 0cm;">
+<br>
+</p>
+</body></html>

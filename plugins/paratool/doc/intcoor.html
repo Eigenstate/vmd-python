@@ -1,0 +1,38 @@
+<h2>Edit internal coordinates</h2>
+Meanings of buttons and entries in the internal coordinate editing
+window:
+
+<b>Adding coordinates:</b><br>
+When the 'Edit internal coordinates' window is openened your mouse is
+set to picking mode, i.e. you can click on atoms in the VMD window to
+select bonds angles and dihedrals and impropers. If you select an
+existing bond it will be removed, if you select an existing angle,
+dihedral or improper, the selection will be ignored. The type of
+coordinate to be added is specified by the buttons in the 'Edit'
+window. The autogeneration of angles and dihedrals containing the
+newly added bond can also be requested.
+<p>
+<b>Deleting coordinates:</b><br>
+You can delete the coordinates that are currently selected in the
+coordinate list by clicking the delete button (or hitting the Del
+key while the focus is on Paratool's main window. Bonds can also be
+removed by clicking on the two participation atoms. Note that deleting
+a coordinated implies the removal of all dependent
+coordinates. E.g. if you delete a bond, all angles, dihedrals and
+impropers containing that bond will also be removed.
+<p>
+<b>Delete all internal coordinates:</b><br>
+With this button yu can completely clear the internal coordinate
+list. However, the bondlist in VMD defining which bonds are displayed
+graphically is not affected, whereas if you delete selected bonds
+their counterparts in VMD's bondlist are removed.
+<p>
+<b>Fix/Unfix coordinates</b><br>
+With these buttons you can fix or unfix selected internal coordinates
+in subsequent geometry optimizations. This can be useful for potential scans.
+<p>
+<b>Bond regeneration:</b><br>
+VMD's bondlist is regenerated based on atom distances, all removed
+bonds and their dependent coordinates will also be removed from the
+internal coordinate list. The maximum atom distance for a bond can be
+specified. 

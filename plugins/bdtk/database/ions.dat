@@ -1,0 +1,7 @@
+# Ions
+# Format: FULL NAME - CODE - CHARGE - DIFFUSION - RADIUS - EPSILON
+# CODE will be used in BD software package
+# RADIUS and EPSILON are from CHARMM
+
+Potassium     POT      1.0      238.0       1.76375       0.087
+Chloride      CLA     -1.0      231.0       2.27          0.150

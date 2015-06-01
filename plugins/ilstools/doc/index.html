@@ -1,0 +1,45 @@
+<!--#set var="TITLE" value="ILS Tools Plugin, Version 1.4"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<img src="ilstools_gui.png" align=right>
+
+<p>This is a graphical user interface for setting up Implicit Ligand Sampling
+(ILS) calculations using VMD's <i>volmap ils</i> command. For more
+information about the ILS method please refer to the documentation in
+the VMD user guide:<br>
+http://www.ks.uiuc.edu/Research/vmd/current/ug/node141.html
+</p>
+<p>
+See also:<br>
+Cohen, J., A. Arkhipov, R. Braun and K. Schulten,  "Imaging the
+migration pathways for O<sub>2</sub>, CO, NO, and Xe inside myoglobin",
+Biophysical Journal 91:1844-1857 (2006)
+</p>
+
+<H2>Choosing a probe molecule</H2>
+You can specify one of the loaded molecules in VMD as the probe in
+which case you have to set the radius and occupancy manually to the
+VDW radius and well depth epsilon respectively for each
+atom. Alternatively you can choose one of the predefined probes from
+the list.
+
+<H2>Choosing a system molecule</H2>
+Pick the molecular system in which you want to perform the ILS
+calulation from the list of loaded VMD molecules.
+
+<H2>Parameter files</H2>
+Specify the CHARMM Parameter files you used for the MD simulation.
+
+<H2>Aligning frames</H2>
+At the beginning of the calculation all frames will be align. Specify
+the atom selection on which the alignment will be based.
+
+<H2>Map dimensions</H2>
+The position and size of the resulting volumetric map.
+
+<H2>Other input options</H2>
+See documentation of the <i>volmap ils</i> command.
+  
+  
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

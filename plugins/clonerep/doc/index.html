@@ -1,0 +1,44 @@
+<!--#set var="TITLE" value="Clone Reps Plugin, Version 1.2"-->
+<!--#include virtual="/include/header-over.shtml"-->
+
+<!-- CONTENT STARTS HERE -->
+
+    <a href="clonerepgui.png"><img style="border: 0; padding: 0 0 1em 1em"
+	src="clonerepgui_small.gif" align="right"></a>
+
+    <p>The CloneRep plugin provides functionality to 'clone' the full
+      set of representations from one molecule onto another. 
+      All previously existing visualizations are deleted. It
+      also comes with a small GUI to perform the task without
+      having to use the command line.</p> 
+
+    <h3>Text mode Interface:</h3>
+    <p>The package is loaded by:<p>
+    <p><tt>package require clonerep</tt></p>
+    <p>and exports the tcl procedure 
+     <tt>::CloneRep::clone_reps [<it>&gt;fromid&lt;</it>]
+         [<it>&gt;toid&lt;</it>]</tt>
+     for cloning representations. The <it>fromid</it> designates
+     the molecule id from where the list of representations is taken
+     from and <it>toid</it> the molecule id(s) where it is copied to.
+     For the source also the symbolic value <it>top</it> is supported,
+     representing the current top molecule, and for the target the 
+     symbolic entries, <it>all</it>, <it>active</it>, and <it>displayed</it>
+     are available, representing all molecules or those with the corresponding
+     status (excluding the source molecule id).
+     When no arguments are provided they default to <it>top</it> 
+     and <it>all</it>, respectively.
+     </p>
+    
+    <h3>Graphical Interface:</h3>
+    <p>The graphical user interface has two pop-up lists that
+      allow selecting the two molecule ids needed for the clone_reps
+      command and the <tt>Clone</tt> button to execute the text mode script.</p>
+
+    <h3>Author</h3>
+
+    <p><a href="http://sites.google.com/site/akohlmey/">Axel Kohlmeyer</a>.
+    Support for symbolic molecule ids based on a patch by Luis Gracia.</p>
+
+<!--#include virtual="/include/footer-over.shtml"-->
+</BODY></HTML>

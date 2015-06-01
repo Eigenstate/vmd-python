@@ -1,0 +1,113 @@
+body    { font-family: Verdana, "Trebuchet MS", "MS Sans Serif", "san serif", geneva, Arial }
+ul   { list-style-image: url("../images/bullet-sm.gif") }
+p         { color: black; font-size: 12px; font-family: Verdana, "Trebuchet MS", "MS Sans Serif", "san serif", geneva, Arial }
+td         { font-style: normal; font-size: 12px; font-family: Verdana, "Trebuchet MS", "MS Sans Serif", "san serif", geneva, Arial }
+.blue { color: #039; font-weight: bold; font-size: 12px; font-family: Verdana, "Trebuchet MS", "MS Sans Serif", "san serif", geneva, Arial; text-decoration: none }
+.menulink    { color: white; font-weight: bold; font-size: 12px; font-family: Verdana, "Trebuchet MS", "MS Sans Serif", "san serif", geneva, Arial; text-decoration: none }
+.menulink:hover { color: white; font-weight: bold; font-size: 12px; font-family: Verdana, "Trebuchet MS", "MS Sans Serif", "san serif", geneva, Arial; text-decoration: underline }
+.red { color: #c00; font-weight: bold; font-size: 12px; font-family: Verdana, "Trebuchet MS", "MS Sans Serif", "san serif", geneva, Arial; text-decoration: none }
+.text { color: black; font-size: 12px; font-family: Verdana, "Trebuchet MS", "MS Sans Serif", "san serif", geneva, Arial }
+.title  { color: #c00; font-weight: bold; font-size: 18px; font-family: Verdana, "Trebuchet MS", "MS Sans Serif", "san serif", geneva, Arial }
+.small { font-size: 10px }
+BODY	{
+	background-color: white;
+	font-size: 12px;
+	}
+H1	{
+	font-weight: bold; 
+	font-variant: small-caps;
+	font-size: 22px;
+	text-align: center;
+	color: #c00;
+	}
+H2	{
+	font-weight: bold;
+	font-size: 18px;
+	color: #039;
+	text-align: left;
+	text-decoration: none;
+	}
+H3	{
+	font-weight: normal;
+	font-variant: small-caps;
+	font-size: 9px;
+	color: red;
+	text-align: center;
+	background: pink;
+	}
+H4	{
+	font-variant: small-caps;
+	font-size: 9px;
+	color: red;
+	text-align: right;
+	clear: both;
+	}
+table.plugin	{
+	background: pink;
+	padding: 3px 3px 3px 3px;
+	margin: 5px 35px 5px 35px;
+	}
+td.plugintit	{
+	color: #039;
+	text-align: left;
+	font-weight: bold; 
+	font-variant: small-caps;
+	}
+td.pluginver	{
+	text-align: right;
+	font-size: 10pt;
+	}
+td.plugindef	{
+	text-align: left;
+	padding-left: 12px;
+	}
+td.footer	{
+	text-align: center;
+	font-size: 10pt;
+	font-weight: bold; 
+	background:  #039;
+	color: white;
+	}
+td.address	{
+	font-family: Type, monospace;
+	text-align: right;
+	font-size: 8pt;
+	}
+td.vertit	{
+	color: #039;
+	text-align: left;
+	font-weight: bold; 
+	font-variant: small-caps;
+	}
+td.verdown	{
+	text-align: right;
+	font-size: 8pt;
+	}
+td.verlog	{
+	text-align: left;
+	font-size: 8pt;
+	padding-left: 12px;
+	}
+pre {
+	font-size: 8pt;
+}
+div.options ul	{
+	margin-bottom: 1em;
+	list-style-type: upper-latin;
+	list-style-image: none;
+}
+div.options ul ul	{
+	margin-bottom: 1em;
+	list-style-type: none;
+	list-style-image: url("http://physiology.med.cornell.edu/images/bullet-sm.gif");
+}
+div.options li	{
+	margin-bottom: .5em;
+	text-align: justify;	
+}
+p {
+	text-align: justify;	
+}
+b { 
+	color: #039;
+}

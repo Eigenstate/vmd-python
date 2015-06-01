@@ -1,0 +1,29 @@
+<!--#set var="TITLE" value="PLT Plugin, Version 0.4"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads electron density maps stored in the PLT format used by 
+<a href="http://www.csc.fi/gopenmol/">gOpenMol</a>. 
+More information on this file format can be found at 
+<a href="http://www.csc.fi/gopenmol/developers/plt_format.phtml">http://www.csc.fi/gopenmol/developers/plt_format.phtml</a>.</p>
+  
+<h3>Notes:</h3>
+
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+writing this file type.</p>
+
+<p><b>Unused data</b>
+<br>VMD ignores the "surface type" value.</p>
+
+<p><b>Unit Cell</b>
+<br>Since PLT files don't contain any information about the geometry of the
+unit cell, it is assumed that the basis vectors are orthogonal.</p>
+
+<p><b>ASCII and Binary Files:</b>
+<br>This plugin can read binary plt files regardless of the byte-order of
+the platform used to create them. It does not currently support the
+"formatted ASCII" files used by the <tt>pltfile</tt> program included with
+gOpenMol.</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

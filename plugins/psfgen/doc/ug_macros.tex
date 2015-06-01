@@ -1,0 +1,52 @@
+\newcommand{\VMD} {VMD}
+\newcommand{\NAMD} {NAMD}
+\newcommand{\PSFGEN} {{\tt psfgen}}
+\newcommand{\PSFGENVER} {1.6}
+\newcommand{\PSFGENAUTHORS} {\tt Justin Gullingsrud, Jan Saam, and Jim Phillips}
+
+%
+% generally useful macros
+%
+\newcommand{\REFAND} {\&}
+\newcommand{\ETALNP}{\mbox{\it et al}}
+\newcommand{\ETAL}{\mbox{\ETALNP{\it.}}}
+\newcommand{\eqnref}[1] {\mbox{eq (\ref{#1})}}
+\newcommand{\mycite}[2] {\cite{#2}}
+
+%
+% macros for style conventions when describing the program.
+%
+
+% name of class or object in program
+\newcommand{\OBJ}[1] {{\bf\tt#1}}
+
+% function arguments
+\newcommand{\FA}[2] {{\rm{\bf#1}\ {\it#2}}}
+
+% global function name
+\newcommand{\FN}[3] {{\rm\bf#1}\ {\tt #2(}#3{\tt)}}
+
+% class member function name
+\newcommand{\FNO}[4] {{\rm\bf#2}\ \OBJ{#1::}{\tt#3(}#4{\tt)}}
+
+% list item, for optional components, parameters, etc.
+\newcommand{\TTLISTITEM}[1] {\item {\tt #1} \\}
+\newcommand{\RMLISTITEM}[1] {\item {\rm #1} \\}
+\newcommand{\BOLDLISTITEM}[1] {\item {\bf #1} \\}
+\newcommand{\EMLISTITEM}[1] {\item {\em #1} \\}
+\newcommand{\LISTITEM}[1] {\RMLISTITEM{#1}}
+
+
+\newcommand{\eg}{{\it e.g.\/}}
+\newcommand{\ie}{{\it i.e.\/}}
+
+\newcommand{\KEY}[1]{{\tt #1}}
+\newcommand{\IKEY}[1]{{\tt #1\index{#1 psfgen command}}}
+\newcommand{\OKEY}[1]{$[${\tt #1}$]$}
+\newcommand{\ARG}[1]{$<${\em #1}$>$}
+\newcommand{\OARG}[1]{$[${\em #1}$]$}
+\newcommand{\ARGDEF}[2]{$<${\em #1}$>$: #2}
+\newcommand{\KEYDEF}[2]{{\tt #1}: #2}
+\newcommand{\COMMAND}[4]{%
+  #1 \\ {\bf Purpose:} #2 \\ {\bf Arguments:} #3 \\ {\bf Context:} #4 }
+

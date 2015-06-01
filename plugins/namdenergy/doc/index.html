@@ -1,0 +1,61 @@
+<!--#set var="TITLE" value="NAMD Energy Plugin, Version 1.4"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<img src="namdenergy.png" align="right">
+<p>
+The NAMD Energy plugin provides both a graphical user
+interface and text commands for evaluating energies using NAMD. NAMDEnergy will apply the desired energy calculations to each frame of the selected molecule, unless a different frame skip parameter is selected.</p> 
+
+<h3>Basic Usage</h3>
+<p>
+NAMDEnergy operates on either one or two selections; if only one selection is chosen, then internal energies for that selection will be calculated, whereas if two selections are chosen, only interaction energies between those selections will be calculated. Selections are given using the standard VMD atom selection language.
+</p>
+
+<p>
+In addition to one or two atom selections, the user must also choose one or more energy types to be calculated. Choices are: bonds, angles, dihedrals, impropers, vdW energy, electrostatic energy, conformational energy (bonds, angles, dihedrals, and impropers), nonbond energy (vdW and electrostatic energy), or all (all other energies). Energies will either be printed to the console or an optionally specified output file. Note that only nonbond energy types are available for interactions between two selections. Note that all energy output is given in kcal/mol, and all force outputs in kcal/(mol &Aring;). Multiple parameter files may be given by specifying the -par switch multiple times.
+</p>
+
+<h3>PME and Periodic Cells</h3>
+Most trajectories which were performed with periodic boundary conditions will include periodic cell information for each step in the DCD file. However, for proper initialization of a periodic system NAMD must also be fed an initial guess for the periodic cell, which will then be replaced by the data from the trajectory as NAMDenergy runs. This means that if you are running NAMDEnergy on a DCD produced from a periodic run, you should set the "XSC File" option to point to an xsc file from your trajectory. If you don't have one available, click "Generate" and a GUI will allow you to create an appropriate one. If and only if you have a periodic system specified, you can also enable PME by checking the PME box; an appropriate mesh density will be automatically specified.
+
+<h3>Text Interface</h3>
+<p>
+All options in NAMDEnergy are immediately visible in the GUI, but a text interface is also provided for scripting purposes. In the text interface, energy types are indicated by the switches <tt>-bond -angl -dihe -impr -conf -vdw -elec -nonb -all</tt>; one or two atom selections should also be given after a <tt>-sel</tt> switch to define the atom selections to run energy calculations on. The argument for the -sel switches is a variable containing either one or two atom selections; if a single selection is given (<i>i.e.</i>, -sel $sel1), then energies for that selection are calculated. If two selections are given (-sel $sel1 $sel2), only interactions between the two selections will be calculated. When using two selections take care that the second atom select does not include any atoms from the first. All other optional parameters use switches defined in the following section.
+
+The text version can be called using the command <tt>namdenergy</tt> once the namdEnergy package has been loaded. It will return a list of lists, where the first element is a list of the energy headers being output, and each subsequent element is a list of the energy outputs.
+</p>
+
+<h3>NAMDEnergy and AMBER</h3>
+<p>
+If your molecule is loaded with an AMBER parm or parm7 file instead of psf, NAMDEnergy should recognize it as such and turn on AMBER mode. In addition, in this case 1-4scaling and scnb will be set to the values shown <a href="http://www.ks.uiuc.edu/Research/namd/2.6/ug/node15.html">here</a>.</p>
+
+<h3>Optional Parameters</h3>
+<p>
+The only required inputs to NAMDEnergy are one selection, and the type of energy to be calculated. A number of optional parameters are available both in the text interface and GUI; these are:
+<ul>
+	<li>Output file (<tt>-ofile FILE</tt>): Gives the name of the file for final energy output to be printed to. If not specified, output will be printed to the vmd console.
+	<li>Temp file prefix (<tt>-tempname FILE</tt>): Prefix for temporary files used by NAMD. These will be deleted after the run unless the debug option is used.
+  <li>Switch (<tt>-switch NUMBER</tt>): Switching distance used by NAMD for nonbond interactions. Default 10. If <tt>switch</tt> is less than  zero, switching will be turned off.
+	<li>Cutoff (<tt>-cutoff NUMBER</tt>): Cutoff for nonbond interactions, used by NAMD. Default 12.
+	<li>Skip (<tt>-skip NUMBER</tt>): Number of frames to skip between every calculated energy frame in NAMDenergy calculations on trajectories. Default 0.
+	<li>Timestep (<tt>-ts NUMBER</tt>): Starting timestep from NAMD; this is purely for bookkeeping purposes. Default: 0
+	<li>Step Length (<tt>-timemult NUMBER</tt>): Length of each timestep that a dynamics trajectory was recorded at, in fs; this is for bookkeeping purposes. Default 1. 
+	<li>Stride (<tt>-stride NUMBER</tt>): Number of timesteps between each output in a trajectory; this is purely for bookkeeping purposes. Default: 1
+	<li>Parameter Files (<tt>-par FILE</tt>): One or more parameter files for NAMD to use; there is a suitable default if none are specified. Each additional parameter file requires another -par switch.
+	<li>Silent (<tt>-silent</tt>): If this flag is specified, no energy output will be printed. This is usually only useful for the command line form, when you want to use the returned energy lists as part of another function.
+	<li>Debug (<tt>-debug</tt>): If this flag is specified, temporary files used by NAMDenergy will not be deleted.
+	<li>Show Force Output (<tt>-keepforce</tt>): If this flag is specified,  information on force magnitudes will be included in the output from interaction calculations. This only applies for calculating the interaction between two selections. 
+	<li>Show Only Force Projection (<tt>-projforce</tt>): This flag is only meaningful when combined with <tt>keepforce</tt>. When specified, the output forces will be the projection of the total forces onto the vector between the center of mass of the two selections. In this case the forces are signed quantities; a negative force is attractive and a positive force repulsive.
+	<li>Plot output (<tt>-plot</tt>): Use <a href="http://www.ks.uiuc.edu/Research/vmd/plugins/multiplot/">multiplot</a> to plot energy output. Plotting will only occur if there is more than one timestep of data.</li>
+	<li>Force GUI (<tt>-gui</tt>): Force creation of gui from command line, using command line options instead of the defaults. Mostly useful for scripting.</li>
+  <li>XSC file (<tt>-extsys  FILE</tt>): Use the specified xsc file to set up a periodic system </li>
+  <li>Update selection every frame (<tt>-updatesel</tt>): Update the selections used for interactions every frame. Use of this option incurs a significant slowdown, but is needed if one or both of the selections contain different sets of atoms in different frames</li>
+  <li>Use PME (<tt>-pme</tt>): Run energy calculations with PME. Only meaningful when combined with <tt>-extsys</tt> 
+        <li><tt>-exe</tt>: Explicitly set the path to the NAMD executable. By default NAMDEnergy is looking for 
+        a binary named <tt>namd2</tt> (or <tt>namd2.exe</tt> on Windows OSes) in the default executable search path,
+      defined by the <tt>PATH</tt> environment variable. This option is only supported in text mode but will be 
+        inherited by future invocations of the GUI.</li>
+</ul>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

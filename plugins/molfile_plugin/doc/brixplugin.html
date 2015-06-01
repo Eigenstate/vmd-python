@@ -1,0 +1,22 @@
+<!--#set var="TITLE" value="BRIX Plugin, Version 0.8"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads electron density maps stored in the BRIX format, 
+used by 
+<a href="http://imsb.au.dk/~mok/o/">O</a>
+and other programs. More information on this file format can be found at 
+<a href="http://zombie.imsb.au.dk/~mok/brix/brix-1.html#ss1.2">http://zombie.imsb.au.dk/~mok/brix/brix-1.html#ss1.2</a>.
+</p> 
+
+<h3>Notes:</h3>
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+writing this file type.</p>
+
+<p><b>Unused data</b>
+<br>The header of the BRIX file contains the value of the RMS 
+deviation of the electron density map. This value is not used by 
+VMD presently.
+</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

@@ -1,0 +1,295 @@
+* Topology file for proteins in coarse-grain representation.
+*
+* Each amino acid is represented by two beads,
+* except the GLY, which is represented by one bead.
+*
+* For all amino-acids except GLY
+* one bead corresponds to the backbone atoms,
+* and another to the side-chain atoms.
+*
+* Also has topology for some lipids and ions
+*
+* Made by TCBG, UIUC.
+27 1
+MASS     1  Nx    72.00000
+MASS     2  C     72.00000
+MASS     3  P     72.00000
+MASS     4  Qa    72.00000
+MASS     5  Qd    72.00000
+MASS     6  Na    72.00000
+MASS     7  Nxx   56.04400 ! Bead for the protein backbone.
+MASS     8  Ca    15.03500 ! Bead for the side-chain of Alanine.
+MASS     9  Qdr  100.14500 ! Bead for the side-chain of Arginine.
+MASS     10 Nxn   58.06000 ! Bead for the side-chain of Asparagine.
+MASS     11 Qad   58.03600 ! Bead for the side-chain of Aspartate.
+MASS     12 Pc    47.09500 ! Bead for the side-chain of Cysteine.
+MASS     13 Nxq   72.08700 ! Bead for the side-chain of Glutamine.
+MASS     14 Qae   72.06300 ! Bead for the side-chain of Glutamate.
+MASS     15 Ph    81.09800 ! Bead for the side-chain of Histidine, both -d and -e.
+MASS     16 Qdh   82.10600 ! Bead for the side-chain of Histidine, protonated.
+MASS     17 Ci    57.11600 ! Bead for the side-chain of Isoleucine.
+MASS     18 Cl    57.11600 ! Bead for the side-chain of Leucine.
+MASS     19 Qdk   73.13900 ! Bead for the side-chain of Lysine.
+MASS     20 Cm    75.14900 ! Bead for the side-chain of Methionine.
+MASS     21 Cf    91.13300 ! Bead for the side-chain of Phenilalanine.
+MASS     22 Cp    42.08100 ! Bead for the side-chain of Proline.
+MASS     23 Ps    31.03400 ! Bead for the side-chain of Serine.
+MASS     24 Pt    45.06100 ! Bead for the side-chain of Threonine.
+MASS     25 Cw   130.17000 ! Bead for the side-chain of Tryptophan.
+MASS     26 Nxy  107.13200 ! Bead for the side-chain of Tyrosine.
+MASS     27 Cv    43.08900 ! Bead for the side-chain of Valine.
+MASS     28 Nap   55.03600 ! Bead for the back-bone of Proline.
+MASS     29 No    72.00000 ! Nonpolar bead
+MASS     30 Nd    72.00000 ! Nonpolar HB donor bead
+MASS     32 Qo    72.00000 ! Charged bead
+MASS     31 Qx    72.00000 ! Charged HB donor/acceptor bead
+MASS     32 Nxg   56.04400 ! Bead for the glycine backbone.
+MASS     33 Cdb   72.00000 ! Apolar bead, double bond.
+
+DEFA FIRS NONE LAST NONE
+AUTO ANGLES DIHE
+
+RESI PCGL         0.00
+GROUP   
+ATOM CHO  Qo      0.70  ! Choline head group 
+ATOM PHO  Qa     -0.70  ! Phosphate
+ATOM ES1  Na      0.00  ! Ester group
+ATOM ES2  Na      0.00  ! Ester group
+ATOM M1  C       0.00  ! lipid tail
+ATOM M2  C       0.00  ! lipid tail
+ATOM M3  C       0.00  ! lipid tail
+ATOM MT1  C       0.00  ! lipid tail terminus
+ATOM M4  C       0.00  ! lipid tail
+ATOM M5  C       0.00  ! lipid tail
+ATOM M6  C       0.00  ! lipid tail
+ATOM MT2  C       0.00  ! lipid tail terminus
+BOND CHO PHO  PHO ES1  ES1 ES2  ES1 M1
+BOND M1 M2  M2 M3  M3 MT1  ES2 M4
+BOND M4 M5  M5 M6  M6 MT2
+
+RESI POPC         0.00
+GROUP
+ATOM CHO  Qo      0.70  ! Choline head group
+ATOM PHO  Qa     -0.70  ! Phosphate
+ATOM ES1  Na      0.00  ! Ester group
+ATOM ES2  Na      0.00  ! Ester group
+ATOM ME1  C       0.00  ! lipid tail
+ATOM ME2  C       0.00  ! lipid tail
+ATOM ME3  CDB     0.00  ! lipid tail double bond
+ATOM ME4  C       0.00  ! lipid tail
+ATOM MT1  C       0.00  ! lipid tail terminus
+ATOM ME5  C       0.00  ! lipid tail
+ATOM ME6  C       0.00  ! lipid tail
+ATOM ME7  C       0.00  ! lipid tail
+ATOM MT2  C       0.00  ! lipid tail terminus
+BOND CHO PHO  PHO ES1  ES1 ES2  ES1 ME1
+BOND ME1 ME2  ME2 ME3  ME3 ME4  ME4 MT1
+BOND ES2 ME5  ME5 ME6  ME6 ME7  ME7 MT2
+
+RESI DOPE         0.00
+GROUP   
+ATOM NH3  Qx      0.70  ! Choline head group 
+ATOM PO4  Qa     -0.70  ! Phosphate
+ATOM GL1  Na      0.00  ! Ester group
+ATOM GL2  Na      0.00  ! Ester group
+ATOM C1A  C       0.00  ! lipid tail
+ATOM C2A  C       0.00  ! lipid tail
+ATOM D3A  C       0.00  ! lipid tail
+ATOM C4A  C       0.00  ! lipid tail terminus
+ATOM C5A  C       0.00  ! lipid tail
+ATOM C1B  C       0.00  ! lipid tail
+ATOM C2B  C       0.00  ! lipid tail
+ATOM D3B  C       0.00  ! lipid tail terminus
+ATOM C4B  C       0.00  ! lipid tail terminus
+ATOM C5B  C       0.00  ! lipid tail terminus
+BOND NH3 PO4  PO4 GL1  GL1 GL2  GL1 C1A
+BOND C1A C2A  C2A D3A  D3A C4A  C4A C5A
+BOND GL2 C1B  C1B C2B  C2B D3B  D3B C4B
+BOND C4B C5B
+
+RESI POPE         0.00
+GROUP   
+ATOM ETA  Qd      0.70  ! ETA head group 
+ATOM PHO  Qa     -0.70  ! Phosphate
+ATOM ES1  Na      0.00  ! Ester group
+ATOM ES2  Na      0.00  ! Ester group
+ATOM ME1  C       0.00  ! lipid tail
+ATOM ME2  Cdb     0.00  ! lipid tail, double bond
+ATOM ME3  C       0.00  ! lipid tail
+ATOM MT1  C       0.00  ! lipid tail terminus
+ATOM ME4  C       0.00  ! lipid tail
+ATOM ME5  C       0.00  ! lipid tail
+ATOM ME6  C       0.00  ! lipid tail
+ATOM MT2  C       0.00  ! lipid tail terminus
+BOND ETA PHO  PHO ES1  ES1 ES2  ES1 ME1
+BOND ME1 ME2  ME2 ME3  ME3 MT1  ES2 ME4
+BOND ME4 ME5  ME5 ME6  ME6 MT2
+
+RESI DOPC         0.00
+GROUP   
+ATOM CHO  Qo      0.70  ! Choline head group 
+ATOM PHO  Qa     -0.70  ! Phosphate
+ATOM ES1  Na      0.00  ! Ester group
+ATOM ES2  Na      0.00  ! Ester group
+ATOM ME1  C       0.00  ! lipid tail
+ATOM ME2  C       0.00  ! lipid tail
+ATOM MD3  Cdb     0.00  ! lipid tail
+ATOM MT1  C       0.00  ! lipid tail terminus
+ATOM ME4  C       0.00  ! lipid tail
+ATOM ME5  C       0.00  ! lipid tail
+ATOM MD6  Cdb     0.00  ! lipid tail terminus
+ATOM MT2  C       0.00  ! lipid tail terminus
+BOND CHO PHO  PHO ES1  ES1 ES2  ES1 ME1
+BOND ME1 ME2  ME2 MD3  MD3 MT1  ES2 ME4
+BOND ME4 ME5  ME5 MD6  MD6 MT2
+
+RESI DOPS        -0.70
+GROUP   
+ATOM SHO  P       0.00  ! Serine head group 
+ATOM PHO  Qa     -0.70  ! Phosphate
+ATOM ES1  Na      0.00  ! Ester group
+ATOM ES2  Na      0.00  ! Ester group
+ATOM ME1  C       0.00  ! lipid tail
+ATOM ME2  C       0.00  ! lipid tail
+ATOM MD3  Cdb     0.00  ! lipid tail
+ATOM MT1  C       0.00  ! lipid tail terminus
+ATOM ME4  C       0.00  ! lipid tail
+ATOM ME5  C       0.00  ! lipid tail
+ATOM MD6  Cdb     0.00  ! lipid tail terminus
+ATOM MT2  C       0.00  ! lipid tail terminus
+BOND SHO PHO  PHO ES1  ES1 ES2  ES1 ME1
+BOND ME1 ME2  ME2 MD3  MD3 MT1  ES2 ME4
+BOND ME4 ME5  ME5 MD6  MD6 MT2
+
+RESI DPC	0.00
+GROUP
+ATOM NC3  Qo	0.70 ! Choline
+ATOM PO4  Qa   -0.70 ! Phosphate
+ATOM C1   C	0.00
+ATOM C2   C	0.00
+ATOM C3	  C	0.00
+BOND NC3 PO4	PO4 C1	C1 C2	C2 C3
+
+RESI SOD 0.7
+GROUP
+ATOM SOD Qd 0.7
+
+RESI CHL -0.7
+GROUP
+ATOM CHL Qa -0.7
+
+RESI ALA          0.00
+ATOM BB   Nxx     0.00
+ATOM ALA2 Ca      0.00
+BOND  BB ALA2  BB +BB
+
+RESI ARG          0.70
+ATOM BB   Nxx     0.00
+ATOM ARG2 Qdr     0.70
+BOND  BB ARG2  BB +BB
+
+RESI ASN          0.00
+ATOM BB   Nxx     0.00
+ATOM ASN2 Nxn     0.00
+BOND  BB ASN2  BB +BB
+
+RESI ASP         -0.70
+ATOM BB   Nxx     0.00
+ATOM ASP2 Qad    -0.70
+BOND  BB ASP2  BB +BB
+
+RESI CYS          0.00
+ATOM BB   Nxx     0.00
+ATOM CYS2 Pc      0.00
+BOND  BB CYS2  BB +BB
+
+RESI GLN          0.00
+ATOM BB   Nxx     0.00
+ATOM GLN2 Nxq     0.00
+BOND  BB GLN2  BB +BB
+
+RESI GLU         -0.70
+ATOM BB   Nxx     0.00
+ATOM GLU2 Qae    -0.70
+BOND  BB GLU2  BB +BB
+
+RESI GLY          0.00
+ATOM BB   Nxg     0.00
+BOND  BB +BB
+
+RESI HSD          0.00  ! neutral HIS, proton on ND1
+ATOM BB   Nxx     0.00
+ATOM HSD2 Ph      0.00
+BOND  BB HSD2  BB +BB
+
+RESI HSE          0.00  ! neutral His, proton on NE2
+ATOM BB   Nxx     0.00
+ATOM HSE2 Ph      0.00
+BOND  BB HSE2  BB +BB
+
+RESI HSP          0.70  ! Protonated His
+ATOM BB   Nxx     0.00
+ATOM HSP2 Qdh     0.70
+BOND  BB HSP2  BB +BB
+
+RESI ILE          0.00
+ATOM BB   Nxx     0.00
+ATOM ILE2 Ci      0.00
+BOND  BB ILE2  BB +BB
+
+RESI LEU          0.00
+ATOM BB   Nxx     0.00
+ATOM LEU2 Cl      0.00
+BOND  BB LEU2  BB +BB
+
+RESI LYS          0.70
+ATOM BB   Nxx     0.00
+ATOM LYS2 Qdk     0.70
+BOND  BB LYS2  BB +BB
+
+RESI MET          0.00
+ATOM BB   Nxx     0.00
+ATOM MET2 Cm      0.00
+BOND  BB MET2  BB +BB
+
+RESI PHE          0.00
+ATOM BB   Nxx     0.00
+ATOM PHE2 Cf      0.00
+BOND  BB PHE2  BB +BB
+
+RESI PRO          0.00
+ATOM BB   Nap     0.00
+ATOM PRO2 Cp      0.00
+BOND  BB PRO2  BB +BB
+
+RESI SER          0.00
+ATOM BB   Nxx     0.00
+ATOM SER2 Ps      0.00
+BOND  BB SER2  BB +BB
+
+RESI THR          0.00
+ATOM BB   Nxx     0.00
+ATOM THR2 Pt      0.00
+BOND  BB THR2  BB +BB
+
+RESI TRP          0.00
+ATOM BB   Nxx     0.00
+ATOM TRP2 Cw      0.00
+BOND  BB TRP2  BB +BB
+
+RESI TYR          0.00
+ATOM BB   Nxx     0.00
+ATOM TYR2 Nxy     0.00
+BOND  BB TYR2  BB +BB
+
+RESI VAL          0.00
+ATOM BB   Nxx     0.00
+ATOM VAL2 Cv      0.00
+BOND  BB VAL2  BB +BB
+
+RESI TIP3      0.00  !  
+ATOM H2O  P    0.00  ! 
+DONOR H2O
+ACCEPTOR H2O
+
+END

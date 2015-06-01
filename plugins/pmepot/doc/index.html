@@ -1,0 +1,72 @@
+<!--#set var="TITLE" value="VMD PMEPot Plugin, Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+The 'pmepot' plugin evaluates the reciprocal sum of the
+<a href="http://scitation.aip.org/getabs/servlet/GetabsServlet?prog=normal&id=JCPSA6000103000019008577000001&idtype=cvips&gifs=yes">smooth particle-mesh Ewald method</a>
+(PME), producing a smoothed electrostatic potential grid,
+and writes it to a 
+<a href="/Research/vmd/plugins/molfile/dxplugin.html">DX file</a>, 
+and reads it into the molecule.
+The smoothing is a natural result of the PME algorithm in which
+point charges are spread into Gaussians with sharpness controlled
+by the Ewald factor.
+Only the reciprocal sum is calculated, there is no direct (short-range) term.
+Charge information must be available for the molecule
+(<a href="http://agave.wustl.edu/pdb2pqr/">PDB2PQR</a> can generate
+a charge-containing PQR file from a PDB file or ID).
+The PME algorithm requires a periodic cell, although a non-periodic
+potential may be approximated by making the cell significantly larger
+than the dimensions of the molecule (padding the bounding box).
+Periodic cell information is taken from VMD, the bounding box,
+a NAMD .xsc file, or as specified by the user.
+<p>
+This method is 
+<a href="/Publications/Papers/paper.cgi?tbcode=AKSI2005">described in detail here</a>.
+Please include this reference in published work using the PME plugin:
+"Imaging alpha-hemolysin with molecular dynamics: Ionic conductance,
+osmotic permeability and the electrostatic potential map". Aleksij
+Aksimentiev and Klaus Schulten. Biophysical Journal, 88:3745-3761,
+2005.
+
+<h3>Decalanine Example</h3>
+<img src="alanin.jpg">
+
+<pre>
+package require pmepot
+
+set mol [mol new alanin.psf type psf waitfor all]
+mol addfile alanin.pdb type pdb waitfor all
+
+pmepot -mol $mol -ewaldfactor 5.0 -grid 0.5
+</pre>
+
+<h3>Periodic Simulation Example</h3>
+<pre>
+package require pmepot
+
+set mol [mol new msp1_cell.psf type psf waitfor all]
+mol addfile mincell-out.coor type pdb waitfor all
+
+pmepot -mol $mol -xscfile mincell-out.xsc -ewaldfactor 0.25
+</pre>
+
+<h3>Command Arguments</h3>
+<pre>
+usage: pmepot ?-arg val?...
+  -mol <em>molid</em> (defaults to top, do not combine with -sel)
+  -sel <em>selection</em> (proc returned by atomselect command)
+  -frames <em>begin:end</em> or <em>begin:step:end</em> or all or now
+  -updatesel yes or no (default) (update selection for each frame)
+  -pad <em>d</em> (cell is bounding box plus d on each side)
+  -cell <em>{{ox oy oz} {ax ay az} {bx by bz} {cx cy cz}}</em> (o is center)
+  -xscfile <em>filename</em> (get cell from NAMD .xsc file)
+  -grid <em>{na nb nc}</em> (integer grid dimensions for PME)
+  -grid <em>n</em> (integer grid dimension for PME, n &gt; 8)
+  -grid <em>resolution</em> (grid resolution for PME in Angstroms)
+  -dxfile <em>filename</em> (write potential map to file)
+  -loadmol <em>molid</em> or none or same or new (molecule to load data to)
+  -ewaldfactor <em>factor</em> (specify ewald factor)
+</pre>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

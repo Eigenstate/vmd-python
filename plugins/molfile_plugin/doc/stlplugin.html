@@ -1,0 +1,25 @@
+<!--#set var="TITLE" value="STL Plugin, Version 2.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>
+This plugin reads and displays files in STL (stereo lithography) format, the
+standard data format for automated fabricators. This format uses triangles
+exclusively to to represent 3-D geometry. More information can be found at 
+<a href="http://rpdrc.ic.polyu.edu.hk/old_files/stl_introduction.htm">http://rpdrc.ic.polyu.edu.hk/old_files/stl_introduction.htm</a>.</p>
+and at
+<a href="http://www.csit.fsu.edu/~burkardt/data/stla/stla.html">http://www.csit.fsu.edu/~burkardt/data/stla/stla.html</a>
+  
+<h3>Notes:</h3>
+
+<p><b>Unused data</b>
+<br>The STL specification dictates that the normal for each facet is to be
+stored with the vertex coordinates. Since this information is superfluous, it
+is ignored by the plugin.</p>
+
+<p><b>ASCII and Binary STL Files</b>
+<br>Currently, there is no support for the 
+<a href="http://www.csit.fsu.edu/~burkardt/data/stlb/stlb.html">binary STL format</a>. 
+Only files in the ASCII format can be read.</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

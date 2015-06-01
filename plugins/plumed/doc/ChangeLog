@@ -1,0 +1,65 @@
+2014-12-05  Toni  <toni@pcgiorgino.isib.cnr.it>
+
+	* 2.4.1 Extensive OSX fixes.
+
+2014-10-22  Toni  <toni@pcgiorgino.isib.cnr.it>
+
+	* 2.4 Secondary structure RMSD function.
+
+2014-06-17  Toni  <toni@tabularasa>
+
+	* 2.3.2 MSD subsetting
+
+2014-04-07  Toni  <toni@pcgiorgino.isib.cnr.it>
+
+	* 2.3 Trajectory passed via dcd molfile
+
+2013-08-01  Toni  <toni@pcgiorgino.isib.cnr.it>
+
+	* 2.2 Prompt before download. Improved wording and doc directory.
+
+2013-05-24  Toni  <toni@pcgiorgino.isib.cnr.it>
+
+	* 2.1 Auto-download of drivers; online man lookup
+
+2013-05-16  Toni  <toni@pcgiorgino.isib.cnr.it>
+
+	* 2.0 Fallback to online documentation, fixed URLs
+
+2013-01-16  Toni  <toni@pcgiorgino.isib.cnr.it>
+
+	* 1.9 Discontinuity in version numbering to match VMD's
+	CVS. Improved geometry packing.
+
+2012-12-07  Toni  <toni@pcgiorgino.isib.cnr.it>
+
+	* 1.901 Extensive changes; added support for Plumed 2 with auto
+	switching. Added multi-file references, cleanup.
+
+2012-07-18  Toni  <toni@tabularasa>
+
+	* 1.0 Added Ramachandran GUI, refactored menus, fixed OSX
+
+2011-02-15    <toni@mio.imim.es>
+
+	* 0.9 Export doesn't keep file name, removed w_stride
+
+2010-09-17    <toni@mio.imim.es>
+
+	* 0.7 Add point option, native contacts
+
+2010-09-13    <toni@mio.imim.es>
+
+	* 0.6 Multithreaded
+
+2010-07-21    <toni@mio.imim.es>
+
+	* 0.5 Batch processing
+
+2010-07-19    <toni@mio.imim.es>
+
+	* 0.3 Don't plot if error on exit
+
+	* 0.2 Fixed user conflict when preparing reference structures
+
+

@@ -1,0 +1,16 @@
+<!--#set var="TITLE" value="PQR Plugin, Version 0.6"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads and writes molecular coordinate data stored in the PQR
+file format. This variant of the PDB format contains atom charge and radius
+information, and does not store many of fields found in PDB files.
+
+<h3>Notes:</h3>
+The PQR files written by this plugin currently contain the same radius and
+charge information used for VMD's internal atom representation. Since this
+may not be appropriate for some applications, it may be necessary to
+override these values in VMD using atomselect commands. Consult the VMD
+User's Guide for information on changing atom data using atomselections.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

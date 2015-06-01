@@ -1,0 +1,642 @@
+# Please go to the end to see rules of defining an atom  
+
+============================================================================================
+                        Defination begin
+============================================================================================
+--------------------------------------------------------------------------------------------
+WILDATOM XX C N O S P
+WILDATOM XA O S
+WILDATOM XB N P
+WILDATOM XC F Cl Br I
+WILDATOM XD S P
+WILDATOM XN C N 
+WILDATOM XE C N O
+-------------------------------------------------------------------------------------------- 
+ f1  f2    f3  f4  f5  f6  f7  f8      		       f9          
+-------------------------------------------------------------------------------------------- 
+
+// -------------------------------------------------------------------------------------------------------------------------------
+//                                                                                                        OPLS    sigma    epsilon
+// -------------------------------------------------------------------------------------------------------------------------------
+// *******************
+// *** Amino acids ***
+// *******************
+
+// *** Hydrogens ***
+ATD HC1    AA  1   1   *   *   *                       (C4)                                            &
+ATD HO     AA  1   1   *   *   *                       (O)                                             &
+ATD HS     AA  1   1   *   *   *                       (S)                                             &
+ATD H31    AA  1   1   *   *   *                       (N3(C3(N3)))                                    &
+ATD H31    AA  1   1   *   *   *                       (N4)                                            &
+ATD H2     AA  1   1   *   *   *                       (N)                                             &
+ATD HA1    AA  1   1   *   *   *                       (XX[AR1.AR2.AR3])                               &
+
+// *** Carbons   ***
+ATD CT2    AA  6   4   *   *   *                                                                       &            
+ATD CN     AA  6   3   0   *   [AR1,RG6,RG5]           (N3[AR2,RG5],C3[AR1,RG6],C3[AR1,RG6,RG5])       &
+ATD CB2    AA  6   3   *   *   [RG5,RG6,AR1.AR2.AR3]                                                   &
+ATD CV     AA  6   3   *   *   [RG5,AR2]               (C3,N2)                                         &
+ATD CX     AA  6   3   *   *   [RG5,AR2]               (C3(N3),N3)                                     &
+ATD CW1    AA  6   3   *   *   [RG5,AR2]               (C3,N3(H))                                      &
+ATD CR1    AA  6   3   *   *   [RG5,AR1.AR2.AR3]       (N3,N3)                                         &
+ATD CR1    AA  6   3   1   *   [RG5,AR2]               (N2,N3(H))                                      &
+ATD CA1    AA  6   3   *   *   [AR1,RG6]                                                               &  
+ATD CA2    AA  6   3   0   *   *                       (N3(H,H),N3(H,H))                               &
+ATD C2     AA  6   3   *   *   *                       (O1,O1)                                         &
+ATD C2     AA  6   3   *   *   *                       (O[DB])                                         &
+ATD C*     AA  6   3   *   *   [RG5,AR1.AR2.AR3]       (C3,C3)                                         &
+
+// *** Nitrogens ***
+ATD NA     AA  7   3   1   *   [RG5.RG6,AR1.AR2.AR3]                                                   & 
+ATD NB     AA  7   2   *   *   [RG5,AR1.AR2.AR3]                                                       & 
+ATD N21    AA  7   3   *   *   *                       (C3(N3))                                        &
+ATD N1     AA  7   3   *   *   *                                                                       &   
+ATD N31    AA  7   4   *   *   *                                                                       &   
+
+// *** Oxygens ***
+ATD O21    AA  8   1   *   *   *                       (C(O1))                                         &
+ATD O2     AA  8   1   *   *   *                       (C)                                             &
+ATD OH2    AA  8   2   1   *   *                       (C[AR1])                                        & 
+ATD OH3    AA  8   2   1   *   *                                                                       & 
+
+// *** Sulfurs ***
+ATD SH2    AA  16  2   1   *                                                                           &
+ATD SH2    AA  16  2   2   *                                                                           &
+ATD S      AA  16  2   *   *                                                                           & 
+
+
+
+// *********************
+// *** Nucleic acids ***
+// *********************
+
+// *** Hydrogens ***
+ATD HC5    NA  1   1   *   *   *                       (C4(C3[AR3](C3[AR3](O1),C3(N3))))  &
+ATD HC5    NA  1   1   *   *   *                       (C3(C3[AR3](N3),C3[AR3](N3[NR])))  &
+ATD HC5    NA  1   1   *   *   *                       (C3(C3[AR3](C3[AR3](O1)),N3))  &
+ATD HC5    NA  1   1   *   *   *                       (C3(C3[AR3](N3),C3[AR3](O1)))  &
+ATD HC5    NA  1   1   *   *   *                       (C3(C2(N1)))  &
+ATD HC5    NA  1   1   *   *   *                       (C4(H,XA1))  &
+ATD H51    NA  1   1   *   *   *                       (C3[AR1.AR2](N2[AR1.AR2](C3[AR1](N3[NR])),N[AR1.AR2])) &
+ATD H51    NA  1   1   *   *   *                       (C3[AR1.AR2](N2[AR1.AR2](C3[AR1](C3[AR1](N3[NR]))),N[AR1.AR2])) &
+ATD H51    NA  1   1   *   *   *                       (C3[AR2](N2[AR2](C3[AR3](C3[AR3](O1[NR]))),N3[AR2])) &
+ATD H41    NA  1   1   *   *   *                       (C(C,N))       &
+ATD H2     NA  1   1   *   *   *                       (N)                                             &
+
+// *** Carbons   ***
+ATD CA3    NA  6   3   *   *   [AR1.AR3]               (N2(C3),N3(H,H),C3) &
+ATD CA3    NA  6   3   *   *   [AR3]                   (N2(C3),N3(H,H),N3) &  
+ATD CA3    NA  6   3   *   *   [AR1]                   (C3(N2[AR1](C3),N3[NR](H,H)),C3(C3)) &  //2,6-Diaminopyridine
+ATD CA3    NA  6   3   *   *   [AR1]                   (C3(C3(N2[AR1](C3),N3[NR](H,H))),C3) &  //2,6-Diaminopyridine
+ATD CM2    NA  6   3   1   *   [AR3]                   (N3,C3(C3(N3))) &
+ATD CM2    NA  6   3   *   *   [AR3]                   (C3[AR3](N3[AR3]),C3[AR3](N3[AR3])) &
+ATD CM2    NA  6   3   1   *   [AR3]                   (C3[AR3](N3[AR3]),C3[AR3](N3)) &
+ATD CB1    NA  6   3   *   *   [RG5,RG6,AR1.AR2.AR3]                                                   &
+ATD CK1    NA  6   3   *   *   [RG5,AR1.AR2.AR3]       (N3,N2)                                           &
+ATD CQ1    NA  6   3   1   *   [AR1,RG6]               (N2(C3(C3,N3)),N2(C3(N3)))                     & 
+ATD C2     NA  6   3   *   *   *                       (O1,O1)                                         &
+ATD C2     NA  6   3   *   *   *                       (O[DB])                                         &
+
+// *** Nitrogens ***
+ATD NA     NA  7   3   1   *   [RG5.RG6,AR1.AR2.AR3]                                                   & 
+ATD NB     NA  7   2   0   *   [RG5,AR1.AR2.AR3]                                                       & 
+ATD NC     NA  7   2   0   *   [RG6,AR1.AR2.AR3]                                                       & 
+ATD N21    NA  7   3   2   *   *                       (C3(N3))                                        &
+
+// *** Oxygens ***
+ATD O2     NA  8   1   *   *   *                       (C)                                             &
+
+// ***********************
+// ** General Molecules **
+// ***********************
+
+
+// *** Hydrogens ***
+ATD H4    *    1   1   *   *   *                       (Si) &
+
+ATD HS    *    1   1   *   *   *                       (S) &
+
+ATD H1    *    1   1   *   *   *                       (C3(N2(C4))) &
+ATD H1    *    1   1   *   *   *                       (C4(N2(C3))) &
+ATD H1    *    1   1   *   *   *                       (C4(P3(C4))) &
+
+ATD H41   *    1   1   *   *   *                       (C3[AR3](N3(C3(O1)),C3(C3(N3,N2)))) &
+
+ATD H31   *    1   1   *   *   *                       (N(C[NR](N,N)))                                & 
+ATD H31   *    1   1   *   *   *                       (N4(H,H,H))                                    & 
+ATD H31   *    1   1   *   *   *                       (N4(C4))                                       &
+
+ATD HO   *     1   1   *   *   *                       (O) &
+
+// The following HC1s are for phenyl substituted AR3 and RG4 rings
+ATD HC1  *     1   1   *   *   *                       (C3(C3(C3(O1,C3),C3(N3)),O1)) &
+
+ATD HC1  *     1   1   *   *   *                       (C3(C3[AR3](C3[AR3](O1),H),N3(C3[AR3](C3[AR1]))))  &
+ATD HC1  *     1   1   *   *   *                       (C3(C3[AR3](N3,H),C3[AR3](O1,C3[AR3](C3[AR1]))))  &
+ATD HC1  *     1   1   *   *   *                       (C3(C3[AR3](N3(C3[AR3](C3[AR1])),H),C3[AR3](O1)))  &
+ATD HC1  *     1   1   *   *   *                       (C3[AR3](N3,C3[AR3](C3[AR3](O1,C3[AR3](C3[AR1])))))  &
+
+ATD HC1  *     1   1   *   *   *                       (C3[AR3,RG6](C3[AR3],N3[AR3](C3[AR3](O1,C3[AR3](C3[AR1])))))  &
+ATD HC1  *     1   1   *   *   *                       (C3[AR3,RG6](C3[AR3](C3[AR1],C3[AR3](O1,N3[AR3])),C3[AR3](H,C3[AR3])))  &
+ATD HC1  *     1   1   *   *   *                       (C3[AR3,RG6](C3[AR3](C3[AR3](C3[AR1])),C3[AR3](N3(C3[AR3](O1)))))  &
+ATD HC1  *     1   1   *   *   *                       (C3[AR3,RG6](C3[AR3](C3[AR1],C3[AR3](O1,C3[AR3])),N3[AR3](C3[AR3])))  &
+
+ATD HC1  *     1   1   *   *   *                       (C3[AR3,RG6](C3[AR3](C3[AR1],N3[AR3]),C3[AR3](O1,C3[AR3])))  &
+ATD HC1  *     1   1   *   *   *                       (C3[AR3,RG6](C3[AR3](C3[AR1],C3[AR3]),C3(O1,N3[AR3](C3[AR3]))))  &
+ATD HC1  *     1   1   *   *   *                       (C3[AR3,RG6](C3[AR3](N3[AR3](C3[AR3](O1))),C3[AR3](C3[AR1],C3[AR3])))  &
+ATD HC1  *     1   1   *   *   *                       (C3[AR3](N3[AR3](C3[AR3](O1)),C3[AR3](C3[AR3](C3[AR1],C3[AR3]))))  &
+
+ATD HC1  *     1   1   *   *   *                       (C4[RG4](C4[RG4](C3[AR1]),C4[RG4](N3[RG4]))) & //HC6-like
+ATD HC1  *     1   1   *   *   *                       (C4[RG4](C4[RG4](C3[AR1]),N3[RG4])) &          //HC6-like
+ATD HC1  *     1   1   *   *   *                       (C4[RG4](C4[RG4],N3[RG4](C4[RG4](C3[AR1])))) & //HC6-like
+ATD HC1  *     1   1   *   *   *                       (C4[RG4](C3[AR1],N3[RG4])) &                   //HC6-like
+ATD HC1  *     1   1   *   *   *                       (C4[RG4](C3[AR1],N3[RG4])) &                   //HC6-like
+
+ATD HC1  *     1   1   *   *   *                       (C3(C4,C3(O))) &
+ATD HC1  *     1   1   *   *   *                       (C3(H,C3(XX,C3(XX,C3(H,H))))) &
+
+ATD HC1  *     1   1   *   *   *                       (C4(H,H,O2(C3(XN3[AR4.NR])))) &
+// END
+
+ATD HC5  *     1   1   *   *   *                       (C4(C3[AR3](C3[AR3](O1),C3(N3,H))))  &
+ATD HC5  *     1   1   *   *   *                       (C3(C3[AR3](N3),C3[AR3](N3[NR])))  &
+ATD HC5  *     1   1   *   *   *                       (C3(C3[AR3](C3[AR3](O1),H),N3))  &
+ATD HC5  *     1   1   *   *   *                       (C3(C3[AR3](C3[AR3](O1),C4),N3))  &
+ATD HC5  *     1   1   *   *   *                       (C3(C3[AR3](N3,H),C3[AR3](O1)))  &
+ATD HC5  *     1   1   *   *   *                       (C3(C3[AR3](N3,C4),C3[AR3](O1)))  &
+ATD HC5  *     1   1   *   *   *                       (C3(C2(N1)))  &
+ATD HC5  *     1   1   *   *   *                       (C4(H,XA1))  &
+
+ATD HC6  *     1   1   *   *   *                       (C4(N3(C4,C4)))           &
+ATD HC6  *     1   1   *   *   *                       (C4(N3(C4,C3[AB])))       &
+ATD HC6  *     1   1   *   *   *                       (C4(N3(H,C3[AB])))        &
+ATD HC6  *     1   1   *   *   *                       (C4(N3(H,C4)))            & 
+ATD HC6  *     1   1   *   *   *                       (C4(N3(H,H)))             & 
+ATD HC6  *     1   1   *   *   *                       (C4(N3(O,O)))             &  
+ATD HC6  *     1   1   *   *   *                       (C4(C2(C2(H))))           & 
+ATD HC6  *     1   1   *   *   *                       (C4[NR](C2(N1)))          & 
+
+ATD HC4  *     1   1   *   *   *                       (C4(C4(O2(C3),C4(O2))))   &  
+ATD HC4  *     1   1   *   *   *                       (C4[NR](C3(O1,C)))        &  
+ATD HC4  *     1   1   *   *   *                       (C(C(O1,O(C)),H))         &  
+ATD HC4  *     1   1   *   *   *                       (C4(C3(O1,H)))            &  
+ATD HC4  *     1   1   *   *   *                       (C(O(C3(O))))             &
+ATD HC4  *     1   1   *   *   *                       (C3[sb](O1))              & 
+ATD HC4  *     1   1   *   *   *                       (C2(C))                   &
+
+ATD HC2  *     1   1   *   *   *                       (C3[NR.AR4]) &
+ATD HC2  *     1   1   *   *   *                       (C4(C[AR1],C[AR4],C[AR1])) &
+
+ATD HC1  *     1   1   *   *   *                       (C4) & // Depends on the HC* types above
+
+ATD HA2   *    1   1   *   0   *                       (C3[AR1,RG6](C3[AR1,RG6](C3[AR1,RG6](N2[AR1,RG6],N3))))          &
+ATD HA2   *    1   1   *   0   *                       (C3[AR1,RG6](C3[AR1,RG6](N2[AR1,RG6],N3)))                       &
+
+ATD H2    *    1   1   *   *   *                       (N3)                                           &  //DEPENDS ON H3
+ATD H2    *    1   1   *   *   *                       (N2(C(N3)))                                    &
+ATD H2    *    1   1   *   *   *                       (N4) & 
+
+ATD H51   *    1   1   *   *   *                       (C3[AR1.AR2](N2[AR1.AR2](C3[AR1](N3[NR])),N[AR1.AR2])) &
+ATD H51   *    1   1   *   *   *                       (C3[AR1.AR2](N2[AR1.AR2](C3[AR1](C3[AR1](N3[NR]))),N[AR1.AR2])) &
+ATD H51   *    1   1   *   *   *                       (C3[AR2](N2[AR2](C3[AR3](C3[AR3](O1[NR]))),N3[AR2])) &
+
+
+ATD HA1   *    1   1   *   *   *                       (C3[AR1.AR2.AR3]) &
+
+
+// *** Carbons ***
+
+ATD CR2    *   6   3   *   *   [RG6]                    (C3,N3[RG6],N2[RG5])                       &
+
+ATD C$    *   6   3   0   *   [AR4,RG4]                 (O1,N3[AR4](H),C4[AR4](H,H,C4[AR4](H,H)))  &  
+
+ATD C1     *   6   *   *   *   [NR]                    (N2,H,H)  &
+ATD C1     *   6   *   *   *   [NR]                    (P3)  &
+
+ATD C2     *   6   3  *   *   [NR]            (O1) & 
+ATD C2     *   6   3  *   *   [AR2.AR3.AR4,RG6.RG5]            (O1) & 
+#ATD C2     *   6   3  *   *   [AR2,RG5]            (O1) & 
+ATD C2     *   6   3  *   *   [NR]            (N2,N3) &
+
+ATD CR1    *   6   3   1   *   [AR2,RG5]               (N2[AR2,RG5](C3[AR2,RG5]),N3[AR2,RG5](C4[NR])) &
+ATD CR1    *   6   3   1   *   [AR2,RG5]               (N2[AR2,RG5](C3[AR2,RG5]),N3[AR2,RG5](C3[AR2,RG5](H),H)) &
+ATD CR1    *   6   3   1   *   [AR2,RG5]               (N2[AR2,RG5](C3[AR2,RG5]),O2[AR2,RG5](C3[AR2,RG5])) &
+ATD CR1    *   6   3   1   *   [AR2,RG5]               (N2[AR2,RG5](C3[AR2,RG5]),S2[AR2,RG5](C3[AR2,RG5])) &
+
+ATD CA4    *   6   3   1   *   [AR2,RG6]           (N3[AR2,RG5,RG6]) &      
+ATD CA4    *   6   3   1   *   [AR2,RG6]           (C3[AR2,RG5,RG6](N3[AR2,RG5,RG6])) &      
+ATD CA4    *   6   3   1   *   [AR1.AR2.AR3,RG6]       (N3[AR1.AR2.AR3](O[NR],C3)) &
+ATD CA4    *   6   3   1   *   [AR1.AR2.AR3,RG6]       (C3(N3[AR1.AR2.AR3](O[NR],C3))) &
+
+ATD CT8    *   6   4   0   *   *                      (F,F,F,F) &
+
+ATD CT7    *   6   4   *   *   [NR.AR1.AR5]            (C2[NR](N1))                                &    
+
+ATD CT6    *   6   3   *   *   [NR]                    (C2[NR](N1))                                &   
+
+ATD CT4    *   6   4   3   *   [NR]                    (C3[AR3](C3[AR3](O1),C3[AR3](H)))                        & 
+
+ATD CT1    *   6   4   0   *    *                      (Cl,Cl,Cl,Cl)  &
+
+ATD CT3    *   6   4   *   *   [NR]                    (F1,F1,F1,C3(C))                            & 
+ATD CT3    *   6   4   *   *   [NR]                    (F1,F1,F1,C4(O2))                            & 
+ATD CT3    *   6   4   *   *   [NR]                    (F1,F1,H,C3)                             & 
+
+
+ATD C=1   *    6   3   1   *   *                     (C3(H,H),C3(H)) &
+ATD C=1   *    6   3   1   *   *                     (C3(C4,H),C3(H)) &
+ATD C=1   *    6   3   1   *   *                     (C3(C4,H),C3(O1)) &
+ATD C=1   *    6   3   1   *   *                     (C3(H,H),C3(O(H))) &
+
+ATD C=2   *    6   3   1   *   [AR3,RG6]             (C(O,N(C(O,N(C,C)))),C) &
+ATD C=2   *    6   3   *   *   [AR3,RG5]             (C(O,N(C(O))),C) &
+ATD C=2   *    6   3   *   *   [AR3]                 (C(O,O),C) &       
+ATD C=2   *    6   3   0   *   [DB,NR]               (C3(H,H),C3[DB,NR](C3(H,H)))
+
+ATD CQ1    *   6   3   1   *   [AR1,RG6]               (N2(C3(C3,N3)),N2(C3(N3)))                     & 
+ATD CQ2    *   6   3   1   *   [AR1,RG6]               (N2,N2)                                        &  
+ATD CQ2    *   6   3   0   *   [AR3,RG6]               (N2,N3,N3) &
+
+ATD CA3    *   6   3   *   *   [AR1.AR3]                (N2(C3),N3(H,H),C3) &
+ATD CA3    *   6   3   *   *   [AR3]                    (N2(C3),N3(H,H),N3) &  
+ATD CA3    *   6   3   *   *   [AR1]                    (C3(N2[AR1](C3),N3[NR](H,H)),C3(C3)) &  //2,6-Diaminopyridine
+ATD CA3    *   6   3   *   *   [AR1]                    (C3(C3(N2[AR1](C3),N3[NR](H,H))),C3) &  //2,6-Diaminopyridine
+
+ATD C:    *    6   2   0   *   *                         (C[DB'],C[DB']) &
+ATD C:    *    6   2   0   *   *                         (C[DB'],O[DB']) &
+
+ATD CZ1    *   6   2   0   *   [NR]                    (N1[NR],C3)                                  &  
+ATD CZ2    *   6   2   0   *   [NR]                    (N1[NR],C4)                                  &  
+ATD CZ3    *   6   2   1   *   *                         (C2) &
+ATD CZ6    *   6   2   0   *   *                         (C2(H),C3[AB]) &
+ATD CZ5    *   6   2   0   *   *                         (C2(H),C4(H,C,C)) &
+ATD CZ4    *   6   2   0   *   [NR]                    (C2[NR],C) & // DEPENDS ON CZ5 and CZ6
+
+ATD C#     *   6   3   1   *   *                         (C3(H,C3(H,H)),C3(H,C)) &
+
+ATD CM3    *   6   3   *   *   [DB]                    (C2[DB](O1[DB]))                               &
+ATD CM3    *   6   3   *   *   [DB]                    (C2[DB](C3[DB]))                               &
+
+ATD CM2    *   6   3   1   *   [AR3]                     (N3(H),C3(H,C3(N3))) &
+ATD CM2    *   6   3   1   *   [AR3]                     (N3(H),C3(C4,C3(N3))) &
+ATD CM2    *   6   3   *   *   [AR3]                     (C3[AR3](H,N3[AR3](H)),C3[AR3](N3[AR3](H)),H) &
+ATD CM2    *   6   3   *   *   [AR3]                     (C3[AR3](H,N3[AR3](H)),C3[AR3](N3[AR3](H)),C4) &
+ATD CM2    *   6   3   1   *   [AR3]                     (C3[AR3](H,N3[AR3](H)),C3[AR3](N3(H))) &
+
+ATD CM4    *   6   3   *   *   [AR3]                  (C3[AR3](O1),C3[AR3](N3[AR3](H,C3(H)),H),C3[AR1])&
+ATD CM4    *   6   3   *   *   [AR3]                  (C3[AR3](O1),C3[AR3](N3[AR3](H),H),H)&
+ATD CM4    *   6   3   *   *   [AR3]                  (C3[AR3](O1),C3[AR3](H,C3[AR3](C3(N3[AR3]))),C3[AR1])&
+ATD CM4    *   6   3   *   *   [AR3]                  (C3[AR1],N3[AR3],C3[AR3](C3[AR3](O1,C3)))&
+ATD CM4    *   6   3   *   *   [AR3]                  (C3[AR3](C3[AR3](O1,N3[AR3](C3(H))),C3[AR1]))&
+ATD CM4    *   6   3   *   *   [AR3]                  (C3[AR3](C3[AR3](O1,N3[AR3](C3(H)))),C3[AR1])&
+
+ATD C33    *   6   1   *   *   [NR]                     (C2[NR])                                       & United Atom!
+
+ATD CW2    *   6   3   1   *   [AR2]                    (S2,C(C,C))                                      & 
+ATD CW2    *   6   3   1   *   [AR2]                    (S2,C(C(C,C)))                                      & 
+
+ATD CW1    *   6   3   *   *   [AR2]                    (S2[AR2],C)                                      & //DEPENDS ON CW2
+ATD CW1    *   6   3   1   *   [AR2,RG5]                    (N3[AR2],C)                        &  
+ATD CW1    *   6   3   *   *   [AR2,RG5]                    (N3[AR2],C,C[NR])                        &  
+ATD CW1    *   6   3   *   *   [AR2]                    (O2[AR2],C)                        &  
+
+ATD C37    *   6   4   *   *   *                       (XA1) &
+
+ATD CN     *   6   3   0   *   [AR1,RG6,RG5]           (N3[AR2,RG5](H),C3[AR1,RG6],C3[AR1,RG6,RG5])      &  
+ATD CN     *   6   3   0   *   [AR1,RG6,RG5]           (N3[AR2,RG5](C4),C3[AR1,RG6],C3[AR1,RG6,RG5])      &  
+
+ATD CS1    *   6   3   1   *   [AR2,RG5]                   (C3[AR2](N),C3[AR2])                           & 
+ATD CS1    *   6   3   *   *   [AR2,RG5]                   (C3[AR2](N),C3[AR2],XX[NR])                    &  
+ATD CS1    *   6   3   *   *   [AR2,RG5]                   (C3[AR2](N(C,C)),C3[AR2],C3[SB'])                    &  
+ATD CS1    *   6   3   1   *   [AR2,RG5]                   (C3[AR2](H),C3[AR2](S2[AR2](C3[AR2](H)),H)) & 
+
+ATD CS2    *   6   3   *   *   [AR2]                   (C[AR2](XA[AR2]),C[AR2])                       & //DEPENDS ON CS1
+
+ATD CY2    *   6   4   *   *   [RG3.RG4]               (C(N3),C,C[AR1])					      & 
+ATD CY2    *   6   4   *   *   [RG3.RG4]               (C(N3,C[AR1]),C)					      & 
+ATD CY2    *   6   4   *   *   [RG3.RG4]               (C(C,C[AR1]),N3)					      & 
+ATD CY2    *   6   4   *   *   [RG3.RG4]               (C(C),N3,C[AR1])					      & 
+ATD CY2    *   6   4   *   *   [RG3.RG4]               (C(C(C[AR1])),N3)					      & 
+
+ATD CY1    *   6   4   *   *   [RG3.RG4]               (C(C),C)					      & //DEPENDS ON CY2 
+ATD CY1    *   6   4   *   *   [RG3.RG4]               (C(N3),C)					      & //DEPENDS ON CY2
+ATD CY1    *   6   4   *   *   [RG3.RG4]               (C(C),N3)					      & //DEPENDS ON CY2
+
+ATD CB2    *   6   3   0   *   [AR2,AR1]               (C[AR1,AR2](XN[AR2](H)),C[AR1](H))                & 
+ATD CB2    *   6   3   0   *   [AR2,AR1]               (C[AR1,AR2](C[AR1](H)),XN[AR2](H))                &
+
+ATD CU     *   6   3   1   *   [AR2,RG5]               (N2[AR2,RG5],C3[AR2,RG5](C[AR2,RG5]))          &
+ATD CV     *   6   3   1   *   [AR2,RG5]               (N2[AR2,RG5],C3[AR2,RG5])                      & 
+ATD CV     *   6   3   *   *   [AR2,RG5]               (N2[AR2,RG5],C3[AR2,RG5](N3[AR2,RG5,RG6]),C3)  & 
+
+ATD C!     *   6   3   0   *   [AB]                    (C3[SB',DB](C3(C3(O1))))                       & //DEPENDS ON CS2 CS1 AND CB2
+ATD C!     *   6   3   0   *   [AB]                    (C3[SB',AB],XN,XN) &                           & //DEPENDS ON CS2 CS1 AND CB2
+ATD C!     *   6   3   0   *   [AR1,RG6]               (C3[sb',DB''](XN[AR1.AR2.AR3],XN[AR1.AR2.AR3]),C3[AR1],C3[AR1]) & //DEPENDS ON CS2 AND CB2
+ATD C!     *   6   3   0   *   [AR3]                   (C3[AR1](C3[AR1],C3[AR1]),XN3[AR3],XN3[AR3]) &     //DEPENDS ON CS2 CS1 AND CB2
+ATD C!     *   6   3   0   *   [AR1,RG6]               (N3[AR3]) &
+
+ATD CA2    *   6   3   *   *   *                       (N3,N3,N3)                                     &  
+
+ATD CO     *   6   4   *   *   *                       (O,O)					      &
+
+ATD CR1    *   6   3   1   *   [AR2,RG5]               (N2[AR2,RG5](C3[AR2,RG5]),N3[AR2,RG5](C4[NR])) &
+ATD CR1    *   6   3   1   *   [AR2,RG5]               (N2[AR2,RG5](C3[AR2,RG5]),N3[AR2,RG5](C3[AR2,RG5](H),H)) &
+ATD CR1    *   6   3   1   *   [AR2,RG5]               (N2[AR2,RG5](C3[AR2,RG5]),N3[AR2,RG5](C3[AR2,RG5,RG6],C3[AR1])) &
+ATD CR1    *   6   3   1   *   [AR2,RG5]               (N2[AR2,RG5](C3[AR2,RG5]),O2[AR2,RG5](C3[AR2,RG5])) &
+ATD CR1    *   6   3   1   *   [AR2,RG5]               (N2[AR2,RG5](C3[AR2,RG5]),S2[AR2,RG5](C3[AR2,RG5])) &
+
+ATD C+     *   6   3   0   *   *                       (C4[SB'],C4[SB'],C4[SB']) &
+
+ATD CT2    *   6   4   *   *   *                       &
+
+ATD CB1    *   6   3   *   *   [AR1.AR2.AR3,RG5,RG6]  (C3,N) &
+
+ATD CK2    *  6   3   *   *   [RG5,AR1.AR2.AR3]       (N3[RG5](C3[RG5,RG6]),N2[RG5](C3[RG5,RG6](C3[RG6](H))))     &
+ATD CK1    *  6   3   *   *   [RG5,AR1.AR2.AR3]       (N3,N2)                                           &
+
+ATD CA1    *   6   3   *   *   [AR1,RG6]              (C3[AR1,RG6],C3[AR1,RG6])&
+
+ATD CM1    *   6   3   *   *   [NR.AR4.AR3]           (C3) &
+
+ATD CA1    *   6   3   *   *   *                       (C3) &
+ATD CA1    *   6   3   *   *   [RG6,AR1.AR2]           &
+
+// *** Nitrogens ***
+
+ATD N$     *   7   3   1   *   [RG4]                   (C[RG4],C[RG4],H)             &
+
+ATD N3     *   7   3   1   *   [RG6]  (H,C[RG6,DB](H,C),C[RG6,DB](H,C))  &
+
+ATD N31    *   7   4   4   *   [NR] & 
+ATD N31    *   7   4   1   *   [AR4,RG6]   (C,C[AR4,RG6](C[AR4,RG6]),C[AR4,RG6](C[AR4,RG6])) &
+ATD N31    *   7   4   1   *   [NR]  (C[AR1,RG6](C[AR1,RG6]),C[NR]) & 
+ATD N31    *   7   4   3   *   [NR]  (C[NR](C[NR])) &
+ATD N31    *   7   4   0   *   [NR]  (C[NR]) &
+ATD N31    *   7   4   3   *   [NR] &
+
+ATD NT1    *   7   3   3   &
+
+ATD N1     *   7   3   2   *   *  (C3[AR3](N3[AR3],N2[AR3])) &
+
+ATD N21    *   7   3   2   *   *                       (C[AR1.AR2.AR3](N)) &
+ATD N21    *   7   3   2   *   *                       (C3(N,N)) &
+
+ATD N2     *   7   3   0   *   *                       (O,O,O) &
+//ATD NM     *   7   3   0   *   [NR]                       (C4,C4,C3(O1,C)) &
+
+ATD NO     *   7   3   0   *   *                       (O,O) & // Depends on N2
+
+ATD NZ2    *   7   1   0   *   *                       (C2[NR](C3[NR])) &
+ATD NZ1    *   7   1   0   *   [NR]                    (C2[NR](C))                                 &  
+
+//KWO
+ATD NB     *   7   2   0   *    [AR1.AR2.AR3,RG5]  &
+
+ATD NC     *   7   2   0   *   [AR1,RG6]  &
+ATD NC     *   7   2   0   *   [AR3,RG6]  &
+ATD NC     *   7   2   1   *   [NR]       &
+
+// Phenyl substituted AR3 Rings
+ATD N1     *   7   3   1   *   [AR3,RG6]  (C[AR3,RG6](C[AR1])) &
+ATD N1     *   7   3   1   *   [AR3,RG6]  (C3[AR3](XN[AR3,RG6](C[AR1]))) &
+ATD N1     *   7   3   1   *   [AR3,RG6]  (C3[AR3](C[AR3,RG6](C[AR3](C[AR1])))) &
+ATD N1     *   7   3   1   *   [AR3,RG6]  (C[AR3,RG5,RG6]) &
+
+//
+
+ATD NA     *   7   3   1   *   [AR2,RG5]  &
+ATD NA     *   7   3   0   *   [AR2,RG5]  &
+ATD NA     *   7   3   1   *   [AR3,RG6]  &
+
+ATD N1     *   7   3   *   *   *   (C3(O1))  &
+ATD N1     *   7   3   0   *   *   (C3(O1),C4,C4)  &
+ATD N1     *   7   3   *   *   *   (C3(N2))  &
+ATD N1     *   7   3   *   *   *   (S4(O1,O1))  &
+ATD N1     *   7   2   0   *   [DB]  (C3[DB](H,H),C4)  &
+ATD N1     *   7   3   *   *   *   (O1) &
+//END KWO
+
+ATD NT2    *   7   3   *   *   *  &
+
+// *** Oxygens ***
+ATD OS2    *   8   2   *   *   [RG6]                    (C4[RG6],C4[RG6])         &
+ATD OS2    *   8   2   *   *   [NR]                     (C3[NR](H,C3),C4[NR])     &
+ATD OS2    *   8   2   *   *   [NR]                     (C3[AR1,RG6],C4[NR])      &
+ATD OS2    *   8   2   *   *   [NR]                     (C4[NR],C4[NR])           &
+ATD OS2    *   8   2   *   *   [NR]                     (C3[AR1,RG6],C3[AR1,RG6]) & 
+ATD OS2    *   8   2   *   *   [NR]                     (C4[RG6],C4[NR])          &
+ATD OS2    *   8   2   *   *   [NR]                     (C4[RG6],C4[RG6])         &
+ATD OS2    *   8   2   *   *   [RG5]                (C3[AR2,RG5],C3[AR2,RG5])     &
+ATD OS2    *   8   2   *   *   [RG5]                (C3[AR2,RG5],N2[AR2,RG5])     &
+ATD OS2    *   8   2   *   *   [RG5]                (C4[RG5],C4[RG5])             &
+ATD OS2    *   8   2   *   *   [NR]                     (P4,C4[NR])               &
+ATD OS2    *   8   2   *   *   [NR]                     (P4,C3[AR1,RG6])          &
+ATD OS2    *   8   2   *   *   [RG5]                (C4[RG5],C3[AR4,RG6])         &
+ATD OS2    *   8   2   *   *   [NR]                     (C4[RG6],C3[AR1,RG6])     &
+ATD OS2    *   8   2   0   *   *                     (C4,O2) &
+
+ATD OY1     *   8   1   *   *   [NR]                       (S3[NR])   &
+ATD OY1     *   8   1   *   *   [NR]                       (S3[AR4])  &
+
+ATD OY2    *   8   1   0   *   [NR]                    (S4[NR.AR4]) & 
+
+ATD OU     *   8   1   0   *   [NR]                    (U[NR]) &
+ATD O3     *   8   1   *   *   [NR]                    (N3(O1,O1)) &
+ATD ON     *   8   1   0   *   *                       (N(C))   &
+ATD O21    *   8   1   0   *   *                       (C3(O1))   &
+ATD O22    *   8   1   0   *   *                       (P)   &
+ATD OH1    *   8   2   1   *   *                       (C3(O)) &
+ATD OH4    *   8   1   0   *   [SB,NR]                 (C4)                         &
+ATD OH5    *   8   1   1   &
+
+ATD O2     *   8   1   0   *   *                       (C) &
+
+ATD OS1    *   8   2   0   *   [NR.AR4]                (C3(O),C[NR.AR4.AR1])  &
+
+ATD OH2    *   8   2   1   *   [NR]                    (C4[AR4.AR5,RG6](C4[AR4.AR5,RG6](O2[NR](H)))) &
+ATD OH2    *   8   2   1   *   [NR]                    (C4(C4(O2[NR](H)))) &
+ATD OH2    *   8   2   1   *   [NR]                    (C4[NR](C4[NR](S2[NR]))) &
+ATD OH2    *   8   2   1   *   [NR]                    (C4[NR](C4[NR](F1[NR]))) &
+
+ATD OH3    *   8   2   1   *   [NR]                    (N3[NR]) &
+ATD OH3    *   8   2   1   *   [NR]                    (C4[NR]) &
+ATD OH3    *   8   2   1   *   [NR]                    (C4[AR5,RG6]) &
+ATD OH3    *   8   2   1   *   [NR]                    (C4[AR4,RG6](C4[AR4,RG6](C3[AR4,RG6]))) &
+
+ATD OH2    *   8   2   1   *   [NR]                    (C[AR1,RG6])  &
+
+
+   
+
+// *** Flourines ***
+ATD F2     *   9   1   *   *   [NR]                       (C4[NR](C4(H)))					      &
+ATD F2     *   9   1   *   *   [NR]                       (C4[NR](C3[RG6]))					      &
+ATD F2     *   9   1   *   *   [NR]                       (C4[NR](H))					      &
+ATD F2     *   9   1   *   *   [NR]                       (C4[AR5](C4(H)))					      &
+
+ATD F1   *     9   1   *   *   *                       (C(O(C))) &
+
+ATD F6   *     9   1   *   *   *                       (C(C(O1),F))      & 
+ATD F6   *     9   1   *   *   *                       (C(C[SB'](F,F)))  &
+ATD F6   *     9   1   *   *   *                       (C(C[SB'](F),F))  &
+ATD F6   *     9   1   *   *   *                       (C(F,F,F))  &
+
+ATD F5   *     9   1   *   *   *                       (P6(F,F,F,F,F)) &
+
+ATD F4   *     9   1   *   *   *                       (C3)&
+
+// *** Neon ***
+ATD Ne1    *   10 &
+
+// *** Phosphorous ***
+ATD P+     *   15  4   *   *   *                       (C,C,C,C) &
+ATD P      *   15  & 
+
+
+//ATD SZ     *   16  3   0   *   [NR.RG6]                 (O1,C) &
+
+ATD SH1    *   16  2   2   &
+ATD SH2    *   16  2   1   *   *                        (C) &
+ATD SH3    *   16  1   *   *   *                        (C(H,H,H)) &
+
+ATD SY     *   16  4   0   *   [NR]                 &
+ATD SY     *   16  4   0   *   [AR4]                 &
+ATD SZ     *   16  3   0   *   [NR.AR4]                (O1[NR]) &
+
+ATD S      *   16  &
+
+// *** Chlorines ***
+ATD Cl3    *   17  1   *   *   *                       (C4(Cl,Cl,Cl)) &
+//ATD Cl2    *   17  1   *   *   *                       (C4(Cl,Cl,H) & //United Atom
+ATD Cl1    *   17  *   *   *   *                       (XX) & 
+ATD Cl4    *   17  0   & 
+
+// *** Bromines ***
+ATD Br1    *   35  *   *   *   *                       (XX)  &
+ATD Br2    *   35  0   &
+
+// *** Iodines ***
+ATD I2     *   53  0   &
+ATD I3     *   53  1   &
+
+// *** Zinc ***
+ATD Zn     *   30  &
+
+//GENERIC TYPES
+ATD H      *   1   &
+ATD He     *   2   &
+ATD Li     *   3   &
+ATD Be     *   4   &
+ATD B      *   5   &
+ATD C      *   6   &
+ATD N      *   7   &
+ATD O      *   8   &
+ATD F      *   9   &
+ATD Ne     *   10  &
+ATD Na     *   11  &
+ATD Mg     *   12  &
+ATD Al     *   13  &
+ATD Si     *   14  &
+ATD P      *   15  & 
+ATD S      *   16  &
+ATD Cl     *   17  &
+ATD Ar     *   18  &
+ATD K      *   19  &
+ATD Ca     *   20  &
+ATD Zn     *   30  &
+ATD Br     *   35  &
+ATD Kr     *   36  &
+ATD Rb     *   37  &
+ATD Sr     *   38  &
+ATD I      *   53  &
+ATD Xe     *   54  &
+ATD Cs     *   55  &
+ATD Ba     *   56  &
+ATD La     *   57  &
+ATD Nd     *   60  &
+ATD Eu     *   63  &
+ATD Gd     *   64  &
+ATD Yb     *   70  &
+ATD Ac     *   89  &
+ATD Th     *   90  &
+ATD U      *   92  &
+ATD Am     *   95  &
+--------------------------------------------------------------------------------------------
+============================================================================================
+
+
+
+
+============================================================================================
+			Field descriptions
+============================================================================================
+f1  ATD, which stands for atom type defination, ATD should always in the first three columns 
+f2  Atom type name, can be letters or numbers   
+f3  Residue names, which means this description is only applied to atoms in special residues
+f4  Atomic number 
+f5  Number of attached atoms 
+f6  Number of attached hydrogen atoms
+f7  For hydrogen, number of the electron-withdrawal atoms connected to the atom that the 
+    hydrogen attached
+f8  atomic property
+f9  Chemical enviornment definations
+
+
+============================================================================================
+			Specific symbols
+============================================================================================
+*  Ignore this field
+&  End of defination 
+.  "or" operation in the ring and aromatity descriptions 
+
+
+============================================================================================
+			Predefined words
+============================================================================================
+EW   Electron-withdraw atom
+AA   Amino acid residue
+NA   Nucleric acid
+BIO  AA + NA
+
+AR1  Pure aromatic atom (such as benzene and pyridine)
+AR2  Atom in a planar ring, usually the ring has two continous single bonds and at least two 
+     double bonds
+AR3  Atom in a planar ring, which has one or several double bonds formed between non-ring atoms
+     and the ring atoms
+AR4  Atom other than AR1, AR2, AR3 and AR5. 
+AR5  Pure aliphatic atom in a ring, which is made of sp3 carbon
+
+RG   Ring (from 3-membered to nine-membered)
+RG3  3-membered ring 
+RG4  4-membered ring 
+RG5  5-membered ring 
+RG6  6-membered ring 
+RG7  7-membered ring 
+RG8  8-membered ring 
+RG9  9-membered ring 
+NR   non-ring atom
+
+SB   Single bond
+DB   Double bond
+TB   Triple bond
+AB   Aromatic bond
+DL   Delocalized bond (9 in AM1-BCC)
+sb   Single bond, including aromtaic single, delocalized bond (9 in AM1-BCC) 
+db   Double bond, including aromatic double
+tb   Triple bond
+ 
+'    Bond type (SB sb etc) followed by ' means the current atom forms this kind of bond with the 
+     immediately precessor in a chain of atoms
+     For example, (XD3[SB',db]) means the current atom XD3 has a double bond with the atom in 
+     defination 
+''   Bond type (SB sb etc) followed by '' means the current atom does not form this kind of bond 
+     with the immediately precessor in a chain of atoms
+============================================================================================
+			Miscellaneous
+============================================================================================
+1. maximum line length is 500 characters
+2. no space in the atomic property string
+3. no space in the chemical environment string 
+4. no filed missing before &
+5. the defination order is crucial, special atom types should defined before the more general 
+   ones

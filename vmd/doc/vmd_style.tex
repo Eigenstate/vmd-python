@@ -1,0 +1,52 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%cr                                                                       
+%cr            (C) Copyright 1995 The Board of Trustees of the            
+%cr                        University of Illinois                         
+%cr                         All Rights Reserved                           
+%cr                                                                       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: vmd_style.tex,v $
+%       $Author: justin $        $Locker:  $                $State: Exp $
+%       $Revision: 1.4 $      $Date: 2000/06/22 19:13:53 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%
+% general style conventions for each document.  Explains the
+% formatting of text and sections.  This goes right after the
+% table of contents of each guide.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Document style conventions}
+
+\begin{enumerate}
+
+\BOLDLISTITEM{Object Classes}
+All object class names are indicated with a \OBJ{typewriter}
+font, and begin with a capital letter, i.e.,
+\begin{center}
+  \OBJ{CommandQueue}
+\end{center}
+
+\BOLDLISTITEM{Function Names}
+All function names begin with a lower case letter and are indicated
+with a {\tt typewriter} font, with the return type in {\bf bold} font;
+arguments are specified with the type in {\bf bold} font, and the name
+in {\it italics}, i.e.,
+\begin{center}
+  \FN{char *}{stringdup}{\FA{char *}{s}}
+\end{center}
+When described specifically as a member function of a particular
+class, the class name is prepended, i.e.,
+\begin{center}
+  \FNO{Displayable}{void}{pick}{void *}
+\end{center}
+Unless otherwise specified, functions with no arguments given are
+assumed to have no arguments, and specify {\bf void} in their
+function prototype.
+
+\end{enumerate}

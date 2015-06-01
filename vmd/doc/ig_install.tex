@@ -1,0 +1,138 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%cr                                                                       
+%cr            (C) Copyright 1995 The Board of Trustees of the            
+%cr                        University of Illinois                         
+%cr                         All Rights Reserved                           
+%cr                                                                       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ig_install.tex,v $
+%       $Author: justin $        $Locker:  $                $State: Exp $
+%       $Revision: 1.9 $      $Date: 2000/12/15 23:25:55 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%
+% INSTALLATION GUIDE : installing VMD
+%   1) Creating the executable
+%   2) Setting installation parameters
+%   3) Installing files
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Installing \VMD}
+\label{chapter:ig:install}
+
+Before all the files required for \VMD\ to run properly can be
+installed, the \VMD\ executable must be properly compiled. \VMD\ may
+be compiled for a number of operating systems and may include any of a
+number of optional features.  The standard \VMD\ distribution includes
+a precompiled version of the executable, which may be used immediately
+for installation.  However, the precompiled version of \VMD\ may not
+meet the needs or preferences of the user, and in this case a new
+version of the executable must be created as described in chapter
+\ref{chapter:ig:compile}.  The precompiled executables described in
+table
+\ref{table:ig:execs} are provided in the {\tt src} directory, with the
+given filenames, and may be used for installation if sufficient.  The
+executables have been compiled with the configuration options listed
+in table \ref{table:ig:execs}; the definitions of these
+configuration options are given in chapter \ref{chapter:ig:compile}.
+
+\begin{table}[htb]
+  \hspace{1.1in}
+  \begin{tabular}{|l|l|} \hline
+    Filename & \multicolumn{1}{|c|}{Configuration Options} \\ \hline\hline
+    {\tt vmd\_IRIX6}	& {\tt IRIX6 OPENGL FLTK TCL TK VRPN} \\ \hline
+  \end{tabular}
+  \caption{Precompiled version(s) of \VMD\ provided with the standard distribution.}
+  \label{table:ig:execs}
+\end{table}
+
+\section{Setting installation parameters}
+\label{section:ig:instparams}
+
+After an executable has been created for the proper operating system
+version and with the proper optional features, the first step in
+installing \VMD\ is to set the values of certain installation
+parameters.  These parameters are in the file {\tt
+configure.parameters} in the main \VMD\ working directory.  Edit this
+file and set the preferred values of the following installation
+parameters (other parameters in the file should not be changed; if you
+have already changes these installation parameters as part of the
+steps in compiling a new version of \VMD, you may skip immediately to
+section
+\ref{section:ig:installfile}):
+\input{vmd_paraminst}
+
+If any of the installation parameters are changed, the configure
+script must be run to generate a new Makefile containing the altered
+values.  Also, if a precompiled \VMD\ executable is being used, the
+configure script {\em must} be run to create a Makefile which
+specifies the proper operating system version. If it is necessary to
+run the script again, do the following:
+\begin{enumerate}
+  \item Change the current directory to the main \VMD\ working
+directory.
+  \item Edit the file {\tt configure.options}; make sure the {\tt
+MAKE} option is not included as an item in the list.  If you have
+previously compiled a new version of \VMD\ as described in chapter
+\ref{chapter:ig:compile}, and are now simply installing the resulting
+new executable and data files, leave all other options in this file
+unchanged.  If a precompiled executable is being used, change this
+file to contain a single line identical to the `Configuration Options'
+line in table \ref{table:ig:execs} for the relevant executable. 
+  \item Type the command {\tt configure} to create a new Makefile.
+\end{enumerate}
+
+\section{Installing files}
+\label{section:ig:installfile}
+
+The penultimate step in installing \VMD\ is to run the install command. 
+Once the makefile has been properly created with the required
+installation parameters, change to the {\tt src} directory and type
+the command:
+\begin{quote} {\tt
+  make install
+} \end{quote}
+If either of the directories {\tt INSTALLLIBDIR} or {\tt
+INSTALLBINDIR} do not exist, the installation procedure will
+attempt to create them; this may require the installation command to
+be run with superuser access if the parent directories are in system
+locations.
+
+If you wish to have copies of the \VMD\ documentation guides installed
+into the {\tt INSTALLLIBDIR} directory (in a subdirectory there named
+{\tt doc}), do the following:
+\begin{quote} {\tt
+  make install.doc
+} \end{quote}
+
+
+\section{Checking perl files}
+\label{section:ig:perl}
+
+\VMD\ uses one perl script, {\tt url\_get}, for retrieving web documents
+(used in the ``mol pdbload'', ``mol load webpdb'', ``mol urlload'', and ``url\_get''
+commands).  The default configuration assumes the perl interpreter is
+located in {\tt /usr/local/bin/perl}, but it might not be that way on
+your system.  Check and possibly edit the first line of the script
+\$INSTALLLIBDIR/scripts/vmd/url\_get to point to the correct location.
+On some SGIs this may be in {\tt /usr/sbin/perl}.
+
+\section{Running \VMD}
+\label{section:ig:running}
+
+Once installed, type {\tt vmd} (or whatever value for {\tt INSTALLNAME} was
+used in the installation) to run the program.  This will run an {\tt xterm}
+process to act as the \VMD\ console.  The Users Guide provides a complete
+description of how to actually use \VMD\ to display molecules.
+
+The environment variable {\tt VMDDIR} may be used to specify another
+directory which contains \VMD\ data files and executables, if the {\tt
+INSTALLLIBDIR} directory files are not adequate.  Or, special data
+files may be customized for each user or for all users, as described
+in chapter \ref{chapter:ig:custom}.
+

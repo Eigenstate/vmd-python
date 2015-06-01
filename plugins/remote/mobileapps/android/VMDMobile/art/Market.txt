@@ -1,0 +1,71 @@
+To update the app:
+
+0) Update Market.txt with information describing changes, and cvs commit
+      cvs diff -tr v1-0 
+   will give all changes since v1-0.  (You might need to delete bin and lib
+   directories first)
+1) Make sure that you have created a release APK by doing 'ant release'
+2) Copy the APK into the plugins/remote/doc directory.
+3) Login to http://market.android.com/publish
+4) Click on VMD Remote Control
+5) Click on APK files
+6) Upload the APK, and make it Active
+7) Go to the Product details tab and enter information describing
+   Recent Changes (English) [entered in step 0]
+8) Click 'Save'
+8.5) Make sure that all files in plugins/remote/mobileapps/android/VMDMobile
+     have been committed to cvs
+9) From plugins/remote/mobileapps/android/VMDMobile do 
+     cvs tag -R v1-0-01
+   where 1-0-01 is the current version.
+10) In plugins/remote/mobileapps/android/VMDMobile/AndroidManifest.xml
+    update the versionCode by 1, and change the version name to the version
+    name that you are going to give the next version.
+11) cvs commit AndroidManifest.xml    
+    
+
+
+Description:
+
+
+
+Control your computer's VMD session from your Android device!
+
+This app requires you to have VMD 1.9.1, from the Theoretical and
+Computational Biophysics Group at the University of Illinois, installed on your
+computer.
+
+Note:  This app does NOT give you the ability to run VMD _ON_ your Android
+device.  It allows you to remotely control a VMD session running on your desktop
+computer.
+
+Once this app is connected to a running VMD session you can use it rotate,
+translate, and pinch 'n zoom your system.  It can be used to move through
+the frames of a trajectory that you have loaded into VMD and can also act
+as a tracker.
+
+Script writers can configure the four user buttons to perform whatever VMD
+action they desire.
+
+Visit the website http://www.ks.uiuc.edu/Research/vmd/ for more information on
+the VMD program and usage of the app.
+
+
+
+
+
+
+Updates:
+
+Version Code: 1, VersionName: 1.0      cvs tag: v1-0
+Version Code: 2, VersionName: 1.0.01   cvs tag: v1-0-01
+
+- When doing rotates, a grey circle is now set at the location where
+  you start the rotate
+- Permission ACCESS_NETWORK_STATE is used to determine if wifi is turned
+  on.  If not, a warning message is printed to the screen.
+
+
+
+
+

@@ -1,0 +1,456 @@
+REMARK To keep xtal waters intact, add hydrogens using VMD. The parts end
+REMARK up having resname TIP3 and atomnames OH2, HI, and H2. As DOWSER
+REMARK has a silly way of reading in the resname, this residue appears
+REMARK as TIP in the dictionary. Note that retaining oxygens (xtal waters
+REMARK without hydrogens) would be much more tricky!
+REMARK 
+REMARK Ribonucleotides adapted from GROMOS FF (ffgmx.rtp).
+REMARK Hence, all hydrogens are not explicitly represented.
+REMARK Assumes input PDB contains all RNA heavy atoms, except
+REMARK for the phosphate group in the 5' terminal end.
+REMARK
+REMARK Modified from Cameron Mura's DNA extension. Note 
+REMARK that we need to
+REMARK - add uracil,
+REMARK - add O2* to all residues, and
+REMARK - pay attention to the charges (not same in, eg, 
+REMARK   DGUA and GUA).
+REMARK See below for other modifications.
+REMARK 
+REMARK Note that as far as LJ parameters are concerned for 
+REMARK the atom types: 
+REMARK O = OM = OS, CS2 = CH2, CS1 = CH1, 
+REMARK NR5* = NR5 = NR6* = NR6 = N, 
+REMARK CR51 and CR61 correspond to CHR, and CB corresponds to CR.
+REMARK Therefore the atom types need not be the same as in 
+REMARK ffgmx.rtp.
+REMARK 
+REMARK Cameron Mura had set OS = OA, which does not seem to be 
+REMARK the case. Why? Probably does not matter much.
+REMARK Will make them Os instead. This is the case for
+REMARK O5*, O4*, O3*.
+REMARK
+REMARK Mura has, in the 5' termini, whose force fields are very
+REMARK hard to find, hydrogenated the terminal oxygen such
+REMARK that the hydrogen and oxygen have charges that take out each
+REMARK other. More important, I'd rather keep the phosphate in the
+REMARK 5' terminal end, as does patch 5PHO (as opposed 5TER).
+REMARK Further, there is a no hydrogen in the O3' of the 3' terminus.
+REMARK
+REMARK As force field parameters for termini were few and far between, 
+REMARK I made some educated guesses, that are good enough.
+REMARK My educated guesses are based on CHARMM, adapted to the GROMOS FF 
+REMARK used here. They also are more or less in line with OPLS.
+REMARK The procedure is a as follows.
+REMARK 
+REMARK 1. In 5' end, CHARMM's 5PHO makes O1P, O2P, and O5' about 5% more 
+REMARK negative than in the non-terminal residues. Hence, I chose 
+REMARK values -0.67 for O1P and O2P, and -0.38 for O5'. 
+REMARK 2. In the CHARMM 5PHO, O5T is slightly more negative than O5'. I
+REMARK decided to give it a charge of -0.42.
+REMARK 3. In the CHARMM 5PHO, H5T is half of the absolute value of
+REMARK O5T. I therefore assigned H5T a charge of 0.21.
+REMARK 4. The total charge of the 5' terminal resisue is now -1.3. As
+REMARK the total charge of the two terminal residues must be -2.0,
+REMARK we know that the charge of the 3' terminus must be 0.7.
+REMARK 5. In the CHARMM 3TER, O3' is about the same as O5T, a tiny
+REMARK bit lower. As we assigned a charge of -0.42 to O5T, we will
+REMARK give a charge -0.38 to O3'. 
+REMARK 6. Again in the CHARMM 3TER, H3T has a charge that is 
+REMARK approximately 2/3 of the absolute value of O3T. We therefore
+REMARK give it a value 0.25. 
+REMARK 7. In the CHARMM 3TER, charge of C3' changes from 0.01 to
+REMARK 0.14 when a non-terminal residue becomes a terminal one.
+REMARK So, C3' has to become somewhat more positive. As the whole
+REMARK residue needs to have charge 0.7, we can figure out that
+REMARK it has to be given a charge of 0.07.
+REMARK
+REMARK Added MO6, MO5, MO4, MO3, MO2. Doing this with DOWSER needs tricks
+REMARK to the actual reformatPDB.c file. The orientations of the
+REMARK of the waters (hydrogens) here are not perhaps wonderful,
+REMARK probably decent enough. Oh, and MO1 is not doable,
+REMARK but needs to be done as an MG residue and a TIP water. :(
+REMARK
+REMARK ---------- GUANINE ----------------------------------------
+RESIDUE G
+ATOM G  P    NOT  NOT  0.000   0.000   0.0   0.990 P
+ATOM G  O1P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM G  O2P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM G  O5*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM G  C5*  NOT  NOT  0.000   0.000   0.0   0.000 CH2
+ATOM G  C4*  NOT  NOT  0.000   0.000   0.0   0.160 CH1
+ATOM G  O4*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM G  C1*  NOT  NOT  0.000   0.000   0.0   0.200 CH1
+ATOM G  N9   NOT  NOT  0.000   0.000   0.0  -0.200 N
+ATOM G  C4   NOT  NOT  0.000   0.000   0.0   0.200 CR
+ATOM G  N3   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM G  C2    N3   N2  0.000   0.000   0.0   0.360 CR
+ATOM G  N2    C2  H22  0.000   0.000   0.0  -0.830 N
+ATOM G  H21   N2  NOT  1.000 120.000 180.0   0.415 H
+ATOM G  H22   N2  NOT  1.000 120.000   0.0   0.415 H
+ATOM G  N1    C2   H1  0.000   0.000   0.0  -0.280 N
+ATOM G  H1    N1  NOT  1.000 120.000 180.0   0.280 H
+ATOM G  C6   NOT  NOT  0.000   0.000   0.0   0.380 CR
+ATOM G  O6   NOT  NOT  0.000   0.000   0.0  -0.380 O 
+ATOM G  C5   NOT  NOT  0.000   0.000   0.0   0.000 CR
+ATOM G  N7   NOT  NOT  0.000   0.000   0.0  -0.360 N 
+ATOM G  C8   NOT  NOT  0.000   0.000   0.0   0.360 CHR
+ATOM G  C3*  NOT  NOT  0.000   0.000   0.0   0.000 CH1
+ATOM G  C2*  C3*  O2*  0.000   0.000   0.0   0.150 CH1
+ATOM G  O2*  C2*  H2*  0.000   0.000   0.0  -0.548 OA
+ATOM G  H2*  O2*  NOT  1.000 115.000 148.6   0.398 H
+ATOM G  O3*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+REMARK NOTE: had to slightly reorder the terminal sugar atoms so
+REMARK       that defined ones lie ahead in the list of undefined 
+REMARK       ones ("defined" = coordinated provided in input PDB).
+RESIDUE G5
+ATOM G5 C4*  NOT  NOT  0.000   0.000   0.0   0.160 CH1
+ATOM G5 O4*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM G5 C1*  NOT  NOT  0.000   0.000   0.0   0.200 CH1
+ATOM G5 C5*  C4*  O5*  0.000   0.000   0.0   0.000 CH2
+ATOM G5 O5*  C5*  H5T  0.000   0.000   0.0  -0.398 OA
+ATOM G5 H5T  O5*  NOT  1.000 109.500 180.0   0.398 H
+ATOM G5 N9   NOT  NOT  0.000   0.000   0.0  -0.200 N
+ATOM G5 C4   NOT  NOT  0.000   0.000   0.0   0.200 CR
+ATOM G5 N3   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM G5 C2    N3   N2  0.000   0.000   0.0   0.360 CR
+ATOM G5 N2    C2  H22  0.000   0.000   0.0  -0.830 N
+ATOM G5 H21   N2  NOT  1.000 120.000 180.0   0.415 H
+ATOM G5 H22   N2  NOT  1.000 120.000   0.0   0.415 H
+ATOM G5 N1    C2   H1  0.000   0.000   0.0  -0.280 N
+ATOM G5 H1    N1  NOT  1.000 120.000 180.0   0.280 H
+ATOM G5 C6   NOT  NOT  0.000   0.000   0.0   0.380 CR
+ATOM G5 O6   NOT  NOT  0.000   0.000   0.0  -0.380 O
+ATOM G5 C5   NOT  NOT  0.000   0.000   0.0   0.000 CR
+ATOM G5 N7   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM G5 C8   NOT  NOT  0.000   0.000   0.0   0.360 CHR
+ATOM G5 C3*  NOT  NOT  0.000   0.000   0.0   0.000 CH1
+ATOM G5 C2*  C3*  O2*  0.000   0.000   0.0   0.150 CH1
+ATOM G5 O2*  C2*  H2*  0.000   0.000   0.0  -0.548 OA
+ATOM G5 H2*  O2*  NOT  1.000 115.000 148.6   0.398 H
+ATOM G5 O3*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+RESIDUE G3
+ATOM G3 P    NOT  NOT  0.000   0.000   0.0   0.990 P
+ATOM G3 O1P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM G3 O2P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM G3 O5*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM G3 C5*  NOT  NOT  0.000   0.000   0.0   0.000 CH2
+ATOM G3 C4*  NOT  NOT  0.000   0.000   0.0   0.160 CH1
+ATOM G3 O4*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM G3 C1*  NOT  NOT  0.000   0.000   0.0   0.200 CH1
+ATOM G3 N9   NOT  NOT  0.000   0.000   0.0  -0.200 N
+ATOM G3 C4   NOT  NOT  0.000   0.000   0.0   0.200 CR
+ATOM G3 N3   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM G3 C2    N3   N2  0.000   0.000   0.0   0.360 CR
+ATOM G3 N2    C2  H22  0.000   0.000   0.0  -0.830 N
+ATOM G3 H21   N2  NOT  1.000 120.000 180.0   0.415 H
+ATOM G3 H22   N2  NOT  1.000 120.000   0.0   0.415 H
+ATOM G3 N1    C2   H1  0.000   0.000   0.0  -0.280 N
+ATOM G3 H1    N1  NOT  1.000 120.000 180.0   0.280 H
+ATOM G3 C6   NOT  NOT  0.000   0.000   0.0   0.380 CR
+ATOM G3 O6   NOT  NOT  0.000   0.000   0.0  -0.380 O 
+ATOM G3 C5   NOT  NOT  0.000   0.000   0.0   0.000 CR
+ATOM G3 N7   NOT  NOT  0.000   0.000   0.0  -0.360 N 
+ATOM G3 C8   NOT  NOT  0.000   0.000   0.0   0.360 CHR
+ATOM G3 C3*  C4*  NOT  0.000   0.000   0.0   0.070 CH1
+ATOM G3 C2*  C3*  O2*  0.000   0.000   0.0   0.150 CH1
+ATOM G3 O2*  C2*  H2*  0.000   0.000   0.0  -0.548 OA
+ATOM G3 H2*  O2*  NOT  1.000 115.000 148.6   0.398 H
+ATOM G3 O3*  C3*  NOT  0.000   0.000   0.0  -0.380 OA
+ATOM G3 H3T  O3*  NOT  1.000 115.000 148.6   0.250 H
+REMARK ---------- URACIL ----------------------------------------
+RESIDUE U
+ATOM U  P    NOT  NOT  0.000   0.000   0.0   0.990 P
+ATOM U  O1P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM U  O2P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM U  O5*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM U  C5*  NOT  NOT  0.000   0.000   0.0   0.000 CH2
+ATOM U  C4*  NOT  NOT  0.000   0.000   0.0   0.160 CH1
+ATOM U  O4*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM U  C1*  NOT  NOT  0.000   0.000   0.0   0.200 CH1
+ATOM U  N1   NOT  NOT  0.000   0.000   0.0  -0.200 N
+ATOM U  C6   NOT  NOT  0.000   0.000   0.0   0.200 CHR
+ATOM U  C2    N1   N3  0.000   0.000   0.0   0.380 CR
+ATOM U  O2   NOT  NOT  0.000   0.000   0.0  -0.380 O
+ATOM U  N3    C2   C4  0.000   0.000   0.0  -0.280 N
+ATOM U  H3    N3  NOT  1.000 120.000 180.0   0.280 H
+ATOM U  C4   NOT  NOT  0.000   0.000   0.0   0.380 CR
+ATOM U  O4   NOT  NOT  0.000   0.000   0.0  -0.380 O
+ATOM U  C5   NOT  NOT  0.000   0.000   0.0   0.000 CHR
+ATOM U  C3*  NOT  NOT  0.000   0.000   0.0   0.000 CH1
+ATOM U  C2*  C3*  O2*  0.000   0.000   0.0   0.150 CH1
+ATOM U  O2*  C2*  H2*  0.000   0.000   0.0  -0.548 OA
+ATOM U  H2*  O2*  NOT  1.000 115.000 148.6   0.398 H
+ATOM U  O3*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+RESIDUE U5
+ATOM U5 C4*  NOT  NOT  0.000   0.000   0.0   0.160 CH1
+ATOM U5 O4*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM U5 C1*  NOT  NOT  0.000   0.000   0.0   0.200 CH1
+ATOM U5 C5*  C4*  O5*  0.000   0.000   0.0   0.000 CH2
+ATOM U5 O5*  C5*  H5T  0.000   0.000   0.0  -0.398 OA
+ATOM U5 H5T  O5*  NOT  1.000 109.500 180.0   0.398 H
+ATOM U5 N1   NOT  NOT  0.000   0.000   0.0  -0.200 N
+ATOM U5 C6   NOT  NOT  0.000   0.000   0.0   0.200 CHR
+ATOM U5 C2    N1   N3  0.000   0.000   0.0   0.380 CR
+ATOM U5 O2   NOT  NOT  0.000   0.000   0.0  -0.380 O
+ATOM U5 N3    C2   C4  0.000   0.000   0.0  -0.280 N
+ATOM U5 H3    N3  NOT  1.000 120.000 180.0   0.280 H
+ATOM U5 C4   NOT  NOT  0.000   0.000   0.0   0.380 CR
+ATOM U5 O4   NOT  NOT  0.000   0.000   0.0  -0.380 O
+ATOM U5 C5   NOT  NOT  0.000   0.000   0.0   0.000 CHR
+ATOM U5 C3*  NOT  NOT  0.000   0.000   0.0   0.000 CH1
+ATOM U5 C2*  C3*  O2*  0.000   0.000   0.0   0.150 CH1
+ATOM U5 O2*  C2*  H2*  0.000   0.000   0.0  -0.548 OA
+ATOM U5 H2*  O2*  NOT  1.000 115.000 148.6   0.398 H
+ATOM U5 O3*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+RESIDUE U3
+ATOM U3 P    NOT  NOT  0.000   0.000   0.0   0.990 P
+ATOM U3 O1P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM U3 O2P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM U3 O5*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM U3 C5*  NOT  NOT  0.000   0.000   0.0   0.000 CH2
+ATOM U3 C4*  NOT  NOT  0.000   0.000   0.0   0.160 CH1
+ATOM U3 O4*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM U3 C1*  NOT  NOT  0.000   0.000   0.0   0.200 CH1
+ATOM U3 N1   NOT  NOT  0.000   0.000   0.0  -0.200 N
+ATOM U3 C6   NOT  NOT  0.000   0.000   0.0   0.200 CHR
+ATOM U3 C2    N1   N3  0.000   0.000   0.0   0.380 CR
+ATOM U3 O2   NOT  NOT  0.000   0.000   0.0  -0.380 O
+ATOM U3 N3    C2   C4  0.000   0.000   0.0  -0.280 N
+ATOM U3 H3    N3  NOT  1.000 120.000 180.0   0.280 H
+ATOM U3 C4   NOT  NOT  0.000   0.000   0.0   0.380 CR
+ATOM U3 O4   NOT  NOT  0.000   0.000   0.0  -0.380 O
+ATOM U3 C5   NOT  NOT  0.000   0.000   0.0   0.000 CHR
+ATOM U3 C3*  C4*  NOT  0.000   0.000   0.0   0.070 CH1
+ATOM U3 C2*  C3*  O2*  0.000   0.000   0.0   0.150 CH1
+ATOM U3 O2*  C2*  H2*  0.000   0.000   0.0  -0.548 OA
+ATOM U3 H2*  O2*  NOT  1.000 115.000 148.6   0.398 H
+ATOM U3 O3*  C3*  NOT  0.000   0.000   0.0  -0.380 OA
+ATOM U3 H3T  O3*  NOT  1.000 115.000 148.6   0.250 H
+REMARK ---------- CYTOSINE ---------------------------------------
+RESIDUE C
+ATOM C  P    NOT  NOT  0.000   0.000   0.0   0.990 P
+ATOM C  O1P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM C  O2P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM C  O5*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM C  C5*  NOT  NOT  0.000   0.000   0.0   0.000 CH2
+ATOM C  C4*  NOT  NOT  0.000   0.000   0.0   0.160 CH1
+ATOM C  O4*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM C  C1*  NOT  NOT  0.000   0.000   0.0   0.200 CH1
+ATOM C  N1   NOT  NOT  0.000   0.000   0.0  -0.200 N
+ATOM C  C6   NOT  NOT  0.000   0.000   0.0   0.200 CHR
+ATOM C  C2   NOT  NOT  0.000   0.000   0.0   0.380 CR
+ATOM C  O2   NOT  NOT  0.000   0.000   0.0  -0.380 O
+ATOM C  N3   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM C  C4    N3   C5  0.000   0.000   0.0   0.360 CR
+ATOM C  N4    C4  H42  0.000   0.000   0.0  -0.830 N
+ATOM C  H41   N4  NOT  1.000 120.000 180.0   0.415 H
+ATOM C  H42   N4  NOT  1.000 120.000   0.0   0.415 H
+ATOM C  C5   NOT  NOT  0.000   0.000   0.0   0.000 CHR
+ATOM C  C3*  NOT  NOT  0.000   0.000   0.0   0.000 CH1
+ATOM C  C2*  C3*  O2*  0.000   0.000   0.0   0.150 CH1
+ATOM C  O2*  C2*  H2*  0.000   0.000   0.0  -0.548 OA
+ATOM C  H2*  O2*  NOT  1.000 115.000 148.6   0.398 H
+ATOM C  O3*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+RESIDUE C5
+ATOM C5 C4*  NOT  NOT  0.000   0.000   0.0   0.160 CH1
+ATOM C5 O4*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM C5 C1*  NOT  NOT  0.000   0.000   0.0   0.200 CH1
+ATOM C5 C5*  C4*  O5*  0.000   0.000   0.0   0.000 CH2
+ATOM C5 O5*  C5*  H5T  0.000   0.000   0.0  -0.398 OA
+ATOM C5 H5T  O5*  NOT  1.000 109.500 180.0   0.398 H
+ATOM C5 N1   NOT  NOT  0.000   0.000   0.0  -0.200 N
+ATOM C5 C6   NOT  NOT  0.000   0.000   0.0   0.200 CHR
+ATOM C5 C2   NOT  NOT  0.000   0.000   0.0   0.380 CR
+ATOM C5 O2   NOT  NOT  0.000   0.000   0.0  -0.380 O
+ATOM C5 N3   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM C5 C4    N3   C5  0.000   0.000   0.0   0.360 CR
+ATOM C5 N4    C4  H42  0.000   0.000   0.0  -0.830 N
+ATOM C5 H41   N4  NOT  1.000 120.000 180.0   0.415 H
+ATOM C5 H42   N4  NOT  1.000 120.000   0.0   0.415 H
+ATOM C5 C5   NOT  NOT  0.000   0.000   0.0   0.000 CHR
+ATOM C5 C3*  NOT  NOT  0.000   0.000   0.0   0.000 CH1
+ATOM C5 C2*  C3*  O2*  0.000   0.000   0.0   0.150 CH1
+ATOM C5 O2*  C2*  H2*  0.000   0.000   0.0  -0.548 OA
+ATOM C5 H2*  O2*  NOT  1.000 115.000 148.6   0.398 H
+ATOM C5 O3*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+RESIDUE C3
+ATOM C3 P    NOT  NOT  0.000   0.000   0.0   0.990 P
+ATOM C3 O1P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM C3 O2P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM C3 O5*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM C3 C5*  NOT  NOT  0.000   0.000   0.0   0.000 CH2
+ATOM C3 C4*  NOT  NOT  0.000   0.000   0.0   0.160 CH1
+ATOM C3 O4*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM C3 C1*  NOT  NOT  0.000   0.000   0.0   0.200 CH1
+ATOM C3 N1   NOT  NOT  0.000   0.000   0.0  -0.200 N
+ATOM C3 C6   NOT  NOT  0.000   0.000   0.0   0.200 CHR
+ATOM C3 C2   NOT  NOT  0.000   0.000   0.0   0.380 CR
+ATOM C3 O2   NOT  NOT  0.000   0.000   0.0  -0.380 O
+ATOM C3 N3   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM C3 C4    N3   C5  0.000   0.000   0.0   0.360 CR
+ATOM C3 N4    C4  H42  0.000   0.000   0.0  -0.830 N
+ATOM C3 H41   N4  NOT  1.000 120.000 180.0   0.415 H
+ATOM C3 H42   N4  NOT  1.000 120.000   0.0   0.415 H
+ATOM C3 C5   NOT  NOT  0.000   0.000   0.0   0.000 CHR
+ATOM C3 C3*  C4*  NOT  0.000   0.000   0.0   0.070 CH1
+ATOM C3 C2*  C3*  O2*  0.000   0.000   0.0   0.150 CH1
+ATOM C3 O2*  C2*  H2*  0.000   0.000   0.0  -0.548 OA
+ATOM C3 H2*  O2*  NOT  1.000 115.000 148.6   0.398 H
+ATOM C3 O3*  C3*  NOT  0.000   0.000   0.0  -0.380 OA
+ATOM C3 H3T  O3*  NOT  1.000 115.000 148.6   0.250 H
+REMARK ---------- ADENINE ----------------------------------------
+RESIDUE A
+ATOM A  P    NOT  NOT  0.000   0.000   0.0   0.990 P
+ATOM A  O1P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM A  O2P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM A  O5*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM A  C5*  NOT  NOT  0.000   0.000   0.0   0.000 CH2
+ATOM A  C4*  NOT  NOT  0.000   0.000   0.0   0.160 CH1
+ATOM A  O4*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM A  C1*  NOT  NOT  0.000   0.000   0.0   0.200 CH1
+ATOM A  N9   NOT  NOT  0.000   0.000   0.0  -0.200 N
+ATOM A  C4   NOT  NOT  0.000   0.000   0.0   0.200 CR
+ATOM A  N3   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM A  C2   NOT  NOT  0.000   0.000   0.0   0.360 CHR
+ATOM A  N1   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM A  C6    N1   C5  0.000   0.000   0.0   0.360 CR
+ATOM A  N6    C6  H62  0.000   0.000   0.0  -0.830 N
+ATOM A  H61   N6  NOT  1.000 120.000 180.0   0.415 H
+ATOM A  H62   N6  NOT  1.000 120.000   0.0   0.415 H
+ATOM A  C5   NOT  NOT  0.000   0.000   0.0   0.000 CR
+ATOM A  N7   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM A  C8   NOT  NOT  0.000   0.000   0.0   0.360 CHR
+ATOM A  C3*  NOT  NOT  0.000   0.000   0.0   0.000 CH1
+ATOM A  C2*  C3*  O2*  0.000   0.000   0.0   0.150 CH1
+ATOM A  O2*  C2*  H2*  0.000   0.000   0.0  -0.548 OA
+ATOM A  H2*  O2*  NOT  1.000 115.000 148.6   0.398 H
+ATOM A  O3*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+RESIDUE A5
+ATOM A5 C4*  NOT  NOT  0.000   0.000   0.0   0.160 CH1
+ATOM A5 O4*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM A5 C1*  NOT  NOT  0.000   0.000   0.0   0.200 CH1
+ATOM A5 C5*  C4*  O5*  0.000   0.000   0.0   0.000 CH2
+ATOM A5 O5*  C5*  H5T  0.000   0.000   0.0  -0.398 OA
+ATOM A5 H5T  O5*  NOT  1.000 109.500 180.0   0.398 H
+ATOM A5 N9   NOT  NOT  0.000   0.000   0.0  -0.200 N
+ATOM A5 C4   NOT  NOT  0.000   0.000   0.0   0.200 CR
+ATOM A5 N3   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM A5 C2   NOT  NOT  0.000   0.000   0.0   0.360 CHR
+ATOM A5 N1   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM A5 C6    N1   C5  0.000   0.000   0.0   0.360 CR
+ATOM A5 N6    C6  H62  0.000   0.000   0.0  -0.830 N
+ATOM A5 H61   N6  NOT  1.000 120.000 180.0   0.415 H
+ATOM A5 H62   N6  NOT  1.000 120.000   0.0   0.415 H
+ATOM A5 C5   NOT  NOT  0.000   0.000   0.0   0.000 CR
+ATOM A5 N7   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM A5 C8   NOT  NOT  0.000   0.000   0.0   0.360 CHR
+ATOM A5 C3*  NOT  NOT  0.000   0.000   0.0   0.000 CH1
+ATOM A5 C2*  C3*  O2*  0.000   0.000   0.0   0.150 CH1
+ATOM A5 O2*  C2*  H2*  0.000   0.000   0.0  -0.548 OA
+ATOM A5 H2*  O2*  NOT  1.000 115.000 148.6   0.398 H
+ATOM A5 O3*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+RESIDUE A3
+ATOM A3 P    NOT  NOT  0.000   0.000   0.0   0.990 P
+ATOM A3 O1P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM A3 O2P  NOT  NOT  0.000   0.000   0.0  -0.635 O 
+ATOM A3 O5*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM A3 C5*  NOT  NOT  0.000   0.000   0.0   0.000 CH2
+ATOM A3 C4*  NOT  NOT  0.000   0.000   0.0   0.160 CH1
+ATOM A3 O4*  NOT  NOT  0.000   0.000   0.0  -0.360 O
+ATOM A3 C1*  NOT  NOT  0.000   0.000   0.0   0.200 CH1
+ATOM A3 N9   NOT  NOT  0.000   0.000   0.0  -0.200 N
+ATOM A3 C4   NOT  NOT  0.000   0.000   0.0   0.200 CR
+ATOM A3 N3   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM A3 C2   NOT  NOT  0.000   0.000   0.0   0.360 CHR
+ATOM A3 N1   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM A3 C6    N1   C5  0.000   0.000   0.0   0.360 CR
+ATOM A3 N6    C6  H62  0.000   0.000   0.0  -0.830 N
+ATOM A3 H61   N6  NOT  1.000 120.000 180.0   0.415 H
+ATOM A3 H62   N6  NOT  1.000 120.000   0.0   0.415 H
+ATOM A3 C5   NOT  NOT  0.000   0.000   0.0   0.000 CR
+ATOM A3 N7   NOT  NOT  0.000   0.000   0.0  -0.360 N
+ATOM A3 C8   NOT  NOT  0.000   0.000   0.0   0.360 CHR
+ATOM A3 C3*  C4*  NOT  0.000   0.000   0.0   0.070 CH1
+ATOM A3 C2*  C3*  O2*  0.000   0.000   0.0   0.150 CH1
+ATOM A3 O2*  C2*  H2*  0.000   0.000   0.0  -0.548 OA
+ATOM A3 H2*  O2*  NOT  1.000 115.000 148.6   0.398 H
+ATOM A3 O3*  C3*  NOT  0.000   0.000   0.0  -0.380 OA
+ATOM A3 H3T  O3*  NOT  1.000 115.000 148.6   0.250 H
+REMARK ---------- MAGNESIUMS ----------------------------------------
+RESIDUE MO6
+ATOM MO6  O1   NOT  MG    0.000    0.0    0.0  -0.820 OW
+ATOM MO6  MG   O1   O6    0.000    0.0    0.0   2.000 MG
+ATOM MO6  O2   MG   H22   0.000    0.0    0.0  -0.820 OW
+ATOM MO6  H21  O2   NOT   1.000  125.3   90.0   0.410 H
+ATOM MO6  H22  O2   NOT   1.000  125.3  -90.0   0.410 H
+ATOM MO6  O3   MG   H32   0.000    0.0    0.0  -0.820 OW
+ATOM MO6  H31  O3   NOT   1.000  125.3  180.0   0.410 H
+ATOM MO6  H32  O3   NOT   1.000  125.3    0.0   0.410 H
+ATOM MO6  O4   MG   H42   0.000    0.0    0.0  -0.820 OW
+ATOM MO6  H41  O4   NOT   1.000  125.3  180.0   0.410 H
+ATOM MO6  H42  O4   NOT   1.000  125.3    0.0   0.410 H
+ATOM MO6  O5   MG   H52   0.000    0.0    0.0  -0.820 OW
+ATOM MO6  H51  O5   NOT   1.000  125.3   90.0   0.410 H
+ATOM MO6  H52  O5   NOT   1.000  125.3  -90.0   0.410 H
+ATOM MO6  O6   MG   H62   0.000    0.0    0.0  -0.820 OW
+ATOM MO6  H61  O6   NOT   1.000  125.3   90.0   0.410 H
+ATOM MO6  H62  O6   NOT   1.000  125.3  -90.0   0.410 H
+ATOM MO6  H11  O1   NOT   1.000  125.3  180.0   0.410 H
+ATOM MO6  H12  O1   NOT   1.000  125.3    0.0   0.410 H
+RESIDUE MO5
+ATOM MO5  O1   NOT  MG    0.000    0.0    0.0  -0.820 OW
+ATOM MO5  MG   O1   O5    0.000    0.0    0.0   2.000 MG
+ATOM MO5  O2   MG   H22   0.000    0.0    0.0  -0.820 OW
+ATOM MO5  H21  O2   NOT   1.000  125.3   90.0   0.410 H
+ATOM MO5  H22  O2   NOT   1.000  125.3  -90.0   0.410 H
+ATOM MO5  O3   MG   H32   0.000    0.0    0.0  -0.820 OW
+ATOM MO5  H31  O3   NOT   1.000  125.3  180.0   0.410 H
+ATOM MO5  H32  O3   NOT   1.000  125.3    0.0   0.410 H
+ATOM MO5  O4   MG   H42   0.000    0.0    0.0  -0.820 OW
+ATOM MO5  H41  O4   NOT   1.000  125.3  180.0   0.410 H
+ATOM MO5  H42  O4   NOT   1.000  125.3    0.0   0.410 H
+ATOM MO5  O5   MG   H52   0.000    0.0    0.0  -0.820 OW
+ATOM MO5  H51  O5   NOT   1.000  125.3   90.0   0.410 H
+ATOM MO5  H52  O5   NOT   1.000  125.3  -90.0   0.410 H
+ATOM MO5  H11  O1   NOT   1.000  125.3  180.0   0.410 H
+ATOM MO5  H12  O1   NOT   1.000  125.3    0.0   0.410 H
+RESIDUE MO4
+ATOM MO4  O1   NOT  MG    0.000    0.0    0.0  -0.820 OW
+ATOM MO4  MG   O1   O4    0.000    0.0    0.0   2.000 MG
+ATOM MO4  O2   MG   H22   0.000    0.0    0.0  -0.820 OW
+ATOM MO4  H21  O2   NOT   1.000  125.3   90.0   0.410 H
+ATOM MO4  H22  O2   NOT   1.000  125.3  -90.0   0.410 H
+ATOM MO4  O3   MG   H32   0.000    0.0    0.0  -0.820 OW
+ATOM MO4  H31  O3   NOT   1.000  125.3  180.0   0.410 H
+ATOM MO4  H32  O3   NOT   1.000  125.3    0.0   0.410 H
+ATOM MO4  O4   MG   H42   0.000    0.0    0.0  -0.820 OW
+ATOM MO4  H41  O4   NOT   1.000  125.3  180.0   0.410 H
+ATOM MO4  H42  O4   NOT   1.000  125.3    0.0   0.410 H
+ATOM MO4  H11  O1   NOT   1.000  125.3  180.0   0.410 H
+ATOM MO4  H12  O1   NOT   1.000  125.3    0.0   0.410 H
+RESIDUE MO3
+ATOM MO3  O1   NOT  MG    0.000    0.0    0.0  -0.820 OW
+ATOM MO3  MG   O1   O3    0.000    0.0    0.0   2.000 MG
+ATOM MO3  O2   MG   H22   0.000    0.0    0.0  -0.820 OW
+ATOM MO3  H21  O2   NOT   1.000  125.3   90.0   0.410 H
+ATOM MO3  H22  O2   NOT   1.000  125.3  -90.0   0.410 H
+ATOM MO3  O3   MG   H32   0.000    0.0    0.0  -0.820 OW
+ATOM MO3  H31  O3   NOT   1.000  125.3  180.0   0.410 H
+ATOM MO3  H32  O3   NOT   1.000  125.3    0.0   0.410 H
+ATOM MO3  H11  O1   NOT   1.000  125.3  180.0   0.410 H
+ATOM MO3  H12  O1   NOT   1.000  125.3    0.0   0.410 H
+RESIDUE MO2
+ATOM MO2  O1   NOT  MG    0.000    0.0    0.0  -0.820 OW
+ATOM MO2  MG   O1   O2    0.000    0.0    0.0   2.000 MG
+ATOM MO2  O2   MG   H22   0.000    0.0    0.0  -0.820 OW
+ATOM MO2  H21  O2   NOT   1.000  125.3   90.0   0.410 H
+ATOM MO2  H22  O2   NOT   1.000  125.3  -90.0   0.410 H
+ATOM MO2  H11  O1   NOT   1.000  125.3  180.0   0.410 H
+ATOM MO2  H12  O1   NOT   1.000  125.3    0.0   0.410 H
+RESIDUE MG
+ATOM MG   MG   NOT  NOT   0.000    0.0    0.0   2.000 MG
+RESIDUE TIP
+ATOM TIP  OH2  NOT  H2    0.000    0.0    0.0  -0.820 OW
+ATOM TIP  H1   OH2  NOT   1.000    0.0    0.0   0.410 H
+ATOM TIP  H2   OH2  NOT   1.000    0.0    0.0   0.410 H

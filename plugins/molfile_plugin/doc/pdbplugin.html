@@ -1,0 +1,81 @@
+<!--#set var="TITLE" value="PDB Plugin, Version 1.16"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads and writes molecular coordinate data stored in the
+RCSB Protein Data Bank
+<a href="http://www.rcsb.org/pdb/file_formats/pdb/pdbguide2.2/guide2.2_frame.html">PDB file format</a>.
+
+<h3>Notes:</h3>
+<p><b>Support for non-standard PDB files</b>
+The PDB plugin will accept a number of variations of the PDB
+file format which are technically violations of the specification.
+These include files containing more than 99,999 ATOM/HETATM records,
+ATOM records with serial number fields extending into the space reserved
+for record keywords, and various other transgressions.
+
+<p><b>ATOM, HETATM records</b>
+The PDB plugin processes all fields in the ATOM and HETATM records.
+
+<p><b>CONECT records</b>
+VMD reads all CONECT records and treats them as an indication of
+"special" bonds that are noteworthy beyond the obvious ones that a
+simple distance based search would find.  VMD reads all of the bonds
+from the CONECT records, and then adds the bonds found by an automatic
+distance search, skipping any duplicates.
+
+<p><b>HEADER record</b>
+The PDB header accession code, data, and classification
+information information are read from the header, but only the 
+accession code and date are returned by the plugin.
+
+<p><b>REMARK records</b>
+All REMARK records are read and returned to VMD by the plugin.
+
+<p><b>Alternate Location Identifiers</b>
+Some PDB files contain ATOM records with non-empty alternate location
+identifiers (AltLoc) which indicate alternative conformations for parts of the
+structure.  VMD 1.8.4 and above reads the AltLoc fields and uses them to 
+prevent generation of spurious bonds between conformations of the structure,
+and to allow differet conformations to be selected using the "altloc" atom
+selection keyword.
+
+<p><b>Interpretation of atom serial numbers</b>
+<br>
+Since PDB files can only store 99,999 atoms without overrunning the
+columns designated for atom indices etc, the PDB plugin doesn't directly 
+use the atom indices specified in the PDB file as its own indices, instead 
+it keeps its own independent atom index counter, allowing it to read files
+containing millions of atoms.  The atom index field for atoms beyond 99,999
+may contain alphanumeric characters, or some other unique string scheme,
+as has commonly been used in software such as X-PLOR/CNS, and other packages.
+</p>
+
+<p><b>Unit Cell</b>
+<br>
+The PDB plugin reads in the CRYST1 unit cell information for use with 
+periodic image display when available. 
+
+<p><b>Multi-structure PDB files</b>
+The PDB plugin reads multi-structure PDB files and treats them 
+as an trajectory of atom positions, if each structure contains
+the same number of atoms.  If the subsequent structures have mismatched
+atom counts, only the first structure is returned.
+
+<p><b>Unused data</b>
+<br>
+Various PDB record types and fields are ignored by VMD, in general
+VMD doesn't do anything with the sequence data or crystallography-specific 
+fields in the format presently.  
+<br>
+All unused PDB records are returned as remark data by the PDB plugin,
+allowing this information to be parsed and accessed by plugins.
+While somewhat hackish and generally not how we'd prefer to do things,
+much of the information provided in PDB files is fairly free format,
+or provided in REMARK lines anyway, so this provides a means of getting
+at it, for plugins that are crafty enough to read this information.
+</p>
+
+
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

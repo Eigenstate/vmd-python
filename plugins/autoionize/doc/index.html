@@ -1,0 +1,133 @@
+<!--#set var="TITLE" value="Autoionize Plugin, Version 1.3"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<!--<h2 align="center"><a href="http://www.chem.duke.edu/~ilya/">Ilya Balabin</a>, Marcos Sotomayor</h2>-->
+<a href="autoionizegui.gif"><img width=300 align=right src="autoionizegui.gif"></a>
+
+<p><b>Why add ions?</b> Some proteins may be (and sometimes are) sensitive
+to the ionic strength of the surrounding solvent. Even when that is not the
+case, adding ions is commonly used to make the net electric charge of the
+system zero. In molecular dynamics (MD) simulations with periodic boundary
+conditions, the energy of the electrostatic interactions is often computed
+using the particle-mesh Ewald (PME) summation, which requires the system
+to be electrically neutral.</p> 
+
+<p>The Autoionize plugin provides a quick and easy means to make the net charge
+of the system zero by adding ions to the solvent. Ion placement is random, but
+but there are minimum distances between ions and molecule as well as between
+any two ions. Autoionize requires a solvated system in psf/pdb format,
+and produces new psf/pdb files with added ions using the CHARMM27 force
+field.</p>
+
+<h3>Ion placement modes</h3>
+
+<p>Autoionize currently supports three ion placement modes: (1) only
+neutralize system; (2) neutralize system and set the salt concentration;
+ and (3) user-defined number of ions.</p>
+
+<p><b>Neutralizing the system.</b>
+In this mode, Autoionize will add just enough ions to neutralize the
+system. By default, Na<sup>+</sup> and Cl<sup>-</sup> are used, but
+the cation and anion can be changed to any of the supported ions.</p>
+
+<p><b>Setting the salt concentration.</b>
+In this mode, Autoionize will first add enough ions to neutrlize the
+system, after which additional ions will be placed according to the 
+requested salt concentration given in mol/L. 
+By default, Na<sup>+</sup> and Cl<sup>-</sup> are used, but
+the cation and anion can be changed to any of the supported ions.</p>
+
+<!-- <p><b>Setting the ionic strength.</b>
+In this mode, Autoionize will first add enough ions to neutralize the
+system, after which additional ios will be placed according to the
+requested ionic strength given in mol/L. 
+By default, Na<sup>+</sup> and Cl<sup>-</sup> are used, but
+the cation and anion can be changed to any of the supported ions.
+The ionic strength is defined as</p>
+
+<p>&nbsp;&nbsp;&nbsp;<img src="is.png"></p>
+
+<p>where <i>c<sub>i</sub></i> and <i>z<sub>i</sub></i> are the molar
+  concentration and charge of ion <i>i</i>, respectively, and the sum is
+  performed over all atoms <i>i</i>. It is customary to use units of 
+  molality (mol of ions per kg of solvent); for simplicity, however, 
+  Autoionize uses molarity (mol of ions per liter of solvent).</p>
+
+-->
+
+<p><b>User-defined number of ions.</b>
+In this mode, Autoionize will place the exact number of each ion
+requested by the user.</p>
+
+<p><b>Note.</b> Ions placed to neutralize the system, as well as any
+ions previously present, are <i>not</i> taken into account when
+calculating the salt concentration! Also, when
+placing ions according to a requested salt concentration,
+the volume is estimated from the number of water molecules in the
+system, i.e., the solute volume is <i>not</i> included in the
+calculation.</p>
+
+<!--
+<h3>Supported ions</h3>
+
+<p>Autoionize currently supports the CHARMM27 force field only, which
+includes the following ions: Na<sup>+</sup>, Mg<sup>2+</sup>,
+K<sup>+</sup>, Cs<sup>+</sup>, Ca<sup>2+</sup>, Zn<sup>2+</sup>, and
+Cl<sup>-</sup>.
+-->
+
+<h3>Command-line interface</h3>
+
+<p>To load the plugin, type in the VMD text console or the Tk Console: <tt>package require autoionize</tt>. The <tt>autoionize</tt> command should then be available:</p>
+
+<tt>
+Usage:&nbsp;autoionize&nbsp;-psf&nbsp;file.psf&nbsp;-pdb&nbsp;file.pdb&nbsp;<mode>&nbsp;[options]<br />Ion&nbsp;placement&nbsp;mode&nbsp;(choose&nbsp;one):<br />&nbsp;&nbsp;-neutralize&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;only&nbsp;neutralize&nbsp;system<br />&nbsp;&nbsp;-sc&nbsp;<salt&nbsp;concentration>&nbsp;--&nbsp;neutralize&nbsp;and&nbsp;set&nbsp;salt&nbsp;concentration&nbsp;(mol/L)<br />&nbsp;&nbsp;-nions&nbsp;{{ion1&nbsp;num1}&nbsp;{ion2&nbsp;num2}&nbsp;...}&nbsp;--&nbsp;user&nbsp;defined&nbsp;number&nbsp;of&nbsp;ions<br />Other&nbsp;options:<br />&nbsp;&nbsp;-cation&nbsp;<ion&nbsp;resname>&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;default:&nbsp;SOD<br />&nbsp;&nbsp;-anion&nbsp;<ion&nbsp;resname>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;default:&nbsp;CLA<br />&nbsp;&nbsp;-o&nbsp;<prefix>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;output&nbsp;file&nbsp;prefix&nbsp;(default:&nbsp;ionized)<br />&nbsp;&nbsp;-from&nbsp;<distance>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;min.&nbsp;distance&nbsp;from&nbsp;solute&nbsp;(default:&nbsp;5A)<br />&nbsp;&nbsp;-between&nbsp;<distance>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;min.&nbsp;distance&nbsp;between&nbsp;ions&nbsp;(default:&nbsp;5A)<br />&nbsp;&nbsp;-seg&nbsp;<segname>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;specify&nbsp;new&nbsp;segment&nbsp;name&nbsp;(default:&nbsp;ION)<br />Supported&nbsp;ions&nbsp;(CHARMM&nbsp;force&nbsp;field&nbsp;resnames):<br />&nbsp;&nbsp;&nbsp;SOD&nbsp;--&nbsp;sodium&nbsp;&nbsp;&nbsp;&nbsp;(Na+)<br />&nbsp;&nbsp;&nbsp;MG&nbsp;&nbsp;--&nbsp;magnesium&nbsp;(Mg2+)<br />&nbsp;&nbsp;&nbsp;POT&nbsp;--&nbsp;potassium&nbsp;(K+)<br />&nbsp;&nbsp;&nbsp;CES&nbsp;--&nbsp;cesium&nbsp;&nbsp;&nbsp;&nbsp;(Cs+)<br />&nbsp;&nbsp;&nbsp;CAL&nbsp;--&nbsp;calcium&nbsp;&nbsp;&nbsp;(Ca2+)<br />&nbsp;&nbsp;&nbsp;ZN2&nbsp;--&nbsp;zinc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Zn2+)<br />&nbsp;&nbsp;&nbsp;CLA&nbsp;--&nbsp;chloride&nbsp;&nbsp;(Cl-)<br />
+</tt>
+
+
+<h3>Examples</h3>
+
+<p>In the following examples, we assume that the files input.psf/input.pdb 
+contain the solvated system.</p>
+
+<ol>
+
+<li><p>Neutralize the system with NaCl:<br />
+<tt>autoionize -psf input.psf -pdb input.pdb -neutralize</tt></p>
+</li>
+
+<li><p>Neutralize the system with MgCl<sub>2</sub>:<br />
+<tt>autoionize -psf input.psf -pdb input.pdb -neutralize -cation MG</tt></p>
+</li>
+
+<li><p>Neutralize the system and add an additional 150mM KCl:<br />
+<tt>autoionize -psf input.psf -pdb input.pdb -sc 0.15 -cation POT</tt></p>
+</li>
+
+<li><p>Add 5 Ca<sup>2+</sup>, 10 Cl<sup>-</sup>, and 3 K<sup>+</sup> ions:<br />
+<tt>autoionize -psf input.psf -pdb input.pdb -nions {{CAL 5} {CLA 10} {POT 3}}</tt></p>
+</li>
+
+</ol>
+
+<!-- <h3>What is new in version 1.3</h3> -->
+
+<h3>Caveats and limitations</h3>
+
+<p>Autoionize places ions randomly,
+which is acceptable if the electric charge of the molecule is relatively
+small. If the charge is big, the ions no longer are nearly uniformly distributed
+in the solvent; instead, they form a screening clowd around the molecule.
+An example of such systems is a double-helix DNA, which carries a -1e charge
+per base pair. In such cases, one needs to place ions with regard to the
+electrostatic potential of the molecule. To neutralize highly charged systems,
+consider using the <a href="/Research/vmd/plugins/cionize">cionize</a> plugin.</p>
+
+<h3>Authors</h3>
+
+<p><a href="http://www.chem.duke.edu/~ilya/">Ilya Balabin</a><br />
+<a href="http://www.ks.uiuc.edu/~sotomayo">Marcos Sotomayor</a> (graphical interface)<br />
+<a href="http://www.ks.uiuc.edu/~ltrabuco">Leonardo Trabuco</a> (version 1.3)</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

@@ -1,0 +1,211 @@
+<!--#set var="TITLE" value="Multiple Alignment Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<font color="#000000" face="Helvetica, Arial" size="3">
+<table border="0">
+	<tbody><tr>
+		<td rowspan="2">
+<b><center> Multiple Alignment Quick Reference</center></b>
+<br>
+<font color="#000000" face="Helvetica, Arial" size="2">
+<b>
+File Menu</b>
+<center>
+<table width=80% border=1>
+<tbody>
+<tr>
+<td width="30%"><b>Choose work directory</b></td>
+<td>Displays a dialog for choosing the directory in which to place all 
+Multiple Alignment-generated temporary files; these files are deleted on 
+exit from Multiple Alignment</td>
+</tr>
+<tr>
+<td width="30%"><b>Save work data to another directory</b></td>
+<td>
+Displays a dialog for choosing the directory in which to copy MultiSeq 
+files; these files are not deleted on exit
+</td>
+</tr>
+<tr>
+<td width="30%"><b>Write PDB from selection</b></td>
+<td>
+Writes pdb files corresponding to any selected residues; the highlighted 
+residues from each sequence go into a file named <original 
+filename>.<index>.pdb (e.g. selections of a sequence from 1azu.pdb might 
+be called 1azu.0.pdb or 1azu.4.pdb) in the pdb directory; the index is 
+chosen so that all files written at the same time have the same index, 
+and no previous file is overwritten; user will be prompted to choose a 
+pdb directory in which to write the files</td>
+</tr>
+<tr>
+<td width="30%"><b>Write alignment in FASTA format</b></td>
+<td>Writes a fasta file (multiseq.fasta) corresponding to the current 
+sequences whether they are aligned or not</td>
+</tr>
+<tr>
+<td width="30%"><b>Write FASTA file with secondary structure data</b></td>
+<td>Writes a fasta file (multiseq.fasta) corresponding to the current 
+sequences whether they are aligned or not; STRIDE generated secondary 
+structure information is added below each sequence</td>
+
+</tr>
+</table>
+</center>
+<br>
+<br>
+<b>
+Tools Menu</b>
+<center>
+<table width="80%" border=1>
+<tr>
+<td width="30%"><b>Phylogenetic Tree</b></td>
+<td>
+Creates an RMSD- or Qh-based UPGMA tree
+<ul>
+<li><b>Show Scale:</b> Draws an appropriate scale beneath the tree</li>
+<li><b>Show Filename:</b> Displays corresponding filename at exterior 
+nodes</li> 
+<li><b>Show Species Name:</b> Displays corresponding species at exterior 
+nodes; if the species name cannot be found, the filename is displayed</li> 
+<li><b>Show Domain: </b> Displays corresponding domain at exterior 
+nodes; if the domain cannot be found, nothing is displayed</li> 
+<li><b>QH:</b> Draws a phylogenetic tree based on Qh distances between 
+each pair of structures</li> 
+<li><b>RMSD:</b> Draws a phylogenetic tree based on RMSD distances 
+between each pair of structures</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td width="30%"><b>Residue Selection</b></td>
+<td>
+<ul>
+<li><b>Q Value</b> Selection is made based on Qalign score, Qa per 
+residue; choose the bounding score, S, (from 0 to 1) and whether you 
+want to select the residues with Qa >= S or Qa <= S</li>
+	<ul>
+		<li><b>Select:</b> Make the selection; chosen 
+residues are highlighted in both the Sequence Display and the VMD OpenGL 
+Display</li>
+<li><b>
+Close Window:</b> Close the selection dialog</li>
+</ul>
+<li><b>Sequence Identity</b> Selection is made based on sequence identity 
+score, SI; choose the bounding score, S, (from 0 to 1) and whether you 
+want to select the residues with SI >= S or SI <= S</li>
+<ul>
+<li>
+<b>Select:</b> Make the selection; chosen residues are highlighted in both 
+the Sequence Display and the VMD OpenGL Display</li>
+<li><b>Close Window:</b> Close the selection dialog  </li>
+</ul>
+</ul>
+</td> 
+</tr> <tr> <td width="30%"><b>Number of Residues Per Molecule</b> </td>
+<td>prints the number of residues per molecule </td>
+</tr>
+<tr>
+<td width="30%"><b>Print QR Ordering</b></td>
+<td>prints the indices (starting with 0) of the current structures 
+corresponding to their relative linear independence, from most 
+independent to least independent </td> 
+</tr> 
+<tr>
+<td width="30%"><b>RMSD Tools</b></td>
+<td>
+<ul>
+<li><b>RMSD Per Residue:</b> Plots the RMSD per aligned alpha carbon 
+between each pair of selected proteins</li>
+<li><b>Pairwise RMSD:</b> Prints the average RMSD for aligned alpha 
+carbons between each pair of proteins
+</li>
+</ul>
+</td>
+</tr>
+</table>
+</center>
+<br>
+<br>
+<b>
+Alignment Menu</b>
+<center>
+<table width="80%" border=1>
+<tr>
+<td width="30%"><b>Alignment Parameters</b></td>
+<td>
+<ul>
+<li><b>Number of passes (npass):</b> Whether one or two fits are to be 
+performed. The idea is that the initial fit can be used with a 
+conformation biased set of parameters to improve the initial fit prior to 
+fitting using distance and conformation parameters. Default NPASS = 1
+</li>
+<li><b>Similarity (scanscore):</b> Specifies how the Sc value (STAMP 
+algorithm) is to be calculated. This depends on the particular 
+application. As a general rule of thumb, use SCANSCORE=6 for large 
+database scans, when you are scanning with a small domain, and wishing to 
+find all examples of this domain - even within large structures. Use 
+SCANSCORE=1 when you wish to obtain a set of transformations for a set of 
+domains which you know are similar (and have defined fairly precisely as 
+domains rather than the larger structure that they may be a part of). 
+Default SCANSCORE = 6</li>
+<li><b>Number of comparison residues (scanslide):</b> This is the number 
+of residues that a query sequence is 'slid' along a database sequence to 
+derive each initial superimposition. Initially, the N-terminus of the 
+query is aligned to the 1st residue of the databse, once this fit has 
+been performed and refined, and tested for good structural similarity, 
+the N-terminus is aligned with the 1+th position, and the process 
+repeated until the end of the database sequence has been reached. Default 
+SCANSLIDE = 5</li>
+<li><b>Slow scan:</b> If set to TRUE, then the SLOW method of getting the 
+initial fits for scanning will be used (See chapter 1). Default SLOWSCAN 
+= FALSE</li>
+<li><b>Default Settings:</b> resets the STAMP parameters to their 
+original values</li>
+</ul>
+ </td> 
+</tr> <tr> <td width="30%"><b>Run Structural Alignment</b></td>
+<td>Calls STAMP to structurally align the proteins; superimposes 
+the aligned proteins and diplays them in the OpenGL Display window 
+</td> 
+</tr> </table>
+</center>
+<br>
+<br>
+<b>
+View Menu</b>
+<center>
+<table width="80%" border=1>
+<tr>
+<td width="30%"><b>Molecule Coloring</b></td>
+<td>
+<ul>
+<li><b>Q Per Residue:</b> Colors the residues of each protein according 
+to their Qalign scores; proteins must be aligned first</li>
+<li><b>Sequence Identity Per Residue:</b> Colors the residues of each 
+protein according to their sequence identity scores; proteins must be 
+aligned first</li>
+</ul>
+</td>
+</tr>
+<tr>
+<td width="30%"><b>Highlight Style</b> </td>
+<td>Choose the display style for selection highlighting in the 
+VMD OpenGL Display</td>   
+</tr>
+</table>
+</center>
+<br>
+<br>
+
+<!-- -->
+ </td> </tr>
+</tbody></table>
+</font>
+<!-- End OF CONTENT AREA -->
+	 <p> <br>
+        </p></td> 
+       </tr>
+      </tbody></table>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

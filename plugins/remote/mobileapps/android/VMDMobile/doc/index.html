@@ -1,0 +1,120 @@
+<HTML>
+<HEAD>
+<TITLE>VMD Mobile</TITLE>
+</HEAD>
+<BODY>
+<H1>VMD Mobile</H1>
+
+<CODE>VMD Mobile</CODE> is a App for Android-powered devices that allows remote
+control of a VMD session.
+
+<P>
+Requirements:
+<P>
+<UL>
+<LI>VMD 1.9.1 or later
+<LI>An Android device running Android 2.2 or later, capable of installing
+third party Apps..
+<LI>Wi-Fi.  Ideally you will be connected to the same 'subnet' as the VMD
+server computer that you are wanting to control.  If the two are far-removed,
+network-wise, from each other, your experience may be less than perfect.
+</UL>
+
+<P>
+Installation:
+<P>
+<UL>
+
+<LI><B>Make sure that your Android device is configured to allow third party
+applications.</B>  From the home screen, go to <CODE>Settings |
+Applications</CODE> and make sure that "Unknown sources" is checked/enabled to
+allow the installation of non-Market applications.
+<LI>Download and install the application.  TODO.
+<LI>Before running the application, make sure that you have Wi-Fi turned on and
+that you are properly connected to a network. 
+</UL>
+
+<P>
+Running and using the App:
+<P>
+On the VMD desktop/laptop computer:
+<UL>
+<LI>Run VMD 1.9.1 (or later).
+<LI>There is a command, <CODE>mobile</CODE>, that you use to mobile-enable VMD.
+If you just type '<CODE>mobile</CODE>' into the console you will be presented
+with usage instructions:
+<PRE>
+vmd &gt; mobile
+mobile usage:
+mobile mode &lt;mode&gt;
+   modes: off, move, animate, tracker, user
+mobile port &lt;incoming network port number&gt;
+</PRE>
+Mode descriptions include:  <B>off</B>: configure VMD to not accept incoming
+connections.  <B>move</B>: The android device will allow you to rotate, translate, and
+scale your molecular view. <B>animate</B>: The android device will act as a 'scrub' to
+move through a trajectory. <B>tracker</B>: The android device will act as tracker.
+<B>user</B>: Can be used, in conjunction with a user script, to do whatever you can
+imagine and write the code for.
+<P>
+By default, VMD will listen on port 3141. If you need to change this, you can do
+so.
+
+</UL>
+
+On the Android device:
+
+<UL>
+<LI>Run the application.
+<LI>When you run VMD Mobile for the very first time, you will need to configure
+a couple of things:  Go to <CODE>Menu | Settings</CODE> and configure the
+<CODE>Server</CODE> with the fully-qualified domain name of the machine running
+VMD (it can be a numeric IP address, or a domain name).  Change the <CODE>Port</CODE> if needed, and set <CODE>Nickname</CODE> to a
+descriptive 16 character (or less) name for your device.  The Nickname will show
+up in the VMD session when it connects and disconnects.
+</UL>
+
+<P>
+If you have the VMD server configured in:
+<BR>
+<B>move</B> mode:
+<UL>
+<LI>Pressing a finger on the Android screen and then moving from that spot will cause the
+molecular system to start rotating in that direction.  The farther you move from
+the initial spot, the faster the rotation.
+<LI>Pinch to zoom in and out.
+<LI>If you apply two fingers to the screen and drag both fingers in a direction, 
+you will translate the system.
+<LI>If you apply two fingers to the screen and rotate both of them clockwise or
+counterclockwise, the system will similarly rotate (can be combined with pinch
+to zoom).
+</UL>
+
+<P>
+<B>translate</B> mode:
+<P>
+If you apply a finger to the Android screen and scrub/move to the
+right, you will increase the trajectory frame you are viewing.  Scrubbing/moving to the
+left will decrease the trajectory frame you are viewing.
+
+
+<P>
+Menu options:
+<UL>
+<LI><B>Stop/Start Sending Touchpad</B> - A toggle that will allow you to send or
+stop sending information about pressing the touchpad.  The App starts in a mode
+of sending.  
+<LI><B>Reset VMD View</B> - The equivalent of pressing the equals
+('<CODE>=</CODE>') key from within VMD.  If you somehow manage to 'lose' the
+molecule, this is handy.
+<LI><B>Settings</B> - Configure server machine name, port, and Nickname that you
+want displayed to the VMD server.  
+</UL>
+
+At the current time, the buttons at the top of the screen are not configured to
+do anything.
+
+<P>
+</BODY>
+</HTML>
+

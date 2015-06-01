@@ -1,0 +1,345 @@
+/*! \page accelerators VMD graphics acceleration notes
+
+<p>
+VMD has been tested with and benefits from hardware 3D acceleration on 
+many OpenGL-capable graphics accelerators.  Note that some of these boards 
+only provide hardware acceleration when they are running in particular 
+display modes.  The list below are video boards and configurations 
+that have been recently tested by us or are thought to work well with VMD.
+
+<p>
+Note that the "Stereo" column indicates that a board support full 
+quad-buffered frame-sequential stereo, and that it works correctly with
+the standard OpenGL interfaces.  There are several video boards
+which provide a form of stereo support, but not through the normal
+OpenGL interfaces.  Unless the board works with the quad-buffered 
+OpenGL stereo interfaces, we have marked it as a "no" in the stereo column.
+It is still possible to use the "side-by-side" and "scanline-interleaved"
+stereo modes in VMD even on cards labeled with "no in the stereo column.
+
+<p>
+VMD supports OpenGL multisample antialiasing in high-end graphics boards.
+Presently this feature is only found in the Unix versions of VMD, but 
+eventually it will make its way into the Windows and Mac versions of VMD
+as well.  The workstation graphics table below notes whether or not we have
+tested the antialiasing feature in VMD with each listed hardware 
+configuration.
+
+<h2>Workstation graphics accelerators</h2>
+<p>
+<table border=1>
+<tr><td>Video Board / Vendor</td> 
+    <td>OS</td>
+    <td>Stereo</td>
+    <td>Antialiasing</td>
+    <td>Video Mode/Settings Notes</td>
+</tr>
+
+<tr><td>Compaq/HP Powerstorm 300</td>        
+    <td>Tru64 4.0F</td>
+    <td>Yes</td> 
+    <td>No</td> 
+    <td></td>
+</tr>
+
+<tr><td>HP Visualize FX10</td>        
+    <td>HP-UX 11.0</td>
+    <td>Yes</td> 
+    <td>No</td> 
+    <td></td>
+</tr>
+
+<tr><td>HP SV6 Cluster</td>        
+    <td>HP-UX 11.0</td>
+    <td>Yes</td> 
+    <td>Yes</td> 
+    <td>VMD cannot enable or disable antialiasing, it is set system-wide</td>
+</tr>
+
+<tr><td>IBM POWER GXT300P</td>        
+    <td>AIX 4.3.x</td>
+    <td>No</td> 
+    <td>No</td> 
+    <td></td>
+</tr>
+
+<tr><td>IBM POWER GXT6000P</td>        
+    <td>AIX 4.3.x</td>
+    <td>Unknown</td> 
+    <td>Unknown</td> 
+    <td></td>
+</tr>
+
+<tr><td>SGI Indigo2 MaximumImpact</td>        
+    <td>IRIX 6.5.x</td>
+    <td>Yes</td> 
+    <td>No</td> 
+    <td>Must be in the quad-buffered stereo mode in order to use VMD in stereo.
+    </td>  
+</tr>
+
+<tr><td>SGI InfiniteReality2</td>        
+    <td>IRIX 6.5.x</td>
+    <td>Yes</td> 
+    <td>Yes</td> 
+    <td>Must be in the quad-buffered stereo mode in order to use VMD in stereo.
+        Not all video resolutions can support multisample antialiasing, 
+        usually only the lower resolutions leave enough video memory.
+    </td>  
+</tr>
+
+<tr><td>SGI Octane2</td>        
+    <td>IRIX 6.5.x</td>
+    <td>Yes</td> 
+    <td>Yes</td> 
+    <td>Must be in the quad-buffered stereo mode in order to use VMD in stereo.
+        Note that there are several graphics board variations available, some 
+        boards do not support all features, particularly when running with
+        two display channels.
+        Not all video resolutions can support multisample antialiasing, 
+        usually only the lower resolutions leave enough video memory.
+    </td>  
+</tr>
+
+
+<tr><td>Sun Elite3D</td>        
+    <td>Solaris 8</td>
+    <td>Yes</td> 
+    <td>No</td> 
+    <td>Must be in the quad-buffered stereo mode in order to use VMD in stereo.</td>
+</tr>
+
+<tr><td>Sun Expert3D / Expert3D-lite</td>        
+    <td>Solaris 8</td>
+    <td>Yes</td> 
+    <td>Yes</td> 
+    <td>Have not tested antialiasing on this hardware</td>
+</tr>
+
+<tr><td>Sun XVR-500</td>        
+    <td>Solaris 8</td>
+    <td>Yes</td> 
+    <td>Yes</td> 
+    <td>Have not tested antialiasing on this hardware</td>
+</tr>
+
+<tr><td>Sun XVR-1000</td>        
+    <td>Solaris 8</td>
+    <td>Yes</td> 
+    <td>Yes</td> 
+    <td>Use "fbconfig -multisample enable dynamic" for best antialiasing with VMD</td>
+</tr>
+
+<tr><td>Sun XVR-1200</td>        
+    <td>Solaris 8</td>
+    <td>Yes</td> 
+    <td>Yes</td> 
+    <td></td>
+</tr>
+
+<tr><td>Sun XVR-4000</td>        
+    <td>Solaris 8</td>
+    <td>Yes</td> 
+    <td>Yes</td> 
+    <td>Use "fbconfig -multisample available -samples max -jitter auto" for best antialiasing with VMD</td>
+</tr>
+
+</table>
+
+
+<h2>PC graphics accelerators</h2>
+<p>
+<table border=1>
+<tr><td>Video Board / Vendor</td> 
+    <td>OS</td>
+    <td>Stereo</td>
+    <td>Video Mode/Settings Notes</td>
+</tr>
+
+<tr><td>3DFX Voodoo3</td>        
+    <td>Win98</td>
+    <td>No</td> 
+    <td>Must be in 16-bit color mode and using latest drivers in order for
+        any OpenGL acceleration to work.  The Win98 1.03.00 drivers worked 
+        beautifully for us, no problems.</td>
+</tr>
+
+<tr><td>3DFX Voodoo3</td>
+    <td>NT</td>
+    <td>No</td> 
+    <td>Must be in 16-bit color mode and using latest drivers in order for
+        any OpenGL acceleration to work.</td>
+</tr>
+
+<tr><td>3DLabs GVX1</td>
+    <td>NT/Win2K</td>
+    <td></td> 
+    <td>Reported to work very well.</td>
+</tr>
+
+<tr><td>3DLabs Oxygen VX-1600</td>
+    <td>NT/Win2K</td>
+    <td>No</td> 
+    <td>Reported to work very well, runs SGI 1600SW flat-panel.</td>
+</tr>
+
+<tr><td>3DLabs Permedia</td>
+    <td>NT</td>
+    <td></td> 
+    <td>1024x768</td>
+</tr>
+
+<tr><td>ATI Rage Mobility 128 AGP 4X</td>
+    <td>Windows 2000</td>  
+    <td>No</td>       
+    <td>Works with 1600x1200 resolution</td>
+</tr>
+
+<tr><td>ATI Rage Pro Turbo</td>
+    <td>NT</td>  
+    <td>No</td>       
+    <td>Must be in Truecolor mode for hardware acceleration</td>
+</tr>
+
+<tr><td>ATI Rage Fury (Rage 128 chip)</td>
+    <td>NT</td>  
+    <td>No</td>
+    <td>Must be in 16-bit color or Truecolor mode for hardware acceleration
+        In the "ATI OpenGL" tab, select "Performance" in the
+        "optimization preference" radio buttons.</td>
+</tr>
+
+<tr><td>Diamond FireGL 1000 8MB AGP</td> 
+    <td>NT</td>
+    <td>Yes</td>
+    <td>Get latest driver, set for 1024x768, use "3D stereo support"
+        configuration file under display properties.  (with older drivers,
+        use 800x600, 16-bit color, and "2nd Z-buffer" option)</td>
+</tr>
+
+<tr><td>Diamond FireGL 4000</td> 
+    <td>NT/Win2K</td>
+    <td>Yes</td>
+    <td>Reported to work very well</td>
+</tr>
+
+<tr><td>Diamond FireGL 1</td> 
+    <td>NT/Win2K</td>
+    <td>Yes</td>
+    <td></td>
+</tr>
+
+<tr><td>Diamond FireGL 2</td> 
+    <td>NT/Win2K</td>
+    <td>Yes</td>
+    <td></td>
+</tr>
+
+<tr><td>Diamond FireGL 4</td> 
+    <td>NT/Win2K</td>
+    <td>Yes</td>
+    <td></td>
+</tr>
+
+<tr><td>Diamond Viper 770 (NVidia TNT2 Ultra)</td>
+    <td>NT</td>  
+    <td>No</td>
+    <td>Both Truecolor and 16-bit color mode work fine.</td>
+</tr>
+
+<tr><td>Evans and Sutherland AccelStar-II</td>
+    <td>NT</td>  
+    <td>Yes</td>
+    <td>1024x768, 16-bit color, possibly several other modes.</td>
+</tr>
+
+<tr><td>HP Visualize FX6</td> 
+    <td>NT/Win2K</td>  
+    <td>Yes</td>      
+    <td>Get the latest drivers.</td>
+</tr>
+
+<tr><td>HP Visualize FX10</td> 
+    <td>NT/Win2K</td>  
+    <td>Yes</td>      
+    <td></td>
+</tr>
+
+<tr><td>Intergraph "Z"</td>
+    <td>NT</td>  
+    <td>Yes</td>
+    <td></td>
+</tr>
+
+
+<tr><td>Matrox G400</td>
+    <td>NT</td>  
+    <td>No</td>
+    <td>32-bit color 1024x768 works fine</td>
+</tr>
+
+<tr><td>NVidia TNT2 Ultra</td>
+    <td>NT, Linux</td>  
+    <td>No</td>
+    <td>All 32-bit and 16-bit color modes work.</td>
+</tr>
+
+<tr><td>NVidia GeForce256</td>
+    <td>NT, Linux</td>  
+    <td>No</td>
+    <td>All 32-bit and 16-bit color modes work.</td>
+</tr>
+
+<tr><td>NVidia GeForce256-DDR</td>
+    <td>NT, Linux</td>
+    <td>No</td>
+    <td>All 32-bit and 16-bit color modes work.</td>
+</tr>
+
+<tr><td>NVidia GeForce 2 GTS</td>
+    <td>NT, Linux</td>
+    <td>No</td>
+    <td>All 32-bit and 16-bit color modes work.</td>
+</tr>
+
+<tr><td>NVidia GeForce 3</td>
+    <td>Win2K, Linux</td>
+    <td>No</td>
+    <td>All 32-bit and 16-bit color modes work.
+    Linux drivers still aren't as reliable or fast as the
+    Windows drivers, but still good.
+</tr>
+
+<tr><td>NVidia GeForce 4 Ti 4600</td>
+    <td>Linux</td>
+    <td>No</td>
+    <td>All 32-bit and 16-bit color modes work.
+    Linux drivers still aren't as reliable or fast as the
+    Windows drivers, but still good.
+</tr>
+
+
+<tr><td>NVidia Quadro</td>
+    <td>NT, Linux</td>
+    <td>No</td>
+    <td>All 32-bit and 16-bit color modes work great.</td>
+</tr>
+
+<tr><td>NVidia Quadro2</td>
+    <td>NT, Linux</td>
+    <td>No</td>
+    <td>All 32-bit and 16-bit color modes work great.</td>
+</tr>
+
+<tr><td>SGI Visual Workstation 320</td>
+    <td>NT</td>  
+    <td>Yes</td>
+    <td>Any of the modes should work fine.</td>
+</tr>
+
+</table>
+
+<p>
+$Id: pg_accelerators.dox,v 1.3 2008/03/04 20:15:49 johns Exp $
+
+*/

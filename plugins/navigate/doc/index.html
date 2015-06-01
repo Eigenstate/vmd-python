@@ -1,0 +1,68 @@
+<!--#set var="TITLE" value="Camera Navigator plugin, Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<img src="navigate-gui.png" alt="Navigate GUI" align="right"
+ style="border: 0px solid ; width: 313px; height: 283px;" hspace="20"
+ vspace="40">
+The Camera Navigator plugin provides a mean to navigate
+the camera as if it were a ship. In normal mouse rotation, the scene is
+rotated around an axis going through a user defined center for each
+molecule. But when using the Camera Navigator, the user can rotate the
+scene using axes centered on the camera. This allows for motions such
+as "turning your head around", which are not easily accomplished using
+the conventional VMD controls.<br>
+<br>
+Currently, the Camera Navigator is operated by means of the keyboard,
+using pre-defined keys:<br>
+<br>
+<table cellpadding="2" cellspacing="4" border="0"
+ style="width: 530px; text-align: left; height: 152px;">
+  <tbody>
+    <tr>
+      <th style="vertical-align: top;">Key<br>
+      </th>
+      <th style="vertical-align: top;">Function<br>
+      </th>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">Q/A<br>
+      </td>
+      <td style="vertical-align: top;">thrust forward/backward<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">I/K<br>
+      </td>
+      <td style="vertical-align: top; text-align: left;">rotate camera
+up/down<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">J/L<br>
+      </td>
+      <td style="vertical-align: top;">rotate camera sideways left/right<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; text-align: left;">U/O<br>
+      </td>
+      <td style="vertical-align: top;">roll camera left/right<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<h2>Settings</h2>
+The plugin comes with speed controls, which define by what increments
+each tap of a keyboard key will rotate or advance the scene. Setting
+the thrust or rotation speed controls to bigger numbers will make the
+thrust or the rotation faster.<br>
+<br>
+<h2>Requirements</h2>
+The forward/backward thrust will only work properly in perspective
+mode. In orthographic mode, this functionality still works, but since
+the molecule will not shrink or grow with distance, there will be no
+visual feedback of the motion of the camera.<br>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

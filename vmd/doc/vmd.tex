@@ -1,0 +1,79 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%cr                                                                       
+%cr            (C) Copyright 1995 The Board of Trustees of the            
+%cr                        University of Illinois                         
+%cr                         All Rights Reserved                           
+%cr                                                                       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: vmd.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.4 $      $Date: 2000/05/23 17:54:38 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%
+% VMD DOCUMENTATION: INSTALLATION, USERS, and PROGRAMMERS GUIDE
+%   Formats all the different VMD guides into a single document
+% in book format.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentstyle[11pt,html,graphic]{book}
+
+% define margins, etc
+\oddsidemargin	0.5in
+\evensidemargin	0in
+\textheight	8.50in
+\textwidth	6.00in
+\marginparsep	0.25cm
+\topmargin	0in
+\headheight	0in
+\headsep	0.5in
+\footskip	0.5in
+\footheight	0in
+
+
+%
+% the document itself
+%
+
+\begin{document}
+
+% set the title for this document when it is HTML-ified
+\begin{rawhtml}
+  <Title> VMD User's Guide </Title>
+\end{rawhtml}
+
+% define global macros
+\input{vmd_macros}
+
+% default definitions for title and description
+\newcommand{\DOCTITLE} {Documentation Guides}
+\newcommand{\DOCDESC} {
+  This document includes the \VMD\ Installation, Users, and
+Programmers Guides, which document how to obtain, install, use, and
+modify the molecular graphics program \VMD.}
+
+% macro used in formatting the guides into a single book
+\newcommand{\vmdpart}[2] {
+  \part{#1}
+  \input{#2}
+}
+
+% initial pages for the guide - title, TOC, etc.
+\input{vmd_begindoc}
+
+% the Installation Guide
+\vmdpart{\VMD\ Installation Guide}{ig_chapters}
+
+% the Users Guide
+\vmdpart{\VMD\ User's Guide}{ug_chapters}
+
+% the Programmer's Guide
+\vmdpart{\VMD\ Programmer's Guide}{pg_chapters}
+
+
+% that's all, folks
+\end{document}

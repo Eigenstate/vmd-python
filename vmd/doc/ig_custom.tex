@@ -1,0 +1,99 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%cr                                                                       
+%cr            (C) Copyright 1995 The Board of Trustees of the            
+%cr                        University of Illinois                         
+%cr                         All Rights Reserved                           
+%cr                                                                       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ig_custom.tex,v $
+%       $Author: jordi $        $Locker:  $                $State: Exp $
+%       $Revision: 1.20 $      $Date: 2003/04/09 21:51:52 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%
+% INSTALLATION GUIDE : customizing VMD
+%   1) .vmdrc file
+%   2) .vmdsensors file
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\chapter{Customizing \VMD}
+%\label{chapter:ig:custom}
+
+\section{Customizing \VMD\ Startup}
+
+The Unix version of \VMD\ reads in several data files (if they exist) 
+when it starts up.
+These files control the initial appearance and behavior of \VMD\ at
+the start, and may be customized to suit each users particular tastes.
+Default versions of these files are placed in the {\tt
+INSTALLLIBDIR} directory (usually {\tt /usr/local/lib/vmd}). 
+While each user may specify to use different versions of these files,
+unless this is done the commands and values in the default files are
+used.  In this way, an administrator may customize the default
+behavior of \VMD\ for all users, while allowing each user the option
+to change the default behavior however they choose.  This chapter
+describes each of these data files.
+
+Several configurable parameters may also be set in a number of ways, including by command-line options or by environment variables.  The order of precedence of these methods is as follows (highest precedence to lowest):
+\begin{enumerate}
+  \item Command-line options (see the Users Guide).
+  \item Environment variable settings (see the Users Guide).
+  \item Built-in defaults, as specified by compilation configurable parameters.
+        These are used only if no other values are specified by the other 
+        methods mentioned in this list.
+\end{enumerate}
+
+%\begin{centering}
+%  \displayepsf[htb] (pictures/screen_params.eps scaled 800) {
+%    \caption{Relationship between screen height, screen distance to origin,
+%			and the viewer.}
+%    \label{fig:ig:screen}
+%  }
+%\end{centering}
+
+\section{The {\tt .vmdrc} and {\tt vmd.rc} files}
+
+After initialization is complete, \VMD\ reads the {\em startup} file.  This file contains text commands
+for \VMD\ to execute, just as if they had been entered at the \VMD\
+text console command prompt.  The file can contain any number of
+commands, including blank lines and comment lines (which begin with
+the {\tt \#} character).  If an error is encountered while reading
+this file, the command in error is skipped and processing of the file
+continues.
+
+The base filename for this startup file is {\tt .vmdrc} by default
+on Unix systems and {\tt vmd.rc} on Windows;
+this is determined by the configuration parameter {\tt STARTUPFILENAME}.
+\VMD\ searches for this file in a number of locations,
+and reads in the {\em first} version of the file it finds.  The order
+of searching for the file is:
+\begin{enumerate}
+  \item {\tt ./STARTUPFILENAME}
+  \item {\tt \$HOME/STARTUPFILENAME}
+  \item {\tt INSTALLLIBDIR/STARTUPFILENAME}
+\end{enumerate}
+See the Users Guide for a list of all \VMD\ text commands.
+
+\section{The {\tt .vmdsensors} file}
+
+If \VMD\ is compiled with the VRPN option, it will look for files that specify how to access the external spatial
+tracking devices. These files are read whenever \VMD\ is told to
+initialize a specific external device.  The Tracker library will load 
+the first file it finds in the following search order:
+\begin{enumerate}
+  \item {\tt \$HOME/.vmdsensors}
+  \item The {\tt \$VMDSENSOR}  environment variable.
+  \item {\tt INSTALLLIBDIR/.vmdsensors}
+\end{enumerate}
+%NOT TRUE RIGHT NOW: In the event of duplicated information, the device specifications found in 
+%{\tt \$HOME/.vmdsensors} have precedence over those in {\tt \$VMDSENSOR}.
+
+This last file ({\tt INSTALLLIBDIR/.vmdsensors}) contains extensive 
+comments on how to configure the sensor description files
+properly. If the VRPN option is omitted when compiling \VMD, 
+this file is not used.

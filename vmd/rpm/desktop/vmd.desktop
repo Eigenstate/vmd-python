@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Exec=vmd
+Name=VMD
+GenericName=Molecular Visualization and Analysis Package
+
+Categories=Graphics
+Terminal=0
+Icon=vmd

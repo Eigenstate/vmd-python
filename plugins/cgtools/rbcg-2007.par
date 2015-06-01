@@ -1,0 +1,916 @@
+!cg.par is a charmm formatted version of the coarse grain potential
+!described in Marrink et al., JPCB 2004:108, 750-760
+!See that paper for details on simulation parameters
+
+BONDS
+P	P	 1.493	4.7
+P	No	 1.493	4.7
+P	Nd	 1.493	4.7
+P	Na	 1.493	4.7
+P	Nx	 1.493	4.7
+P	C	 1.493	4.7
+P	Qo	 1.493	4.7
+P	Qd	 1.493	4.7
+P	Qa	 1.493	4.7
+P	Qx	 1.493	4.7
+No	No	 1.493	4.7
+No	Nd	 1.493	4.7
+No	Na	 1.493	4.7
+No	Nx	 1.493	4.7
+No	C	 1.493	4.7
+No	Qo	 1.493	4.7
+No	Qd	 1.493	4.7
+No	Qa	 1.493	4.7
+No	Qx	 1.493	4.7
+Nd	Nd	 1.493	4.7
+Nd	Na	 1.493	4.7
+Nd	Nx	 1.493	4.7
+Nd	C	 1.493	4.7
+Nd	Qo	 1.493	4.7
+Nd	Qd	 1.493	4.7
+Nd	Qa	 1.493	4.7
+Nd	Qx	 1.493	4.7
+Na	Na	 1.493	4.7
+Na	Nx	 1.493	4.7
+Na	C	 1.493	4.7
+Na	Qo	 1.493	4.7
+Na	Qd	 1.493	4.7
+Na	Qa	 1.493	4.7
+Na	Qx	 1.493	4.7
+Nx	Nx	 1.493	4.7
+Nx	C	 1.493	4.7
+Nx	Qo	 1.493	4.7
+Nx	Qa	 1.493	4.7
+Nx	Qd	 1.493	4.7
+Nx	Qx	 1.493	4.7
+C	C	 1.493	4.7
+CDB	C	 1.493	4.7
+C	Qo	 1.493	4.7
+C	Qa	 1.493	4.7
+C	Qd	 1.493	4.7
+C	Qx	 1.493	4.7
+Qo	Qo	 1.493	4.7
+Qo	Qa	 1.493	4.7
+Qo	Qd	 1.493	4.7
+Qo	Qx	 1.493	4.7
+Qd	Qd	 1.493	4.7
+Qd	Qa	 1.493	4.7
+Qd	Qx	 1.493	4.7
+Qa	Qa	 1.493	4.7
+Qa	Qx	 1.493	4.7
+Qx	Qx	 1.493	4.7
+Nxx	Nxx	 1.493	3.9
+Nxg     Nxx      1.493	3.9
+Nxx	Nap	 1.493	3.9
+Nap	Nap	 1.493	3.9
+Nxg     Nap      1.493  3.9
+Nxg     Nxg      1.493  3.9
+Nxx	Ca 	 1.493	2.0
+Nxx	Qdr	 1.493	4.1
+Nxx	Nxn	 1.493	2.8
+Nxx	Qad	 1.493	3.0
+Nxx	Pc 	 1.493	2.7
+Nxx	Nxq	 1.493	4.0
+Nxx	Qae	 1.493	4.0
+Nxx	Ph 	 1.493	4.7
+Nxx	Qdh	 1.493	4.0
+Nxx	Ci 	 1.493	2.7
+Nxx	Cl 	 1.493	3.9
+Nxx	Qdk	 1.493	4.2
+Nxx	Cm 	 1.493	3.8
+Nxx	Cf 	 1.493	4.1
+Nap	Cp 	 1.493	2.5
+Nxx	Ps 	 1.493	2.5
+Nxx	Pt 	 1.493	2.7
+Nxx	Cw 	 1.493	4.5
+Nxx	Nxy	 1.493	4.6
+Nxx	Cv 	 1.493	2.7
+
+ANGLES
+Na   Qa   Qo  2.988 180 cos
+C    Na   Qa  2.988 180 cos
+Na   Na   Qa  2.988 120 cos
+C    C    Na  2.988 180 cos
+C    Na   Na  2.988 180 cos
+C    C    C   2.988 180 cos
+C    C    CDB 2.988 180 cos ! the double bond for dopc/dops tail groups
+C    CDB  C   4.183 120 cos ! the double bond for dopc/dops tail groups
+Nx   Nx   Nx  2.988 180 cos
+Nx   Nx   Qd  2.988 180 cos
+Nx   Nx   Qa  2.988 180 cos
+Nx   Qa   Qa  2.988 180 cos
+C    Nx   Qa  2.988 180 cos
+C    C    Nx  2.988 180 cos
+C    Nx   Nx  2.988 180 cos
+Na   Nx   Qa  2.988 120 cos
+Nx   Na   Qa  2.988 120 cos
+C    Nx   Na  2.988 180 cos
+C    Na   Nx  2.988 180 cos
+Na   Nx   Nx  2.988 180 cos
+Nx   Na   Nx  2.988 180 cos
+Nx   Nx   Na  2.988 180 cos
+Na   Na   Nx  2.988 180 cos
+Nx   Na   Na  2.988 180 cos
+Na   Nx   Na  2.988 180 cos
+Nx   Nx   P   2.988 180 cos
+Na   Nx   P   2.988 180 cos
+Nx   Na   P   2.988 180 cos
+Nxx  Nxx  Nxx 2.988   92    !Default for protein backbone angle
+Nxx  Nap  Nxx 2.988   88    !Default for protein backbone angle (with proline)
+Nap  Nxx  Nxx 2.988   92    !Default for protein backbone angle (with proline)
+Nap  Nap  Nxx 2.988   88    !Default for protein backbone angle (with proline)
+Nap  Nxx  Nap 2.988   92    !Default for protein backbone angle (with proline)
+Nap  Nap  Nap 2.988   88    !Default for protein backbone angle (with proline)
+Nxx  Nxx  Ca  2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Qdr 2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Nxn 2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Qad 2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Pc  2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Nxq 2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Qae 2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Ph  2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Qdh 2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Ci  2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Cl  2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Qdk 2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Cm  2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Cf  2.988  134    !Default for protein angles involving side chains
+Nxx  Nap  Cp  2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Ps  2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Pt  2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Cw  2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Nxy 2.988  134    !Default for protein angles involving side chains
+Nxx  Nxx  Cv  2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Ca  2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Qdr 2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Nxn 2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Qad 2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Pc  2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Nxq 2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Qae 2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Ph  2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Qdh 2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Ci  2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Cl  2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Qdk 2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Cm  2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Cf  2.988  134    !Default for protein angles involving side chains
+Nap  Nap  Cp  2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Ps  2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Pt  2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Cw  2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Nxy 2.988  134    !Default for protein angles involving side chains
+Nap  Nxx  Cv  2.988  134    !Default for protein angles involving side chains
+X    X    X   2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Nxx 2.988   92
+Nxg  Nxg  Nxx 2.988   92
+Nxx  Nxg  Nxx 2.988   92    !Default for glycine backbone angle
+Nxg  Nap  Nxx 2.988  180    !Default for glycine backbone angle (with proline)
+Nxx  Nap  Nxg 2.988  180    !Default for glycine backbone angle (with proline)	
+Nxg  Nap  Nxg 2.988  180
+Nap  Nxx  Nxg 2.988   92
+Nap  Nxg  Nxx 2.988   92
+Nap  Nxg  Nxg 2.988   92
+Nap  Nap  Nxg 2.988  180
+Nap  Nxg  Nap 2.988   92
+Nxg  Nxx  Nxg 2.988   92
+Nxg  Nxg  Nxg 2.988   92
+Nxg  Nxx  Ca  2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Qdr 2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Nxn 2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Qad 2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Pc  2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Nxq 2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Qae 2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Ph  2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Qdh 2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Ci  2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Cl  2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Qdk 2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Cm  2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Cf  2.988  134    !Default for protein angles involving side chains
+Nxg  Nap  Cp  2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Ps  2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Pt  2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Cw  2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Nxy 2.988  134    !Default for protein angles involving side chains
+Nxg  Nxx  Cv  2.988  134    !Default for protein angles involving side chains
+X    X    X   2.988  134    !Default for protein angles involving side chains
+
+DIHEDRALS 
+Nxx  Nxx  Nxx  Nxx     15       2     -70
+Nap  Nxx  Nxx  Nxx     15       2     -70
+Nxx  Nxx  Nxx  Nap     15       2     -70
+Nap  Nxx  Nxx  Nap     15       2     -70
+Nxg  Nxx  Nxx  Nxx     15       2     -70
+Nxx  Nxx  Nxx  Nxg     15       2     -70
+Nxg  Nxx  Nxx  Nxg     15       2     -70
+Nap  Nxx  Nxx  Nxg     15       2     -70
+Nxg  Nxx  Nxx  Nap     15       2     -70
+Nxx  Nap  Nxx  Nxx     11       2     -66
+Nap  Nap  Nxx  Nxx     11       2     -66
+Nxx  Nap  Nxx  Nap     11       2     -66
+Nap  Nap  Nxx  Nap     11       2     -66
+Nxg  Nap  Nxx  Nxx     11       2     -66
+Nxx  Nap  Nxx  Nxg     11       2     -66
+Nxg  Nap  Nxx  Nxg     11       2     -66
+Nap  Nap  Nxx  Nxg     11       2     -66
+Nxg  Nap  Nxx  Nap     11       2     -66
+Nxx  Nxx  Nap  Nxx     11       2     -66
+Nap  Nxx  Nap  Nxx     11       2     -66
+Nxx  Nxx  Nap  Nap     11       2     -66
+Nap  Nxx  Nap  Nap     11       2     -66
+Nxg  Nxx  Nap  Nxx     11       2     -66
+Nxx  Nxx  Nap  Nxg     11       2     -66
+Nxg  Nxx  Nap  Nxg     11       2     -66
+Nap  Nxx  Nap  Nxg     11       2     -66
+Nxg  Nxx  Nap  Nap     11       2     -66
+Nxx  Nap  Nap  Nxx     11       2     -66
+Nap  Nap  Nap  Nxx     11       2     -66
+Nxx  Nap  Nap  Nap     11       2     -66
+Nap  Nap  Nap  Nap     11       2     -66
+Nxg  Nap  Nap  Nxx     11       2     -66
+Nxx  Nap  Nap  Nxg     11       2     -66
+Nxg  Nap  Nap  Nxg     11       2     -66
+Nap  Nap  Nap  Nxg     11       2     -66
+Nxg  Nap  Nap  Nxg     11       2     -66
+Nxx  Nxg  Nxx  Nxx     13       2     -64
+Nap  Nxg  Nxx  Nxx     13       2     -64
+Nxx  Nxg  Nxx  Nap     13       2     -64
+Nap  Nxg  Nxx  Nap     13       2     -64
+Nxg  Nxg  Nxx  Nxx     13       2     -64
+Nxx  Nxg  Nxx  Nxg     13       2     -64
+Nxg  Nxg  Nxx  Nxg     13       2     -64
+Nap  Nxg  Nxx  Nxg     13       2     -64
+Nxg  Nxg  Nxx  Nap     13       2     -64
+Nxx  Nxx  Nxg  Nxx     13       2     -64
+Nap  Nxx  Nxg  Nxx     13       2     -64
+Nxx  Nxx  Nxg  Nap     13       2     -64
+Nxg  Nxx  Nxg  Nxx     13       2     -64
+Nxx  Nxx  Nxg  Nxg     13       2     -64
+Nxg  Nxx  Nxg  Nxg     13       2     -64
+Nap  Nxx  Nxg  Nxg     13       2     -64
+Nxg  Nxx  Nxg  Nap     13       2     -64
+Nxx  Nxg  Nxg  Nxx     13       2     -64 
+Nap  Nxg  Nxg  Nxx     13       2     -64
+Nxx  Nxg  Nxg  Nap     13       2     -64
+Nap  Nxg  Nxg  Nap     13       2     -64
+Nxg  Nxg  Nxg  Nxx     13       2     -64
+Nxx  Nxg  Nxg  Nxg     13       2     -64
+Nxg  Nxg  Nxg  Nxg     13       2     -64
+Nap  Nxg  Nxg  Nxg     13       2     -64
+Nxg  Nxg  Nxg  Nap     13       2     -64
+Nxx  Nap  Nxg  Nxx     11       2     -66
+Nap  Nap  Nxg  Nxx     11       2     -66
+Nxx  Nap  Nxg  Nap     11       2     -66
+Nap  Nap  Nxg  Nap     11       2     -66
+Nxg  Nap  Nxg  Nxx     11       2     -66
+Nxx  Nap  Nxg  Nxg     11       2     -66
+Nxg  Nap  Nxg  Nxg     11       2     -66
+Nap  Nap  Nxg  Nxg     11       2     -66
+Nxg  Nap  Nxg  Nap     11       2     -66
+Nxx  Nxg  Nap  Nxx     11       2     -66
+Nap  Nxg  Nap  Nxx     11       2     -66
+Nxx  Nxg  Nap  Nap     11       2     -66
+Nap  Nxg  Nap  Nap     11       2     -66
+Nxg  Nxg  Nap  Nxx     11       2     -66
+Nxx  Nxg  Nap  Nxg     11       2     -66
+Nxg  Nxg  Nap  Nxg     11       2     -66
+Nap  Nxg  Nap  Nxg     11       2     -66
+Nxg  Nxg  Nap  Nap     11       2     -66
+X    X    X    X       0        1     0      ! No dihedrals for non-backbone beads
+
+NONBONDED
+!Note that all nonbond terms should actually be defined in the NBFIX section
+P 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+No 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Na 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Nd 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Nx 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+C 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+CDB 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Qo 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Qa 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Qd 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Qx 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Nxx 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Nap 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Ca  0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Qdr 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Nxn 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Qad 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Pc  0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Nxq 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Qae 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Ph  0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Qdh 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Ci  0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Cl  0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Qdk 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Cm  0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Cf  0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Cp  0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Ps  0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Pt  0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Cw  0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Nxy 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Cv  0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+Nxg 0.000000 -1.195 2.35 ! Should NEVER be used; use NBFIX terms instead
+
+NBFIX
+C C -0.813 5.3
+Nx C -0.43 5.3
+Nx Nx -1.195 5.3
+No C -0.813 5.3
+No Nx -0.813 5.3
+No No -0.813 5.3
+Nd C -0.621 5.3
+Nd Nx -1.004 5.3
+Nd No -0.813 5.3
+Nd Nd -1.004 5.3
+Na C -0.621 5.3
+Na Nx -1.004 5.3
+Na No -0.813 5.3
+Na Nd -1.004 5.3
+Na Na -1.004 5.3
+Qx C -0.43 5.3
+Qx Nx -1.195 5.3
+Qx No -0.813 5.3
+Qx Nd -1.004 5.3
+Qx Na -1.004 5.3
+Qx Qx -1.195 5.3
+Qo C -0.43 5.3
+Qo Nx -0.813 5.3
+Qo No -0.813 5.3
+Qo Nd -0.813 5.3
+Qo Na -0.813 5.3
+Qo Qx -1.004 5.3
+Qo Qo -0.813 5.3
+Qd C -0.43 5.3
+Qd Nx -1.004 5.3
+Qd No -0.813 5.3
+Qd Nd -0.813 5.3
+Qd Na -1.004 5.3
+Qd Qx -1.195 5.3
+Qd Qo -0.813 5.3
+Qd Qd -0.813 5.3
+Qa C -0.43 5.3
+Qa Nx -1.004 5.3
+Qa No -0.813 5.3
+Qa Nd -1.004 5.3
+Qa Na -0.813 5.3
+Qa Qx -1.195 5.3
+Qa Qo -0.813 5.3
+Qa Qd -1.004 5.3
+Qa Qa -0.813 5.3
+P C -0.43 5.3
+P Nx -1.004 5.3
+P No -0.621 5.3
+P Nd -0.813 5.3
+P Na -0.813 5.3
+P Qx -1.195 5.3
+P Qo -1.195 5.3
+P Qd -1.195 5.3
+P Qa -1.195 5.3
+P P -1.195 5.3
+Nxx C -0.43 5.3
+Nxx Nx -1.195 5.3
+Nxx No -0.813 5.3
+Nxx Nd -1.004 5.3
+Nxx Na -1.004 5.3
+Nxx Qx -1.195 5.3
+Nxx Qo -0.813 5.3
+Nxx Qd -1.004 5.3
+Nxx Qa -1.004 5.3
+Nxx P -1.004 5.3
+Nxx Nxx -1.195 5.3
+Nxx Nxg -1.195 5.3
+Nxg C -0.43 5.3
+Nxg Nx -1.195 5.3
+Nxg No -0.813 5.3
+Nxg Nd -1.004 5.3
+Nxg Na -1.004 5.3
+Nxg Qx -1.195 5.3
+Nxg Qo -0.813 5.3
+Nxg Qd -1.004 5.3
+Nxg Qa -1.004 5.3
+Nxg P -1.004 5.3
+Nxg Nxg -1.195 5.3
+Nxg Nxx -1.195 5.3
+Ca C -0.813 5.3
+Ca Nx -0.43 5.3
+Ca No -0.813 5.3
+Ca Nd -0.621 5.3
+Ca Na -0.621 5.3
+Ca Qx -0.43 5.3
+Ca Qo -0.43 5.3
+Ca Qd -0.43 5.3
+Ca Qa -0.43 5.3
+Ca P -0.43 5.3
+Ca Nxx -0.43 5.3
+Ca Nxg -0.43 5.3
+Ca Ca -0.813 5.3
+Qdr C -0.43 5.3
+Qdr Nx -1.004 5.3
+Qdr No -0.813 5.3
+Qdr Nd -0.813 5.3
+Qdr Na -1.004 5.3
+Qdr Qx -1.195 5.3
+Qdr Qo -0.813 5.3
+Qdr Qd -0.813 5.3
+Qdr Qa -1.004 5.3
+Qdr P -1.195 5.3
+Qdr Nxx -1.004 5.3
+Qdr Nxg -1.004 5.3
+Qdr Ca -0.43 5.3
+Qdr Qdr -0.813 5.3
+Nxn C -0.43 5.3
+Nxn Nx -1.195 5.3
+Nxn No -0.813 5.3
+Nxn Nd -1.004 5.3
+Nxn Na -1.004 5.3
+Nxn Qx -1.195 5.3
+Nxn Qo -0.813 5.3
+Nxn Qd -1.004 5.3
+Nxn Qa -1.004 5.3
+Nxn P -1.004 5.3
+Nxn Nxx -1.195 5.3
+Nxn Nxg -1.195 5.3
+Nxn Ca -0.43 5.3
+Nxn Qdr -1.004 5.3
+Nxn Nxn -1.195 5.3
+Qad C -0.43 5.3
+Qad Nx -1.004 5.3
+Qad No -0.813 5.3
+Qad Nd -1.004 5.3
+Qad Na -0.813 5.3
+Qad Qx -1.195 5.3
+Qad Qo -0.813 5.3
+Qad Qd -1.004 5.3
+Qad Qa -0.813 5.3
+Qad P -1.195 5.3
+Qad Nxx -1.004 5.3
+Qad Nxg -1.004 5.3
+Qad Ca -0.43 5.3
+Qad Qdr -1.004 5.3
+Qad Nxn -1.004 5.3
+Qad Qad -0.813 5.3
+Pc C -0.43 5.3
+Pc Nx -1.004 5.3
+Pc No -0.621 5.3
+Pc Nd -0.813 5.3
+Pc Na -0.813 5.3
+Pc Qx -1.195 5.3
+Pc Qo -1.195 5.3
+Pc Qd -1.195 5.3
+Pc Qa -1.195 5.3
+Pc P -1.195 5.3
+Pc Nxx -1.004 5.3
+Pc Nxg -1.004 5.3
+Pc Ca -0.43 5.3
+Pc Qdr -1.195 5.3
+Pc Nxn -1.004 5.3
+Pc Qad -1.195 5.3
+Pc Pc -1.195 5.3
+Nxq C -0.43 5.3
+Nxq Nx -1.195 5.3
+Nxq No -0.813 5.3
+Nxq Nd -1.004 5.3
+Nxq Na -1.004 5.3
+Nxq Qx -1.195 5.3
+Nxq Qo -0.813 5.3
+Nxq Qd -1.004 5.3
+Nxq Qa -1.004 5.3
+Nxq P -1.004 5.3
+Nxq Nxx -1.195 5.3
+Nxq Nxg -1.195 5.3
+Nxq Ca -0.43 5.3
+Nxq Qdr -1.004 5.3
+Nxq Nxn -1.195 5.3
+Nxq Qad -1.004 5.3
+Nxq Pc -1.004 5.3
+Nxq Nxq -1.195 5.3
+Qae C -0.43 5.3
+Qae Nx -1.004 5.3
+Qae No -0.813 5.3
+Qae Nd -1.004 5.3
+Qae Na -0.813 5.3
+Qae Qx -1.195 5.3
+Qae Qo -0.813 5.3
+Qae Qd -1.004 5.3
+Qae Qa -0.813 5.3
+Qae P -1.195 5.3
+Qae Nxx -1.004 5.3
+Qae Nxg -1.004 5.3
+Qae Ca -0.43 5.3
+Qae Qdr -1.004 5.3
+Qae Nxn -1.004 5.3
+Qae Qad -0.813 5.3
+Qae Pc -1.195 5.3
+Qae Nxq -1.004 5.3
+Qae Qae -0.813 5.3
+Ph C -0.43 5.3
+Ph Nx -1.004 5.3
+Ph No -0.621 5.3
+Ph Nd -0.813 5.3
+Ph Na -0.813 5.3
+Ph Qx -1.195 5.3
+Ph Qo -1.195 5.3
+Ph Qd -1.195 5.3
+Ph Qa -1.195 5.3
+Ph P -1.195 5.3
+Ph Nxx -1.004 5.3
+Ph Nxg -1.004 5.3
+Ph Ca -0.43 5.3
+Ph Qdr -1.195 5.3
+Ph Nxn -1.004 5.3
+Ph Qad -1.195 5.3
+Ph Pc -1.195 5.3
+Ph Nxq -1.004 5.3
+Ph Qae -1.195 5.3
+Ph Ph -1.195 5.3
+Qdh C -0.43 5.3
+Qdh Nx -1.004 5.3
+Qdh No -0.813 5.3
+Qdh Nd -0.813 5.3
+Qdh Na -1.004 5.3
+Qdh Qx -1.195 5.3
+Qdh Qo -0.813 5.3
+Qdh Qd -0.813 5.3
+Qdh Qa -1.004 5.3
+Qdh P -1.195 5.3
+Qdh Nxx -1.004 5.3
+Qdh Nxg -1.004 5.3
+Qdh Ca -0.43 5.3
+Qdh Qdr -0.813 5.3
+Qdh Nxn -1.004 5.3
+Qdh Qad -1.004 5.3
+Qdh Pc -1.195 5.3
+Qdh Nxq -1.004 5.3
+Qdh Qae -1.004 5.3
+Qdh Ph -1.195 5.3
+Qdh Qdh -0.813 5.3
+Ci C -0.813 5.3
+Ci Nx -0.43 5.3
+Ci No -0.813 5.3
+Ci Nd -0.621 5.3
+Ci Na -0.621 5.3
+Ci Qx -0.43 5.3
+Ci Qo -0.43 5.3
+Ci Qd -0.43 5.3
+Ci Qa -0.43 5.3
+Ci P -0.43 5.3
+Ci Nxx -0.43 5.3
+Ci Nxg -0.43 5.3
+Ci Ca -0.813 5.3
+Ci Qdr -0.43 5.3
+Ci Nxn -0.43 5.3
+Ci Qad -0.43 5.3
+Ci Pc -0.43 5.3
+Ci Nxq -0.43 5.3
+Ci Qae -0.43 5.3
+Ci Ph -0.43 5.3
+Ci Qdh -0.43 5.3
+Ci Ci -0.813 5.3
+Cl C -0.813 5.3
+Cl Nx -0.43 5.3
+Cl No -0.813 5.3
+Cl Nd -0.621 5.3
+Cl Na -0.621 5.3
+Cl Qx -0.43 5.3
+Cl Qo -0.43 5.3
+Cl Qd -0.43 5.3
+Cl Qa -0.43 5.3
+Cl P -0.43 5.3
+Cl Nxx -0.43 5.3
+Cl Nxg -0.43 5.3
+Cl Ca -0.813 5.3
+Cl Qdr -0.43 5.3
+Cl Nxn -0.43 5.3
+Cl Qad -0.43 5.3
+Cl Pc -0.43 5.3
+Cl Nxq -0.43 5.3
+Cl Qae -0.43 5.3
+Cl Ph -0.43 5.3
+Cl Qdh -0.43 5.3
+Cl Ci -0.813 5.3
+Cl Cl -0.813 5.3
+Qdk C -0.43 5.3
+Qdk Nx -1.004 5.3
+Qdk No -0.813 5.3
+Qdk Nd -0.813 5.3
+Qdk Na -1.004 5.3
+Qdk Qx -1.195 5.3
+Qdk Qo -0.813 5.3
+Qdk Qd -0.813 5.3
+Qdk Qa -1.004 5.3
+Qdk P -1.195 5.3
+Qdk Nxx -1.004 5.3
+Qdk Nxg -1.004 5.3
+Qdk Ca -0.43 5.3
+Qdk Qdr -0.813 5.3
+Qdk Nxn -1.004 5.3
+Qdk Qad -1.004 5.3
+Qdk Pc -1.195 5.3
+Qdk Nxq -1.004 5.3
+Qdk Qae -1.004 5.3
+Qdk Ph -1.195 5.3
+Qdk Qdh -0.813 5.3
+Qdk Ci -0.43 5.3
+Qdk Cl -0.43 5.3
+Qdk Qdk -0.813 5.3
+Cm C -0.813 5.3
+Cm Nx -0.43 5.3
+Cm No -0.813 5.3
+Cm Nd -0.621 5.3
+Cm Na -0.621 5.3
+Cm Qx -0.43 5.3
+Cm Qo -0.43 5.3
+Cm Qd -0.43 5.3
+Cm Qa -0.43 5.3
+Cm P -0.43 5.3
+Cm Nxx -0.43 5.3
+Cm Nxg -0.43 5.3
+Cm Ca -0.813 5.3
+Cm Qdr -0.43 5.3
+Cm Nxn -0.43 5.3
+Cm Qad -0.43 5.3
+Cm Pc -0.43 5.3
+Cm Nxq -0.43 5.3
+Cm Qae -0.43 5.3
+Cm Ph -0.43 5.3
+Cm Qdh -0.43 5.3
+Cm Ci -0.813 5.3
+Cm Cl -0.813 5.3
+Cm Qdk -0.43 5.3
+Cm Cm -0.813 5.3
+Cf C -0.813 5.3
+Cf Nx -0.43 5.3
+Cf No -0.813 5.3
+Cf Nd -0.621 5.3
+Cf Na -0.621 5.3
+Cf Qx -0.43 5.3
+Cf Qo -0.43 5.3
+Cf Qd -0.43 5.3
+Cf Qa -0.43 5.3
+Cf P -0.43 5.3
+Cf Nxx -0.43 5.3
+Cf Nxg -0.43 5.3
+Cf Ca -0.813 5.3
+Cf Qdr -0.43 5.3
+Cf Nxn -0.43 5.3
+Cf Qad -0.43 5.3
+Cf Pc -0.43 5.3
+Cf Nxq -0.43 5.3
+Cf Qae -0.43 5.3
+Cf Ph -0.43 5.3
+Cf Qdh -0.43 5.3
+Cf Ci -0.813 5.3
+Cf Cl -0.813 5.3
+Cf Qdk -0.43 5.3
+Cf Cm -0.813 5.3
+Cf Cf -0.813 5.3
+Cp C -0.813 5.3
+Cp Nx -0.43 5.3
+Cp No -0.813 5.3
+Cp Nd -0.621 5.3
+Cp Na -0.621 5.3
+Cp Qx -0.43 5.3
+Cp Qo -0.43 5.3
+Cp Qd -0.43 5.3
+Cp Qa -0.43 5.3
+Cp P -0.43 5.3
+Cp Nxx -0.43 5.3
+Cp Nxg -0.43 5.3
+Cp Ca -0.813 5.3
+Cp Qdr -0.43 5.3
+Cp Nxn -0.43 5.3
+Cp Qad -0.43 5.3
+Cp Pc -0.43 5.3
+Cp Nxq -0.43 5.3
+Cp Qae -0.43 5.3
+Cp Ph -0.43 5.3
+Cp Qdh -0.43 5.3
+Cp Ci -0.813 5.3
+Cp Cl -0.813 5.3
+Cp Qdk -0.43 5.3
+Cp Cm -0.813 5.3
+Cp Cf -0.813 5.3
+Cp Cp -0.813 5.3
+Ps C -0.43 5.3
+Ps Nx -1.004 5.3
+Ps No -0.621 5.3
+Ps Nd -0.813 5.3
+Ps Na -0.813 5.3
+Ps Qx -1.195 5.3
+Ps Qo -1.195 5.3
+Ps Qd -1.195 5.3
+Ps Qa -1.195 5.3
+Ps P -1.195 5.3
+Ps Nxx -1.004 5.3
+Ps Nxg -1.004 5.3
+Ps Ca -0.43 5.3
+Ps Qdr -1.195 5.3
+Ps Nxn -1.004 5.3
+Ps Qad -1.195 5.3
+Ps Pc -1.195 5.3
+Ps Nxq -1.004 5.3
+Ps Qae -1.195 5.3
+Ps Ph -1.195 5.3
+Ps Qdh -1.195 5.3
+Ps Ci -0.43 5.3
+Ps Cl -0.43 5.3
+Ps Qdk -1.195 5.3
+Ps Cm -0.43 5.3
+Ps Cf -0.43 5.3
+Ps Cp -0.43 5.3
+Ps Ps -1.195 5.3
+Pt C -0.43 5.3
+Pt Nx -1.004 5.3
+Pt No -0.621 5.3
+Pt Nd -0.813 5.3
+Pt Na -0.813 5.3
+Pt Qx -1.195 5.3
+Pt Qo -1.195 5.3
+Pt Qd -1.195 5.3
+Pt Qa -1.195 5.3
+Pt P -1.195 5.3
+Pt Nxx -1.004 5.3
+Pt Nxg -1.004 5.3
+Pt Ca -0.43 5.3
+Pt Qdr -1.195 5.3
+Pt Nxn -1.004 5.3
+Pt Qad -1.195 5.3
+Pt Pc -1.195 5.3
+Pt Nxq -1.004 5.3
+Pt Qae -1.195 5.3
+Pt Ph -1.195 5.3
+Pt Qdh -1.195 5.3
+Pt Ci -0.43 5.3
+Pt Cl -0.43 5.3
+Pt Qdk -1.195 5.3
+Pt Cm -0.43 5.3
+Pt Cf -0.43 5.3
+Pt Cp -0.43 5.3
+Pt Ps -1.195 5.3
+Pt Pt -1.195 5.3
+Cw C -0.813 5.3
+Cw Nx -0.43 5.3
+Cw No -0.813 5.3
+Cw Nd -0.621 5.3
+Cw Na -0.621 5.3
+Cw Qx -0.43 5.3
+Cw Qo -0.43 5.3
+Cw Qd -0.43 5.3
+Cw Qa -0.43 5.3
+Cw P -0.43 5.3
+Cw Nxx -0.43 5.3
+Cw Nxg -0.43 5.3
+Cw Ca -0.813 5.3
+Cw Qdr -0.43 5.3
+Cw Nxn -0.43 5.3
+Cw Qad -0.43 5.3
+Cw Pc -0.43 5.3
+Cw Nxq -0.43 5.3
+Cw Qae -0.43 5.3
+Cw Ph -0.43 5.3
+Cw Qdh -0.43 5.3
+Cw Ci -0.813 5.3
+Cw Cl -0.813 5.3
+Cw Qdk -0.43 5.3
+Cw Cm -0.813 5.3
+Cw Cf -0.813 5.3
+Cw Cp -0.813 5.3
+Cw Ps -0.43 5.3
+Cw Pt -0.43 5.3
+Cw Cw -0.813 5.3
+Nxy C -0.43 5.3
+Nxy Nx -1.195 5.3
+Nxy No -0.813 5.3
+Nxy Nd -1.004 5.3
+Nxy Na -1.004 5.3
+Nxy Qx -1.195 5.3
+Nxy Qo -0.813 5.3
+Nxy Qd -1.004 5.3
+Nxy Qa -1.004 5.3
+Nxy P -1.004 5.3
+Nxy Nxx -1.195 5.3
+Nxy Nxg -1.195 5.3
+Nxy Ca -0.43 5.3
+Nxy Qdr -1.004 5.3
+Nxy Nxn -1.195 5.3
+Nxy Qad -1.004 5.3
+Nxy Pc -1.004 5.3
+Nxy Nxq -1.195 5.3
+Nxy Qae -1.004 5.3
+Nxy Ph -1.004 5.3
+Nxy Qdh -1.004 5.3
+Nxy Ci -0.43 5.3
+Nxy Cl -0.43 5.3
+Nxy Qdk -1.004 5.3
+Nxy Cm -0.43 5.3
+Nxy Cf -0.43 5.3
+Nxy Cp -0.43 5.3
+Nxy Ps -1.004 5.3
+Nxy Pt -1.004 5.3
+Nxy Cw -0.43 5.3
+Nxy Nxy -1.195 5.3
+Cv C -0.813 5.3
+Cv Nx -0.43 5.3
+Cv No -0.813 5.3
+Cv Nd -0.621 5.3
+Cv Na -0.621 5.3
+Cv Qx -0.43 5.3
+Cv Qo -0.43 5.3
+Cv Qd -0.43 5.3
+Cv Qa -0.43 5.3
+Cv P -0.43 5.3
+Cv Nxx -0.43 5.3
+Cv Nxg -0.43 5.3
+Cv Ca -0.813 5.3
+Cv Qdr -0.43 5.3
+Cv Nxn -0.43 5.3
+Cv Qad -0.43 5.3
+Cv Pc -0.43 5.3
+Cv Nxq -0.43 5.3
+Cv Qae -0.43 5.3
+Cv Ph -0.43 5.3
+Cv Qdh -0.43 5.3
+Cv Ci -0.813 5.3
+Cv Cl -0.813 5.3
+Cv Qdk -0.43 5.3
+Cv Cm -0.813 5.3
+Cv Cf -0.813 5.3
+Cv Cp -0.813 5.3
+Cv Ps -0.43 5.3
+Cv Pt -0.43 5.3
+Cv Cw -0.813 5.3
+Cv Nxy -0.43 5.3
+Cv Cv -0.813 5.3
+Nap C -0.621 5.3
+Nap Nx -1.004 5.3
+Nap No -0.813 5.3
+Nap Nd -1.004 5.3
+Nap Na -1.004 5.3
+Nap Qx -1.004 5.3
+Nap Qo -0.813 5.3
+Nap Qd -1.004 5.3
+Nap Qa -0.813 5.3
+Nap P -0.813 5.3
+Nap Nxx -1.004 5.3
+Nap Nxg -1.004 5.3
+Nap Ca -0.621 5.3
+Nap Qdr -1.004 5.3
+Nap Nxn -1.004 5.3
+Nap Qad -0.813 5.3
+Nap Pc -0.813 5.3
+Nap Nxq -1.004 5.3
+Nap Qae -0.813 5.3
+Nap Ph -0.813 5.3
+Nap Qdh -1.004 5.3
+Nap Ci -0.621 5.3
+Nap Cl -0.621 5.3
+Nap Qdk -1.004 5.3
+Nap Cm -0.621 5.3
+Nap Cf -0.621 5.3
+Nap Cp -0.621 5.3
+Nap Ps -0.813 5.3
+Nap Pt -0.813 5.3
+Nap Cw -0.621 5.3
+Nap Nxy -1.004 5.3
+Nap Cv -0.621 5.3
+Nap Nap -1.004 5.3
+CDB C -0.813 5.3
+CDB Nx -0.43 5.3
+CDB No -0.813 5.3
+CDB Nd -0.621 5.3
+CDB Na -0.621 5.3
+CDB Qx -0.43 5.3
+CDB Qo -0.43 5.3
+CDB Qd -0.43 5.3
+CDB Qa -0.43 5.3
+CDB P -0.43 5.3
+CDB Nxx -0.43 5.3
+CDB Nxg -0.43 5.3
+CDB Ca -0.813 5.3
+CDB Qdr -0.43 5.3
+CDB Nxn -0.43 5.3
+CDB Qad -0.43 5.3
+CDB Pc -0.43 5.3
+CDB Nxq -0.43 5.3
+CDB Qae -0.43 5.3
+CDB Ph -0.43 5.3
+CDB Qdh -0.43 5.3
+CDB Ci -0.813 5.3
+CDB Cl -0.813 5.3
+CDB Qdk -0.43 5.3
+CDB Cm -0.813 5.3
+CDB Cf -0.813 5.3
+CDB Cp -0.813 5.3
+CDB Ps -0.43 5.3
+CDB Pt -0.43 5.3
+CDB Cw -0.813 5.3
+CDB Nxy -0.43 5.3
+CDB Cv -0.813 5.3
+CDB Nap -0.621 5.3
+CDB CDB -0.813 5.3

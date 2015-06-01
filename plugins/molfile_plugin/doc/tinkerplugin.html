@@ -1,0 +1,42 @@
+<!--#set var="TITLE" value="Tinker Plugin, Version 0.5"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>
+This plugin reads 
+<a href="http://dasher.wustl.edu/tinker/">Tinker</a> 
+files, a minimalistic plain text file format for storing molecular 
+coordinates, bonds, angles, and torsions. 
+
+<p>
+A brief summary of the format, as read by VMD follows:
+<pre>
+    Tinker molecule file format:
+    [ N ] ...             # of atoms, and molecule name
+    idx1 atom1 x y z ...  atom index, followed by name, xyz coords,
+    idx2 atom2 x y z ...  atom type index, bond, angle, torsion
+    ...
+    idx3 atomN x y z ... 
+                        
+    Note that this plugin only reads the atom name and coordinate fields, 
+    all other fields are ignored at present.
+</pre>
+
+<h3>Notes:</h3>
+
+<p><b>Trajectories</b>
+<br>Tinker files can contain multiple timesteps. All timesteps, however 
+have to have the same number of atoms. Also the atoms must be in the same
+order, only the first timestep will be used to read the element names.
+Only the coordinates will be read fom successive timesteps.
+</p>
+
+<p><b>Unused Data</b>
+<br>This plugin only reads the label and coordinates for each atom. Any
+additional data recorded for an atom is ignored.</p>
+
+<p><b>Atom Count</b>
+<br>VMD requires that the first non-comment line of the file contain the
+number of atoms.</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

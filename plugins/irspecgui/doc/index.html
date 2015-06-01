@@ -1,0 +1,58 @@
+<!--#set var="TITLE" value="IR Spectral Density Calculator Plugin, Version 1.3"-->
+<!--#include virtual="/include/header-over.shtml"-->
+
+<!-- CONTENT STARTS HERE -->
+
+    <a href="irspecgui.png"><img style="border: 0; padding: 0 0 1em 1em"
+	src="irspecgui_small.png" align="right"></a>
+
+    <p>This plugin provides a graphical interface to compute spectral densities
+      from trajectories using time series data created with the <tt>measure dipole</tt>
+      command in VMD and a custom spectral densities plugin to compute the auto-correlated 
+      Fourier transform. Please note that this is using the <b>total dipole moment</b> 
+      of all atoms in the selection and not averaging over individual molecules.
+      The latter and other types of auto-correlations can be computed through 
+      the script interface of the <tt>specden</tt> command which is part of 
+      the <a href="../signalproc/">SignalProc</a> plugin collection and 
+      described in the respective documentation. The spectral 
+      density plugin also supports a selection of thermal corrections to the 
+      peak intensities. It is recommended to stick to the default setting 
+      (harmonic) unless you know what you are doing.
+      You have to have a trajectory already loaded and have the option to 
+      view the resulting spectrum in a <a href="../multiplot/">MultiPlot</a>
+      window and write it to a file.</p>
+
+    <h3>Remarks</h3>
+<img style="border: 0; padding: 0 0 1em 1em" src="multiplot_spectrum.png" align="right">
+    <p>In order to get meaningful results, the selection of atoms has to
+    have (partial) charges assigned, so loading a corresponding topology
+    file (.psf, .parm7), that contains this information is highly
+    recommended. For cases, where this is not available, you have the
+    options to either guess charges using the CHARMM guess routine from
+    the <a href="../apbsrun/">APBSrun plugin</a> or to load an atom name
+    to charge mapping from an external file. Instead of using the simple
+    guess, you may want to consider using the 
+    <a href="../autopsf/">AutoPSF plugin</a> to create a matching .psf file
+    for your system.</p>
+     
+    <p>This plugin can also be used to compute spectral densities from
+    ab initio MD simulations, if one has computed maximally localized
+    Wannier functions along the trajectory. A corresponding manually
+    loadable charge mapping would look like be following (element X
+    stands for the Wannier centers):</p>
+<pre>
+     # pseudopotential valence charges from cpmd run. 
+     Zn  12.0 
+     O    6.0 
+     N    5.0
+     C    4.0
+     H    1.0
+     X   -2.0 # electron pairs from localization
+</pre>
+
+    
+<h3>Author</h3>
+<p><a href="http://sites.google.com/site/akohlmey/">Axel Kohlmeyer</a>.</p>
+
+<!--#include virtual="/include/footer-over.shtml"-->
+</BODY></HTML>

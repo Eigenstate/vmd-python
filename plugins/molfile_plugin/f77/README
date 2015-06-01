@@ -1,0 +1,87 @@
+
+Fortran bindings for the VMD molfile plugins. v0.01
+Quick and dirty instructions, feel free to improve.
+
+Copyright 2006 (c) Axel Kohlmeyer <akohlmey@cmm.chem.upenn.edu>
+
+
+1. Compilation/Configuration/Compatibility
+
+a) compile the molfile plugins in the usual way.
+b) edit the config section of the Makefile:
+   - set your architecure, c and fortran compiler
+   - set fortran name mangling via define in CPPFLAGS.
+     no define            : fortran names are lowercase and 
+                            one underscore appended
+     -D_F77_NO_UNDERSCORE : fortran names are lowercase and
+                            without underscore appended
+     -D_F77_F2C_UNDERSCORE: fortran names are lowercase and 
+                            follow f2c/g77 underscoring conventions
+   - currently only Sun string length conventions (i.e. the length
+     of the strings is added to the list of arguments after all
+     other arguments) are supported.
+c) type: make
+   this will compile the interface code and a test/example program,
+   which will combine the interface with the static molfile lib.
+   if it does not link, see b) 
+d) adapt and try the tester with your own files.
+e) tested platforms: 
+   - Linux 32-bit with gcc/g77/gfortran, VMD-1.8.4b12cvs.
+
+2.) Usage/API
+
+a) currently only reading coordinates and static plugins are
+   supported. more to come...
+
+b) usage:
+   - you have to initialize the plugins and the interface by:
+     call f77_molfile_init
+
+   - to open a file for reading do:
+     call f77_molfile_open_read(handle, natom, infile, intype)
+     'handle' is of type integer*4 and a file descriptor 
+     (i.e. like an i/o channel) that identifies this file 
+     and will be set by the subroutine and has to be used
+     for all consecutive operations on the same opened file.
+     note that this number is not connected in any way whatsorever
+     to a fortran i/o channel number.
+     'natom' is of type integer*4 and will contain the number
+     of atoms in the opened file on exit.
+     'infile' is of type character*(*) and contains the
+     name of the file to open.
+     'intype' is the file type. it can be any valid molfile
+     plugin name or 'auto' for automatic detection based on
+     the filename extension. first matching plugin wins.
+
+    - to read a set of coordinates do:
+     call f77_molfile_read_next(handle, natom, xyz, box, status);
+     'handle' is the handle from the call to f77_molfile_open().
+     'natom' is the number of atoms from the call to f77_molfile_open().
+     'xyx' is an array of type real*4 and will contain the 
+     coordinates in angstrom after the successful read. the coordinates 
+     are stored in the order x(1),y(1),z(1),x(2),y(2),z(2),...
+     so xyz(:) has to be at least of size 3*natom.
+     'box' is of type real*4(6) and contains the box dimensions 
+     as, a, b, c, alpha, beta, gamma with a,b,c in angstrom and 
+     alpha, beta, gamma in degrees.
+     'status' is of type integer*4 and if set to zero on enter
+     will instruct the reader to skip this frame.
+     on exit it will be set to zero if there was a problem or
+     to 1 on success.
+
+    - to close the file do:
+    call f77_molfile_close_read(handle)
+    this will clear the file descriptor for the corresponding 
+    open call and close the file.
+     
+
+3.) Implementation and Limitations
+   The current implementation does use static variables
+   and arrays to handle the list of plugins, and concurrent
+   open files. so the code is not meant to be thread safe. 
+   If you want to use more plugins and use more simultaneously
+   open files, you can add -DMAXPLUGINS=<your number> and/or
+   -DMAXHANDLES=<your number> to CPPFLAGS, make clean and recompile.
+   
+
+2006/02/16.

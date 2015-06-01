@@ -1,0 +1,47 @@
+<!--#set var="TITLE" value="NAMD Server Plugin, Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+Provides an interface for starting NAMD in "server mode".
+NAMD is started externally and its output is piped back into VMD such that the
+energy output can be utilized. You can generate a NAMD input file that contains 
+code such that NAMD starts up, opens a socket and goes into waiting mode (event-loop,
+waiting for socket to be connected).
+The NAMDserver plugin polls the server and as soon as it's up it will connect a client
+to it. In the following every line that the client sends to the server will be evaluated
+in NAMD as a command (TCL and NAMD commands). The results will be sent back to the client
+through the socket. Thus you can interactively control NAMD.
+<p>
+NAMDserver is most useful, if you want to build a structure once and then want to
+evaluate energies for different coodinates or charges which you generate on the fly
+through another script. Thus you can save the startup phase of NAMD for the subsequent 
+calculations, if the structure was built once in NAMD.
+<p>
+<p>
+I prepared two function that simplify life even more:
+<p>
+::NAMDserver::namd_eval will send $cmd to the server and block until the
+return value is received or the timeout has been reached.
+<p>
+::NAMDserver::namd_compute_energies {sock dcdfile} 
+will request the evaluation of the energies for all frames of the given 
+dcdfile and block until the return value is received or the timeout has been 
+reached. The resulting energies are stored in ::NAMDserver::etitle and 
+::NAMDserver::energy.
+<p>
+NAMDserver works only in conjunction with namdenergy since you must use the latter is used 
+to build the NAMD input files using the -server flag.
+<p>
+Example:<br>
+  set sel [atomselect top "segid CWAT"]<br>
+  namdenergy -sel $sel -bond -server -tempname "namdserver" 
+     -par par_all27_prot_lipid_na.inp<br>
+
+  set sock [start_server "namdserver-temp.namd"]<br>
+  set energy [namd_compute_energies $sock myfile.dcd]<br>
+  set energy2 [namd_compute_energies $sock myotherfile.dcd]<br>
+<p>
+Author: <br>
+Jan Saam<br>
+saam@charite.de<br>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

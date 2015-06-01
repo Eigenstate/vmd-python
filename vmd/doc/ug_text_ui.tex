@@ -1,0 +1,2951 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_text_ui.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.235 $      $Date: 2014/12/29 05:52:41 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%   The Text UI
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Tcl Text Interface}
+\label{chapter:ug:text}
+\index{user interfaces!text}
+
+The Tcl text interface provides complete access to all the \VMD\ commands.
+Anything that can be done from the menus can be done with \VMD\ text
+commands.   
+
+\section{Using text commands}
+
+Text commands can be entered into \VMD\ in several ways:
+
+\begin{itemize}
+\item 
+Commands can be entered by typing them at the \VMD\ prompt in 
+the text console window.  This window normally contains the prompt {\tt
+vmd > }.  When other text (e.g., from a mouse pick) is displayed to
+the screen, it will scroll the screen up so the prompt is not at the
+last line of the screen.  To make it reappear, press enter.  When
+entering multi-line commands, an alternate prompt appears, {\tt ? },
+and will not disappear until the command is finished.  Sometimes it is
+waiting for a close to a double quote, open brace, or open bracket,
+while at other times it is waiting for a line that doesn't end in a
+backslash.  
+
+\item
+\index{scripts!source}
+\index{scripts!play}
+Since you may not want to retype all the data in every time, there are
+two ways to read the data in from a text file.  One 
+is the \index{play!command}
+{\tt play} command.  This reads a line from the file,
+executes it, then updates the screen and checks for any changes in the
+mouse or window input, so that \VMD\ stays interactive during execution of
+the script.  The second way is the Tcl command \index{source!command}
+{\tt source}.  This reads the whole file before allowing the
+mouse and windows to respond to new input.  This is often more efficient
+when your script contains many lines.  
+
+\item
+\index{{\tt .vmdrc}}
+\index{{\tt vmd.rc}}
+On Unix/Linux platforms, if the file {\tt .vmdrc} (see
+section \ref{ug:section:vmdrc}) exists in your home
+directory, it is played at \VMD\ startup.  If you don't have a {\tt .vmdrc}
+file, \VMD\ uses a default script in the \VMD\ installation directory.  
+Similarly, at startup the {\tt -e} command line flag can be used to specify 
+an input file to be played after reading the {\tt .vmdrc} file.  
+The Windows version of \VMD\ works similarly, though the startup file
+is named {\tt vmd.rc}.
+
+A good use of the {\tt .vmdrc file} is to specify which \VMD\ menus you
+would like to have open when you start \VMD\ and where they should be placed;
+see section \ref{ug:ui:text:menu}) for information
+on usage.
+\end{itemize}
+
+\section{Tcl/Tk}
+\label{ug:section:tcl}
+\index{Tcl}\index{Tk}
+
+The standard distribution is compiled with Tcl, which add a complete
+scripting language including variables, loops, and conditionals along with a
+standard method for communicating with other programs via standard TCP/IP
+sockets. Versions 1.2 and later also include the Tk toolkit, for creating
+menus with buttons bound to one's favorite actions.
+
+Tcl (short for Tool Command Language, developed by John Ousterhout) is
+an embeddable and extensible scripting language.  In other words, Tcl
+sits inside \VMD\ as a language interpreter where it can execute its
+standard language commands or the various \VMD\ specific extensions.
+
+\VMD\ uses Tcl and Tk version 8.4.1.  We refer you to 
+\htmladdnormallink{{\tt http://www.tcl.tk/}}
+	{http://www.tcl.tk/}
+for more information about Tcl. 
+
+\section{Tcl Text Commands}
+\label{ug:section:text}
+\index{tcl commands}
+
+\begin{table}[htp]
+%  \hspace{1in}
+  \begin{tabular}{|l|l|} \hline
+    \multicolumn{1}{|c}{First Word} &
+	\multicolumn{1}{|c|}{Description} \\ \hline\hline
+    animate	& Play/Pause/Rewind a molecular trajectory. \\
+    atomselect  & Create atom selection objects for analysis. \\
+    axes	& Position a set of XYZ axes on the screen. \\
+    color	& Change the color assigned to molecules,
+			or edit the colormap. \\
+    colorinfo	& (Tcl) Obtain color properties for various objects \\
+    display	& Change various aspects of the graphical display window. \\
+    exit, quit	& Quit VMD. \\
+    gettimestep & Retrieve a timestep as a binary Tcl array (use for plugins) \\
+    help	& Display an on-line help file with an HTML viewer. \\
+    imd         & Control the connection to a remote simulation. \\
+    label	& Turn on/off labels for atoms, bonds, angles,
+    dihedral angles, or springs. \\
+    light	& Control the light sources used to illuminate
+			graphical objects. \\
+    logfile	& Turn on/off logging a VMD session to a file or the console. \\
+    material    & Create new material definitions and modify their settings. \\
+    mdffi       & MDFF density map synthesis and cross correlation commands \\
+    measure     & Measure properties of moleculear structures. \\
+    menu	& Control or query the on-screen GUI windows. \\
+    molecule or mol	& Load, modify, or delete a molecule. \\
+    molinfo     & Get information about a molecule or loaded file. \\
+    mouse	& Change the current state (mode) of the mouse. \\
+    parallel    & Execute commands in parallel on clusters or supercomputers.\\
+    play 	& Start executing text commands from a specified file. \\
+    render	& Output the currently displayed image (scene) to a file. \\
+    rock	& Rotate the current scene continually at a specified rate. \\
+    rotate	& Rotate the current scene around a given axis by a 
+			certain angle. \\
+    scale	& Scale the current scene up or down. \\
+    stage	& Position a checkerboard stage on the screen. \\
+    tool	& Initialize and control external spatial tracking devices. \\
+    translate 	& Translate the objects in the current scene. \\
+    user	& Add new keyboard commands. \\
+    vmdinfo     & (Tcl) Get information about this version of \VMD\\
+    volmap  & Create volumetric data based on molecular information\\
+    wait	& Wait a number of seconds before reading another
+			command.  Animation continues. \\ 
+    sleep	& Sleep a number of seconds before reading another 
+			command.  Animation is frozen. \\
+			\hline
+  \end{tabular}
+  \caption{Summary of core text commands in \VMD.}
+  \label{table:ug:text}
+\index{animate!command}
+\index{axes!command}
+\index{atomselect!command}
+\index{color!command}
+\index{colorinfo!command}
+\index{debug!command}
+\index{display!command}
+\index{exit!command}
+\index{gettimestep!command}
+\index{help!command}
+\index{imd!command}
+\index{logfile!command}
+\index{label!command}
+\index{light!command}
+\index{material!command}
+\index{mdffi!command}
+\index{measure!command}
+\index{menu!command}
+\index{molecule!command}
+\index{mouse!command}
+\index{parallel!command}
+\index{play!command}
+\index{render!command}
+\index{rock!command}
+\index{rotate!command}
+\index{scale!command}
+\index{stage!command}
+\index{tool!command}
+\index{translate!command}
+\index{user!command}
+\index{volmap!command}
+\index{vmdinfo!command}
+\index{wait!command}
+\index{sleep!command}
+\end{table}
+
+
+
+All Tcl commands in \VMD\ are composed of one or more words or
+phrases separated by white space, and terminated by a newline.  In 
+Tcl, a ``phrase'' is text surrounded by double
+quotes or by a matching set of open and close braces. 
+The first word of each command indicates the general
+purpose for the command, and the following words specify the exact
+type of command to execute. Table \ref{table:ug:text} summarizes the
+text commands in \VMD\ by listing the first words, and describing the
+general purpose for commands starting with those words.  
+
+The commands described in the following sections are listed by name,
+and followed by a list of the available arguments.  If an argument is
+optional, it is enclosed in {\tt []}s.  If only one of a list of
+arguments is needed, the list is enclosed in {\tt <>}s and the items
+are separated by {\tt |}.  Words in italics indicate a string or value
+to be specified by the user.
+
+  \index{animate!command}\subsection{animate}
+  \label{ug:ui:text:animate}
+These commands control the animation of a molecular trajectory and are
+used to read and write animation frames to/from a file or
+Play/Pause/Rewind a molecular trajectory.
+  \begin{itemize}
+    \item {\bf dup {\tt [} frame {\it frame\_number} {\tt ]} {\it molId}}: 
+	 Duplicate the given frame (default ``now'') of
+	molecule {\it molId} and add the new frame to this molecule.
+    \item {\bf forward}: Play animation forward.
+\index{animation!duplicate frame}
+\index{frame!duplicate}
+    \item {\bf for}: Same as forward.
+    \item {\bf reverse}: Play animation backward.
+    \item {\bf rev}: Same as reverse.
+    \item {\bf pause}: Pause animation.
+\index{animation!play}
+    \item {\bf prev}: Go to previous frame.
+    \item {\bf next}: Go to next frame.
+    \item {\bf skip {\it n}}: Set stride to {\it n}+1 frames.
+    \item {\bf delete all}: Delete all frames from memory.
+\index{animation!delete}
+    \item {\bf speed {\it n}}: Set animation speed to {\it n}.
+\index{animation!speed}
+    \item {\bf style once}: Set to play animation once.
+    \item {\bf style loop}: Set to loop through animation continuously.
+    \item {\bf style rock}: Set to play animation forward and back continuously.
+    \item {\bf styles}: Return a list of the available styles.
+\index{animation!style}
+    \item {\bf goto start}: Go to first frame.
+\index{animation!goto start}
+    \item {\bf goto end}: Go to last frame.
+\index{animation!goto end}
+    \item {\bf goto {\it n}}: Go to frame {\it n}.
+\index{animation!jump}
+    \item {\bf read {\it file\_type} {\it filename} {\tt [}beg {\it nb}{\tt ]} {\tt [}end {\it ne}
+{\tt ]} {\tt [}skip {\it ns}{\tt ]}  {\tt [}waitfor {\it nw}{\tt ]}
+           {\tt [}{\it molecule\_number}{\tt ]}}: 
+
+Read data for {\it molecule\_number} from {\it filename} of type {\it
+file\_type}, beginning with \timestep {\it nb}, ending with \timestep
+{\it ne}, with a stride of {\it ns}.  Return the number of \timesteps
+read from this file; if the file contains more than this number, the
+remaining \timesteps will be loaded during subsequent VMD display updates.
+By default, one \timestep will be loaded before the command returns.
+The {\tt waitfor} option allows you to specify how
+many \timesteps to load before returning.  The {\tt waitfor} parameter
+{\it nw} can be any integer, or {\tt all}; choosing {\it nw} less than
+zero is the same as choosing {\tt all}.  If \timesteps from other files
+are still being loaded when the animate command is issued, these \timesteps
+will be loaded first.
+
+\index{animation!read}
+\index{files!read}
+    \item {\bf write {\it file\_type} {\it filename} {\tt [}beg {\it nb}{\tt ]} {\tt [}end {\it ne}
+{\tt ]} {\tt [}skip {\it ns}{\tt ]}  {\tt [}waitfor {\it nw}{\tt ]}
+           {\tt [}sel {\it selection}{\tt ]} 
+           {\tt [}{\it molecule\_number}{\tt ]}}: 
+Write data from {\it molecule\_number} to {\it filename} of type {\it
+file\_type}, beginning with \timestep {\it nb}, ending with \timestep {\it ne},
+with a stride of {\it ns}.  Return the number of \timesteps written to
+this file; if more \timesteps have been specified than this number, the
+remaining \timesteps will be written during subsequent VMD display updates.
+By default, one \timestep will be written before the command returns.
+The {\tt waitfor} option allows you to specify how many \timesteps to
+write before returning.  The {\tt waitfor} parameter {\it nw} can be any
+integer, or {\tt all}; choosing {\it nw} less than zero is the same as
+choosing {\tt all}.  Pass the name of an atom selection as {\it selection}
+to write only the selected atoms to the file.
+
+\index{animation!write}
+\index{frame!write}
+\index{files!writing}
+    \item {\bf delete {\tt [}beg {\it nb}{\tt ]} {\tt [}end {\it ne}{\tt ]} 
+{\tt [}skip {\it ns}{\tt ]} 
+          {\tt [}{\it molecule\_number}{\tt ]}}: Delete data for 
+{\it molecule\_number}, beginning with 
+          frame {\it nb}, ending with frame {\it ne}, and keep frames with a stride 
+of {\it ns} (a stride of -1 implies to keep all frames).
+\index{animation!delete}
+\index{frame!delete}
+\end{itemize}
+
+\index{atomselect!command}\subsection{atomselect}
+\label{ug:ui:text:atomselect}
+\index{atom!info}
+\index{atom!selection}
+\index{selection}
+
+ Atom selection is the primary method to access information about
+the atoms in a molecule.  It works in two steps. The first step is to create a
+selection given the selection text, molecule id, and optional frame
+number. This is done by a function called {\tt atomselect}, which returns the
+name of the new atom selection. the second step is to use the created
+selection to access the information about the atoms in the selections.
+ 
+\begin{itemize}
+  \item {\bf list}: Return a list of all undeleted atom selections.
+
+  \item {\bf keywords}: Return a list of all recognized keywords in an atom
+  selection text.
+
+\index{atom!selection!macros}
+\index{atom!selection!Tcl!macros}
+  \item {\bf macro} {\it name} {\it selection}: Create a new singleword atom
+selection out of existing atom selections.  {\it name} must be a single word
+starting with a non-numeric character and contain no spaces or special 
+characters.  {\it selection} can be any
+valid atom selection, and can even contain other macros.  You should ensure 
+that your macros do not contain themselves, either directly or through a chain
+of other macros.  If VMD detects this situation, it will abort the evaluation
+of the atom selection.
+
+If no selection is given, the macro for the given name is returned.
+
+If no name is given, a list of all macro names is returned.
+
+If a macro already exists for the given name, the old selection will
+be replaced with the new selection.  Singlewords that are not defined
+as macros, like {\tt protein} and {\tt water}, cannot be redefined with
+the macro command.
+
+  \item {\bf delmacro} {\it name}: Delete the macro corresponding to {\it name}.
+Singlewords that are not defined as macros cannot be deleted.
+
+  \item {\bf {\it molecule\_id} {\it selection\_text}
+[frame {\it frame\_number}]}
+	Creates a new atom selection and returns its name.  The returned name
+can be used as a Tcl proc in order to access the atom selection.  
+  The {\it selection text} is the same language used in
+the \hyperref{{\sf Graphics} window}{{\sf Graphics} window [\S~}{]}
+{ug:ui:window:graphics} and described in
+Chapter \ref{ug:topic:selections}.
+It is used to pick a given subset of the atom.
+The text cannot be changed once a selection is made.  Some of the terms
+in the selection depend on data that change during a trajectory (so
+far only the keywords 'x', 'y', and 'z' can change over time).  For
+these, the optional 'frame value' is used to determine which specific
+frame to use.  The frame number can be a non-negative integer, the word
+{\tt now} (the current frame), the word {\tt first} (for frame 0) 
+and {\tt last} (for the last frame).
+
+Some examples are:
+\begin{verbatim}
+vmd> atomselect top "name CA"
+atomselect0
+vmd> atomselect 3 "resid 25" frame last
+atomselect1
+vmd> atomselect top "within 5 of resname LYR" frame 23
+atomselect2
+\end{verbatim}
+
+The newly created atom selection is a Tcl proc, which takes the following
+options:
+
+\begin{itemize}
+    \item {\bf num}: Return the number of atoms in the selection.
+   \item {\bf list}: Return a list of the atom indices in the selection 
+	(BTW, this is the same as {\tt get index}).
+\item {\bf text}: Return the text used to create this selection.
+\item {\bf molid}: Returns the molecule id used to create this selection.
+\item {\bf frame}: Returns the animation frame associated with this selection.  The
+	result will be either {\tt now}, {\tt last}, or an integer corresponding
+	to the frame.  When the frame is {\tt now}, the atom selection will use
+	atomic coordinates from the current frame for its associated molecule.  If
+	the frame is {\tt last}, the atom selection will always use coordinates 
+	from the last frame.  If the frame is a specific integer, the selection
+	will always use coordinates from that frame, even if the current animation
+	frame changes.  Note that if a nonexistent frame is specified, the atomic
+	coordinates will reference the last frame.
+\item {\bf frame} {\it frame}: Set the frame for the selection.  {\it frame} should
+	be either {\tt now}, {\tt last}, or an integer.  
+\item {\bf delete}: Delete this object (removes the function). 
+\item {\bf global}: Moves the object into the global namespace.  Atom 
+	selections created within a Tcl proc that are not made global are 
+	deleted when the proc exits.
+\item {\bf uplevel {\it level}}: Moves the object to a new level in the 
+	namespace stack.  Works the same as the Tcl function {\tt uplevel}.
+\item {\bf get {\it attribute\_list}}: Given an attribute or a list of 
+attributes, returns the attribute values.  If only a single attribute is
+given, a list of corresponding attributes values will be returned.  If a
+list of attributes is given, then a list of sublists will be returned;
+each sublist will contain the values for the corresponding attributes.
+See Tables \ref{table:ug:keywords}, \ref{table:ug:keywords:cont}, and
+\ref{table:ug:volkeywords} for the 
+recognized attribute keywords.
+
+\item {\bf set {\it attribute\_list} {\it values\_lists}}: Set the attributes
+	in the attribute list with the values gven in the values lists.  
+  If there is only one attribute, then {\it values\_lists} can be either
+  a single value or a list of values, one for each selected atom.
+  If there is more than one attribute, then {\it values\_lists} must be a
+  list of sublists; the number of sublists must equal the number of selected
+  atoms, and the number of items in each sublist must equal the number of
+  attributes.  
+
+  Example:
+\begin{verbatim}
+  set sel [atomselect top all]
+  set mass [$sel get mass]
+  set xyz [$sel get {x y z}]
+  $sel set beta 0      # all values are set to zero
+  $sel set beta $mass  # copy mass to beta
+  # set occupancy to x, mass to y, beta to z
+  $sel set {occupancy mass beta} $xyz 
+\end{verbatim}
+
+It is an error to set integer or floating point keywords using non-numeric
+values.  If floating point values are passed to integer keywords, they will
+be converted to integers, and vice versa.
+
+The set command immediately updates all representations of the selected 
+molecule.  If speed is an issue, delete all representations of the molecule
+before setting the values.
+
+\item {\bf getbonds}: returns a list of bondlists; each bondlist contains the 
+	id's of the atoms bonded to the corresponding atom in the selection.
+\item {\bf setbonds}: Set the bonds for the atoms in the selection; the second 
+	argument should be a list of bondlists, one bondlist for each 
+	selected atom.
+\item {\bf move {\it 4x4 matrix}}: Applies the given transformation matrix to
+	the coordinates of each atom in the selection. 
+\item {\bf moveby {\it offset}}: move all the atoms by a given offset.
+\item {\bf lmoveby {\it offset\_list}}: move each atom by an offset given in the list.
+\item {\bf moveto {\it position}}: move all the atoms to a given location. 
+\item {\bf lmoveto {\it position\_list}}: move each atom to a point given by the appropriate list 
+	element.
+\item {\bf writeXXX {\it filename}}: 
+\label{ug:ui:text:atomselect:writexxx}
+write the selected atoms to a file of type XXX; e.g., pdb, dcd.
+      {\bf New in VMD 1.8}: writepdb requires a filename; omitting the filename
+no longer returns the PDB data as a string.  To get the PDB data as a string,
+first write to a file, then enter the following commands: {\tt set fd [open 
+{\it filename} r]; set s [read \$fd]; close \$fd}.  The text will be contained in the
+variable {\tt s}.
+\item {\bf update}: Update the atom selection based on the frame for the
+      selection (the frame can be specified using the {\bf frame} option as
+      described above). 
+    
+\end{itemize}
+
+See section \ref{ug:topic:atomselect} for more on 
+using atom selections for fun and profit, as well as issues relating to
+speed of analysis scripts.
+
+\end{itemize}
+
+
+  \index{axes!command}\subsection{axes}
+The axes (orthogonal vectors pointing along the $x$, $y$, and $z$
+directions) can be placed in any of 5 locations on the screen, or
+turned off.  
+
+  \begin{itemize}
+    \item {\bf locations}: Return a list of possible locations.
+    \item {\bf location}: Get the current location.
+    \item {\bf location {\tt <}  off {\tt |} origin {\tt |} lowerleft {\tt |} lowerright {\tt |} upperleft {\tt |} upperright {\tt >}}: Position axes.
+  \end{itemize}
+
+Also, though this may seem like a likely command for changing the color of
+the axes, this function can only be performed from the {\sf Colors} window or by
+the {\tt color} command (see below).  Future
+implementations of \VMD\ may change this.
+
+
+  \index{color!command}
+  \subsection{color}
+  \label{ug:ui:text:color}
+  
+Change the color assigned to molecules, or edit the color scale.  All
+color values are in the range \mbox{0 \ldots\ 1}.  Please see the 
+\hyperref{section on coloring}{section on coloring [\S~}{]}
+{ug:topic:coloring} for a full description of the various options. \index{color!scale}
+
+  \begin{itemize}
+    \item {\bf {\it category} {\it name} {\it color}}: Set the color of the object specified by {\it category} and {\it name} to {\it color}.
+    \item {\bf {\it category} {\it name}}: Get the color of the object specified by {\it category} and {\it name}.
+    \item {\bf scale method {\tt <} {\it scale\_name} {\tt >}}: Set type of scale to use for coloring objects by values.  They are:
+    \begin{itemize}
+      \item  RGB  -- Red to green to blue.
+      \item  BGR  -- Blue to green to red.
+      \item  RWB  -- Red to white to blue.
+      \item  BWR  -- Blue to white to red.
+      \item  RWG  -- Red to white to green.
+      \item  GWR  -- Green to white to red.
+      \item  GWB  -- Green to white to blue.
+      \item  BWG  -- Blue to white to green.
+      \item  BlkW -- Black to white.
+      \item  WBlk -- White to black.
+    \end{itemize}
+
+    \item {\bf scale midpoint {\it x}}: 
+	Set midpoint of color scale to {\it x}, in the range 0 \ldots\ 1.
+    \item {\bf scale min {\it x}}: 
+	Set minimum of color scale to {\it x}, in the range 0 \ldots\ 1.
+    \item {\bf scale max {\it x}}: 
+	Set maximum of color scale to {\it x}, in the range 0 \ldots\ 1.
+    \item {\bf change rgb {\it color}}: 
+	Reset rgb of {\it color} to default value.
+    \item {\bf change rgb {\it color} {\it r} {\it g} {\it b}}: 
+	Set the RGB of {\it color} to {\it r} {\it g} {\it b}.
+    \item {\bf restype {\it resname} {\tt [} {\it restype} {\tt ]}}:
+        Set the residue type for {\it resname} to {\it restype}.  If
+        the {\it restype} parameter is omitted, the current residue type
+        is returned.
+    \item {\bf add item {\it category} {\it name} {\it colorname}}:
+        Adds colors for the named color category, item name, using
+        the colorname color.
+
+  \end{itemize}
+See the \hyperref{colorinfo}{colorinfo \S~}{}{ug:ui:text:colorinfo} command for additional ways to query VMD's color settings. See the \hyperref{graphics}{graphics \S~}{}{ug:ui:text:graphics} command for 
+how to change color of a user-defined graphics object. 
+
+\subsection{colorinfo}  
+\label{ug:ui:text:colorinfo}
+\index{colorinfo!command}
+\index{color!access definitions}
+(Tcl) This command provides access to the color definitions. For information on
+the color properties see the chapter on 
+\hyperref{Coloring}{Coloring [\S }{]}{ug:topic:coloring}.
+
+\begin{itemize}
+\item {\bf  colorinfo categories}:
+     returns a list of available categories
+\index{color!category}
+
+\item {\bf  colorinfo category {\it category}}:
+     returns a list of names for the given category
+
+\item {\bf  colorinfo num}:
+     returns the number of base solid colors (33)
+
+\item {\bf  colorinfo max}:
+     returns the total number of colors available (1057)
+
+\item {\bf  colorinfo colors}:
+     returns a list of the named solid colors
+\index{color!names}
+
+\item {\bf  colorinfo {\tt [} index {\tt |} rgb {\tt ]} {\tt <}
+       name {\tt |} value {\tt >}} : 
+     returns the index or rgb of the given name or color id.  
+\index{color!index}
+
+\index{color!properties}
+
+\item {\bf  colorinfo scale {\tt <} method {\tt |} methods {\tt |} 
+	midpoint {\tt |} min {\tt |} max {\tt >}}:
+     returns the information about the color scales
+\end{itemize}
+
+Examples:
+
+{\tt 
+\begin{verbatim}
+  # find out what color corresponds to which id:
+  set i 0
+  foreach color [colorinfo colors] {
+    puts "$i $color"
+    incr i
+  }
+
+
+  # also get a list of RGB values
+  set i 0
+  foreach color [colorinfo colors] {
+    lassign [colorinfo rgb $color] r g b
+    puts "$i $color   \{$r $g $b\}"
+    incr i
+  }
+\end{verbatim}
+}
+
+  \index{display!command}\subsection{display}
+  \label{ug:ui:text:display}
+Change various aspects of the graphical display window.  For
+information about the options, see the section describing the 
+\hyperref{{\sf Display} window}{{\sf Display} window [\S }{]}{ug:ui:window:display}.
+
+
+\begin{itemize} 
+\index{antialiasing}
+\index{display!antialiasing}
+\index{ambient occlusion lighting}
+\index{rendering!ambient occlusion lighting}
+\item {\bf get {\tt <} backgroundgradient {\tt |} 
+  eyesep {\tt |} focallength {\tt |} height {\tt |} 
+  distance {\tt |} antialias {\tt |} depthcue {\tt |} 
+  culling  {\tt |} rendermode {\tt |} size {\tt |} stereo {\tt |} 
+  projection {\tt |} nearclip {\tt |} farclip {\tt |}
+  cuestart {\tt |} cueend {\tt |} cuedensity {\tt |} cuemode 
+  shadows {\tt |} ambientocclusion {\tt |} aoambient {\tt |} aodirect {\tt |}
+  dof {\tt |} dof\_fnumber {\tt |} dof\_focaldist {\tt |} 
+  backgroundgradient {\tt >}}: 
+  Return the current value of the requested option.
+
+ \item {\bf get {\tt <} rendermodes {\tt |} stereomodes {\tt |}  projections {\tt |}}: Return a list of the available values for the given 
+  options.
+  (See section \ref{ug:ui:window:display} and
+  chapter \ref{ug:topic:stereo} 
+  for more information.)
+
+\item {\bf  antialias {\tt <}  on {\tt |} off {\tt >}}: Turn
+    antialiasing on or off.
+
+\index{display!ambient occlusion}
+\item {\bf  ambientocclusion {\tt <}  on {\tt |} off {\tt >}}: Turn
+    ambient occlusion lighting on or off.  This only affects renderers
+    that support ambient occlusion lighting.  It will have no visible effect
+    on the interactive VMD display or on renderers that don't support it.
+    At present, only the Tachyon and TachyonInternal renderers are capable
+    of ambient occlusion lighting.
+
+\item {\bf  aoambient {\it value}}:
+    Set ambient occlusion lighting factor to {\it value}.
+    Useful values tend to range from 0.7 to 1.0. 
+    At present, only the Tachyon and TachyonInternal renderers are capable
+    of ambient occlusion lighting.
+
+\item {\bf  aodirect {\it value}}:
+    Set ambient occlusion direct lighting rescaling factor to {\it value}.
+    Useful values tend to range from 0.0 to 0.4. 
+    At present, only the Tachyon and TachyonInternal renderers are capable
+    of ambient occlusion lighting.
+
+
+\index{display!depth of field}
+\index{display!dof}
+\item {\bf dof {\tt <}  on {\tt |} off {\tt >}}:
+    Turn depth of field focal blur on or off.  This only affects renderers
+    that support depth of field.  It will have no visible effect
+    on the interactive VMD display or on renderers that don't support it.
+    At present, only the various Tachyon and POV-Ray renderers are capable
+    of depth of field.
+
+\item {\bf  dof\_fnumber {\it value}}:
+    Set depth of field aperture f/stop number to {\it value}.
+    Useful values fall over a broad range from f/30 to f/1000 due
+    to the reciprocal relationship between the f/stop number and the
+    resulting the size of the blur aperture.  The blur aperture 
+    relates directly to the size of out of focus bokeh effects in the
+    final rendered image.
+    At present, only the various Tachyon and POV-Ray renderers are capable
+    of depth of field.
+
+\item {\bf dof\_focaldist {\it value}}:
+    Set depth of field focal plane distance to {\it value}.
+    Useful values fall over a broad range from f/30 to f/1000.
+    At present, only the various Tachyon and POV-Ray renderers are capable
+    of depth of field.
+
+
+\index{display!backgroundgradient}
+\item {\bf backgroundgradient {\tt <}  on {\tt |} off {\tt >}}: 
+  Enable or disable the gradient background. 
+
+\index{culling}
+\item {\bf  culling {\tt <}  on {\tt |} off {\tt >}}: Turn backface culling on or off.
+\index{depth cue}
+\item {\bf  depthcue {\tt <}  on {\tt |} off {\tt >}}: Turn depth cueing on or off.
+
+\index{eye separation}
+\index{stereo!parameters}
+\item {\bf  eyesep {\it value}}: Set the eye separation to {\it value}.
+
+\item {\bf  fps {\tt <}  on {\tt |} off {\tt >}}: Turn frames-per-second
+  indicator on or off.
+
+\index{focal length}
+\item {\bf  focallength {\it value}}: Set the focal length to {\it value}.
+\item {\bf  height {\it value}}: Set the screen height to {\it value}.
+\item {\bf  distance {\it value}}: Set the screen distance to {\it value}.
+
+\item {\bf  nearclip {\tt <}  set {\tt |} add {\tt >}  {\it value}}: Add or set near clipping plane position to {it value}.
+\item {\bf  farclip {\tt <}  set {\tt |} add {\tt >}  {\it value}}: Add or set far clipping plane position to {\it value}.
+
+\item {\bf  projection {\tt <} perspective {\tt |} orthographic {\tt >}}: Set the projection mode to {\it mode}.
+
+
+\index{rendering modes}
+\item {\bf  rendermode {\tt <} Normal {\tt |} GLSL {\tt |} Acrobat3D {\tt >}}:
+   Set the rendering mode to {\it mode}.
+   This parameter allows the use of various OpenGL extensions to implement 
+   alpha-blended transparency, or programmable shading for higher quality
+   molecular graphics.  The default rendering mode does not enable these 
+   features since they significantly alter the rendering and performance
+   characteristics of VMD when they are enabled.  The Acrobat3D mode is
+   used to allow successful capture of molecular geometry into Acrobat3D.
+
+\index{resetview}
+\item {\bf  resetview}: Reset the view. 
+
+\item {\bf  resize {\it valueX} {\it valueY}}: Set the size of the
+    display window to {\it valueX} $\times$ {\it valueY}.
+
+\item {\bf  reposition {\it valueX} {\it valueY}}: Set the position of
+    the upper-left corner of the display window to {\it valueX} $\times$
+    {\it valueY} pixels from the lower-left corner of the screen.
+
+\item {\bf  shadows {\tt <}  on {\tt |} off {\tt >}}: 
+    Turn shadow rendering on or off.  This only affects renderers
+    that support control of shadow rendering.  It will have no visible effect
+    on the interactive VMD display or on renderers that don't support it.
+    At present, only the Tachyon and TachyonInternal renderers are capable
+    of controlling the shadow rendering mode.
+
+\index{stereo!parameters}
+\item {\bf  stereo {\it mode}}: Set the stereo mode to {\it mode}.
+
+\index{display!update}
+\item {\bf update}: Force a display update. Used if the display 
+  update is off or to force a redraw. This does not necessarily take care 
+  of resizing the display window or using the GUI while the display 
+  update is turned off.
+\item {\bf update on}: Turn display update on. 
+\item {\bf update off}: Turn display update off. By default VMD does the
+  display updates constantly. Sometimes it is beneficial to turn the turn
+  the display updates off. This prevents VMD from redrawing the scene 
+  as a response to every change, thus saving time while doing changes of 
+  representations.  See the VMD script library for examples of use.
+\item {\bf update status}: Return the display update status (on or off).
+\item {\bf update ui}: Similar to {\tt display update}, but also forces
+  updates of the GUI windows. The windowed interface is subject to the
+  following behavior: if the display update is set to {\tt off} and 
+  actions (such as, e.g., iconify/deiconify)
+  have been performed to the windows, the windows do not get updated 
+  by just {\tt display update} command, whereas {\tt display update ui}
+  forces both updates to happen. Tk does not seem to have this problem,
+  so this option will become obsolete after switching to Tk graphics user
+  interface. 
+
+
+\end{itemize}
+
+\subsection{draw}
+\index{draw!command}
+\index{graphics!user-defined}
+\label{ug:ui:text:draw}
+VMD offers a way to display user-defined objects built from graphics
+primitives such as 
+points, lines, cylinders, cones, spheres, triangles, and text.  
+Since these are displayed in the scene just like all other graphics, 
+they can also be exported to the various ray tracing formats, 3-D printers, 
+etc.
+User-defined graphics can be used to draw a box around a molecule, draw
+an arrow between two atoms, place a text label somewhere in space,
+or to test a new method for visualizing a molecule.  
+
+The {\tt draw} command is a straight Tcl function which is meant to
+simplify the interface to the {\tt graphics} command as well as
+provide a base for extensions to the standard graphics primitives.
+The format of the {\tt draw} command is:
+\begin{itemize}
+\item {\bf draw {\it command} [{\it arguments}]}
+\end{itemize}
+
+\noindent The draw command is equivalent (in most cases) to {\tt graphics top
+{\it command} [{\it arguments}]}, in that it simply adds graphics
+primitives to the top molecule, saving you the trouble of typing
+an extra argument.  However, {\tt draw} extends {graphics} in two ways.
+First, if no molecule exists, {\tt draw} creates one for you automatically.
+Second, {\tt draw} can be extended with user-defined drawing commands.
+This is done by defining for a function of the form
+{\tt vmd\_draw\_\$command}.  If the function exists, it is called with the
+first parameter as the molecule index and the rest as the arguments from
+the original {\tt draw} call.
+Here's an example which extends the draw command to include an
+``arrow'' primitive.
+
+\index{example scripts!Tcl!drawing!arrows}
+\begin{verbatim}
+proc vmd_draw_arrow {mol start end} {
+    # an arrow is made of a cylinder and a cone
+    set middle [vecadd $start [vecscale 0.9 [vecsub $end $start]]]
+    graphics $mol cylinder $start $middle radius 0.15
+    graphics $mol cone $middle $end radius 0.25
+}
+\end{verbatim}
+
+\noindent After entering this command into VMD, you can use a command such as
+\verb!draw arrow {0 0 0} {1 1 1}! 
+to draw an arrow.
+In addition to defining new commands, user-defined drawing commands can also 
+be used to override existing commands.  For example, if you define
+{\tt vmd\_draw\_sphere}, then \verb!draw sphere {0 0 0}!
+will call your sphere routine, not the one from {\tt graphics}.
+
+
+\index{labels!text}
+\index{example scripts!Tcl!drawing!labels}
+  Here's a quick way to add your own label to an 
+\hyperref{atom selection}{atom selection [\S }{]}{ug:topic:selections}.  
+This function take the selection text and the labels that
+atom (in the {\sf top} molecule) with the given string.  It returns
+with an error if more anything other than one atom is selected.
+\begin{verbatim}
+proc label_atom {selection_string label_string} {
+    set sel [atomselect top $selection_string]
+    if {[$sel num] != 1} {
+        error "label_atom: '$selection_string' must select 1 atom"
+    }
+    # get the coordinates of the atom
+    lassign [$sel get {x y z}] coord
+    # and draw the text
+    draw text $coord $label_string
+}
+\end{verbatim}
+
+
+\index{quit!command}\subsection{exit}
+Quit VMD.
+
+\subsection{graphics}
+\label{ug:ui:text:graphics}
+\index{graphics!command}
+\index{graphics!primitives}
+
+
+The {\tt graphics} command draws low-level graphics primitives.
+These primitives can be used to draw a box around a molecule, or an
+arrow between two atoms, or place a text label somewhere in space.
+The command syntax is {\tt graphics <molid> <cmd>},
+where {\tt <molid>} is a valid molecule id and {\tt <cmd>} is one of the
+commands listed below.  To create a ``blank'' molecule, use the Tcl command 
+{\tt mol new}.  
+\index{molecule!graphics}
+\index{molecule!loading}
+\index{graphics!loading}
+See the 
+\hyperref{draw}{draw [\S~}{]}{ug:ui:text:draw} command for a 
+possibly more convenient interface.  Also refer to the 
+\htmladdnormallinkfoot{VMD script library}{http://www.ks.uiuc.edu/Research/vmd/script\_library} 
+for some examples of user-defined graphics scripts.
+
+
+As graphical primitives are added to the list they are assigned a unique,
+increasing {\tt id}.  The first object added is assigned $0$, the second
+is assigned $1$, etc.  The commands which add an item return its value.
+
+\begin{itemize}
+\item {\bf point \{{\it x y z}\}}:
+Draws a point at the given position.
+
+\item {\bf line \{{\it x1 y1 z1}\} \{{\it x2 y2 z2}\} [width {\it w}]
+  [style $<$solid\verb!|!dashed$>$] }:
+
+  Draws either a solid or dashed line of the given width from
+the first point to the second.  By default, this is a solid line of
+width 1.
+
+\item {\bf cylinder \{{\it x1 y1 z1}\} \{{\it x2 y2 z2}\} [radius {\it r}]
+  [resolution {\it n}] [filled $<$yes\verb!|!no$>$]}:
+
+  Draws a cylinder of the given radius (default {\tt r}$=$1)
+from the first point to the second.  The cylinder is actually drawn as
+an {\tt n} sided polygon.  If the {\tt filled} option is true, the
+ends are capped with flat disks, otherwise the cylinder is hollow (default).
+width of the base. The resolution parameter
+(default {\tt n}$=$6)
+determines the number of polygons used in the approximation.
+
+\item {\bf cone \{{\it basex basey basez}\} \{{\it tipz tipy tipz}\}
+  [radius {\it r}] [resolution {\it n}]}:
+
+  Draw a cone with the center of the base at the first point and
+the tip at the second.  The radius(default {\tt r}$=$1) determines the
+width of the base.  As with {\tt cylinder}, the resolution 
+(default {\tt n}$=$6)
+determines the number of polygons used in the approximation.
+
+\item {\bf triangle \{{\it x1 y1 z1}\} \{{\it x2 y2 z3}\} \{{\it x3 y3 z3}\}}:
+
+  Draws a triangle with endpoints at each of the three vertices
+
+\item {\bf trinorm \{{\it x1 y1 z1}\} \{{\it x2 y2 z3}\} \{{\it x3 y3 z3}\}
+  \{{\it nx1 y1 z1}\} \{{\it nx2 ny2 nz3}\} \{{\it nx3 ny3 nz3}\}}:
+
+  Draws a triangle with endpoints at each of the first three
+points.  The second group of three values specify the normals for the
+three points.  This is used for making a smooth shading across the
+triangle.  The normals must be normalized to unit-length for proper display.
+
+
+\item {\bf tricolor \{{\it x1 y1 z1}\} \{{\it x2 y2 z3}\} \{{\it x3 y3 z3}\}
+  \{{\it nx1 y1 z1}\} \{{\it nx2 ny2 nz3}\} \{{\it nx3 ny3 nz3}\}}
+  {\it c1 c2 c3}: 
+
+  Draws a triangle with endpoints at each of the first three
+points.  The second group of three values specify the normals for the
+three points.  The last three integers indicate the colors to apply to 
+each vertex.  This is used for making a smooth shading across the
+triangle.  The normals must be normalized to unit-length for proper display.
+
+\item {\bf sphere \{{\it x y z}\} [radius {\it r}] [resolution {\it n}]}:
+
+  Draws a sphere of the given radius (default {\tt r}$=$1)
+centered at the vertex.  The resolution (default {\tt n}$=$6)
+determines how many polygons are used in the approximation of a
+sphere.
+
+\item {\bf text \{{\it x y z}\} ``{\it text string}'' [size {\it s}] [thickness {\it t}]}:
+\index{text!displayed}
+
+  Displays the text string with the bottom left of the string
+starting at the given coordinates, with the font size scaled by the 
+optional size parameter, and drawn with line thickness determined 
+by the optional thickness parameter.
+
+\item {\bf color {\it colorId}}
+\item {\bf color {\it name}}
+\item {\bf color {\it trans\_name}}:
+\index{color!in user-defined graphics}
+  Each of the above geometrical objects are drawn using the
+current color.  Initially, that color is blue, which has the colorid
+of 0.  The {\tt color} command changes the current color, and stays
+info effect until the next {\tt color} command.  Thus, to draw a red
+cylinder then a red sphere, first use the command {\tt color red}
+command to change the color, then use the {\tt cylinder} and {\tt
+sphere} commands.
+
+\item {\bf materials $<$on\verb!|!off$>$}:
+\index{material properties}
+\index{color!material properties}
+  Material properties are used to make the graphical objects
+(lines, cylinders, etc.) be affected by the light sources.  These make
+the objects look more realistic, but are slower on machines which
+don't implement materials in hardware (see
+chapter \ref{ug:topic:coloring} and
+sections on \hyperref{color}{color [\S~}{]}{ug:ui:text:color} and
+\hyperref{colorinfo}{colorinfo [\S~}{]}{ug:ui:text:colorinfo} commands
+for the information on how to turn off
+material characteristics for all objects in VMD).  One surprising
+effect of material characteristics is that lines are affected.  In
+some lighting situations, the lines can even appear to disappear.
+Thus, you may want to turn off materials before drawing lines.
+
+\item {\bf material $<$name$>$}:
+\index{material properties}
+\index{color!material properties}
+  Sets the material to use for the corresponding graphics molecule.
+{\tt name} must be a valid material name, as displayed in the Materials menu.
+
+\item {\bf delete} {\it id}:
+\index{graphics!delete}
+Deletes the graphics primitive with the given id.
+\item {\bf delete} {\bf all}:
+Deletes all graphics primitives.
+\item {\bf replace} {\it id}:
+\index{graphics!replace}
+Causes the next graphics primitive to replace the one with the given id.
+Subsequent graphics primitives will be added to the end of the list as
+usual.
+\item{\bf exists} {\it id}:
+Returns whether the primitive with the given id exists.
+\item{\bf list}:
+Returns a list of valid graphics id's.
+\item{\bf info {\it id}}:
+Returns the text of a Tcl command which will recreate the graphics primitive
+with the given {\it id}.
+
+\end{itemize}
+
+\index{gettimestep!command}
+\subsection{gettimestep}
+Retrieve the specified molecule's timestep as a Tcl byte array which can
+be used for high-efficiency analysis calculations by compiled Tcl plugins.
+  \begin{itemize}
+    \item {\bf  {\tt <} {\it molid}{\tt >} {\tt <} {\it timestep} {\tt >}}: retrieve timestep as a Tcl byte array for use in compiled analysis plugins.
+  \end{itemize}
+
+
+\index{help!command}
+\subsection{help}
+Display the on-line help file with an HTML viewer.  See 
+Chapter \ref{ug:topic:customizing}
+for information on how to change the default viewer (which is Netscape).
+
+  \begin{itemize}
+    \item {\bf  {\tt [} {\it subject}{\tt ]}}: Jump to help corresponding 
+    to {\it subject}.
+  \end{itemize}
+Presently, ``subject'' can be any one of the following words, which
+launches the associated URL.  To guarantee that the help system will
+work correctly, you will probably want to start up your web browser
+before choosing one of these options.  After you do this, VMD will
+properly direct the browser to the pages mentioned below.
+
+
+\begin{table}[htp]
+  \hspace{0.5in}
+  \begin{tabular}{|l|l|} \hline
+    \multicolumn{1}{|c}{Source} &
+        \multicolumn{1}{|c|}{Associated URL} \\ \hline\hline
+
+     raster3d & http://www.bmsc.washington.edu/raster3d/ \\
+     msms & http://www.scripps.edu/pub/olson-web/people/sanner/html/msms\_home.html \\
+     faq  & http://www.ks.uiuc.edu/Research/vmd/allversions/vmd\_faq.html \\
+     biocore  & http://www.ks.uiuc.edu/Research/biocore/ \\
+     tachyon  & http://www.photonlimited.com/\verb!~!johns/tachyon/ \\
+     babel  & http://www.eyesopen.com/babel/ \\
+     homepage & http://www.ks.uiuc.edu/Research/vmd/ \\
+     quickhelp  & http://www.ks.uiuc.edu/Research/vmd/vmd\_help.html \\
+     radiance & http://radsite.lbl.gov/radiance/HOME.html \\
+     maillist & http://www.ks.uiuc.edu/Research/vmd/mailing\_list/ \\
+     scripts  & http://www.ks.uiuc.edu/Research/vmd/script\_library/ \\
+     namd & http://www.ks.uiuc.edu/Research/namd/ \\
+     vrml & http://www.web3d.org/ \\
+     rayshade & http://www-graphics.stanford.edu/\verb!~!cek/rayshade/rayshade.html \\
+     povray & http://www.povray.org/ \\
+     plugins  & http://www.ks.uiuc.edu/Research/vmd/plugins/ \\
+     python & http://www.python.org/ \\
+     software & http://www.ks.uiuc.edu/Research/vmd/allversions/related\_programs.html \\
+     tcl  & http://www.tcl.tk/ \\
+     userguide  & http://www.ks.uiuc.edu/Research/vmd/vmd-1.8.1/ug/ug.html \\ \hline
+
+  \end{tabular}
+  \caption{On-line Help Sources}
+  \label{table:ug:helpoptions}
+\index{help!topics}
+\end{table}
+
+
+\index{imd!command}\subsection{imd}
+\label{ug:ui:text:imd}
+\index{remote!simulation control}
+\index{remote!connection}
+\index{remote!options}
+Controls the connection to a remote simulation.  
+
+\begin{itemize}
+  \item {\bf connect} {\it host port}: connect to an MD simulation running on
+    the machine named {\it host} and listening on port {\it port}.   This 
+    command will fail if a previously-established connection has not yet
+    been disconnected.
+
+  \item {\bf detach}: Disconnect from the simulation; the simulation will 
+    continue to run.
+ 
+  \item {\bf kill}: Disconnect from the simulation and also cause it to halt.
+
+  \item {\bf pause {\tt <}  on {\tt |} off {\tt |} toggle {\tt >}}: Pause, unpause or toggle the paused state of the remote simulation.
+
+  \item {\bf transfer} {\it rate}: Set the rate at which new coordinates are
+    sent by the remote simulation to VMD to the specified value.
+
+  \item {\bf keep} {\it rate}: Set the keep rate, i.e. the frequency at which
+    \VMD\ saves simulation frames to memory, to the specified value.
+
+  \item {\bf copyunitcell {\tt <}  on {\tt |} off {\tt >}}: 
+    Enable or disable copying unit cell information from the previous 
+    frame when updating or saving frames through IMD. 
+    This can be useful when using periodic display with IMD since
+    the IMD protocol currently doesn't support communicating the 
+    unitcell information, or when using a IMD client that does not
+    provide this information after the protocol has been extended.\\
+    {\bf WARNING:} when using {\bf imd copyunitcell on} with simulations 
+    in NPT ensemble, the resulting unit cell information will be incorrect.\\
+    The default setting is {\bf off}.
+\end{itemize}
+ 
+    
+  \index{label!command}\subsection{label} Turn on or off labels for
+the four categories: atoms, bonds, angles, or dihedral angles; create
+and destroy simulated springs.  Once a label is created (given the
+list of associated atoms) it can be turned on or off until it is
+deleted.  Also, the value of the label over the trajectory can be
+saved to a file and viewed with an external program such as {\tt
+xmgrace}.  In the following, {\it category} implies one of {\tt
+[}Atoms|Bonds|Angles|Dihedrals{\tt ]}.
+\index{labels!categories}
+
+  \begin{itemize}
+    \item {\bf  list}: Return a list of available categories.
+    \item {\bf  list {\it category}}: List all labels in the given category.
+    \item {\bf  add {\it category} {\it molID1}/{\it atomID1} {\tt [}
+{\it molID2}/{\it atomID2}... {\tt ]}}: Add a
+label involving the atom(s) {\it atomID} of the molecule {\it molID} to the
+given category.
+    \item {\bf  show {\it category} {\tt <} all {\tt |} {\it label\_number} {\tt >}}: 
+Turn on labels in the given category.
+    \item {\bf  hide {\it category} {\tt <} all {\tt |} {\it label\_number} {\tt >}}: 
+Turn off labels in the given category.
+    \item {\bf  delete {\it category} {\tt <} all {\tt |}{\it label\_number}{\tt >}}:
+ Delete labels in the given category.
+    \item {\bf  graph {\it category} {\it label\_number} {\tt [}{\it filename}{\tt ]}}: 
+Retrieve the values of the labels for all timesteps.  If the optional 
+{\tt filename} is given, the data will be written to that file; otherwise
+it will be returned as a list.  You can use the Tcl {\tt exec} command to
+launch an external graphing program to plot the data if you wish.
+    \item {\bf  addspring {\it molID1} {\it atomID1}
+{\it atomID2} {\tt k}}: Add a
+spring connecting the atom(s) {\it atomID\/} and {\it atomID2\/} of the
+molecule {\it molID}.  The spring will have spring constant {\it k}.
+    \item {\bf  textsize [{\it newsize}]}:
+      Get/set the text size for all labels, which is 1.0 by default.
+      {\it newsize} should be a decimal value greater than zero.
+    \item {\bf  textthickness [{\it newthickness}]}:
+      Get/set the text line thickness for all labels, which is 1.0 by default.
+      {\it newthickness} should be a decimal value greater than zero.
+\end{itemize}
+
+\index{light!command}\subsection{light}
+There are four light sources, numbered 0 to 3, which are used to
+illuminate graphical objects.  They are point sources located at
+infinity, so setting their positions places them along a ray from the
+origin through the given point. 
+
+  \begin{itemize}
+    \item {\bf  num}: Return the number of lights available.
+    \item {\bf  {\it light\_number} on}: Turn a light on.
+    \item {\bf  {\it light\_number} off}: Turn a light off.
+%    \item {\bf  {\it light\_number} highlight}: Display a line indicating the
+%position of a light source.
+%    \item {\bf  {\it light\_number} unhighlight}: Hide the line indicating the
+%position of a light source.
+    \item {\bf  {\it light\_number} status}: Return the pair on/off highlight/unhighlight
+    \item {\bf  {\it light\_number} rot {\tt <}  x {\tt |} y {\tt |} z {\tt >}  {\it angle}}: Rotate a light (at infinity) {\it angle} degrees about a given axis.
+    \item {\bf  {\it light \_numer} pos}: Return current position.
+    \item {\bf  {\it light \_numer} pos default}: Return default position.
+    \item {\bf  {\it light \_numer} pos \{ {\tt x y z}\}}: Set light position.
+    
+  \end{itemize}
+
+
+  \subsection{logfile}\index{logfile!command}\label{ug:text:log} 
+  \index{logfile!enable from text}
+  \index{logfile!disable from text}
+\index{logging tcl commands}
+  Turn on/off logging a VMD session to a log file.  This will create a
+  log file with commands for all the actions taken during the session.
+  The log file may be played back later by using the `play' command or
+  the Tcl `source' command.  The only actions recorded are those which
+  change the state of the \VMD\ display, so straight Tcl commands are
+  not saved.  All of the core \VMD\ commands will write to the log.
+
+
+  \begin{itemize}
+    \item {\bf {\it filename}}: Turn on logging to {\it filename}.
+    \item {\bf console}: Turn on logging and direct it to the VMD 
+                         text console window.
+    \item {\bf off}: Turn off logging.
+  \end{itemize}
+  To write log information to the file `off', use the file name `./off'.
+
+%%%%% material
+
+\index{material!command}
+\subsection{material}
+This set of commands is used to create new material definitions and modify
+existing ones.
+
+\begin{itemize}
+  \item {\bf list}: Return a list of the available materials
+  \item {\bf settings} {\em name}: Return a list of the five material settings
+    for the material of the given name.  These settings take on floating point
+    values between 0 and 1.  The values are returned in the 
+    following order: ambient, specular, diffuse, shininess, mirror, opacity.  If the
+    specified material has not been defined, nothing is returned.
+  \item {\bf add} {\em name}: create a new material with the given name.  
+    The new material will start with the settings for {\sf Opaque}.  If 
+    the name already exists, no new material is created.
+  \item {\bf add copy} {\em name}: create a new material copied from 
+    the selected material name.
+  \item {\bf rename} {\em oldname newname}: rename the given material.  The
+    command will fail if the name is already used.  
+  \item {\bf change} {\em property name value}: Change a material property
+    of the material named {\em name} to the value {\em value}.  {\em property}
+    must be one of the following:
+    \begin{itemize}
+      \item ambient
+      \item specular 
+      \item diffuse 
+      \item shininess 
+      \item mirror 
+      \item opacity 
+    \end{itemize}
+  \item {\bf delete} {\em name}: Delete the given material.
+\end{itemize}
+
+
+%%%%%% MDFF commands
+
+\subsection{mdffi}
+\index{mdffi!command}
+\index{MDFF}
+\index{cross correlation}
+
+The mdffi command provides fast internal implementations of 
+key cross correlation and density map synthesis algorithms
+used for molecular dynamics flexible fitting (MDFF) simulation,
+analysis, and visualization~\cite{STON2014A}.
+
+\begin{itemize}
+\item {\bf cc {\it selection} [--allframes] [-i {\it input density map}] [-mol {\it molid} $|$ -vol {\it volume ID}] [-thresholddensity {\it threshold value}] }: 
+  Computes the MDFF cross correlation between an selection from an all-atom  
+  molecular structure, and a density map.
+
+\item {\bf sim {\it selection} [-o {\it output density map}] [-res {\it target resolution in \AA}] [-spacing {\it grid spacing}] }: 
+  Compute a simulated density map from an atom selection on an all-atom
+  molecular structure.
+
+\end{itemize}
+
+ 
+%%%%%% measure
+
+\subsection{measure}
+\index{measure!command}
+
+The measure command supplies several algorithms for analyzing molecular 
+structures.  In the following options, {\it selection} refers to an atom
+selection, as returned by the {\tt atomselect} command described in section
+\ref{ug:ui:text:atomselect}.  The optional {\it weight} must be either 
+{\tt none}, an atom selection keyword such as {\tt mass}, or a list of values, 
+one for each atom in the selection, to be used as weights.  If {\it weight} 
+is missing or is {\tt none}, then all weights are taken to be 1.  When
+an atom selection keyword is used, the weights are taken from {\it selection1}.
+
+\begin{itemize}
+\item {\bf avpos {\it selection} [first {\it first}] [last {\it last}] [step {\it step}]}: 
+  Returns the average position of each of the selected atoms, for the 
+  selected frames.  If no first, last, or step values are 
+  provided the calculation will be done for all frames.
+
+\item {\bf center {\it selection} [weight {\it weight}]}:
+  Returns the geometric center of atoms in {\it selection} using the
+  given {\tt weight}.
+
+\item {\bf cluster {\it selection} [num {\it numclusters}] [distfunc {\it flag}] 
+    [cutoff {\it cutoff}] [first {\it first}] [last {\it last}] [step {\it step}]
+    [selupdate {\it bool}] [weight {\it weight}]}:
+  Performs a cluster analysis (find clusters of timesteps that are 
+  similar with respect to a given distance function) for the atoms
+  in {\it selection} using the given {\tt weight}. 
+  The implementation is based on the {\it quality threshold} (QT) algorithm. 
+  See \htmladdnormallink{{\tt http://dx.doi.org/10.1101/gr.9.11.1106}}{http://dx.doi.org/10.1101/gr.9.11.1106} 
+  and \htmladdnormallink{Cluster Analysis on Wikipedia}{http://en.wikipedia.org/wiki/Cluster_analysis#QT_clustering_algorithm} for more details
+  on the algorithm. Typically, only a small number of the largest clusters are
+  of interest. This implementation takes this into account and trades low 
+  memory consumption on data sets with many frames for fast determination 
+  of multiple clusters.  Use the {\tt num} keyword to adjust how many clusters
+  to determine (default is 5). The {\tt distfunc} flag selects the 
+  ``distance function''; available options are 'rmsd' (root mean 
+  squared atom--to--atom distance), 'fitrmsd' (root mean squared 
+  atom--to--atom distance after alignment), and 'rgyrd' (difference 
+  in radius of gyration). The {\tt cutoff} flag defines the maximal 
+  distance value  between two frames that are considered similar 
+  (default value is 1.0). The {\tt weight} flag allows to use an
+  atom property, e.g. mass or radius, to be used as weighting factor
+  (default is no weighting). The command returns a list of {\it numcluster + 1}
+  lists, each containing the list of trajectory frame indices belonging to a 
+  cluster of decreasing size. The last list contains the remaining, yet
+  unclustered frame indices.
+
+\item {\bf contacts {\it cutoff} {\it selection1} [{\it selection2}]}:
+  Find all atoms in {\it selection1} that are within {\it cutoff} of 
+  any atom in {\it selection2} and not bonded to it.  If {\it selection2} is 
+  omitted, it is taken to be the same as {\it selection1}.  {\it selection2} 
+  and {\it selection1} can either be from the same of from different molecules.
+  Returns two lists of atom indices, the first containing the first index of 
+  each pair (taken from {\it selection1}) and the 
+  second containing the second index (taken from {\it selection2}).  
+  Note that the index is the global index of the atom with respect to its 
+  parent molecule, as opposed to the index within the given atom 
+  selection that contains it.  
+
+\item {\bf dipole {\it selection} [-elementary|-debye] [-geocenter|-masscenter|-origincenter]}:
+  Compute the dipole moment vector of the atoms in {\it selection} from
+  their respective positions and {\tt charge} values. The result by
+  default assumes charges given in units of an elementary charge
+  and distances in angstrom. By default the result is given in the 
+  same units (same as using the {\it -elementary} flag), setting the 
+  {\it -debye} flag will convert the output to units of Debye.
+  For selections that have a residual charge after summing up all
+  individual charges, the resulting dipole vector depends on the 
+  choice of center of the charge distribution. By default, the center 
+  will be the geometrical center of the selection (sames as using 
+  the {\it -geocenter} flag), but using the selection's center of mass 
+  through the {\it -masscenter} flag is available, as well as
+  using the origin via the {\it -origincenter} flag. Using {\it -masscenter}
+  is recommended, but not made default as it depends on the
+  {\tt mass} value to be correctly set for all atoms.
+
+\item {\bf fit {\it selection1} {\it selection2} [weight {\it weight}] [order {\it index list}]}:
+  Returns a 4x4 transformation matrix which, when applied to the atoms in
+  {\it selection1}, minimizes the weighted RMSD between {\it selection1} and
+  {\it selection2}.  See section \ref{ug:scripts:rmsd} for more on RMSD 
+  alignment. The optional flag {\it order} takes as argument a list of
+  0-based indices specifying how to reorder the atoms in {\it selection2}
+  (Example: To reverse the order of atoms in a selection containing 10 atoms
+  one would use {\tt order \{9 8 7 6 5 4 3 2 1 0\}}). 
+  
+
+\item {\bf gofr {\it selection1} {\it selection2} [delta {\it value}] [rmax {\it value}] [usepbc {\it boolean}] [selupdate {\it boolean}] [first {\it first}] [last {\it last}] [step {\it step}]}:
+ Calculates the atomic radial pair distribution function $g(r)$ and the
+ number integral $\int_0^r \rho g(r) r^2\mathrm{d}r$ for all pairs of 
+ atoms in the two selections. Both selections have to reference the
+ same molecule and may be identical. In case one of the selections
+ resolves to an empty list for a given time step, and empty array is
+ added to the histograms. The command returns a list of five
+ lists containing $r$, $g(r)$, $\int_0^r \rho g(r) r^2\mathrm{d}r$, 
+ the unnormalized histogram, and a list of frame counters containing
+ currently 3 elements: total number of frames processed, the number
+ of skipped frames and the number of frames handled with the orthogonal
+ cell algorithm (Further algorithm and corresponding list entris will
+ be added in the future).
+ With the optional arguments {\it delta} (default 0.1) and {\it rmax} 
+ (default 10.0) one can set the resolution and the maximum $r$ value.
+ With the {\it usepbc} flag processing of periodic boundary conditions 
+ can be turned on.  With the {\it selupdate} flag enabled, both atom 
+ selections are updated as each frame is processed, allowing productive
+ use of "within" selections.  The size of the unitcell has to be stored in 
+ the trajectory file or has to be set manually for all frames with the 
+ {\it molinfo} command. The command uses by default only the current
+ active frame for both selections. Using an explicite frame range via
+ {\it first}, {\it last}, and {\it step} is recommended for most cases.
+
+\item {\bf hbonds {\it cutoff} {\it angle} {\it selection1} [{\it selection2}]}:
+\index{hydrogen bonds}
+  Find all hydrogen bonds in the given selection(s),
+  using simple geometric criteria.  Donor and acceptor must be within the
+  {\it cutoff} distance, and the angle formed by the donor, hydrogen, and
+  acceptor must be less than {\it angle} from 180 degrees.  Only non-hydrogen
+  atoms are considered in either selection.  If both 
+  {\it selection1} and {\it selection2} are given, the {\it selection1} is
+  considered the donor and {\it selection2} is considered the acceptor.  If
+  only one selection is given, all non-hydrogen atoms in the selection are 
+  considered as both donors and acceptors.  The two selections
+  must be from the same molecule.  The function returns three lists; each 
+  element in each list corresponds to one hydrogen bond.  The first
+  list contains the indices of the donors, the second contains the indices of
+  the acceptors, and the third contains the index of the hydrogen atom in
+  the hydrogen bond.
+
+  Known Issue: The output of hbonds cannot be considered 100\% accurate if 
+  the donor and acceptor selection share a common set of atoms.
+
+\item {\bf inverse {\it matrix}}:
+  Returns the inverse of the given 4x4 matrix.
+
+% FIXME: add [-withradii] option
+\item {\bf minmax {\it selection}}:
+  Returns two vectors, the first containing the minimum $x$, $y$, and $z$
+  coordinates of all atoms in {\it selection}, and the second containing the
+  corresponding maxima.
+
+\item {\bf rgyr {\it selection} [weight {\it weights}]}:
+  Returns the radius of gyration of atoms in {\it selection} using the
+  given {\tt weight}.  The radius of gyration is computed as 
+  \begin{equation}
+  r_{gyr}^2 = \left( \sum_{i=1}^n w(i) (r(i) - \bar r)^2\right) / \left( \sum_{i=1}^n w(i)\right)
+  \end{equation}
+  where $r(i)$ is the position of the $i$th atom and $\bar r$ is the weighted 
+  center as computer by {\tt measure center}.
+
+\item {\bf rmsd {\it selection1} {\it selection2} [weight {\it weights}]}:
+Returns the root mean square distance between corresponding atoms in
+the two selections, weighted by the given {\it weight}.  {\it selection1} and
+{\it selection2} must contain the same number of atoms (the selections may
+be from different molecules that have different numbers of atoms).  
+
+\item {\bf rmsf {\it selection} [first {\it first}] [last {\it last}] [step {\it step}]}:
+Returns the root mean square position fluctuation for each selected 
+atom in the selected frames.  If no first, last, or step values are 
+provided the calculation will be done for all frames.
+
+\item {\bf sasa {\it srad} {\it selection} [-points {\it varname}] [-restrict {\it restrictedsel}] [-samples {\it numsamples}]}:
+  Returns the solvent-accessible surface area of atoms in the
+  {\it selection} using the assigned radius for each atom, extending
+  each radius by {\tt srad} to find the points on a sphere that are
+  exposed to solvent.  If the {\it restrictedsel} selection is used,
+  only solvent-accessible points near that selection will be considered.
+  The restrict option can be used to prevent internal protein
+  voids or pockets from affecting the surface area results.  The points
+  option can be used to see where the area contributions are coming from,
+  and then the restrict flag can be used to eliminate any unwanted
+  contributions after visualizing them.  The {\it varname} parameter 
+  can be used to collect the points which are determined to be 
+  solvent-accessible.
+
+\item {\bf sumweights {\it selection} weight {\it weights}}:
+  Returns the sum of the list of weights (or data field to use for
+  the weights) for all of the atoms in the selection.
+
+\item {\bf bond} {\it atom\_list} [{\it options}]:
+  Returns the distance of the two specified atoms. 
+  The atoms are specified in form of a list of atom indexes. Unless you specify
+  a certain molecule through 'molid {\it molecule\_number}' these indices refer
+  to the current top molecule. If the atoms are in different molecules you can
+  use the form \{\{{\it atomid1} [{\it molid1}]\} \{{\it atomid2} [{\it molid2}]\} ... \}
+  where you can set the molecule ID for the individual atoms.
+  Note that {\tt measure bond} does not care about the bond that are specified in a psf file or
+  that are drawn in VMD it just returns the distance! Similar things are true for 
+  {\tt measure angle}, {\tt dihed} and {\tt imprp}.\\
+  The following options can be specified:
+  \begin{itemize}
+  \item {\tt molid <default molid>}: The default molecule to which an atom belongs unless
+    a molecule number was explicitely specified for this atom in the atom list. Further, all
+    frame specifications refer to this molecule.
+    (Default is the current top molecule.)
+  \item {\tt frame <frame>}: 
+    By default the value for the current frame will be
+    returned but a specific frame can be chosen through this option. One can also
+    specify {\it all} or {\it last} instead of a frame number in order to get a 
+    list of values for all frames or just the last frame respectively.
+  \item {\tt first <frame>}: Use this option to specify the first frame of a frame
+    range. (Default is the current frame.)
+  \item {\tt last <frame>}: Use this option to specify the last frame of a frame
+    range. (Default is the last frame of the molecule).
+  \end{itemize}
+  In case you specified the molecule IDs in the atom list then all frames 
+  specifications will refer to the current top molecule unless a default molecule 
+  was set using the 'molid' option.
+  Since the top molecule can be different from the molecules involved in the 
+  selected atoms, it is generally a good idea to specify a default molecule.
+
+  Here are a few examples of usage:\\
+  {\tt measure bond \{3 5\}} -- Returns the distance between atoms 3 and 5 of the
+  current frame of the top molecule\.\
+  {\tt measure bond \{3 5\} molid 1 frame all} -- Returns the distance between
+  atoms 3 and 5 of molecule 1 for all frames.\\
+  {\tt measure bond \{3 \{5 1\}\} molid 0 first 7} -- Returns the distance between
+  atoms 3 of molecule 0 and atom 5 of molecule 1. The value is computed for all
+  frames between the seventh and the last frame of molecule 0.
+  
+\item {\bf angle {\it atom\_list} [{\it options}]}:
+  Returns the angle spanned by three atoms. Same input format as the
+  {\tt measure bond} command.
+
+\item {\bf dihed {\it atom\_list} [{\it options}]}:
+  Returns the dihedral angle defined by four atoms. Same input format as the
+  {\tt measure bond} command.
+
+\item {\bf imprp {\it atom\_list} [{\it options}]}:
+  Returns the improper dihedral angle defined by four atoms. Same input format as the
+  {\tt measure bond} command.
+
+\item {\bf energy} {\it energy\_term} {\it atom\_list} [parameters] [options]:
+  Returns the specified energy term for a given set of atoms. The energy term must be one of
+  {\bf bond}, {\bf angle}, {\bf dihed}, {\bf imprp}, {\bf vdw} or {\bf elect} where
+  vdw stands for 'van der Waals' and elect for electrostatic energy.
+  The energy is computed based on the CHARMM force field functions,
+  the given parameters and the current coordinates. All options for the {\tt measure bond}
+  command work for {\tt measure energy}, too. Thus, you can for instance request energies
+  for a range of frames of a trajectory. Also the format of the atom list is the same.
+  The following parameters can be specified:
+  \begin{itemize}
+  \item {\tt k  <value>}: force constant for bond, angle, dihed and imprp energies in
+     kcal/mol/A$^2$ or kcal/mol/rad$^2$ respectively.
+  \item {\tt x0 <value>}: equilibrium value for bond length, angle, dihedral angles and
+     improper dihedrals in Angstrom or degree.
+  \item {\tt kub <value>}: Urey-Bradley force constant for angles in kcal/mol/A$^2$.
+  \item {\tt s0 <value>}:  Urey-Bradley equilibrium distance for angles in Angstrom.
+  \item {\tt n <value>}: dihedral periodicity.
+  \item {\tt delta <value>}: dihedral phase shift in degree (usually 0.0 or 180.0).
+  \item {\tt rmin1 <value>}: VDW equilibrium distance for atom 1 in Angstrom.
+  \item {\tt rmin2 <value>}: VDW equilibrium distance for atom 2 in Angstrom.
+  \item {\tt eps1 <value>}: VDW energy well depth (epsilon) for atom 1 in kcal/mol.
+  \item {\tt eps2 <value>}: VDW energy well depth (epsilon) for atom 2 in kcal/mol.
+  \item {\tt q1 <value>}: charge for atom 1.
+  \item {\tt q2 <value>}: charge for atom 2.
+  \item {\tt cutoff <value>}: nonbonded cutoff distance.
+  \item {\tt switchdist <value>}: nonbonded switching distance.
+  \end{itemize}
+  For all omitted parameters a default value of 0.0 is assumed. 
+  For the electrostatic energy the default charges are taken from the according
+  atom based field of the molecule. If the cutoff is not set or zero then no cutoff
+  function will be used.
+
+\item {\bf surface} {\it selection} {\it gridsize} {\it radius} {\it depth}:
+  Returns a list of atom indices comprising the surface of the 
+selected atoms.  The method for determining the surface is to 
+construct a grid with a spacing approximately equal to {\it gridsize}, 
+where each grid point is either marked full or empty, depending on 
+whether any atoms from the {\it selection} are within {\it radius} 
+distance of the grid point. If the periodic cell parameters are 
+defined in VMD, the molecule is considered periodic and the grid 
+reflects the coordinates of periodic images of the selection. 
+The grid size may be modified from that passed to the routine so 
+that an integer grid dimension fits the dimensions of the box 
+containing the molecule. Finally, each atom that falls within 
+{\it depth} distance of an empty grid point is considered a 
+surface atom, and the command returns a list of atom indices 
+for all such atoms.
+
+% FIXME: Update 'pbc2onc' with current usage
+\item {\bf pbc2onc} {\it center} [frame {\it frame$\mid$last}]:
+  Computes the transformation matrix that transforms coordinates from an arbitrary PBC cell 
+  into an orthonormal unitcell. Since the cell center is not stored by VMD
+  you have to specify it.
+
+  Here is a 2D example of a nonorthogonal PBC cell:
+  A and B are the are the displacement vectors which are needed to create 
+  the neighboring images. The parallelogram denotes the PBC cell with the origin O at its center.
+  The square to the right indicates the orthonormal unit cell i.e. the area into which the atoms 
+  will be wrapped by transformation T.
+
+
+  \begin{minipage}[t]{\textwidth}
+  \setlength{\baselineskip}{2.5ex}
+  \begin{verbatim}
+                  + B                                        
+                 /                              + B'         
+       _________/________                       |            
+      /        /        /                   +---|---+        
+     /        /        /              T     |   |   |        
+    /        O--------/-------> A   ====>   |   O---|--> A'  
+   /                 /                      |       |        
+  /_________________/                       +-------+        
+  
+  A  = displacement vector along X-axis with length a
+  B  = displacement vector in XY-plane with length b
+  A' = displacement vector along X-axis with length 1
+  B' = displacement vector along Y-axis with length 1
+  O  = origin of the PBC cell
+ \end{verbatim}
+ \end{minipage}
+
+
+\item {\bf pbcneighbors} {\it center cutoff} [{\it options}]:
+  Returns all image atoms that are within {\it cutoff} {\AA} of the PBC unitcell in form of two lists.
+  The first list holds the atom coordinates while the second one is an indexlist mapping the image
+  atoms to the atoms in the unitcell. Since the PBC cell center is not stored in DCDs and cannot 
+  be set in VMD it must be provided by the user as the first argument.
+
+  The second argument ({\it cutoff}) is the maximum distance (in {\AA}) from the PBC unit cell
+  for atoms to be considered. In other words the cutoff vector defines the region surrounding the
+  pbc cell for which image atoms shall be constructed (i.e. \{6 8 0\} means 6 {\AA} for the direction
+  of A, 8 {\AA} for B and no images in the C-direction).
+
+  The following options can be specified:
+  \begin{itemize}
+  \item {\tt molid <molecule\_number>}: The default molecule to which an atom belongs unless
+    a molecule number was explicitely specified for this atom in the atom list. Further, all
+    frame specifications refer to this molecule.
+    (Default is the current top molecule.)
+  \item {\tt frame <frame>}: 
+    By default the value for the current frame will be
+    returned but a specific frame can be chosen through this option. One can also
+    specify {\it all} or {\it last} instead of a frame number in order to get a 
+    list of values for all frames or just the last frame respectively.
+  \item {\tt sel <selection>}: If an atomselection is provided then only those
+    image atoms are returned that are within cutoff of the selected atoms
+    of the main cell. In case cutoff is a vector the largest value will be
+    used.
+  \item {\tt align <matrix>}: In case the molecule was aligned you can supply the
+    alignment matrix which is then used to correct for the rotation and shift of the pbc cell.
+  \item {\tt boundingbox PBC$\mid$\{<mincoord> <maxcoord>\}}: With this option the atoms are
+    wrapped into a rectangular bounding box. If you provide "PBC" as an argument then the
+    bounding box encloses the PBC box but then the cutoff is added to the bounding box.
+    Negative values for the cutoff dimensions are allowed and lead to a smaller box.
+    Instead you can also provide a custom bounding box in form of the minmax coordinates
+    (list containing two coordinate vectors such as returned by the measure minmax command).
+    Here, again, the cutoff is added to the bounding box.
+  \end{itemize}
+
+\item {\bf inertia {\it selection} [moments] [eigenvals]}:
+  Returns the center of mass and the principles axes of inertia
+  for the selected atoms. If {\tt moments} is set then the moments
+  of inertia tensor are also returned. With option {\tt eigenvals}
+  the corresponding eigenvalues will be returned, too. If both
+  flags are set then the eigenvalues will be listed after the
+  moments.
+
+
+\item {\bf symmetry {\it selection}
+     [plane$\mid$I$\mid$C{\it n}$\mid$S{\it n} [{\it vector}]]
+     [tol {\it value}] [nobonds] [verbose {\it level}]}:
+  This function evaluates the molecular symmetry of an atom selection.
+  The underlying algorithm finds the symmetry elements such as 
+  inversion center, mirror planes, rotary axes and rotary reflections.
+  Based on the found symmetry elements it guesses the underlying
+  point group.
+  The guess is fairly robust and can handle molecules whose
+  coordinates deviate to a certain extent from the ideal
+  symmetry. The closest match with the highest symmetry will
+  be returned.
+
+  \underline{Options:}
+  \begin{itemize}
+  \item {\tt tol <value>}:
+    Allows one to control tolerance of the algorithm when
+    considering wether something is symmetric or not.
+    A smaller value signifies a lower tolerance, the default
+    is 0.1.
+  \item {\tt nobonds}:
+    If this flag is set then the bond order and orientation
+    are not considered when comparing structures.
+  \item {\tt verbose <level>}:
+    Controls the amount of console output.
+    A level of 0 means no output, 1 gives some statistics at
+    the end of the search (default). Level 2 gives additional
+    info about each stage, and 2, 3, 4 yield even more info
+    for each iteration.
+  \item {\tt idealsel <selection>}:
+    The symmetry search will be performed on the regular
+    selection but then the found symmetry elements will be
+    imposed on the selection given with this option an the
+    search is repeated with this second selection. This method
+    allows, for example, to perform the symmetry guess on a
+    selection without hydrogens (which might point in random
+    directions for rotable groups) but still get the ideal
+    coordinates and unique atoms for the entire structure.
+    The selection specified here must be a superset of the
+    selection used for the symmetry search.
+  \item {\tt I}:
+    Instead of guessing the symmetry pointgroup of the selection
+    determine if the selection's center off mass represents an
+    inversion center. The returned value is a score between 0
+    and 1 where 1 denotes a perfect match.
+  \item {\tt plane <vector>}:
+    Instead of guessing the symmetry pointgroup of the selection
+    determine if the plane with the defined by its normal
+    {\it vector} is a mirror plane of the selection. The
+    returned value is a score between 0 and 1 where 1 denotes
+    a perfect match.
+  \item {\tt C{\it n}$\mid$S{\it n} <vector>}:
+    Instead of guessing the symmetry pointgroup of the selection
+    determine if the rotation or rotary reflection axis Cn/Sn
+    with order {\it n} defined by {\it vector} exists for the
+    selection. E.g., if you want to query wether the Y-axis
+    has a C3 rotational symmetry you specify {\tt C3 \{0 1 0\}}.
+    The returned value is a score between 0 and 1 where 1
+    denotes a perfect match.
+  \item {\tt imposeinversion}:
+    Impose an inversion center on the structure.
+  \item {\tt imposeplanes \{<vector> [<vector> ...]\}}:
+    Impose the planes given by a list of normal vectors on the
+    structure.
+  \item {\tt imposeaxes|imposerotref \{<vector> order [<vector> order ...]\}}:\\
+    Impose rotary axes or rotary reflections on the structure
+    specified by a list of pairs of a vector and an integer.
+    Each pair defines an axis and its order.
+  \end{itemize}
+  The scores for the individual symmetry elements depend on the
+  specified tolerance.
+  Imposing symmetry elements on a structure will wrap the atoms
+  around these elements and average the coordinates of the atoms
+  and its images. Atoms for which no image is found (with respect
+  to that transformation) will not be wrapped. I.e. if you, for
+  instance, impose an axis on a molecule that has no such rotary
+  symmetry within the given tolerance then nothing will happen.
+  
+
+  \underline{Result:}
+
+  The return value is a TCL list of pairs consisting of a label
+  string and a value or list. For each label the data following
+  it are described below:
+  \begin{description}
+  \item [pointgroup] The guessed point group. For point groups
+    that have an order associated with it, like C3v or D2, the
+    order is replaced by 'n' and we have Cnv or Dn. The order
+    is given separately (see below).
+  \item [order] Point group order, i.e. order of highest axis
+    (0 if not applicable).
+  \item [elements] Summary of found symmetry elements, i.e.
+    inversion center, rotary axes, rotary reflections,
+    mirror planes. Example: ``(i) (C3) 3*(C2) (S6) 3*(sigma)''
+    for point group D3d.
+  \item [missing] Elements missing with respect to ideal set
+    of elements (same format as above). If this is not an empty
+    list then something has gone awfully wrong with the symmetry
+    finding algorithm.
+  \item [additional] Additional elements that would not be
+    expected for this point group (same format as above).
+    If this is not an empty list then something has gone
+    awfully wrong with the symmetry finding algorithm.
+  \item [com] Center of mass of the selection based on the idealized
+    coordinates (see 'ideal' below).
+  \item [inertia] List of the three axes of inertia, the eigenvalues
+    of the moments of inertia tensor and a list of three 0/1 flags 
+    specifying for each axis wether it is unique or not.
+  \item [inversion] Flag 0/1 signifying if there is an inversion center.
+  \item [axes]       Normalized vectors defining rotary axes
+  \item [rotreflect] Normalized vectors defining rotary reflections
+  \item [planes]     Normalized vectors defining mirror planes.
+  \item [ideal]  Idealized symmetric coordinates for all atoms of
+    the selection. The coordinates are listed in the order of 
+    increasing atom indices (same order asa returned by the
+    atomselect command ``get {x y z}''). Thus you can use the list
+    to set the atoms of your selection to the ideal coordinates
+    (see example below).
+  \item [unique] Index list defining a set of atoms with unique
+    coordinates.
+  \item [orient] Matrix that aligns molecule with GAMESS standard
+    orientation.
+  \end{description}
+
+  If a certain item is not present (e.g. no planes or no axes)
+  then the corresponding value is an empty list.
+  The pair format allows to use the result as a TCL array for
+  convenient access of the different return items.
+
+  \underline{Example:}
+  \begin{verbatim}
+    set sel [atomselect top all]
+    # Determine the symmetry
+    set result [measure symmetry $sel]
+    # Create array 'symm' containing the results
+    array set symm $result
+    # Print selected elements of the array
+    puts $symm(pointgroup)
+    puts $symm(order)
+    puts $symm(elements)
+    puts $symm(axes)
+    # Set atoms of selection to ideally symmetric coordinates
+    $sel set {x y z} $symm(ideal)
+  \end{verbatim}
+  
+  % FIXME: Add 'measure transoverlap' (and 'measure mirroroverlap'?)
+
+\end{itemize}
+
+%%%%%% menu
+
+\index{menu!command}\subsection{menu}
+\label{ug:ui:text:menu}
+The menu command controls or queries the on-screen GUI windows.
+\index{menus}
+\index{windows}
+
+  \begin{itemize}
+    \item {\bf  list}: Return a list of the available menus
+    \item {\bf  {\it menu\_name} on}: Turn a menu on.
+    \item {\bf  {\it menu\_name} off}: Turn a menu off.
+    \item {\bf  {\it menu\_name} status}: Return {\tt on} if on, {\tt off} if off.
+    \item {\bf  {\it menu\_name} loc}: Return the {\it x y} location.
+    \item {\bf  {\it menu\_name} move {\it x} {\it y}}: Move a menu to the 
+	given ({\it x}, {\it y}) location
+  \end{itemize}
+
+\noindent The parameter {\it menu\_name} is one of the following menu names:
+color, 
+display, 
+files, 
+graphics, 
+labels, 
+main, 
+material, 
+ramaplot. 
+render, 
+save, 
+sequence, 
+simulation, 
+or tool. 
+
+  \index{molecule!command}\subsection{mol}
+  \label{ug:ui:text:mol}
+Load, modify, or delete a molecule in VMD.  In the following, {\it
+molecule\_number} is a string describing which molecules are to be
+affected by the command.  It is one of the following: {\tt all}, {\tt top}, 
+{\tt active}, {\tt inactive}, {\tt displayed}, {\tt on}, {\tt off}, 
+{\tt fixed}, {\tt free}, or one of the unique integer ID codes
+assigned to the molecules when they are loaded (starting with 0). 
+The codes (molIDs) are not reused after a molecule is deleted, so if you, 
+for example, have three molecules loaded (numbered 0, 1, 2), 
+delete molecule with molID equal to 0, and then load another molecule,
+the new molecule will have molID 3. Thus, the list of available 
+molecule IDs\index{molecule!id} becomes (1 2 3). The index of
+the molecule\index{molecule!index} on this list is, among many other things,
+accessible 
+through the \hyperref{{\tt molinfo} command}{{\tt molinfo} command [\S}{]}
+{ug:topic:molinfo}. In the above case, for example, molecule that 
+was loaded the last has molID equal to 3, however, it is the third
+on the list of molecules, so it has the index equal to 2 (since we
+start countin from 0).
+
+The molecule representations\index{representation} (views\index{view})
+are assigned integer number (starting with 0 for each molecule), 
+which appear in the list on 
+the \hyperref{{\sf Graphics} window}{{\sf Graphics} window [\S }{]}{ug:ui:window:graphics}.
+The representations can be added, deleted or changed with the {\tt mol}
+command. See also sections on
+\hyperref{{\tt molinfo} command}{{\tt molinfo} command [\S~ }{]}
+{ug:topic:molinfo} for more ways of retrieving information about the 
+representations. 
+
+  \begin{itemize}
+    \item {\bf new } { {\tt [} {\it filename } {\tt ]} {\tt [} {\it options}
+      {\tt ]}}:
+    \item {\bf addfile } { {\tt <} {\it filename } {\tt >} {\tt [} {\it options}
+      {\tt ]}}:
+
+{\tt mol new} is used to create a new molecule from a file; if the optional
+{\it filename} parameter is omitted, a plain, ``blank'' molecule is created with
+no atoms (this can be used to create a canvas for drawing user-defined
+geometry).  {\tt mol addfile} is like {\tt mol new} except that the structure
+and coordinate data are loaded into the top molecule (whichever molecule was
+loaded last) instead of creating a new one.  Both {\tt mol new} and 
+{\tt mol addfile} accept the following set of options:
+\begin{itemize}
+  \item {\tt type <type>}: Specifies the file type (psf, pdb, etc.)  If this
+  option is omitted, the filename extension is used to guess the filetype; 
+  otherwise, it overrides what would be guessed from the filename.
+  \item {\tt first <frame>}:
+  \item {\tt last <frame>}:
+  \item {\tt step <frame>}: For files containing coordinate \timesteps, 
+  specifies which \timesteps to load. \Timesteps are indexed starting at 0.
+  A step of 1 means all frames in the range will be loaded; a step of 2 means
+  load every other frame.  
+  \item {\tt waitfor <frames>}: For files containing coordinate \timesteps,
+  specifies how many \timesteps to load before returning; the default is 1.
+  If {\tt frames} is less than the number of \timesteps in the file, the rest
+  of the \timesteps will be loaded in the background on subsequent VMD display
+  updates.  If {\tt \timesteps} is
+  {\tt -1} or {\tt all}, then all \timesteps in all files still in progress
+  will be loaded at once before the command returns. \Timesteps loaded this
+  way will load faster than if they are loaded in the background. 
+  If files are still being loaded in the background when the addfile command 
+  is issued, \timesteps from the files in progress will be loaded first.
+  \item {\tt volsets <set ids>}: For files containing volumetric data,
+  specifies which data sets to load.  {\tt <set ids>} should be a list of
+  zero-based indices.
+  \item {\tt autobonds <on|off>}: Turn automatic bond calculation on/off. 
+  This can be useful for loading unusual non-molecular coordinates for which VMD's 
+  bond-finding algorithm is too slow (e.g., if the point density is very high). 
+  Default is on.
+  \item {\tt molid}: For addfile only.  The molecule id of the molecule into
+  which the file should be loaded may be specified.  It must be the last 
+  option specified.  If omitted, the default is the top molecule.
+\end{itemize}
+
+
+    \item {\bf load {\it structure\_file\_type}
+{\it structure\_file} {\it {\tt [}coordinate\_file\_type coordinate\_file{\tt ]}}
+}: 
+Load a new molecule from {\it filename(s)} using the given {\it format}.
+If an additional coordinate file is specified, load this file as well.
+{\bf New in VMD 1.8:} All \timesteps from the coordinate file will
+be loaded before the command returns.  If this is not desirable, use
+the {\tt animate read} command for more fine-grained control over how
+coordinate files are loaded.  Previous version of VMD loaded only one
+\timestep before returning.  The function will return the id of the newly
+created molecule, or return an error if unsuccessful.
+
+\index{files!reading}
+    \item {\bf urlload {\tt <}file\_type{\tt >} {\tt <}URL{\tt >}}: Load a 
+molecule of {\it file\_type} from a given URL address.  Return the id of
+the newly created molecule, or an error if unsuccessful.
+
+    \item {\bf pdbload {\tt <}four\_letter\_accession\_id{\tt >}}: Retrieve
+the PDB file with the specified accession code from the RCSB web site.  Returns
+the id of the newly created molecule, or an error if unsuccessful.
+
+    \item {\bf  list}: Print a one-line status summary for each molecule.
+\index{molecule!status}
+    \item {\bf  list {\it molecule\_number}}: Print a one-line status summary
+for each molecule matching the {\it molecule\_number}. If only one 
+molecule matches the {\it molecule\_number}, also print the representation
+status for this molecule, i.e., number of representations as well as
+the representation number, coloring method
+\index{coloring!methods}, representation style\index{representation!style}
+and the selection string\index{selection} for each of the representations.
+    \item {\bf  color {\it coloring\_method}}: Change the default atom coloring method  setting.
+\index{coloring!methods}
+    \item {\bf  material {\it material\_name}}: Change the default material setting.
+\index{material!changing}
+    \item {\bf  representation {\it rep\_style}}: Change the default rendering
+method setting.
+\index{representation!changing}
+    \item {\bf  selection {\it select\_method}}: Change the default atom selection  setting.
+\index{clipping planes!user defined}
+\index{representation!clipping planes!user defined}
+    \item {\bf  clipplane center {\it clipplane\_id rep\_number molecule\_number } {\tt [} {\it vector} {\tt ]}}
+    \item {\bf  clipplane color {\it clipplane\_id rep\_number molecule\_number } {\tt [} {\it  vector} {\tt ]}}
+    \item {\bf  clipplane normal {\it clipplane\_id rep\_number molecule\_number } {\tt [} {\it vector} {\tt ]}}
+    \item {\bf  clipplane status {\it clipplane\_id rep\_number molecule\_number } {\tt [} {\it boolean} {\tt ]}}
+\index{atom!selection!default}
+    \item {\bf  modcolor {\it rep\_number} {\it molecule\_number} {\it coloring\_method}}: 
+Change the current coloring method for the given
+representation in the specified molecule.
+    \item {\bf  modmaterial {\it rep\_number} {\it molecule\_number} {\it material\_name}}:
+Change the current material for the given representation in the specified 
+molecule.
+\index{material!changing}
+    \item {\bf  modstyle {\it rep\_number} {\it molecule\_number} {\it rep\_style}}: 
+Change the current rendering method (style) for the given
+representation in the specified molecule.
+    \item {\bf  modselect {\it rep\_number} {\it molecule\_number} {\it
+select\_method}}: Change the current selection for the given representation
+in the specified molecule.
+    \item {{\bf  addrep} {\it molecule\_number}}: Using the current default 
+           settings for the atom selection, coloring, and rendering methods, 
+           add a new representation to the specified molecule.
+    \item {\bf  default {\it category} {\it value}}: Set the default settings for color, style, selection, or material to the supplied value.
+    \item {\bf  delrep {\it rep\_number} {\it molecule\_number}}: Deletes the
+given representation from the specified molecule.
+    \item {\bf  modrep {\it rep\_number} {\it molecule\_number}}: Using the 
+    current default settings for the atom selection, coloring, 
+    and rendering methods, changes the given representation to the 
+    current defaults.
+    \item {\bf  delete  {\it molecule\_number}}: Delete molecule(s).
+    \item {\bf  active {\it molecule\_number}}: Make molecule(s) active.
+    \item {\bf  inactive {\it  molecule\_number}}: Make molecule(s) inactive.
+    \item {\bf  on {\it molecule\_number}}: Turn molecule(s) on (make drawn).
+    \item {\bf  off {\it  molecule\_number }}: Turn molecule(s) off (hide).
+    \item {\bf  fix {\it  molecule\_number}}: Fix molecule(s).
+    \item {\bf  free {\it  molecule\_number}}: Unfix molecule(s).
+    \item {\bf  top {\it molecule\_number}}: Set the top molecule.
+    \item {\bf  cancel {\it molecule\_number}}: Cancel loading trajectories.
+    \item {\bf  reanalyze {\it molecule\_number}}: Re-analyze structure after bonding and atom name changes.
+    \item {\bf  bondsrecalc {\it molecule\_number}}: Recalculate bonds from distances for current timestep.
+    \item {\bf  ssrecalc {\it molecule\_number}}: Recalculate secondary structure.
+    \item {\bf  rename {\it molecule\_number newname}}: Rename the specified 
+molecule.
+    \item {\bf  repname {\it molecule\_number rep\_number}}:
+      Returns the name of the given rep.  This name is
+      guaranteed to be unique for all reps in the molecule, and will stay with
+      the rep even if the rep\_number changes.  
+    \item {\bf repindex {\it molecule\_number name}}: Return the 
+      {\it rep\_number} for the rep with the given name, or -1 if no rep with
+      that name exists in that molecule.
+    \item {\bf selupdate {\it rep\_number} {\it molecule\_number} 
+    \index{represention!auto-update}
+    \index{atom!selection!auto-update}
+          {\it [onoff]}}: Update the selection for the specified rep each
+            time the molecule's timestep changes.  If {\it onoff} is not 
+            specified, returns the current update state.
+    \item {\bf colupdate {\it rep\_number} {\it molecule\_number} 
+    \index{atom!color!auto-update}
+          {\it [onoff]}}: Update the calculated color for the specified rep 
+          each time the molecule's timestep changes.  If {\it onoff} is not 
+          specified, returns the current update state.
+    \item {\bf drawframes {\it molecule\_number} {\it rep\_number} {\it [frame\_specification]}}:
+    \index{representation!draw multiple frames}
+    \index{trajectory!draw multiple frames}
+           Draw multiple trajectory frames or coordinate sets simultaneously.
+           This setting allows the user to select one or more ranges of frames
+           to display simultaneously.  The frame specification takes one of the
+           following forms {\bf now}, {\it frame\_number}, {\it start:end}, or
+           {\it start:step:end}.  If the {\it frame\_specification} is not 
+           specified, the command returns the currently active frame 
+           selection text.
+    \item {\bf smoothrep} {\it molecule\_number rep\_number [n]}:
+    \index{trajectory!smoothing}
+    \index{animation!smoothing}
+    Get/set the window size for on-the-fly smoothing of trajectories.  
+    Instead of drawing the specified rep from the current coordinates, VMD
+    will calculate the average of the coordinates from the $n$ previous
+    and subsequent timesteps.  If $n$ is zero then no smoothing is performed.
+    Note that this smoothing does not affect any label measurements, and does
+    not change the values of the coordinates returned by atom selections or
+    written to files; it only affects how the rep is drawn.  Smoothing can
+    be especially useful in visualizing rapidly fluctuating molecules or
+    making movies.
+    \item {\bf scaleminmax} {\it molecule\_number rep\_number [min max {\tt |} auto]}:
+    \index{color!scale!set minmax}
+    Get/set the color scale range for this rep.  Normally the color scale
+    is automatically scaled to the minimum and maximum of the corresponding
+    range of data.  This command overrides the autoscaled values with the
+    values you specify.  Omit the {\it min} and {\it max} arguments to get
+    the current values.  Use ``auto" instead of a min and max to rescale the
+    color scale to the maximum range again.
+\index{molecule!status!changing}
+    \item {\bf showrep} {\it molecule\_number rep\_number [on {\tt |} off]}:
+      \index{representation!show/hide}
+    Get/set whether the given rep is shown or hidden.  Hidden reps cannot
+    be picked and do not show any graphics.
+    \item {\bf volume} {\it molecule\_number {\tt <}volumeset\_name{\tt >} 
+       {\tt <}Origin{\tt >}  {\tt <}a{\tt >}  {\tt <}b{\tt >}  {\tt <}c{\tt >}
+        \#a \#b \#c  {\tt <}Data{\tt >} }
+   Add a volumetric data set to the current molecule. Origin, a, b, and c are 
+   vectors setting the origin and the three cell vectors. \#a, \#b, and \#c
+   are the number of grid points in the respective cell vector directions and
+   finally the data has to be provided as one list with the data following the 
+   grid points along the c-axis fastest, then the b-axis and finally the a-axis.
+  \end{itemize}
+
+
+  \index{molecule!command}\subsection{molecule}
+Same as mol.
+
+\index{molinfo!command}\subsection{molinfo}
+\label{ug:topic:molinfo}
+
+\begin{table}[htp]
+ \hspace{0.5in}
+  \begin{tabular}{|l|l|l|l|l|} \hline
+    \multicolumn{1}{|c}{Keyword} &
+    \multicolumn{1}{|c}{Aliases} &
+    \multicolumn{1}{|c}{Arg} &
+    \multicolumn{1}{|c}{Set} &
+    \multicolumn{1}{|c|}{Description} \\ \hline\hline
+id      & & {\it int} & N & molecular id                        \\
+index   & & {\it int} & N & index on the molecule list          \\
+numatoms& & {\it int} & N & number of atoms                     \\
+name    & & {\it str} & N & the name of the molecule (usually the name of the file) \\
+filename& & {\it str} & N & list of filenames for all files loaded for this molecule \\
+filetype & & {\it str} & N & list of file types for this molecule \\
+database & & {\it str} & N & list of databases for this molecule \\
+accession& & {\it str} & N & list of database accession codes for this molecule \\
+remarks  & & {\it str} & N & list of freeform remarks for this molecule \\
+active  & & {\it bool} & Y & is/make the molecule active         \\
+drawn   & displayed & {\it bool} & Y & is/make the molecule drawn \\
+fixed   & & {\it bool} & Y & is/make the molecule fixed         \\
+top     & & {\it bool} & Y & is/make the molecule top           \\
+center  & & {\it vector} & Y & get/set the coordinate used as the center \\
+center\_matrix & & {\it matrix} & Y & get/set the centering matrix      \\
+rotate\_matrix & & {\it matrix} & Y & get/set the rotation matrix       \\
+scale\_matrix & & {\it matrix} & Y & get/set the scaling matrix         \\
+global\_matrix & & {\it matrix} & Y & get/set the global (rotation/scaling) matrix \\
+view\_matrix  & & {\it matrix} & N & get/set the overall viewing matrix \\
+numreps & & {\it int} & N & the number of representations       \\
+selection {\it i} & & {\it string} & N & the string for the i'th selection \\
+rep {\it i} & & {\it string} & N & the string for the i'th representation \\
+color {\it i} & colour & {\it string} & N & the string for the i'th coloring method \\
+numframes & & {\it int} & N & number of animation frames         \\
+numvolumedata & & {\it int} & N & number of volumetric data sets \\
+frame & & {\it int} & Y & current frame number                   \\
+timesteps & & {\it int} & Y & number of elapsed timesteps in an interactive simulation\\
+angles & & {\it list} & Y & topology angle types and definitions \{type a1 a2 a3\}  \\
+dihedrals & & {\it list} & Y & topology dihedral types and definitions \{type a1 a2 a3 a4\}  \\
+impropers & & {\it list} & Y & topology improper types and definitions \{type a1 a2 a3 a4\}  \\
+bond & & {\it float} & N & the bond energy (for the current frame)      \\
+angle & & {\it float} & N & the angle energy                    \\
+dihedral & & {\it float} & N & the dihedral energy              \\
+improper & & {\it float} & N & the improper energy              \\
+vdw & & {\it float} & N & the van der Waal energy               \\
+electrostatic & elec & {\it float} & N & the electrostatic energy \\
+hbond & & {\it float} & N & the hydrogen bond energy            \\
+kinetic & & {\it float} & N & the total kinetic energy          \\
+potential & & {\it float} & N & the total potential energy      \\
+energy & & {\it float} & N & the total energy                   \\
+temperature & temp & {\it float} & N & the overall temperature  \\
+pressure & & {\it float} & Y & the simulation pressure          \\
+volume & & {\it float} & Y & the simulation volume              \\
+efield & & {\it float} & Y & efield \\
+alpha  & & {\it float} & Y & unit cell angle alpha in degrees (for the current frame)   \\
+beta   & & {\it float} & Y & unit cell angle beta in degrees (for the current frame)    \\
+gamma  & & {\it float} & Y & unit cell angle gamma in degrees (for the current frame)   \\
+a      & & {\it float} & Y & unit cell length a in Angstroms (for the current frame)    \\
+b      & & {\it float} & Y & unit cell length b in Angstroms (for the current frame)    \\
+c      & & {\it float} & Y & unit cell length c in Angstroms (for the current frame)    \\
+\hline
+    \end{tabular}
+\caption{{\tt molinfo set/get} keywords}
+\label{table:molinfo:get:keywords}
+\index{molecule!data}
+\index{molinfo!keywords}
+\end{table}
+
+The {\tt molinfo} command is used to get information about a molecule
+(or loaded file) including the number of loaded atoms, the
+filename, the graphics selections, and the viewing matrices.  It can
+also be used to return information about the list of loaded molecules.
+
+Each molecule has a unique id, which is assigned to it when it is first loaded.
+These start at zero and increase by 1 for each new molecule.  When a molecule
+is deleted, the number is not used again.  There is one unique molecule, called
+the \hyperref{{\sf top} molecule}{{\sf top} molecule [\S}{]}
+{ug:ui:window:mol:top}, which is used to determine some parameters, such as the
+center of view, the data in the animation controls, etc. \index{molecule!top}
+
+\begin{itemize}
+  \item {\bf list}: Returns a list of all current molecule id's.
+  \item {\bf num}: Returns the number of loaded molecules.
+  \item {\bf top}: Returns the id of the top molecule.
+  \item {\bf index {\it n}}: Returns the id of the {\it n}'th molecule.
+  \item {\bf {\it molecule\_id} get {\it \{list of keywords\}}}
+  \item {\bf {\it molecule\_id} set {\it \{list of keywords\}} {\it \{list of values\}}}
+     Access and, in some cases, modify information about a given molecule.  
+The list of recognized keywords is given in Table 
+\ref{table:molinfo:get:keywords}.
+
+\begin{verbatim}
+Examples:
+vmd > molinfo top get numatoms
+568
+molinfo 0 get {filetype filename}
+pdb /home/dalke/pdb/bpti.pdb
+vmd > molinfo 0 get { {rep 0} {color 0} {rep 1} {color 1} }
+{VDW 1.000000 8.000000} {ColorID 5} Lines 1.0000 SegName
+\end{verbatim}
+
+\end{itemize}
+
+
+  \index{mouse!command}\subsection{mouse}
+Change the current state (mode) of the mouse, optionally active TCL
+callbacks.
+\index{mouse!modes}
+  \begin{itemize}
+    \item {\bf mode 0}: Set mouse mode to rotation.
+    \item {\bf mode 1}: Set mouse mode to translation.
+    \item {\bf mode 2}: Set mouse mode to scaling.
+    \item {\bf mode 3 {\it N}}: Set mouse mode to rotate light {\it N}.
+    \item {\bf mode 4 {\it N}}: Set mouse mode to picking mode {\it N}, where
+{\it N} is one of the following:
+	\begin{itemize}
+		\item 0: query item
+		\item 1: pick center
+		\item 2: pick atom
+		\item 3: pick bond
+		\item 4: pick angle
+		\item 5: pick dihedral
+		\item 6: move atom
+		\item 7: move residue
+		\item 8: move fragment
+		\item 9: move molecule
+		\item 10: force on atom
+		\item 11: force on residue
+		\item 12: force on fragment
+	\end{itemize}
+  \end{itemize}
+\index{mouse!callback}
+  \begin{itemize}
+    \item {\bf callback on/off}: Turn the callbacks on or off.  To
+    use the callbacks, trace the variable \verb^vmd_pick_atom_silent^.
+    See below for information on tracing.
+    \item {\bf rocking on/off}: Enable/disable persistent rotation of the
+    scene with the mouse.
+    \index{mouse!rocking}
+    \item {\bf stoprotation}: Stop any mouse-initiated scene rotation as well
+    as any rocking initiated with the "rock" command.
+    \index{mouse!stop rotation}
+  \end{itemize}
+\index{picking!text command}
+
+\index{parallel!command}
+\subsection{parallel}
+  The parallel command enables large scale parallel 
+scripting when VMD has been compiled with MPI support.
+In absence of MPI support, the parallel command is still
+available, but it operates the same way it would if an 
+MPI-enabled VMD would when run on only a single node.
+The parallel command enables large analysis scripts to be
+easily adapted for execution on large clusters and supercomputers
+to support simulation, analysis, and visualization operations that
+would otherwise be too computationally demanding for conventional
+workstations~\cite{STON2013,STON2013A,STON2014,PHIL2014}.
+
+\begin{itemize}
+  \item {\bf nodename}: Return the hostname of the current compute node.
+  \item {\bf noderank}: Return the MPI rank of the current compute node.
+  \item {\bf nodecount}: Return the total number of MPI ranks in the 
+        currently running VMD job.
+  \item {\bf allgather {\it object}}:
+        Perform a parallel allgather operation across all MPI ranks,
+        taking the user defined object as input to each caller.
+        All VMD MPI ranks must participate in the allgather operation.
+  \item {\bf allreduce {\it user\_reduction\_procedure} {\it object}}:
+        Perform a parallel reduction across all MPI ranks by calling
+        the user-supplied reduction procedure, passing in a user defined
+        object. 
+        All VMD MPI ranks must participate in the allreduce operation.
+  \item {\bf barrier}: Perform a barrier synchronization across all
+        MPI ranks in the running VMD job.
+  \item {\bf for} {\it startcount} {\it endcount} {\it user\_worker\_procedure} {\it object}:
+        Invoke VMD parallel work scheduler to run a computation over 
+        all MPI ranks.  The VMD work scheduler uses dynamic load balancing
+        to assign work indices to workers, calling the user-defined 
+        worker callback procedure for each work item.  
+\end{itemize}
+
+
+\index{play!command}
+\subsection{play}
+Start executing text commands from a specified file, instead of from the 
+console.  When the end of the file is
+reached, \VMD\ will resume reading commands from the previous source.  This
+command may be nested, so commands being read from one file can include
+commands to read other files.
+
+  \begin{itemize}
+    \item {\bf  {\it filename}}: Execute commands from {\it filename}.
+  \end{itemize}
+
+
+  \index{quit!command}\subsection{quit}
+Same as exit.
+
+
+
+
+  \index{render!command}\subsection{render}
+Output the currently displayed image (scene) to a file using
+the global VMD display settings and any renderer-specific settings.
+
+\index{antialiasing}
+\index{rendering!antialiasing}
+\index{ambient occlusion lighting}
+\index{rendering!ambient occlusion lighting}
+  \begin{itemize}
+    \item {\bf list}: List the available rendering methods.
+    \item {\bf hasaa {\it method}}: 
+         Query whether or not a renderer has controllable antialiasing feature.
+    \item {\bf aasamples {\it method} {\it samples}}: 
+         Query or set the number of antialiasing samples to be used by this
+         renderer, if supported.
+    \item {\bf aosamples {\it method} {\it samples}}: 
+         Query or set the number of ambient occlusion lighting
+         samples to be used by this renderer, if supported.
+    \item {\bf formats {\it method}}:
+         List a renderer's available image output formats/modes.
+    \item {\bf format {\it method} {\it format}}:
+         Set a renderer's active image output format/mode.
+         
+\index{rendering!methods}
+\index{rendering!Tachyon}
+\index{rendering!TachyonInternal}
+    \item {\bf  {\it method} {\it filename}}: Render the global 
+	scene to {\it filename} using {\it method} and execute the 
+	default command, where {\it method} can be one of the following:
+	\begin{itemize}
+		\item ART
+                \item Gelato
+		\item POV3
+		\item PostScript
+		\item Radiance
+		\item Raster3D
+		\item Rayshade
+                \item Renderman
+		\item snapshot
+		\item STL
+		\item Tachyon 
+		\item TachyonInternal 
+		\item VRML-1
+		\item VRML-2
+                \item Wavefront
+	\end{itemize} 
+    \item {\bf  {\it method} {\it filename} {\it command}}: Render the global scene to 
+{\it filename}, then execute `{\it command}'.  Any \%s in `{\it command}'
+are replaced by the filename (up to 5).
+\index{rendering!exec command}
+    \item {\bf  {\bf options} {\it method}}: Get the default command string.
+    \item {\bf  {\bf options} {\it method} {\it command}}: Set new default command.
+    \item {\bf  {\bf default} {\it method}}: Get the original default command. 
+  \end{itemize}
+
+
+  \index{rock!command}\subsection{rock}
+Rotate the current scene continually at a specified rate.
+
+  \begin{itemize}
+    \item {\bf  off}: Stops rocking.
+    \item {\bf  {\tt <}  x {\tt |} y {\tt |} z {\tt >}  by {\it step}}: Rock around 
+the given axis at a rate of {\it step} degrees per redraw.
+    \item {\bf  {\tt <}  x {\tt |} y {\tt |} z {\tt >}  by {\it step} {\it n}}: 
+Rock around the given axis at a rate of {\it step} degrees per redraw for 
+{\it n} steps, reverse, and repeat.
+  \end{itemize}
+
+
+  \index{rotate!command}\subsection{rotate}
+Rotate the current scene around a given axis by a certain angle.
+This does not change atom coordinates.
+\index{atom!coordinates}
+
+  \begin{itemize}
+    \item {\bf  stop}: Stop all rotation, similar to rock off, but it also stops mouse rotations as well.
+    \item {\bf  {\tt <}  x {\tt |} y {\tt |} z {\tt >}  by {\it angle}}: Rotate 
+around the given axis {\it angle} degrees.
+    \item {\bf  {\tt <}  x {\tt |} y {\tt |} z {\tt >}  to {\it angle}}: Rotate the 
+given axis to the absolute position {\it angle}.
+    \item {\bf  {\tt <}  x {\tt |} y {\tt |} z {\tt >}  {\tt <}  by {\tt |} to 
+{\tt >}  {\it angle} {\it step}}: Rotate at a rate of {\it step} degrees per 
+redraw.
+  \end{itemize}
+
+
+
+  \index{scale!command}\subsection{scale}
+Scale the current scene up or down.
+This does not change atom coordinates.
+\index{atom!coordinates}
+
+  \begin{itemize}
+    \item {\bf  by {\it f}}: Multiply scene scaling factor by {\it f}.
+    \item {\bf  to {\it f}}: Set scene scaling factor to {\it f}.
+  \end{itemize}
+
+  \index{stage!command}\subsection{stage}
+Position a checkerboard stage on the screen.  
+
+  \begin{itemize}
+    \item {\bf location {\tt <}  off {\tt |} origin {\tt |} bottom {\tt |} top 
+{\tt |} left {\tt |} right {\tt |} behind {\tt >}}: Set the location.
+    \item {\bf location}: Get the current location.
+    \item {\bf locations}: Get a list of possible locations.
+    \item {\bf panels {\it n}}: Set number of panels in stage, up to 30.
+    \item {\bf panels}: Get the number of panels in use
+  \end{itemize}
+
+
+
+  \index{tool!command}\subsection{tool}
+Initialize and control the tools that are controlled by external
+tracking devices.
+
+  \begin{itemize}
+    \item {\bf  create}: Create a new tool
+    \item {\bf  change {\it type {\tt [} toolid\/ {\tt ]}}}: Change the
+    type of a tool.
+    \item {\bf  scale {\it scale {\tt [} toolid\/ {\tt ]}}}: Change the
+    scale of the coordinates reported by a tool.
+    \item {\bf  scaleforce {\it scale {\tt [} toolid\/ {\tt ]}}}: Increase
+    or decrease the force on a force-feedback device.
+%%    \item {\bf  rot {\tt [} left {\tt |} right {\tt ]}} $A_{00}$
+%%    $A_{01}\ldots A_{33}$ {\tt [} {\it toolid\/} {\tt ]}: Multiply a
+%%    tool's orientation matrix on the left or right by a matrix $A$.
+    \item {\bf  offset {\it x y z\/ {\tt [} toolid\/ {\tt ]}}}: Add a
+    vector to a tool's position.
+    \item {\bf  delete \it {\tt [} toolid\/ {\tt ]}}: Remove a tool.
+%%    \item {\bf  info \it {\tt [} toolid\/ {\tt ]}}: Get info about a tool.
+    \item {\bf  rep \it molid repid\/}: 
+    Choose only a single representation for tugging or SMD.
+    \item {\bf  adddevice \it name\/ {\tt [} toolid\/ {\tt ]} }: Add a
+    device to a tool, using a name found in the sensor configuration
+    file.
+    \item {\bf  removedevice \it name\/ {\tt [} toolid\/ {\tt ]} }:
+    Remove a device from a tool, using a name found in the sensor
+    configuration file.
+
+    \item {\bf  callback {\tt on}/{\tt off} }: Enable callbacks for
+    the tools.
+  \end{itemize}
+
+
+  \index{translate!command}\subsection{translate}
+Translate the objects in the current scene.
+This does not change the atom coordinates.
+\index{atom!coordinates}
+
+  \begin{itemize}
+    \item {\bf  by {\it x} {\it y} {\it z}}: Translate by vector ({\it x}, {\it y},
+{\it z}) in screen units (note, that  
+this does not change the atom coordinates).
+    \item {\bf  to {\it x} {\it y} {\it z}}: Translate to the absolute position 
+({\it x}, {\it y}, {\it z}) in screen units.
+  \end{itemize}
+
+
+
+  \index{user!command}\subsection{user}
+Add user-customized commands.
+  \begin{itemize}
+    \item {\bf  add key {\it key} {\it command}}: Assign the given
+text command to the hot key {\it key}.  When {\it key} is pressed while
+the mouse is in the display window, the specified command will be executed.
+    \item {\bf  print keys }: Print out the current definition of the hot keys.
+\index{hot keys}
+  \end{itemize}
+See section \ref{ug:ui:hotkeys} for
+examples of the use of the {\tt user} command.
+
+  \index{vmdinfo!command}\subsection{vmdinfo}
+(Tcl) Returns information about this version of \VMD.
+  \begin{itemize}
+	\item {\bf version}: Returns the version number;
+	\item {\bf versionmsg}: Full information about this version;
+	\item {\bf authors}: List of authors;
+	\item {\bf arch}: architecture type (in case you couldn't tell);
+	\item {\bf options}: options used to compile \VMD;
+\index{VMD!compile options}
+	\item {\bf www}: \VMD\ home page;
+	\item {\bf wwwhelp}: \VMD\ help page.
+  \end{itemize}
+This function is available without Tcl and the information is 
+displayed to the screen.
+
+
+
+\subsection{volmap}
+\index{volmap!command}
+\index{volumetric data!generating}
+\label{ug:ui:text:volmap}
+
+The {\tt volmap} command creates volumetric maps (3D grids containing a value at
+each grid point) based on the molecular data, which can then be visualized in
+VMD using the Isosurface and VolumeSlice representations or using the Volume
+coloring mode. Also note that the VolMap plugin, accessible from the VMD
+Extension menu, provides a graphical front-end to many of the {\tt volmap}
+command's capabilities.
+
+To create a volumetric map, the {\tt volmap} command is run in the following
+way, where the atom selection specifies the atoms and molecule to include in the
+calculation, and where the maptype specifies the type of volumetric data to
+create:
+{\tt 
+\begin{verbatim}
+  volmap <maptype> <atom selection> [optional arguments]
+\end{verbatim}
+}
+
+For example, to create a mass density map with a cell side of 0.5 {\AA},
+averaged over all frames of the top molecule, and add the volumetric data to the
+top molecule, on would use:
+{\tt 
+\begin{verbatim}
+  volmap density [atomselect top "all"] -res 0.5 -weight mass -allframes \
+                                                   -combine avg -mol top
+\end{verbatim}
+}
+
+The various volumetric data map types currently supported by {\tt volmap} are
+listed as follows. Please note that when a map type description refers to an atoms radius
+or beta field, \emph{etc.}, that these values will be read directly from VMD's
+associated fields for that atom. In certain cases, you may want to adjust the
+atom selections fields (such as radius, beta, \emph{etc.}) before performing the
+volmap analysis.
+\begin{itemize} 
+
+  \index{density!volumetric data}
+  \item {\bf density}: creates a map of the weighted atomic density at each
+  gridpoint. This is done by replacing each atom in the selection with a
+  normalized gaussian distribution of width (standard deviation) equal to its
+  atomic radius. The gaussian distribution for each atom is then weighted using
+  an optional weight (see the {\tt -weight} argument), and defaults to a weight
+  of one (\emph{i.e}, the number density). The various gaussians are then
+  additively distributed on a grid. 
+
+  \index{interpolation!volumetric data}
+  \item {\bf interp}: creates a map with the atomic weights interpolated
+  onto a grid. For each atom, its weight is distributed to the 8 nearest 
+  voxels via a trilinear interpolation. The optional weight (see the
+  {\tt -weight} argument) defaults to a weight of one.
+
+  \index{distance!volumetric data}
+  \item {\bf distance}: creates a map for which each gridpoint contains the
+  distance between that point and the edge of the nearest atom. In other words,
+  each gridpoint specifies the maximum radius of a sphere cnetered at that point
+  which does not intersect with the spheres of any other atoms. All atoms are
+  treated as spheres using the atoms' VMD radii.
+
+  \index{electrostatics!volumetric data}
+  \index{Coulomb potential!volumetric data}
+  
+  \item {\bf coulomb}, {\bf coulombmsm}: Creates a map of the electrostatic 
+  field of the atom selection, made by computing the 
+  non-bonded Coulomb potential from each atom in the selection 
+  (in units of $k_BT/e$). The coulomb map generation is optimized to 
+  take advantage of multi-core CPUs and programmable GPUs if they are 
+  available~\cite{STON2007,OWEN2008-JS,RODR2008,HARD2009,KIND2009-JS,STON2010,STON2010-JS,ENOS2010-JP,STON2011}.
+  
+  \index{potential of mean force!volumetric data} 
+  \index{implicit ligand sampling!volumetric data}
+  
+  \item {\bf ils}: Creates a free energy map of the distribution of
+  a weakly-interacting monoatomic or diatomic gas ligand throughout the
+  system using the Implicit Ligand Sampling (ILS) technique.
+  See additional information about ILS below.
+
+  \index{mask!volumetric data}
+  \item {\bf mask}: Creates a map which is set to 0 or 1 depending on whether
+  they are within a specified cutoff distance (use the {\tt -cutoff} argument)
+  of any atoms in the selection. The mask map is typically used in combination
+  with other maps in order to hide/mask data that is far from a region of
+  interest.
+
+  \index{occupancy!volumetric data}
+  \item {\bf occupancy}: Each grid point is set to either 0 or 1, depending on
+  whether it contains onbe or more atoms or not. When averaged over many frames,
+  this will provide the fractional occupancy of that grid point. By default,
+  atoms are treated as spheres using the atomic radii and a gridpoint is
+  considered to be "occupied" if it lies inside that sphere. Use the {\tt
+  -points} argument to treat atoms as points (a grid point is "occupied" if its
+  grid cube contains an atom's center).
+
+\end{itemize} 
+
+The following optional arguments are universally understood by every volmap map types:   
+      
+\begin{itemize} 
+
+  \item {\bf -allframes}: Use every frame in the molecule instead of just the
+  current one to compute the volumetric map. The method used to combine the
+  various trajectory frame maps can be specified using the {\tt -combine}
+  argument. By default, volmap only uses the current frame.
+
+  \item {\bf  -combine {\tt <} avg {\tt |} max {\tt |} min {\tt |} stdev {\tt
+  |} pmf {\tt >}}: Specifies the rule to use to combine frames when using the
+  {\tt -allframes} argument. These correspond to keeping the average, maximum or
+  minimum values from the range of calculated frames. {\tt stdev} will return
+  the standard deviation for each point over the range of frames, and {\tt pmf}
+  uses a thermal average $-\ln \sum_i^N e^{-value_i}/N$ for each point. The
+  default is {\tt avg} except for ligand maps where the default is {\tt pmf}.
+  
+  \item {\bf -res {\it resolution}}: Sets the resolution of the map. This means
+  that the volume will be subdivided into many small cubes whose side have a
+  length of {\it resolution}.
+  
+  \item {\bf -minmax {\tt \{\{}$x_{min}$ $y_{min}$ $z_{min}${\tt \} \{}$x_{max}$
+$y_{max}$ $z_{max}${\tt \}\}}}: Allows the user to specify the min-max
+boundaries of the grid in which the volumetric map will be computed. The
+argument to -minmax is a list of two 3-vectors specifying the minimum and
+maximum coordinates of the desired volumetric data grid.
+
+  \item {\bf -checkpoint {\it frequency}}: For the analysis of
+  long trajectories, it can be desirable to have intermediate outputs of the
+  volmap computation. The checkpoint option forces the volmap computation to
+  output a map of what has been computed so far, at every  {\it frequency}
+  frames. The default {\it frequency} is 500; setting the {\it frequency} to
+  zero disables the checkpointing feature.
+  
+  \item {\bf -mol {\tt <} {\it molid} {\tt |} top {\tt >}}: Exports the final
+  volumetric data into the VMD molecule specified by {\it molid}. By default,
+  all maps are exported to a file or name {\it maptype}\_out.dx; using the {\tt
+  -mol} option overrides this.
+
+  \item {\bf -o {\it filename}}: Exports the final volumetric data into a DX
+  file (.dx extension is added if missing). By default, all maps are exported to
+  a file or name {\it maptype}\_out.dx.
+  
+\end{itemize}  
+
+The following optional arguments are special arguments understood only by some volmap map types. Some arguments may only apply to certain map types or may have different meaning for different map types:      
+
+\begin{itemize}
+  \item {\bf -cutoff {\it cutoff}}: Specifies a cutoff distance. For the
+  distance maps, specifies the largest distance that will be considered (large
+  number is better but slower). For the mask maps, specifies the distance from
+  each atom which will be considered part of the mask.
+
+  \item {\bf -points}: For the occupancy map type. Treat atoms as point
+  particles instead of as spheres.
+  
+  \item {\bf -radscale {\it factor}}: For the density map type. Sets a
+  multiplication factor that multiplies all the VMD atomic radii for the purpose
+  of the calculation.
+
+  \item {\bf -weight {\tt <} {\it field name} {\tt |} {\it value list} {\tt >}}:
+  For the density map type. Sets a per-atom weight to be used when computing the
+  density. This can be the name of any VMD numerical atomic field (such as mass,
+  charge, beta, occupancy, user, radius, \emph{etc.}) or else a Tcl list of
+  numbers of the same length as the number of atoms.
+
+\end{itemize}
+
+
+\subsubsection{Implicit Ligand Sampling ({\tt volmap ils} command)}
+This command computes a map of the estimated potential of mean force (in
+units of k$_B$T at 300~K) of placing a weakly-interacting gas monoatomic or
+multiatomic ligand at every gridpoint. These results will only be valid when
+averaging over a large set of frames.
+Note that if you have a CUDA enabled GPU then your ILS calculation
+will run about 20 times faster than on a CPU.
+
+Please refer to and cite:\\
+%Saam, J., D. Hardy, J. Stone, K. Vandivort, and K. Schulten, 
+Cohen, J., A. Arkhipov, R. Braun and K. Schulten,  {\it "Imaging
+the migration pathways for O$_2$, CO, NO, and Xe inside myoglobin"},
+Biophysical Journal {\bf 91}, 1844--1857, 2006.\\
+
+
+The command syntax differs from the other volmap commands and
+it has its own set of options:\\[2ex]
+{\tt volmap ils {\it molid} < {\it minmax} | pbcbox > [options]}\\[2ex]
+
+Here {\it minmax} denotes the boundaries of the grid in
+which the volumetric map will be computed. It is given as
+a list of two 3-vectors specifying the minimum and maximum
+coordinates of the desired volumetric data grid 
+\{\{$x_{min}$ $y_{min}$ $z_{min}$\}
+\{$x_{max}$ $y_{max}$ $z_{max}$\}\}.
+If you provide the keyword {\tt\bf pbcbox} instead of the {\it minmax}
+coordinates then the target grid will be set to the rectangular
+box that encloses the PBC cell. A typical choice for the minmax
+parameters would be the minmax box of a subset of your system
+(for instance the just protein) as returned by the {\tt measure
+ minmax} command.
+
+Based on the grid dimensions a selection that includes all atoms within
+the interaction cutoff distance (specified by {\tt -cutoff}) is 
+automatically chosen for the computation of the interactions.
+
+In case your minmax box exceeds the periodic bounday box the
+non-overlapping parts of your map will be ill defined and a warning
+is printed. In this case you should consider wrapping the coordinates
+so that the requested grid lies in the center of the box. You can use
+the {\tt pbc wrap} command from the PBCtool plugin for this.
+
+In case the nonbonded interaction margin exceeds the periodic 
+boundaries regions of your map will be based on incomplete 
+interactions and a warning is printed. If this happens you should 
+use the {\tt -pbc} flag which automatically takes atoms of the 
+neighboring cells into account.
+
+Before starting the computation, the atomic radii of each atom in the
+molecule should be set to the corresponding CHARMM Lennard-Jones
+$R_\mathrm{min}/2$ parameter (in {\AA}ngstr\"om), and the {\it beta}
+value of each atom should be set to the CHARMM Lennard-Jones $\epsilon$
+(energy well depth in kcal/mol) parameter. 
+This can be done using VMD's VolMap plugin. Simply call in succession 
+the following commands within the VMD console environment to use default
+CHARMM values for the various atoms of a molecule:
+\begin{verbatim}
+  package require ilstools
+  ILStools::readcharmmparams [list of CHARMM parameter files]
+  ILStools::assigncharmmparams <molid>
+\end{verbatim}
+
+The following optional arguments are understood:
+\begin{itemize} 
+  \item {\bf -first {\it frame}}: First frame to process. (default: frame 0)
+
+  \item {\bf -last {\it frame}}: Last frame to process.
+    (default: last frame of molecule)
+
+  \item {\bf -o {\it filename}}: Exports the final volumetric data into a DX
+    file (.dx extension is added if missing). By default, all maps are exported to
+    a file or name {\it maptype}\_out.dx.
+
+  \item {\bf -res {\it resolution}}: Sets the resolution of the final map.
+    This means that the volume will be subdivided into many small cubes
+    whose side have a length of {\it resolution}. The computation should
+    be performed on a finer grid (see {\tt -subres} option) but at the end
+    the map is downsampled to this resolution.
+    A good choice for the grid resolution 1 {\AA} (argument {\tt -res}). 
+    Lower resolutions make it difficult to see features, higher ones will
+    be very costly in terms of computation time. Also, since the fluctuation
+    of the protein backbone is on the order of 1-2 Angstrom a higher grid 
+    resolution doesn't make much sense.
+
+  \item {\bf -subres {\it num}}: Number of points in each dimension of the
+    subsampling grid, e.g. 2 for a 2x2x2 subgrid or 3 for a 3x3x3 subgrid.
+    A value of 1 means is no subsampling, the default is ({\tt -subres 3}). 
+    Without subsampling the probe is placed at each grid cell
+    center (for diatomic probes in $numconf$ different random orientations, 
+    see argument {\tt -orient}). This position is assumed to be representative
+    for the interaction of the probe in this voxel with the system.
+    However, for a typical voxel size of 1x1x1 {\AA} the energy value can
+    differ significantly within the voxel and the value at the center might
+    not be close to the average. Subsampling averages over the interaction
+    on a regular subgrid in each voxel thus producing a more accurate free
+    energy value for placing the probe into each voxel. Even though this
+    severely increases the computational cost it is highly recommended that
+    you use subsampling!
+    A 3x3x3 subgrid for a 1 {\AA} resolution map is a good choice.
+
+  \item {\bf -T {\it temperature}}: The temperature in Kelvin at which the
+    MD simulation was performed. (default: 300)
+
+  \item {\bf -probesel {\it selection}}: Atom selection that defines the
+    probe molecule. The radius and occupancy fields should be populated
+    with the VDW radii and VDW epsilon parameters from the force field
+    (see option {\tt -probevdw}).
+    Alternatively, you can specify the probe coordinates and VDW parameters
+    probe atoms directly using the {\tt -probecoor} and {\tt -probevdw}
+    options. 
+
+  \item {\bf -probecoor {\it atomcoords}}: Set the coordinates of the
+    probe atoms in form of a list of triples
+    {\it \{\{$x_0$~$y_0$~$z_0$\}~$\dots$~\{$x_N$~$y_N$~$z_N$\}\}}. 
+
+    
+  \item {\bf -probevdw {\it parameterlist}}: Set the tuple of van der
+    Waals parameters for each probe atom in the form
+    {\it
+    \{\{$\epsilon_0$~$R_{\mathrm{min},0}/2$\}~$\dots$~\{$\epsilon_N$~$R_{\mathrm{min},N}/2$\}\}}.
+    They define the nonbonded interactions of the probe evaluated by the
+    Lennard-Jones potential 
+    \begin{equation}
+      \label{eq:vdw}
+      U_\mathrm{VDW} = \sum_{\mathrm{atoms}\,\,i,j}
+         \epsilon_{ij}\left(\left(\frac{R_{ij}}{r_{ij}}\right)^{12} - 
+         2\left(\frac{R_{ij}}{r_{ij}}\right)^{6}\right)
+    \end{equation}
+    where $R_{ij}=(R_{\mathrm{min},i}+R_{\mathrm{min},j})/2$ and
+    $\epsilon_{ij}=\sqrt{\epsilon_i\cdot\epsilon_j}$.
+    (That's the same form as in CHARMM and AMBER parameter files).
+    Units of $\epsilon$ are kcal/mol, and of $R_\mathrm{min}/2$ are
+    {\AA}ngstr\"om.  
+
+  \item {\bf -orient {\it n}}: Control the number of samples of
+    different probe orientations for multiatom probes at each grid
+    point. The number $n$ determines the angular spacing of probe
+    orientation vectors and of the rotations around each of these
+    vectors.
+
+    $n=1$: use 1 orientation only\\
+    $n=2$: use 6 orientations (vertices of a octahedron)\\
+    $n=3$: use 8 orientations (vertices of a hexahedron)\\
+    $n=4$: use 12 orientations (faces of a dodecahedron)\\
+    $n=5$: use 20 orientations (vertices of a dodecahedron)\\
+    $n=6$: use 32 orientations (faces+vertices of a dodecahedron)\\
+    $n>6$: geodesic subdivisions of icosahedral faces
+           with frequency 1, 2, ... $n-6$
+    
+    For each orientation a number of rotamers will be
+    generated. The angular spacing of the rotations
+    around the orientation vectors is chosen to be about
+    the same as the angular spacing of the orientation
+    vector itself.
+    If the probe has at least one symmetry axis then the 
+    rotations around the orientation vectors are reduced
+    accordingly. If there is an infinite oder axis (linear
+    molecule) the rotation will be omitted.
+    In case there is an additional perpendicular C2 axis
+    the half of the orientations will be ignored so that
+    there are no antiparallel pairs.
+    
+    Probes with tetrahedral symmetry:\\ 
+    Here $n$ denotes the number of rotamers for each of
+    the 8 orientations defined by the vertices of the 
+    tetrahedron and its dual tetrahedron.
+
+  \item {\bf -cutoff {\it cutoff}}: Set the CHARMM van der Waals cutoff beyond
+    which the interaction between the probe and protein atoms is set to zero.
+
+  \item {\bf -maxenergy {\it energy}}: Cutoff energy above which the
+    occupancy of a grid cell is regarded zero. For GPUs energies of
+    more than 87 always correspond to floating point values of zero
+    for the occupancy. Hence there is no point going higher than
+    that. For CPUs that number is higher, however, the lower the
+    occupancy the more severely these points will be undersampled and
+    the according error will be very high. Thus, in the final map it
+    probably does not make sense to look at values higher than 10kT
+    which not a big loss since the low energy regions are the ones we
+    are interested in. So you probably want to set this to a value
+    between 10 and 87 (we are in thye process of testing this but I
+    suppose 20 kT would be a safe number).
+
+  \item {\bf -alignsel {\it selection}}:
+    Use the provided selection to align all trajectory frames to the first
+    frame. If you don't use this option you should make sure that you aligned
+    all frames yourself before running volmap ils.
+    
+  \item {\bf -transform {\it matrix}}:
+    Suppose you want to align your trajectory to a reference frame
+    from a different molecule. In this case you should align the
+    first frame of your trajectory to the reference and provide the
+    according alignment matrix as returned by "{\tt measure fit}")
+    using the -transform option. {\tt volmap ils} will take care
+    of the rest.
+    %(It doesn't matter if you align
+    %all frames, but you must use the same transformation matrix,
+    %namely the one that aligns the first frame, for each frame.)
+
+    
+  \item {\bf -pbc}:
+    This flag signals that you want a periodic boundary aware ILS
+    calculation. Depending on the desired target grid size image atoms
+    from neighboring PBC cells are taken into account for the computation.
+    The atoms used for the calculation are chosen from a box that exceeds
+    the target grid size by the interaction cutoff in each direction.\\
+    {\it Note:} If your molecule rotated or drifted from the PBC center during
+    your MD simulation then the structure alignment will rotate or shift
+    the PBC cell so that your map might not lie entirely inside the PBC 
+    cell anymore. This will lead to ill-defined fringes of the map and you
+    might want to consider rewrapping the coordinates. Rewrapping cannot
+    undo the rotation but unless you have a very oblonged PBC cell
+    removing the shift by rewrapping will in most cases yield a map
+    without or with little boundary effects. See the {\tt pbc wrap}
+    command from the PBCtool plugin.\\
+    {\it Warning:} If you use {\tt -pbc} DO NOT ALIGN the frames of
+    the structure yourself prior to the calculation! It will totally
+    mess up the definition of your PBC cells. Instead you should use
+    the {\tt -alignsel} option and let volmap handle the alignment.
+    However, you CAN align the sturcture globally (i.e. align all
+    frames using the SAME transformation matrix) to a reference
+    frame. In this case you have to provide the transformation matrix
+    you used via -transform.
+
+  \item {\bf -pbccenter {\it vector}}:
+    Since the PBC cell origin is stored neither in DCD files nor in VMD
+    you have to specify it in case it is different than the default
+    \{0 0 0\}.
+        
+  \item {\bf -maskonly}: This flag requests to compute only a mask map
+    telling for which gridpoints we expect valid energies, i.e. the
+    points for which the maps overlap for all frames will contain 1,
+    all other points will be 0. This is useful if you don't use
+    periodic boundary conditions where it can happen that due to the
+    choice of the grid and/or the rotation of the protein the box
+    including your grid plus the interaction cutoff will lie partially
+    outside your system which means you would miss some of the
+    interactions. The map produced by the {\tt -maskonly} mode will
+    tell where are these ill defined regions.
+
+\end{itemize}
+
+  \index{wait!command}\subsection{wait}
+Specify a number of seconds to wait before reading another command.
+Animation {\em continues} during this time.  The wait command will
+not behave as expected if called within a complex Tcl proc or loop
+structures.  The wait command doesn't actually run until the next complete
+Tcl code block due to the way VMD processes its commands.  
+
+  \begin{itemize}
+    \item {\bf  {\it time}}: wait {\it time} seconds.
+  \end{itemize}
+
+  \index{sleep!command}\subsection{sleep}
+Specify a number of seconds to sleep before reading another command.
+Animation {\em stops} during this time.
+
+  \begin{itemize}
+    \item {\bf  {\it time}}: sleep {\it time} seconds.
+  \end{itemize}
+
+
+\section{Tcl callbacks}
+\index{variables!trace}
+\index{callbacks!Tcl}
+
+When certain events occur, \VMD\ notifies the Tcl interpreter by setting
+certain Tcl variables to new values.  You can use this feature to customize
+\VMD, for instance, by causing new graphics to appear when the user picks
+an atom, or recalculating secondary structure on the fly.  
+
+To make these new feature happen at the right time, you need to write a
+script that takes a certain set of arguments, and register this script with
+the variable you are interested.  Registering scripts is done with the
+built-in Tcl command {\tt trace}; see \htmladdnormallink{{\tt
+http://www.tcl.tk/man/tcl8.4/TclCmd/trace.htm}}{http://www.tcl.tk/man/tcl8.4/TclCmd/trace.htm}
+for documentation on how to use this command.   The idea is that after you
+register your callback, when \VMD\ changes the value of the variable, your
+script will immediately be called with the new value of the variable as
+arguments.  Table~\ref{table:ug:tclcallbacks} summarizes the callback
+variables available in \VMD.
+
+\newcommand{\tclcallback}[3]{
+	\parbox[t]{2in}{#2}&{\tt #1}&\parbox[t]{2in}{#3 \vspace{.2in}} \\
+}
+
+\begin{table}[htp]
+\caption{Description of Tcl callback variables in \VMD.} 
+\label{table:ug:tclcallbacks}
+\begin{tabular}{|l|l|l|} \hline
+        \multicolumn{1}{|c}{When called} &
+        \multicolumn{1}{|c|}{Name} &
+        \multicolumn{1}{|c|}{Description}
+        \\ \hline\hline
+        
+\index{callbacks!Tcl}
+
+
+\tclcallback{vmd\_molecule(molid)}
+{Molecule {\tt molid} was deleted}
+{0}
+
+\tclcallback{vmd\_molecule(molid)}
+{Molecule {\tt molid} was created (data may not have been loaded yet)}
+{1}
+
+\tclcallback{vmd\_molecule(molid)}
+{Molecule {\tt molid} was renamed}
+{2}
+
+\tclcallback{vmd\_initialize\_\-structure(molid)}
+{Structure file loaded}
+{1}
+
+\tclcallback{vmd\_trajectory\_read(molid)}
+{Coordinate file loaded}
+{\emph{name of coordinate file}}
+
+\tclcallback{vmd\_frame(molid)}
+{Molecule {\tt molid} changed animation frames}
+{\emph{new animation frame}}
+
+\tclcallback{vmd\_logfile}
+{Any \VMD\ command executed}
+{Tcl text equivalent of command}
+
+%\tclcallback{vmd\_pick\_value}
+%{Bond, angle or dihedral label added}
+%{Value of geometry label}
+
+%\tclcallback{vmd\_pick\_mol}
+%{Atom picked}
+%{id of picked molecule}
+
+%\tclcallback{vmd\_pick\_atom}
+%{Atom picked}
+%{id of picked atom}
+
+\tclcallback{vmd\_pick\_event}
+{An atom has been picked using the ''Pick" mouse mode}{When receiving this event, the following global variables are also set: vmd\_pick\_atom (id of picked atom), vmd\_pick\_mol (id of picked molecule)}
+
+
+
+\tclcallback{vmd\_pick\_client}
+{Pointer moved.}
+{name of pointer}
+
+\tclcallback{vmd\_pick\_mol\_silent}
+{Pointer moved.}
+{id of nearby mol}
+
+\tclcallback{vmd\_pick\_atom\_silent}
+{Pointer moved.}
+{id of nearby atom}
+
+\tclcallback{vmd\_pick\_shift\_state}
+{Atom picked}
+{1 if shift key down during pick, 0 otherwise}
+
+
+
+\tclcallback{vmd\_timestep(molid)}
+{IMD coordinate set received}
+{frame containing new coordinates}
+
+\tclcallback{vmd\_graph\_label}
+{ \index{labels!plotting} Set of labels to be graphed}
+{ \{labeltype labelid\} \{labeltype labelid\} ...}
+
+\tclcallback{vmd\_quit}
+{Tcl interpreter is shutting down}
+{1}
+
+\hline
+\end{tabular}
+\end{table}
+
+In the \VMD\ script library at
+\verb!http://www.ks.uiuc.edu/Research/vmd/script_library/!,
+you can find a number of scripts that take advantage of Tcl variable tracing.
+Below, we give a simple example. The following procedure takes the picked atom and finds the molecular weight of residue it is on.
+
+\index{mass!of residue atoms}
+\index{example scripts!Tcl!calculation!mass of a picked atom}
+\begin{verbatim}
+proc mol_weight {args} {
+  # use the picked atom's index and molecule id
+  global vmd_pick_atom vmd_pick_mol
+  set sel [atomselect $vmd_pick_mol "same residue as index $vmd_pick_atom"]
+  set mass 0
+  foreach m [$sel get mass] {
+    set mass [expr $mass + $m]
+  }
+  # get residue name and id
+  set atom [atomselect $vmd_pick_mol "index $vmd_pick_atom"]
+  lassign [$atom get {resname resid}] resname resid
+  # print the result
+  puts "Mass of $resname $resid = $mass"
+}
+\end{verbatim}
+
+Once an atom has been picked, run the command {\tt mol\_weight}
+to get output like:
+
+\begin{verbatim}
+Mass of ALA 7 : 67.047
+\end{verbatim}
+
+Since \VMD\ sets the vmd\_pick\_event, it can be traced. The trace function is registered as:
+
+\begin{verbatim}
+trace add variable ::vmd_pick_event write mol_weight
+\end{verbatim}
+
+And now the residue masses will be printed automatically
+when an atom is picked. Make sure to turn off the trace when you are done with it (\emph{e.g.} your plugin's window gets closed):
+
+\begin{verbatim}
+trace remove variable ::vmd_pick_event write mol_weight
+\end{verbatim}
+
+
+

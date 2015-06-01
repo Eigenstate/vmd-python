@@ -1,0 +1,21 @@
+<!--#set var="TITLE" value="Mol2 Plugin, Version 0.16"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads and writes molecular coordinate and bonding data 
+stored in the
+<a href="http://www.tripos.com/custResources/mol2Files/">Mol2</a> 
+<a href="http://www.tripos.com/mol2/index.html">Mol2</a>
+file format.
+
+<h3>Notes:</h3>
+
+<p><b>Recognized data</b>
+<br>Only the following record types are currently recognized by the Mol2
+plugin: molecule, atom, and bond. All others are ignored.  The plugin 
+returns charges when they are available, and bond orders for each bond.
+
+<br>The mol2 plugin doesn't currently read SUBSTRUCTURE records which
+contain chain, information, residue names, etc.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

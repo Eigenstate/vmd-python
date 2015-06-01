@@ -1,0 +1,131 @@
+<!--#set var="TITLE" value="Timeline Plugin, Version 2.3"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<table border="0">
+<tr>
+<td>
+The Timeline plugin provides an interface for viewing temporally changing
+per-residue attributes of a molecular structure.  It can also display
+temporally changing attributes of a set of VMD selections, for
+example a set of all the salt-bridge pairs observed in a
+trajectory.
+
+<p>
+The controls allow selection of the molecule used for the
+calculation. The graphical display of residues and timesteps 
+can be scrolled and zoomed as necessary to see results for 
+large structures and long trajectories.
+
+</td>
+
+<td>
+  <a href="timeline.gif"><img src="timeline-thumb.gif" alt="Image of Timeline Plugin"></a>
+</td>
+</tr>
+
+
+<tr>
+<td colspan="2">
+<p>
+<b>Tutorial Example:</b>
+<ol>
+<li><p>Start VMD 
+<li><p>Load a trajectory (e.g.  sample.psf and sample-traj.dcd)
+<li><p>Select <strong>Extensions:Analysis:Timeline</strong> from "VMD Main" window.
+<li><p><strong>Calculate and display graphs:</strong>
+  To display a 2D graph of secondary structure vs. time, select
+  Calculate:Calc Sec. Struct. from the "VMD Timeline" window.  A color-coded map
+  of secondary structure should appear.  The horizontal axis is time (frame
+  number), the vertical axis is residue number/chain.
+<li><p> <strong>To change red-highlighted residue (or selection group):</strong> Click on the Timeline graph with the middle mouse button, or hold down the middle mouse button and scrub up and down.  A red outline highlight  will be drawn at the selected residue in the graph. The red box shows current residue (selection) and frame.
+ <li><p><strong>View data about red-highlighted residue (or selection group)
+group:</strong> As you click with middle button, the description panel shows
+corresponding: frame number, analysis value, name of analysis method, residue
+number and chain (for residues), selection label (for selection group). 
+
+<li><p><strong>Graph zooming:</strong> 
+  Control the residue numbering as for the Sequence Viewer [link to section].
+  The top left horizontal slider sets the scale for both axes simultaneously.
+  The left horizontal slider below it sets the scale only for the horizontal
+  axis. The vertical slider sets the scale for the vertical axis. "Fit all" will fit both the vertical and horizontal graphs into the
+  window.  "Every residue" will scale the vertical axis so there is sufficient room to label every residue (or every selection group) in the molecule.
+  Use the right mouse button  to drag out a green selection box to define a zoom-in region. Click with the right mouse button (without dragging) to zoom out.
+<li><p> <strong>To change highlighted frame: </strong> Click on the Timeline graph with the middle mouse button, or hold down the middle mouse button while scrubbing left and right over the graph, to change the frame displayed in the GL window.  A block outline  will overlay the current time in the graph.  The red highlight box shows current residue (selection)  and frame.  The frame will change as the mouse is scrubbed around the Timeline data graph.
+<li><p> <strong>To change red-highlighted residue (or selection group) </strong>
+Click on the Timeline graph with the middle mouse button, or hold down the
+middle mouse button and scrub up and down, to change the red-highlighted residue
+(selection group) in the Timeline window, as well as the highlighted residue
+(selection group) in the Open GL window.  A red-highlight outline will be drawn
+at that frame/residue position in the Timeline graph. The red box shows current
+residue (selection) and frame.  The corresponding residue will be highlighted
+in the Open GL molecule view, even as the mouse is scrubbed around the data
+graph.
+
+<li><p><strong>Use threshold graph</strong>: view a graph over time of the number of elements at each frame meeting threshold criteria. For numerical values, the bottom two sliders in the left Timeline panel control the minimum and maximum threshold bounds for producing the threshold graph; the threshold graph updates dynamically as the sliders move. The graph size is normalized to the largest count seen for any frame.  
+<li> <strong>To highlight residues for entire trajectory:</strong> left mouse button click, shift-click, and click-drag in the vertical axis labels (left of the main data graph) work as in the "Sequence Viewer" plugin to select residues or selection groups for highlighting.
+<li><p> <strong>To highlight an 'event': </strong> Click and drag a marquee box with the left mouse
+  button.  A blue box will appear in the graph to show the residues and time
+  range selected.  Shift-Click-drag out another box to select more residues;
+  several sets of residues may be selected, but only one frame range. The
+  trajectory will animate through the selected frame range three times after each
+  selection. 
+<p>
+  The selected residues will appear as bonds; change their color and draw style
+  by changing the associated representation in the "Graphical Representations"
+  window.
+<p> 
+  <li><p>  <strong>To clear blue 'event' highlight box: </strong> click twice with middle mouse button.
+
+<li><p><strong>Other per-residue calculations are available besides secondary structure. </strong>
+ <p> 
+   From the "VMD Timeline" window menu:
+  Calculate:Calc X position : simple per-reside information <br>
+  Calculate:Calc Y position : simple per-reside information <br>
+  Calculate:Calc Z position : simple per-reside information <br>
+  Calculate:Calc. Phi: per-residue Phi angle <br>
+  Calculate:Calc. Psi: per-residue Phi angle <br>
+  Calculate:Calc. Delta Phi: per-reside change in Psi angle from initial frame <br>
+  Calculate:Calc. Delta Psi: per-residue change in Psi angle from initial frame <br>
+  Calculate:Calc. displacement: per-res displacement from initial frame <br>
+  Calculate:Calc. disp. velocity: per-res inter-frame displacement (crude velocity analog)<br>
+  Calculate:Calc H-bonds: show hydrogen bond lifetimes through trajectory.  Finds all hydrogen bonds that appear throughout trajectory, value is 1 in frames the bond is defined, 0 when the bond is not defined (VMD default criteria)<br> 
+  Calculate:Calc Salt Bridges: show salt-bridge lifetimes through trajectory.  Finds all salt bridges that appear throughout trajectory, value is 1 in frames the salt bridge is defined, 0 when it is not (VMD default criteria)<br> 
+  Calculate:Calc. User-def. per-res. function: run a simple user-defined functions on every residue (or selection group) displayed<br>
+<li><p> <strong>Make a user-defined per-residue procedure:</strong>
+  Insert the name of a user-defined tcl procedure which will be run on every residue, perpend "::" to indicate the user-level namespace.  The named tcl procedure will be provided with 3 VMD selections to work with: <code>resCompleteSel</code> (the current residue or selection group), <code>resAtomSel</code> (a single atom for each protein or nucleic residue), and <code>proteinNucSel</code> ("protein or nucleic" VMD selection for the whole molecule).   <p>
+ 
+  Example 1:
+  <pre>
+  proc ::myResX {resAtomSel  resCompleteSel  proteinNucSel} {
+    return [$resAtomSel get x]
+  }
+  </pre>
+<p>
+     Example 2:
+  <pre>
+  proc  ::myCountContacts {resAtomSel  resCompleteSel  proteinNucSel} {
+    return [llength [lindex [measure contacts 4.0 $resCompleteSel $proteinNucSel] 0]]
+  }
+ </pre>
+<li><p>  <strong>Save currently-displayed data to a .tml file</strong><br>
+ File: Save Data file: saves the current  per-res or per-selection-group data for entire trajectory<br>
+<li><p><strong>Load data from an existing .tml file</strong><br>
+ File: Load Data file: saves currently-displayed  per-res or pre-selection-group data for later use.<br>
+ Data is read/written to a <code>.tml</code> file.  
+<li><p><strong>View collection of pre-generated .tml files:</strong> select Data:Set collection directory... to point to a directory filled with <code>.tml </code> files corresponding to the currently loaded molecule.
+The Data menu will then populate with the names of the datasets, one per  <code>.tml</code> file in that directory.  Select each dataset name to display on the Timeline graph, just as in the Calculate menu.
+
+<!--
+<li><p><strong>Create .tml  data files from user-defined batch analysis</strong>:
+    See <a href="http://www.ks.uiuc.edu/Research/vmd/script_library/timeline_examples/">http://www.ks.uiuc.edu/Research/vmd/script_library/timeline_examples</a> for tcl procedures which generate properly formatted files for both per-residue and per-selection calculations.   The scripts can be run in batch non-interactive text-mode VMD sessions to perform large analysis jobs.
+-->
+
+</ol>
+
+</td>
+</tr>
+</table>
+
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

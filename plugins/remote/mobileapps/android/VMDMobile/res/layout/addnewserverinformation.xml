@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+
+<TextView  
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    android:text="@string/ipLabel"
+    />
+
+<EditText
+    android:id="@+id/ipEntry"
+    android:hint="@string/ipDescript"
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    />
+
+<TextView  
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    android:text="@string/portLabel"
+    />
+
+<EditText
+    android:id="@+id/portEntry"
+    android:defaultValue="3141"
+    android:hint="3141"
+    android:inputType="number"
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    />
+
+<TextView  
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    android:text="@string/listenportLabel"
+    />
+
+<EditText
+    android:id="@+id/listenportEntry"
+    android:defaultValue="4141"
+    android:hint="4141"
+    android:inputType="number"
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+    />
+
+<Button
+   android:id="@+id/dialogButtonOK"
+   android:text="OK"
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+/>
+<Button
+   android:id="@+id/dialogButtonCancel"
+   android:text="Cancel"
+    android:layout_width="fill_parent" 
+    android:layout_height="wrap_content" 
+/>
+
+</LinearLayout>
+

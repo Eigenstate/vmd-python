@@ -1,0 +1,64 @@
+<IMG width="25%" ALIGN=RIGHT SRC="mainWindow.png">
+<H2>NetworkView</H2>
+
+The NetworkView plugin allows the user to study allostery and signaling through
+network models.  It can be used to display and manipulate representations of the
+networks projected onto the underlying molecular structures.  Networks stored in
+simple formats can be loaded and mapped onto molecular structures. 
+
+<P>
+The Luthey-Schulten Group has developed a detailed tutorial that demonstrates
+the use of the NetworkView plugin.
+
+<P>
+Please go to the following URL and download the tutorial near the bottom of the
+page entitled:  Dynamical Network Analysis.
+
+<P>
+<A HREF="http://www.scs.illinois.edu/schulten/tutorials/" 
+>http://www.scs.illinois.edu/schulten/tutorials/</A>
+
+<P> 
+The simplest networks consist of sets of nodes and edges that connect pairs
+of nodes. For example, in protein·protein interaction networks, nodes represent
+individual proteins, and if two proteins interact with one another, an edge is
+drawn between their nodes.
+
+<H3>Dynamical Network Representations</H3>
+<P>
+
+
+The NetworkView plugin can display dynamical network representations by loading
+a network file via <CODE>File&nbsp;|&nbsp;Load&nbsp;Network...</CODE>.  Once the network is
+loaded, you can choose to perform "Action"s on the network (or subnetworks,
+defined by the choices made in the <CODE>Node&nbsp;Selection</CODE> section of the
+plugin), listed in the box at the bottom of the plugin window.  Chose your
+desired action and then click <CODE>Apply</CODE>.  You can perform multiple
+Actions, and when you want to actually view the results, click the
+<CODE>Draw</CODE> button at the bottom of the plugin window.
+
+<H3>Communities</H3>
+
+Community Data can be loaded into the NetworkView plugin by selecting 
+<CODE>File&nbsp;|&nbsp;Load&nbsp;Community&nbsp;Data...</CODE>.  You can then
+use the <CODE>Node&nbsp;Selection</CODE> section of the plugin to choose individual communities to
+perform Actions upon.
+<IMG width="25%" ALIGN=RIGHT SRC="suboptPath1.png">
+
+<P>
+Critical nodes between communities can be displayed by choosing the proper
+<CODE>Node&nbsp;Selection</CODE>.
+
+<H3>Optimal and Suboptimal Paths</H3>
+
+Optimal and Suboptimal paths can be loaded into the plugin and mapped onto
+molecular structures.  You can choose to view all paths, or specific paths via
+the <CODE>Node&nbsp;Selection</CODE>.
+
+<H3>Advanced Features</H3>
+
+Via TCL scripting, you can perform more complex operations than are exposed via
+the plugin window.  See the tutorial for additional information on e.g.,
+retrieving specific information about edges that connect subnetworks and other
+metrics.
+

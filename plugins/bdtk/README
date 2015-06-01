@@ -1,0 +1,23 @@
+* Compile tools. On OS X use GNU g++, not clang++, as the latter does not understand OpenMP.
+	You can use 'brew' to install g++. Tested to work with g++ 4.6.4
+	OpenMP significantly speeds up computations of 3-d potential maps
+
+		cd tools
+		make
+		cd ..
+
+
+* Add the following code to the very end of your '.vmdrc' file:
+
+	if ![info exists tk_version] return
+	set auto_path [linsert $auto_path 0 /local/path/to/PoreExplorer]
+
+	if [catch {package require bdtoolkit} msg] {
+			puts "Pore Explorer could not be loaded!"
+			puts "Error message:"
+      puts "$msg"
+	} elseif [catch {menu tk register "PoreExplorer" bdtk} msg] {
+			puts "Pore Explorer window could not be created!"
+			puts "Error message:"
+      puts "$msg"
+	}

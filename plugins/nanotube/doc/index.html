@@ -1,0 +1,194 @@
+<!--#set var="TITLE" value="Carbon / Boron Nitride Nanostructure Builder Plugin, Version 1.5"-->
+<!--#include virtual="/include/header-over.shtml"-->
+
+<!-- CONTENT STARTS HERE -->
+
+<h2>About Carbon / Boron Nitride Nanostructure Builder Plugin</h2>
+<img style="border: 0; padding: 0 0 1em 1em" src="nanotube_gui.png" align="right" alt="Nanotube GUI">
+<p>
+  This plugin allows construction of carbon or boron nitride nanostructures like
+  single-wall nanotubes or graphene-like sheets. The plugin
+  provides both, a command line version (details below) and a GUI
+  (see image on the right).
+  The GUI is located in the VMD Extensions menu under Modeling/Nanotube Builder.</p>
+</p>
+
+<h3>Topology Options</h3>
+<p>
+  The plugin itself only computes the carbon atom positions according to
+  the provided input, but then has the option to generate further topology
+  information suitable for classical force field MD simulations, which
+  can then be stored in files of a suitable format. This uses functionality
+  provided by the <a href="../topotools/">TopoTools plugin</a>, so if your
+  topology is incorrect contact the author of that plugin for help.
+  NOTE: since the construction of angle, dihedral, and improper definitions
+  depends on the bonding topology, they will only be computed, when 
+  bond generation is enabled.
+</p>
+<p>
+  To simplify use of the generated structures in MD simulations, several
+  properties are assigned to the generated atoms. Those may need to be 
+  adjusted depending on the force field and simulation software to be used.
+  For carbon nanotubes the following assignments are made:
+  name: C, residue name: CNT, segment id: TUB, element: C, atom type: CA,
+  mass: 12.0107, radius: 1.7, chain: X and charge: 0.0. 
+  For graphene sheets the following assignments are made:
+  name C, residue name: GRA, segment id: SHT, element: C, atom type: CA,
+  mass: 12.0107, radius: 1.7, and charge: 0.0.
+  For boron nitride nanotubes the following assignments are made:
+  name: B, residue name: BNT, segment id: TUB, element: B, atom type: B,
+  mass: 10.811, radius: 1.7265, chain: X and charge: 1.05. 
+  name: N, residue name: BNT, segment id: TUB, element: N, atom type: N,
+  mass: 14.0067, radius: 1.6825, chain: X and charge: -1.05. 
+  For boron nitride sheets the following assignments are made:
+  name: B, residue name: BNS, segment id: SHT, element: B, atom type: B,
+  mass: 10.811, radius: 1.7265, chain: X and charge: 1.05. 
+  name: N, residue name: BNS, segment id: SHT, element: N, atom type: N,
+  mass: 14.0067, radius: 1.6825, chain: X and charge: -1.05. 
+</p>
+
+<h3>Nanotube Builder</h3>
+
+<p>
+  Single-wall carbon nanotubes (SWCNs) are cylindrical tubes of carbon
+  atoms that can assume a wide range of atomic structures. Each
+  structure is defined by two positive integers (n,m) called the chiral
+  indices. The Nanotube Builder plugin generates SWCN structures of
+  arbitrary length and chirality for the purpose of molecular
+  simulations or nanoscience education. This plugin produces the unit
+  cell of a SWCN by first generating coordinates of a rectangular
+  graphene sheet with dimensions corresponding to the particular chiral
+  indices specified by the user. These coordinates are then mapped onto
+  a cylinder to generate the SWCN unit cell with its central axis
+  aligned in the z-direction. The unit cell is then replicated along the
+  z-axis to generate a SWCN of the desired length. The structure is
+  loaded into VMD as a new molecule and contains the appropriate box
+  dimensions for a SWCN periodic in the z-direction. Below are further
+  details on SWCN structure.
+</p>
+
+<h3>Structure of a SWCN</h3>
+<p>
+<img style="border: 0; padding: 0 0 1em 1em" src="swcn-construction.png" align="right" alt="SWCN Construction from Graphene Sheet">
+
+  A SWCN can be thought of as a single sheet of graphite (graphene)
+  rolled up into a seamless molecular cylinder (see figure on the right). 
+  <b>C</b> is the chiral vector and indicates the direction of the rolling.
+
+  <b>C</b> extends from one carbon atom to a crystallographically equivalent
+  atom on the graphene lattice. Thus, <b>C</b> can be written as a linear
+  combination of the lattice basis vectors:</p>
+    <div align="center">
+      <b>C</b> = <tt>n</tt> <b>a<sub>1</sub></b> 
+      + <tt>m</tt> <b>a<sub>2</sub></b>
+    </div>
+<p>Here, <tt>n</tt> and <tt>m</tt> are positive integers known as the chiral 
+ indices. All physical properties of a given SWCN ultimately depend on these
+ two numbers. SWCNs of different atomic structure result for various choices
+ of <tt>n</tt> and <tt>m</tt> (see figure on the left). High symmetry 
+armchair and zigzag SWCNs occur for m = n and m = 0, respectively.</p> 
+
+<p>
+<img style="border: 0; padding: 0 0 1em 1em" src="swcn-types.png" align="left" alt="SWCN types">
+
+  The length of <b>C</b> equals the circumference of the resulting SWCN. 
+  Thus, the SWCN diameter <i>d</i> is  given by</p>
+<div align="center">
+      <i>d</i> = |<b>C</b>| / <i>pi</i> 
+      = <i>a</i> sqrt(<tt>n</tt><sup>2</sup> + <tt>n</tt> <tt>m</tt> 
+      + <tt>m</tt><sup>2</sup>)
+</div>
+
+<p>
+ Here, a = 2.49 Angstrom is the lattice constant of the graphene honeycomb 
+ lattice.</p>
+
+<p>The translation vector <b>T</b> connects two equivalent carbon atoms 
+  along the SWCN axis and is given by</p>
+
+ <div align="center">
+      <b>T</b> = [ (2<tt>m</tt> + <tt>n</tt>)<b>a<sub>1</sub></b> 
+      -  (<tt>m</tt> + 2<tt>n</tt>) <b>a<sub>2</sub></b>] /
+      gcd(2<tt>m</tt> + <tt>n</tt>,<tt>m</tt> + 2<tt>n</tt>)
+</div>
+<p> where gcd is the greatest common divisor function. The length of <b>T</b>
+ gives the length of the SWCN unit cell and can be written as:</p>
+
+ <div align="center">
+      |<b>T</b>| = sqrt(3)<i>d</i> /
+      gcd(2<tt>m</tt> + <tt>n</tt>,<tt>m</tt> + 2<tt>n</tt>)
+</div>
+</p>
+
+<h3>Using Nanotube Builder</h3>
+
+<p>The nanotube builder can be run from the VMD console via the command:</p>
+
+<pre>
+    nanotube -l &lt;length&gt; -n &lt;n&gt; -m &lt;m&gt; [-b &lt;0|1&gt;] [-a &lt;0|1&gt;] [-d &lt;0|1&gt;] [-i &lt;0|1&gt;] [-cc &lt;blength&gt;] [-ma &lt;C-C|B-N&gt;]
+</pre>
+    <dl>
+      <dt><tt>length</tt></dt>
+      <dd>is the desired length of the nanotube in nanometers (nm).</dd>
+      <dt><tt>n</tt> and <tt>m</tt></dt>
+      <dd>are the chiral indices. They should be positive integers.</dd>
+      <dt><tt>blength</tt></dt>
+      <dd>is the length of a bond in nanometers (nm) (default: 0.1418)</dd>
+      <dt><tt>-ma C-C/B-N</tt></dt>
+      <dd>selects between carbon and boron-nitride (default: C-C)</dd>
+      <dt><tt>-b 0/1</tt></dt>
+      <dd>turns generation of bonds off/on (default: on)</dd>
+      <dt><tt>-a 0/1</tt></dt>
+      <dd>turns generation of angles off/on (default: on)</dd>
+      <dt><tt>-d 0/1</tt></dt>
+      <dd>turns generation of dihedrals off/on (default: on)</dd>
+      <dt><tt>-i 0/1</tt></dt>
+      <dd>turns generation of impropers off/on (default: on)</dd>
+    </dl>
+
+<p><i>Note:</i> because <b>Nanotube Builder</b> constructs SWCNs by first 
+   generating the unit cell, its actual length will be a multiple of the 
+   unit cell length determined by the chiral indices.</p>
+
+<h3>Graphene Sheet Builder</h3>
+<p>
+The graphene sheet builder is very similar to the nanotube builder, only 
+that it will generate coordinates for a flat rectangular graphene sheet
+and optional a stack of multiple of them.
+</p>
+
+<h3>Using Graphene Sheet Builder</h3>
+
+<p>The graphene sheet builder can be run from the VMD console via the command:</p>
+
+<pre>
+    graphene -lx &lt;length&gt; -ly &lt;length&gt; -type &lt;armchair|zigzag&gt; [-nlayers &lt;number of layers&gt;] [-b &lt;0|1&gt;] [-a &lt;0|1&gt;] [-d &lt;0|1&gt;] [-i &lt;0|1&gt;] [-cc &lt;blength&gt;] [-ma &lt;C-C|B-N&gt;]
+</pre>
+    <dl>
+      <dt><tt>length</tt></dt>
+      <dd>is the desired length of the sheet in x or y direction in nanometers (nm).</dd>
+      <dt><tt>type</tt></dt>
+      <dd>is the type of edge: 'armchair' or 'zigzag'</dd>
+      <dt><tt>number of layers</tt></dt>
+      <dd>determines how many sheets are stacked (default: 1)</dd>
+      <dt><tt>blength</tt></dt>
+      <dd>is the length of a bond in nanometers (nm) (default: 0.1418)</dd>
+      <dt><tt>-ma C-C/B-N</tt></dt>
+      <dd>selects between carbon and boron-nitride (default: C-C)</dd>
+      <dt><tt>-b 0/1</tt></dt>
+      <dd>turns generation of bonds off/on (default: on)</dd>
+      <dt><tt>-a 0/1</tt></dt>
+      <dd>turns generation of angles off/on (default: on)</dd>
+      <dt><tt>-d 0/1</tt></dt>
+      <dd>turns generation of dihedrals off/on (default: on)</dd>
+      <dt><tt>-i 0/1</tt></dt>
+      <dd>turns generation of impropers off/on (default: on)</dd>
+    </dl>
+</p>
+
+<h3>Authors</h3>
+<p><a href="http://www.physics.upenn.edu/~robertjo/">Robert R. Johnson</a>,
+Axel Kohlmeyer.</p>
+
+<!--#include virtual="/include/footer-over.shtml"-->
+</BODY></HTML>

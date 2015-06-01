@@ -1,0 +1,57 @@
+<!--#set var="TITLE" value="COR Plugin, Version 0.9"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads molecular coordinate data stored in 
+<a href="http://brooks.scripps.edu/charmm_docs/TSRI_docs-list.htm">CHARMM</a>
+Cartesian Coordinate format. More information about this file format can be
+found below.
+
+<p>Note that the files created by CHARMM normally carry the extension
+<tt>.crd</tt>. Since this extension is also used by 
+<a href="crdplugin.html">Amber 7</a> trajectory files, the filetype must be
+explicitly set to <tt>cor</tt> when opening a Cartesian Coordinate File in
+VMD. This extra step can be omitted by renaming the file and changing the
+the extension to <tt>cor</tt>.</p>
+
+
+<h3>Notes:</h3>
+
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+writing this file type.</p>
+
+<p><b>Unused data</b>
+<br>The <tt>Weight</tt> field, which can be used to store atom-dependent
+data such as mass or charge is ignored by VMD.</p>
+
+<p><b>ASCII format</b>
+<br>This plugin reads only ASCII, or "formatted" COOR files. Binary
+coordinated files produced by CHARMM are presently not supported by VMD.
+</p>
+
+<h3>Format of the CHARMm coordinate file</h3>
+<pre>
+CHARMm coordinate files contain information about the location of each atom in Cartesian (3D) space. The format of the ASCII (CARD) CHARMm coordinate files is:
+    * Title line(s)
+    * Number of atoms in file
+    * Coordinate line (one for each atom in the file)
+
+The coordinate lines contain specific information about each atom in the model and consist of the following fields:
+    * Atom number (sequential)
+    * Residue number (specified relative to first residue in the PSF)
+    * Residue name
+    * Atom type
+    * X-coordinate
+    * Y-coordinate
+    * Z-coordinate
+    * Segment identifier
+    * Residue identifier
+    * Weighting array value
+
+The FORTRAN FORMAT statement for the coordinate lines is:
+
+I5, I5, 1X, A4, 1X, A4, 3(F10.5), 1X, A4, 1X, A4, F10.5
+</pre>
+
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

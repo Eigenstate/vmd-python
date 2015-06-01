@@ -1,0 +1,37 @@
+<!--#set var="TITLE" value="APBS Plugin: ELEC Window"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<img src="elec.png" align="right">
+
+<p>Options pertaining to a single Poisson-Boltzman equation are located in
+the ELEC Window. Since APBS does not provide default values for any of the
+required fields, the plugin does its best to fill in appropriate numbers.
+More information about APBS ELEC statements can be found in the 
+<a href="http://apbs.sourceforge.net/doc/user-guide/x674.html#elec">APBS
+  Documentation</a>. Remember that the plugin does not yet support the
+fields newly available in APBS 0.3.0.
+
+<h3>Calculation Type</h3>
+
+<p>The Calculation menu includes the list of calculation types that APBS can
+perform. The fields listed in the window are changed when a different
+calculation type is selected. This menu also allows the user to choose
+whether a linear or nonlinear equation is used.
+
+<h3>Molecule Selection</h3>
+
+<p>Any molecule loaded in VMD can be used for a calculation. A VMD atom
+selection can be used, e.g., to remove waters before running APBS.
+
+<h3>Output Menu</h3>
+
+<p>The Output menu presents a list of the maps that can be created by APBS.
+Any combination of maps can be selected in the menu.
+
+<h3>Grid Centers</h3>
+
+<p>Grid centers can be specified using either a molecule or coordinates.
+Any molecule loaded in VMD can be selected, and the grid will be centered at
+the center of the molecule.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

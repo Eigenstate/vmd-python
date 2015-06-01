@@ -1,0 +1,54 @@
+<!--#set var="TITLE" value="Clip Tool Plugin, Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+
+Clipping planes allow for the slicing of a 3D model along a plane. Each molecule can have up to 6 different clipping planes, which can independently be set on or off. The Clip Tool plugin provides an easy-to-use interface for utilizing
+some of the clipping plane features provided by VMD 1.8.x. 
+
+<p/>
+
+<img src="cliptool.png" alt="Image of Clip Tool Plugin" align="right" hspace=10>
+
+<h2>Using the Clip Tool Plugin</h2>
+
+Clipping planes must be independently set and adjusted for each molecule individually. If you wish to use different clipping plane settings on different representations, it is easiest to simply create a separate molecules with these representations. (Note: using the VMD text interface, it is possible to set clipping plane settings for each representation individually; this is not the case for this graphical plugin).
+
+To edit the clipping planes for a given molecule, just make sure to make it the top molecule. All subsequent changes will then apply to that molecule. 
+
+<h3>Active Clipping Planes</h3>
+
+Here you can pick which of the 6 clipping planes will be active. 
+
+<h3>Edit Clipping Planes</h3>
+
+Here, you can edit the properties of each of the 6 clipping planes for the top molecule. Each property only applies to the currently selected plane:
+
+<dl>
+<dt><b>Active</b></dt>
+<dd>Turn the selected clipping plane on or off.</dd>
+
+<dt><b>Distance</b></dt>
+<dd>Move the plane back and forth along its normal direction.</dd>
+
+<dt><b>Normal/Origin</b></dt>
+<dd>Set the orientation and location of the clipping plane.</dd>
+
+<dt><b>Render as solid color (POV-Ray)</b></dt>
+<dd>When rendering the view using the POV-Ray renderer, the intersection of the model and the selected clipping plane can be rendered as a solid color rather instead of being see-through.</dd>
+</dl>
+
+
+
+<h3>Settings</h3>
+
+Here, you can select the behavior of the clipping plane that you are currently manipulating:
+<dl>
+<dt><b>Normal follows view</b></dt>
+<dd>When checked, the clipping plane will dynamically adjust to be parallel to the screen. This is a good way to easily set the clipping plane orientation. When deselected, the plane normal can be edited numerically by hand.</dd>
+
+<dt><b>Origin follows center</b></dt>
+<dd>When checked, the clipping plane origin will automatically be set to the molecule's center (set using the Center mouse mode). When deselected, the plane origin can be edited numerically by hand.</dd>
+</dl>
+
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

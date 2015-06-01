@@ -1,0 +1,34 @@
+<!--#set var="TITLE" value="CCP4, MRC Plugin, Version 1.5"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads electron density maps written in the 
+MRC format, also used by the 
+<a href="http://www.ccp4.ac.uk/">CCP4 suite</a>. 
+More information on this file format can be found in the CCP4 
+documentation at 
+<a href="http://www.ccp4.ac.uk/html/maplib.html#description">http://www.ccp4.ac.uk/html/maplib.html#description</a>.
+</p>
+
+<h3>Notes:</h3>
+
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+writing this file type.</p>
+
+<p><b>Byte-order</b>
+<br>CCP4 files are created using the native byte-order (i.e., "little-endian"
+or "big-endian") of the machine used to create them. This plugin can read maps
+created with either byte-order.</p>
+
+<p><b>Density values</b>
+<br>Only "mode 2" maps (those with density values stored as 32-bit floating
+point values) can currently be read.</p>
+
+<p><b>Symmetry Records:</b>
+<br>CCP4 maps contain information useful in crystallography, including a
+collection of records that describe the symmetry of the crystal. Since VMD does
+not make use of such information currently, these symmetry records are only
+printed to the terminal when the file is read, and ignored otherwise.</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

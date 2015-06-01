@@ -1,0 +1,74 @@
+/*! 
+
+\page intro Introduction  
+
+<p>
+The VMD plugin system is a relatively simple mechanism by which
+new functionality or updated code can be dynamically loaded from
+Tcl/Python scripts, shared object files (Unix-like systems), 
+or dynamic link libraries (Windows). 
+
+<p>
+The main idea behind the inclusion of plugins in VMD is to facilitate
+dynamic extensions to core parts of VMD at runtime without the need to
+recompile the entire program from scratch.  This allows end-users to 
+modify VMD with new features, support for additional file formats, 
+and even new graphical user interfaces, all without having to change
+the main VMD source code.  In addtion to increasing code modularity, 
+plugins provide a mechanism by which 3rd party developers can distribute
+extensions to the VMD user community at larger, without the need for 
+custom versions of VMD.  Users can continue to use the same version of
+VMD they have installed, but gain new features through the installation
+of new plugins.  This capability allows developers to release plugins which
+support new computational chemistry file formats, in-between major releases 
+of VMD.   This is extremely helpful since new versions of popular chemistry
+packages are release frequently, and rarely at the same time that new 
+versions of VMD are released.
+
+<p>
+VMD currently supports several types of plugins:
+<ul>
+<li>\ref molfileplugins "Molecule file reader plugins" (natively read one or more file formats)
+<li>Molecule file translator plugins (translate to another supported format)
+<li>\ref tcltkplugins "Tcl/Tk packages" and 
+    \ref pythonplugins "Python modules" which may optionally be added to 
+    the VMD "Extensions" menu.
+</ul>
+
+<p>
+By far the simplest type of plugins to develop are Tcl packages and
+Python modules.  These plugins can be anything from a simple script that
+simplifies a commonly performed set of calculations to something more
+sophisticated that works with other plugins to perform more complex
+tasks such as structure building or running calculations with external
+electrostatics or molecular dynamics engines.  Tcl packages and Python
+modules are easier to distribute than other plugins since they don't 
+normally have any compiled components, so they can be very easily 
+developed, tested, and deployed.  Carefully written plugins of this
+type can be made to work with several versions of VMD as long as no
+version-specific features or text commands are used by the plugin.
+
+<p>
+Molfile file plugins are normally implemented with C/C++ code that is
+compiled to statically and dynamically loadable libraries.  The
+static plugins are used when compiling a particular VMD binary 
+distribution as a fall-back and to provide a minimum level of built-in
+functionality.  New platforms typically support static plugins first
+and dynamic plugins once shared library loading code is written.
+Molfile plugins are more challenging to write, debug, and deploy
+than the Tcl or Python plugins since they have to be compiled
+separately for each target operating system and platform combination.
+VMD includes mechanisms for dynamically loading new plugins in place
+of statically linked plugins and older revs of dynamically loaded 
+plugins.  File plugins are implemented with compiled C/C++ primarily
+for the increased efficiency in performing byte-level file and
+memory manipulations and operations on large multidimensional arrays.
+At some point we expect to provide scripting-based methods for loading
+files though this isn't presently available.  One could certainly implement
+a molfile plugin using one's favorite scripting interface as long as it
+could provide the necessary C callbacks, data structures, etc.
+
+<p>
+$Id: plg_intro.dox,v 1.3 2008/03/31 19:40:25 johns Exp $
+
+*/

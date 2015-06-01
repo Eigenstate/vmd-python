@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/snapshotLayout"
+    >
+
+<TextView  android:id="@+id/ipinfo" 
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content" />
+
+<TextView  android:id="@+id/console" 
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content" 
+    android:layout_below="@id/ipinfo" />
+
+<edu.uiuc.ks.vmdmobile.SnapshotView android:id="@+id/snapshotImage"
+      android:layout_width="wrap_content" 
+      android:layout_height="wrap_content"
+      android:layout_below="@id/ipinfo"
+
+      android:layout_alignParentLeft="true"
+android:layout_alignParentRight="true"
+android:layout_alignParentBottom="true"
+/>
+
+<Button android:layout_alignBottom="@+id/snapshotImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/shareButton"
+        android:id="@+id/shareButton" />
+<Button android:layout_alignBottom="@+id/snapshotImage"
+        android:layout_alignRight="@+id/snapshotImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/closeButton"
+        android:id="@+id/closeButton" />
+
+
+
+</RelativeLayout>
+

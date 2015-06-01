@@ -1,0 +1,72 @@
+Changes in v2.7
+---------------
+
+* Added function "writexst".
+* Improved docs.
+
+Changes in v2.6
+---------------
+
+* Added option "pbc join connected".
+* Added a "-material" flag to "pbc box"
+* Added a "-bondlist|-nobondlist" flag of "pbc join" that selects an
+  alternate, bond-topology based algorithm, that works better with
+  long chains. 
+
+Changes in v2.5
+---------------
+
+* Added option "-border" to "pbc join" that allows to specify how deep
+  in the system broken compounds can be found.
+* Thanks to Dan Lussier and John Stone, join was optimized for a
+  performance gain of about 50% and a massive reduction of the memory
+  footprint.
+* Thanks to Jan Saam, wrap and box are able to center the box on the
+  center of mass of a selection. Added option "-centersel", added
+  arguments "com" and "bb" to option "-center". Note, that "-center
+  $sel" is deprecated.
+* Thanks to Axel Kohlmeyer, join now checks whether the pbc cell
+  parameters are reasonable.
+* Automatically generate HTML docs from the LaTeX docs.
+
+Changes in v2.4
+---------------
+
+* Added option "-noverbose" to wrap, unwrap and join for completeness.
+* Translated documentation to LaTeX format to allow the distribution
+  of the docs together with the plugin.
+* Moved plugin to http://www.espresso-pp.de/projects/pbctools/ .
+
+Changes in v2.3
+---------------
+
+* Bugfix (Thanks to Chris Maffeo!) of "pbc wrap -compound segment".
+* Improved implementation of "pbc join -compound bonded", that uses
+  VMDs "fragment" keyword now.
+* Renamed "-rectangular" option of "pbc box" and "pbc wrap" to
+  "-orthorhombic" (Translation hint thanks to Jon Halverson).
+
+Changes in v2.2
+---------------
+
+* Docfixes.
+* Changed default compound option of "pbc wrap" to "-nocompound".
+
+Changes in v2.1
+---------------
+
+* Added "pbc join".
+* Improved error handling.
+* "wrap", "unwrap" and "join" have an option "-verbose" for verbose
+  output. Furthermore, the functions report their progress while they
+  work.
+* Improved documentation.
+* Various bugfixes.
+
+Initial version (v2.0)
+----------------------
+
+* Several mainly independent scripts written by different authors from
+the script library have been assembled by Olaf Lenz to form the
+"pbctools" plugin. 
+

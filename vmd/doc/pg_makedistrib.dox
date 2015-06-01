@@ -1,0 +1,135 @@
+/*! \page makedistrib Building a source or binary distribution
+
+\section unixbuild Building Unix and source distribution archives with make_distrib
+<p>
+The 
+\ref buildscripts "make_distrib" 
+script is used to create a distribution archive from compiled 
+VMD executables and associated files, on Unix platforms.  
+The make_distrib script can also be used to build a source code distribution.  
+<p>
+In order to build a binary VMD distribution, run the make_distrib script
+with the architecture and graphics library parameters as shown in the 
+example below:
+<pre>
+make_distrib IRIX6 opengl
+</pre>
+
+<p>
+Source distributions are built similarly to binary distributions
+except that they don't require the graphics library parameter:
+<pre>
+make_distrib source
+</pre>
+
+\section macbuild Building MacOS X application bundle and disk images
+<p>
+The MacOS X VMD application bundles are presently a manual labor-intensive 
+process.  VMD application bundles are built by taking a previously created 
+bundle directory and replacing the contents of the VMD.app/Contents/vmd
+directory with the contents one would normally install into /usr/local/lib/vmd
+on Unix.  This is easily done by setting the $install_library_dir environment
+variable before running the configure script, and before doing make install
+after compiling the code.
+
+<p>
+  One of the trickiest parts with MacOS X is getting VMD (and plugins) 
+to find the private dynamic link libraries used for Tcl and Tk.  This
+is done using the <b>install_name_tool</b> command in MacOS X.  In general, 
+the process involves labelling the Tcl and Tk libraries so they advertise 
+themselves as being findable in an executable relative path.  Here's an
+example sequence of steps to set these up properly:
+<pre>
+cd ~/vmd/lib/tcl/lib_MACOSX/Tcl.framework/Versions/8.4/
+install_name_tool -id @executable_path/../Frameworks/Tcl.framework/Versions/8.4/Tcl   Tcl
+cd ~/vmd/lib/tcl/lib_MACOSX/Tk.framework/Versions/8.4/
+install_name_tool -id @executable_path/../Frameworks/Tk.framework/Versions/8.4/Tk     Tk
+install_name_tool -change /Library/Frameworks/Tcl.framework/Versions/8.4/Tcl
+ @executable_path/../Frameworks/Tcl.framework/Versions/8.4/Tcl   Tk
+</pre>
+Once this sequence of commands has been executed on the Tcl/Tk libraries
+that VMD is compiled against and distributed with, it should be able to 
+find both of them in the application-private frameworks directory in
+the VMD.app bundle: <b>VMD.app/Contents/Frameworks</b> 
+
+<p>
+  Once an appropriate VMD.app bundle is assembled
+and has been tested, a disk image is created using the MacOS X disk image
+tools.  The disk image contains the VMD.app application bundle and the
+User's Guide.  Keep in mind that the disk image will look precisely as it
+did on the build machine with which it was created.  This means that the
+position or icons in the disk image window, and the size of the window 
+itself will be duplicated when an end user opens the disk image.  Its 
+important to get all of these little details right before you create the
+disk image since I have not found a way to adjust them later.
+
+
+\section winbuild Building Windows Installers and distribution archives 
+<p>
+The process for building installers and distribution archives for 
+the Windows platform is very different from the process used on Unix 
+platforms.  VMD is currently distributed as a self-extracting Winzip 
+archive, containing an InstallShield installer built for VMD.  
+<p>
+The InstallShield installer must be built first.  
+The VMD build area must be mounted as S:\VMD on the Windows machine 
+used to create the installer.  
+The VMD InstallShield project is loaded into InstallShield from 
+<b>S:\vmd\msvc\inst\vmd.ipr</b> 
+Assuming that this succeeds, the installer is initially compiled, and then
+the Media Build Wizard is used to package up the entire installer into 
+a target directory, using the "Custom" template provided by InstallShield.
+
+<p>
+One of the most important things that the InstallShield installer MUST do
+when it installs VMD is to create a special Windows Registry key which is
+used by VMD at runtime, in order to find the VMD initialization scripts,
+as well as helper programs such as Stride, Surf, and Tachyon.  The Registry
+key is created as follows, where XXXX is replaced by the version number
+string used by the VMD binary being installed:
+<pre>
+HKEY_LOCAL_MACHINE, Software\University of Illinois\VMD\XXXX
+</pre>
+The Registry key is created at install time by the InstallShield
+code and is based on the VMD version number.  Assuming nothing major
+changes with this, the salient point is that the InstallShield program
+version number data MUST ALWAYS match the VMD executable being installed,
+or VMD will fail to find its scripts, data, and helper programs at
+startup time, leading to serious problems for the end user.
+
+<p>
+Once the installer is built, the next step is to build a WinZip archive
+containing all of the installer files.  This is pretty straightforward,
+but make sure that the archive is built using the 
+"add files using wildcard *.*" option with recursive directories.  
+Once the WinZip archive has been created, it must be turned into a 
+self-extracting archive using the WinZip Self-Extractor tool.  
+The Winzip self-extractor settings just require it be marked as a 32-bit
+program, a software installation self-extractor, and it should use the
+icon, title, and about box information from the <b>msvc/winzip</b> directory.
+
+
+\section rpmbuild Building RPM distributions
+<p>
+The RPM spec files found in the <b>rpm</b> directory in the source tree
+are not being used for any official VMD distributions presently, but
+they are a good starting point if one wants to make an RPM distribution 
+of VMD for easy local installation onto a network of Linux machines.
+The latest RPM version can be built by typing "make" in the rpm directory.
+Building RPMs can be tricky if RPM finds any interdependencies between
+files in the distribution and system libraries or shared libraries found
+elsewhere on the system.  Even files such as perl scripts can cause RPM
+to generate ridiculous version requirements based on what it finds installed
+on the machine which is used to make the RPM.  For script files, you can 
+often bypass such problems through the creative use of 
+
+<pre>#!/usr/bin/env  perl</pre> 
+
+at the beginning of perl scripts rather than assuming 
+
+<pre>#!/usr/bin/perl</pre> or <pre>#!/usr/local/bin/perl</pre>.  
+
+<p>
+$Id: pg_makedistrib.dox,v 1.4 2008/03/04 20:15:49 johns Exp $
+
+ */

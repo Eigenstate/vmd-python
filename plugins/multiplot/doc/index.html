@@ -1,0 +1,341 @@
+<!--#set var="TITLE" value="Multiplot Plugin, Version 1.5"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<table border="0">
+<tr>
+  <td>
+  <p>
+  The Multiplot plugin provides an easy to use Tcl text interface
+  for plotting one or more datasets (in the vertical axis) 
+  versus another axis (the horizontal axis).
+  Many instances of Multiplot can be created concurrently, through
+  the use of handles which are returned when new plots are created.
+  Creation of a new graph doesn't interfere with existing ones.
+  <p>
+  <h3>Author:</h3>
+  Jan Saam<br>
+  Institute of Biochemistry<br>
+  Charite Berlin<br>
+  Germany<br>
+  saam@charite.de<br>
+  <h3>Contributing Authors:</h3>
+  Axel Kohlmeyer &lt;akohlmey@gmail.com&gt;: support for using multiplot as a non-toplevel widget.<br>
+  Nadja Lederer &lt;nadja_lederer@gmx.at&gt;:  support for deleting objects created with draw. <br>
+  James Gumbart &lt;gumbart@ks.uiuc.edu&gt;: support for changing the plot range.
+
+  <p>
+  <h2>Using Multiplot</h2>
+  First you must create a plot using the multiplot command which
+  returns a handle to the new plot. The handle allows to control
+  this plot independently of other plots you might create.
+  <pre>
+    set plothandle [multiplot ?reset|list|embed <path>? ?options?]
+  </pre>
+
+  <TABLE>
+  <TR>
+    <TD width=25%><code>multiplot list</code></TD>
+    <TD>Lists all existing plothandles</TD>
+  </TR>
+  <TR>
+    <TD><code>multiplot reset</code></TD>
+    <TD>Closes all windows and deletes all namespaces and plothandles</TD>
+  </TR>
+  <TR>
+    <TD><code>multiplot embed &lt;path&gt;</code></TD>
+    <TD>Allows to use multiplot as an embedded widget. You have to give
+        widget path to the parent window as argument. The path to the
+        created widget tree can be retrieved with the 'getpath' command.</TD>
+  </TR>
+  </TABLE>
+  </td>
+  <td cellpadding=20>
+  <img src="multiplot.png" alt="Image of NAMD Plot" align=top><br>
+  <b>NAMDPlot results displayed using Multiplot plugin<br>&nbsp;</b>
+  <p>
+  </td>
+</tr>
+
+<tr>
+<td colspan="2">
+  <p>
+  The options are used to define the plot. They are described further below.
+  Note that you can create an empty plot and provide data and configure it any time later
+  using the plothandle.
+  <p>
+  Once you have a plothandle you can use it to control the plot:
+
+  <pre>
+    $plothandle add|replot|namespace|configure|data|export|quit ?options?
+  </pre>
+
+<TABLE>
+<TR>
+  <TD width=45%><code>$plothandle add X Y ?options?</code></TD>
+  <TD>Adds a dataset to the plot.</TD>
+</TR>
+<TR>
+  <TD><code>$plothandle replot </code></TD>
+  <TD>Replots the current data.</TD>
+</TR>
+<TR>
+  <TD><code>$plothandle namespace</code></TD>
+  <TD>Returns the current namespace.</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>$plothandle configure ?options?</code></TD>
+  <TD>Modifies the existing plot according to the options.
+      These modifications are silent until you call 'replot'
+      unless you specify the flag -plot !!!</TD>
+</TR>
+<TR>
+  <TD><code>$plothandle nsets</code></TD>
+  <TD>Returns the number of datasets in the plot.</TD>
+</TR>
+<TR>
+  <TD><code>$plothandle data</code></TD>
+  <TD>Returns all x and y datasets of the plot.</TD>
+</TR>
+<TR>
+  <TD><code>$plothandle xdata </code></TD>
+  <TD>Returns all x datasets of the plot.</TD>
+</TR>
+<TR>
+  <TD><code>$plothandle ydata </code></TD>
+  <TD>Returns all y datasets of the plot.</TD>
+</TR>
+<TR>
+  <TD><code>$plothandle getpath </code></TD>
+  <TD>Returns the widget path to the highest level widget.
+      Useful to manipulating embedded multiplot widgets.</TD>
+</TR>
+<TR>
+  <TD><code>$plothandle export program filename</code></TD>
+  <TD>Exports plot to external program.</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>$plothandle getpath</code></TD>
+  <TD>Returns the widget path to the plot window.</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>$plothandle draw &lt;item&gt; ?options?</code></TD>
+  <TD>Draws arbitrary item into canvas.
+      The item can be one of the items defined in Tk's <code>canvas</code> command 
+      (arc, bitmap, image, line, oval, polygon, rectangle, text, window).
+      The options are the same as for the corresponding
+      <code>canvas create &lt;item&gt;</code> command
+      (they are directly passed to <code>canvas create</code>).
+      Don't dare to ask me about these options, read the Tk manual!
+      For your convenience I have added wrappers for the oval and rectangle
+      items where you can specify the center coordinates instead of the two
+      opposite corners of the bounding box. These two additional items are called
+      <code>circle</code> and <code>square</code>. The size is controlled by the
+      additional flag -radius (which in case of square denotes the half side
+      length).</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>$plothandle undraw &lt;tag&gt;</code></TD>
+  <TD>Deletes an item that is associated with a tag. The item can be one of the 
+      items defined in Tk's 'canvas' command (see draw command above).</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>$plothandle clear </code></TD>
+  <TD>Removes all datasets but does not delete the plothandle.</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>$plothandle quit </code></TD>
+  <TD>Destroys the window of the plot and delete all data.</TD>
+</TR>
+</TABLE>
+
+<h3>Options for the plothandle:</h3>
+
+<TABLE>
+<TR>
+  <TD width=25%><code>-lines</code></TD>
+  <TD>Connect datapoint with lines.</TD>
+</TR>
+<TR>
+  <TD><code>-nolines</code></TD>
+  <TD>Don't connect datapoint with lines.</TD>
+</TR>
+<TR>
+  <TD><code>-stats</code></TD>
+  <TD>Print some statistics of the last added dataset.</TD>
+</TR>
+<TR>
+  <TD><code>-nostats</code></TD>
+  <TD>Get rid of the statistics.</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>-plot</code></TD>
+  <TD>Actually plot the data otherwise only the canvas and the axes are drawn
+      This is equivalent to '$plothandle replot'.
+      If you have multiple datasets it is a good idea to add all data first and
+      then plot them all at once since this will be a lot faster.</TD>
+</TR>
+<TR>
+  <TD><code>-autoscale</code></TD>
+  <TD> Automatically scale plot to fit all data points.</TD>
+</TR>
+<TR>
+  <TD><code>-xanglescale</code></TD>
+  <TD> Use 90 degree as major tic unit for the x-axis.</TD>
+</TR>
+<TR>
+  <TD><code>-yanglescale</code></TD>
+  <TD> Use 90 degree as major tic unit for the y-axis.</TD>
+</TR>
+<TR>
+  <TD><code>-set &lt;i&gt;</code></TD>
+  <TD>Apply all dataset specific modifications to dataset &lt;i&gt;.</TD>
+</TR>
+<TR>
+  <TD><code>-x &lt;X&gt;</code></TD>
+  <TD>Supply the x-values for a dataset in a list.</TD>
+</TR>
+<TR>
+  <TD><code>-y &lt;Y&gt;</code></TD>
+  <TD>Supply the y-values for a dataset in a list.</TD>
+</TR>
+<TR>
+  <TD><code>-title &lt;text&gt;</code></TD>
+  <TD>Title of the plot.</TD></TD>
+</TR>
+<TR>
+  <TD><code>-xlabel &lt;text&gt;</code></TD>
+  <TD>Text for the x-axis label.</TD>
+</TR>
+<TR>
+  <TD><code>-ylabel &lt;text&gt;</code></TD>
+  <TD>Text for the y-axis label.</TD>
+</TR>
+<TR>
+  <TD><code>-xmajortics &lt;dist&gt;</code></TD>
+  <TD>Distance between two x-axis ticlabels.</TD>
+</TR>
+<TR>
+  <TD><code>-ymajortics &lt;dist&gt;</code></TD>
+  <TD>Distance between two y-axis ticlabels.</TD>
+</TR>
+<TR>
+  <TD><code>-xminortics &lt;dist&gt;</code></TD>
+  <TD>Distance between two x-axis minor tic marks.</TD>
+</TR>
+<TR>
+  <TD><code>-yminortics &lt;dist&gt;</code></TD>
+  <TD>Distance between two y-axis minor tic marks.</TD>
+</TR>
+<TR>
+  <TD><code>-xsize &lt;s&gt;</code></TD>
+  <TD>Width of the canvas.</TD>
+</TR>
+<TR>
+  <TD><code>-ysize &lt;s&gt;</code></TD>
+  <TD>Height of the canvas.</TD>
+</TR>
+
+<TR>
+  <TD><code>-xmin &lt;s&gt;</code></TD>
+  <TD>Minimum x value; use "auto" to take the minimum x value of all datasets.</TD>
+</TR>
+<TR>
+  <TD><code>-xmax &lt;s&gt;</code></TD>
+  <TD>Maximum x value; use "auto" to take the maximum x value of all datasets.</TD>
+</TR>
+<TR>
+  <TD><code>-ymin &lt;s&gt;</code></TD>
+  <TD>Minimum y value; use "auto" to take the minimum y value of all datasets.</TD>
+</TR>
+<TR>
+  <TD><code>-ymax &lt;s&gt;</code></TD>
+  <TD>Maximum y value; use "auto" to take the maximum y value of all datasets.</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>-marker &lt;type&gt;</code></TD>
+  <TD>Draw markers at datapoints (none|point|circle|square).</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>-radius &lt;r&gt;</code></TD>
+  <TD>Data point marker (radius of circle and point, size of square).</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>-fillcolor &lt;color&gt;</code></TD>
+  <TD>Fill color of datapoint markers.</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>-linewidth &lt;w&gt;</code></TD>
+  <TD>Width of the lines connecting datapoints.</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>-linecolor &lt;color&gt;</code></TD>
+  <TD>Color of the lines connecting datapoints.</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>-dash &lt;pattern&gt;</code></TD>
+  <TD>Draw dashed lines. The dash pattern is specified by one of the
+      following characters "-,._" (uses the same format as -dash for Tk canvas)
+      Note that each line segment is dashed. Hence you'll get a solid line when
+      the datapoints are so dense that the line segments are shorter than the dashes!</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>-legend &lt;text&gt;</code></TD>
+  <TD>Add an entry for this dataset to the legend
+      Note that the legend is drawn in the upper left corner of the plot
+      but you can drag the legend anywhere you want using the mouse.</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>-hline &lt;{y args}&gt;</code></TD>
+  <TD>Draw a horizontal line at position y, args are arguments for the Tk canvas
+      'create line' command. Through args like '-width 2 -fill red -dash "-"' you can
+      determine the line style.</TD>
+</TR>
+<TR>
+  <TD valign="top"><code>-hline &lt;{y args}&gt;</code></TD>
+  <TD>Draw a vertical line at position x, args are arguments for the Tk canvas
+      'create line' command. Through args like '-width 2 -fill red -dash "-"' you can
+      determine the line style.</TD>
+</TR>
+</TABLE>
+
+
+<h3>Example:</h3>
+<pre>
+  package require multiplot
+  set x {-2 -1 0 1 2 3 4 5 6 7 8 9 10}
+  set y {-2  0 2 3 4 5 5 4 3 2 1 0 1}
+  # This plot will be immediately created because we specified -plot
+  set plothandle [multiplot -x $x -y $y -title "Example plot" -lines -linewidth 3 -marker point -plot]
+
+  # Now we change the appearence of the existing plot.
+  # BUT WE WON'T SEE THIS change until the next replot is requested!
+  $plothandle configure -fillcolor yellow -radius 6
+
+  # Let's add a vertical dotted line at x=3
+  $plothandle configure -vline {3 -width 2 -fill red -dash "."}
+
+  # And now redraw the plot so that the changes become visible:
+  $plothandle replot;
+
+  # It's time to add a second dataset to the same plot
+  set y2 {8  7 6 6 5 4 4 3 2 3 4 3 1}
+  $plothandle add $x $y2 -fillcolor green -radius 4 -plot
+
+  # Of course we can change the appearence of the the two sets independently:
+  $plothandle configure -set 1 -lines -linewidth 4 -dash "," -plot
+
+  # Export to xmgrace, load with 'xmgrace -nxy /tmp/foo.plot'
+  $plothandle export xmgrace /tmp/foo.plot
+
+  # Close the plot
+  $plothandle quit
+</pre>
+
+
+
+  </td>
+</tr>
+</table>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

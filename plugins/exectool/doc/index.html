@@ -1,0 +1,46 @@
+<!--#set var="TITLE" value="Exectool Plugin, Version 1.0"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>Exectool provides a robust means of executing external programs 
+on the local computer, <a href="biocore.html">or remotely</a>
+on behalf of other plugins.  
+
+
+<p>
+The primary features of exectool are syntactic emulation 
+of Tcl's built-in ::exec funcion, but with functionality for automatically
+searching for executables in the user's path, with fall-back code for
+allowing a user to specify the location of a missing executable rather
+than failing silently as often happens with Tcl's ::exec function.
+
+<p>Exectool also provides features for running jobs in the background,
+and may be extended to replace some of the built-in job execution 
+functionality found in more sophisticated plugins such as AutoIMD
+as work progresses.
+
+<dl>
+  <dt><code>::ExecTool::exec</code></dt>
+  <dd>Drop-in replacement for ::exec. Before running the program, it
+  searches Exectool's registry for the program, prompting the user for its
+  location if not found.</dd>
+</dl>
+
+<dl>
+  <dt><code>::ExecTool::find [-interactive] [-path &lt;path&gt;] 
+    [-description &lt;text&gt;] mnemonic</code></dt>
+  <dd>Search for the program by the provided mnemonic. Returns the full path
+  to the executable if it is found, and the empty list otherwise.
+  Options:<br> 
+  
+  [-interactive] - if specified and Tk is available, the user is prompted
+  for missing information.<br> 
+  
+  [-path <path>] - if specified, the given path is tested before continuing
+  the search<br> 
+  
+  [-description <text>] - if specified and the mnemonic is not registered,
+  the description defaults to the given text while prompting the user and
+  returning the path.</dd>
+</dl>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

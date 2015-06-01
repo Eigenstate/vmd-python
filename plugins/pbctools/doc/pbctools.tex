@@ -1,0 +1,813 @@
+\documentclass[a4paper, DIV12]{scrartcl}
+
+\usepackage{hyperref}
+\usepackage{xspace}
+\usepackage{verbatim}           % required for \verbatim and \endverbatim
+\usepackage{fancyvrb}
+\usepackage{longtable}
+
+% no graphics so far
+%\usepackage{graphicx}
+
+\newcommand{\ie}{\emph{i.e.}\xspace}
+\newcommand{\eg}{\emph{e.g.}\xspace}
+\newcommand{\etal}{\emph{et al}\xspace}
+\newcommand{\pbctools}{PBCTools\xspace}
+
+\hypersetup{
+  pdfauthor={Olaf Lenz}, 
+  pdftitle={PBCTools Plugin User's Guide}
+}
+
+\RecustomVerbatimEnvironment{Verbatim}{Verbatim}{frame=single,commandchars=\\\{\}}
+
+\begin{document}
+\title{\pbctools Plugin User's Guide}
+\author{Jerome Henin \and Olaf Lenz \and Cameron Mura \and Jan Saam}
+\date{Version 2.8}
+
+\maketitle
+
+The plugin \texttt{pbctools} provides Tcl functions to handle periodic
+boundary conditions. 
+
+\section{Basic usage}
+All of the plugin's functions can be accessed via the Tcl text command
+
+\begin{Verbatim}
+  pbc \textrm{\textit{subcommand}} [\textrm{\textit{options}}]...
+\end{Verbatim}
+
+\noindent that you can write in a VMD-Tcl-script or interactively
+enter in the VMD console window or the VMD TkConsole (accessible via
+VMD Main Menu $\rightarrow$ Extensions $\rightarrow$ Tk Console).
+When no \textit{subcommand} is provided, a short help message will be
+printed. The list of available subcommands can be found in table
+\ref{tab:commands}.
+
+\begin{table}[p]
+  \centering
+  \begin{tabular}{|p{0.3\textwidth}|p{0.55\textwidth}|r|}
+    \hline
+    \textbf{Subcommand} & \textbf{Description} & \textbf{p.}\\\hline\hline
+    
+    \mbox{\texttt{set} \textit{cell}} [\textit{options}\dots]
+    & Set the VMD unit cell properties (\eg to use VMD's feature that
+    allows to display periodic copies of the system). 
+    & \pageref{sec:set}
+    \\\hline
+  
+    \mbox{\texttt{get} [\textit{options}\dots]}
+    & Get the VMD unit cell properties. 
+    & \pageref{sec:get}
+    \\\hline
+
+    \mbox{\texttt{readxst} \textit{xstfile} [\textit{options}\dots]}
+    & Read the VMD unit cell properties from an XST file.
+    & \pageref{sec:readxst} 
+    \\\hline
+
+    \mbox{\texttt{writexst} \textit{xstfile} [\textit{options}\dots]}
+    & Write the VMD unit cell properties to an XST file.
+    & \pageref{sec:writexst} 
+    \\\hline
+  
+    \texttt{wrap} [\textit{options}\dots]
+    & When the atoms of the system are not all in one periodic image,
+    but are distributed over various images, this function wraps all
+    atoms into the chosen image. It is also possible to change between
+    different representations of the unit cell (orthorhombic or triclinic).
+    & \pageref{sec:wrap}
+    \\\hline
+  
+    \texttt{unwrap} [\textit{options}\dots]
+    & When overlong bonds (that stretch the whole system) occur and
+    compounds (residues, segments, chains or fragments) are broken in
+    the course of a simulation trajectory because atoms are wrapped
+    around the periodic boundaries, this function will remove large
+    jumps of atoms between consecutive frames.
+    & \pageref{sec:unwrap}
+    \\\hline
+  
+    \texttt{join} \textit{compound} [\textit{options}\dots]
+    & When you have still broken compounds in frames after you have
+    used \texttt{unwrap}, this function can be used to join broken
+    compounds. Note, that this function is significantly slower than
+    \texttt{unwrap}!
+    & \pageref{sec:join}
+    \\\hline
+  
+    \texttt{box} [\textit{options}\dots]
+    & When you want to draw a box around the unit cell of your system,
+    this function can be used. The box will automatically adapt to
+    changes in the unit cell parameters in the course of a trajectory.
+    & \pageref{sec:box}
+    \\\hline
+  
+    \texttt{box\_draw} [\textit{options}\dots]
+    & When the unit cell parameters do not change in the course of a
+    trajectory, this function draws a static box that will not adapt to
+    changes in the unitcell properties.
+    & \pageref{sec:box_draw}
+    \\\hline
+  \end{tabular}
+  
+  \caption{List of the subcommands of the \pbctools plugin.}
+  \label{tab:commands}
+\end{table}
+
+\section{Installation}
+
+Since VMD version 1.8.6, the \pbctools plugin is part of the official
+distribution of
+VMD\footnote{\url{http://www.ks.uiuc.edu/Research/vmd/}}, and all
+commands can be used within VMD without further preparation.
+
+In the case that you are using an older version of VMD, or that you
+want to use a more recent version of \pbctools than what came with the
+VMD distribution, you can activate the \pbctools plugin as follows:
+
+\begin{enumerate}
+\item Fetch the \pbctools plugin from Github
+\begin{Verbatim}
+git clone git://github.com/olenz/pbctools.git
+\end{Verbatim}
+This will create a new directory \texttt{pbctools} in the current
+directory.
+\item Add the following lines to your VMD startup file
+  (\verb!~/.vmdrc! on Unix or \verb!vmd.rc! on Windows)\footnote{For
+    more details on the startup files, see chapter ``Startup Files''
+    in the VMD User's Guide.}:
+\begin{Verbatim}
+set dir \textrm{\textit{pbctools-directory}}
+source $dir/pkgIndex.tcl
+package require pbctools
+\end{Verbatim}
+%$
+\end{enumerate}
+
+
+\newpage
+\section{\texttt{set} -- Setting the unitcell parameters}
+\label{sec:set}
+
+To be able to work correctly, all other procedures of the \pbctools
+plugin require the VMD unitcell parameters to be set.  Some file
+formats and their readers provide the necessary information (\eg the
+DCD, VTF and Amber crdbox formats).  When the format does not provide
+the information, the parameters can either be set with help of the
+command \texttt{pbc set}, or they can be read in from a file in XST
+format via the procedure \texttt{pbc readxst} (see section
+\ref{sec:readxst}).
+
+\minisec{Syntax}
+\mbox{\texttt{pbc} \texttt{set} \textit{cell}} [\textit{options}\dots]
+
+\minisec{Description}
+
+Sets the VMD unit cell properties to \textit{cell} in the specified
+frames. \textit{cell} must either contain a single set of unit cell
+parameters that will be used in all frames of the molecule, or it must
+contain a parameter set for every frame.
+
+\minisec{Example}
+
+\begin{Verbatim} 
+# set the unit cell side length to 10 in all frames
+pbc set \{10.0 10.0 10.0\} -all
+\end{Verbatim}
+
+\minisec{Options}
+
+\begin{tabular}{|p{0.3\textwidth}|p{0.64\textwidth}|}
+\hline
+
+\texttt{-molid} \textit{molid}$|$\texttt{top}
+& Which molecule to use (default: \texttt{top}).
+\\ \hline
+
+\texttt{-first} \textit{frame}$|$\texttt{first}$|$\texttt{now}
+& The first frame to use (default: \texttt{now}).
+\\ \hline
+
+\texttt{-last} \textit{frame}$|$\texttt{last}$|$\texttt{now}
+& The last frame to use (default: \texttt{now}).
+\\ \hline
+
+\texttt{-all}[\texttt{frames}]
+& Equivalent to \texttt{-first first -last last}.
+\\ \hline
+
+\texttt{-now}
+& Equivalent to \texttt{-first now -last now}.
+\\ \hline
+
+\texttt{-namd}$|$\texttt{-vmd}
+& Format of the unit cell parameters \textit{cell}. When \texttt{-vmd}
+is used, a parameter set must be a list of the VMD unitcell parameters
+\textit{a}, \textit{b}, \textit{c} (\ie the side lengths of the unit
+cell) and optionally \textit{alpha}, \textit{beta} and \textit{gamma}
+(the angles of the unit cell) for non-orthorhombic unitcells. When
+\texttt{-namd} is used, a parameter set must contain the three unit
+cell vectors \textit{A}, \textit{B} and \textit{C} (the 3D-vectors of
+the unitcell sides) (default:\texttt{-vmd}).
+\\ \hline
+
+\texttt{-}[\texttt{no}]\texttt{alignx} 
+& If the option \texttt{-namd} is used and the unit cell vector
+\textit{A} is not parallel to the x-axis, \texttt{-alignx} will rotate
+the system so that it is. If \texttt{-noalignx} is used, the function
+will return with a warning when \textit{A} ist not aligned with the
+x-axis.
+\\ \hline
+\end{tabular}
+ 
+
+
+\newpage
+\section{\texttt{get} -- Getting the unitcell parameters}
+\label{sec:get}
+
+\minisec{Syntax}
+\texttt{pbc} \texttt{get} [\textit{options}\dots]
+
+\minisec{Description}
+Gets the VMD unit cell properties from the specified frames. Returns a
+list of one parameter set for each frame or an empty list when an
+error occured.
+
+\minisec{Example}
+
+\begin{Verbatim}
+# get the unit cell parameters of the current frame
+set cell [pbc get -now]
+\end{Verbatim}
+
+\minisec{Options}
+
+\begin{tabular}{|p{0.3\textwidth}|p{0.64\textwidth}|}
+\hline
+
+\texttt{-molid} \textit{molid}$|$\texttt{top}
+& Which molecule to use (default: \texttt{top})
+\\ \hline
+
+\texttt{-first} \textit{frame}$|$\texttt{first}$|$\texttt{now}
+&  The first frame to use (default: \texttt{now}).
+\\ \hline
+
+\texttt{-last} \textit{frame}$|$\texttt{last}$|$\texttt{now}
+& The last frame to use (default: \texttt{now}).
+\\ \hline
+
+\texttt{-all}[\texttt{frames}]
+& Equivalent to \texttt{-first first -last last}.
+\\ \hline
+
+\texttt{-now}
+& Equivalent to \texttt{-first now -last now}.
+\\ \hline
+
+\texttt{-namd}$|$\texttt{-vmd}
+& Format of the unit cell parameters. When \texttt{-vmd}
+is used, a parameter set will contains the VMD unitcell
+parameters \textit{a}, \textit{b}, \textit{c}, \textit{alpha},
+\textit{beta}, \textit{gamma}. When \texttt{-namd} is used, a
+parameter set contains the three 3D unit cell vectors \textit{A},
+\textit{B} and \textit{C} (default: \texttt{-vmd}).
+\\ \hline  
+
+\texttt{-}[\texttt{no}]\texttt{check}
+& Check whether the unit cell parameters seem reasonable, \ie whether
+the side lengths are not too small and the angles are not very small
+or very large (default: \texttt{-nocheck}).
+\\ \hline  
+
+\end{tabular}
+
+\newpage
+\section{\texttt{readxst} and \texttt{writexst} -- Handling XST files}
+\label{sec:writexst}
+\label{sec:readxst}
+
+\minisec{Syntax}
+\texttt{pbc} \texttt{readxst} \textit{xstfile} [\textit{options}\dots]\\
+\texttt{pbc} \texttt{writexst} \textit{xstfile} [\textit{options}\dots]
+
+\minisec{Description}
+Read/write the unit cell information from an XST or XSC file.
+
+\minisec{Example}
+\begin{Verbatim}
+# read the unit cell parameters from system.xst
+pbc readxst system.xst
+pbc writexst system.xst
+\end{Verbatim}
+
+\minisec{Options}
+
+\begin{tabular}{|p{0.3\textwidth}|p{0.64\textwidth}|}
+\hline
+
+\texttt{-molid} \textit{molid}$|$\texttt{top}
+& Which molecule to use (default: \texttt{top}).
+\\ \hline
+
+\texttt{-first} \textit{frame}$|$\texttt{first}$|$\texttt{now}
+& The first frame to use (default: \texttt{first}).
+\\ \hline
+
+\texttt{-last} \textit{frame}$|$\texttt{last}$|$\texttt{now}
+& The last frame to use (default: \texttt{last}).
+\\ \hline
+
+\texttt{-all}[\texttt{frames}]
+& Equivalent to \texttt{-first first -last last}.
+\\ \hline
+
+\texttt{-now}
+& Equivalent to \texttt{-first now -last now}.
+\\ \hline
+
+\texttt{-stride} \textit{stride}
+& Read only every \textit{stride}-th timestep from the
+file (default: 1).
+\\ \hline
+
+\texttt{-}[\texttt{no}]\texttt{skipfirst}
+& \emph{(only readxst)} Whether to skip the first line of the file, or not
+(default: \texttt{-skipfirst} for XST files, \texttt{-noskipfirst} for
+XSC files)
+\\ \hline
+
+\texttt{-step2frame} \textit{num}
+& Conversion factor between step \textit{num} in XST file
+and frame \textit{num} in DCDs. This is useful when loading multiple
+XSTs and want to avoid over-writing info of earlier frames
+by having a unique mapping between step and frame.
+\\ \hline
+
+\texttt{-step0} \textit{num}
+& \emph{(only writexst)} Timestep number for the first written frame.
+\\ \hline
+
+\texttt{-}[\texttt{no}]\texttt{alignx}
+& \emph{(only readxst)} If the unit cell vector \textit{A} is not
+parallel to the x-axis, \texttt{-alignx} will rotate the system so that it is. If
+\texttt{-noalignx} is used, the function will return with a warning
+when \textit{A} ist not aligned with the x-axis.
+\\ \hline
+
+\texttt{-log} \textit{logfile}
+& \emph{(only readxst)} Log file used for debugging information.
+\\ \hline
+\end{tabular}
+
+\newpage
+\section{\texttt{wrap} -- Wrapping atoms}
+\label{sec:wrap}
+
+\minisec{Syntax}
+
+\texttt{pbc} \texttt{wrap} [\textit{options}\dots]
+
+\minisec{Description} 
+
+Wrap atoms into a single unitcell.
+
+\minisec{Example}
+
+\begin{Verbatim}
+# wrap the system into the orthorhombic box shifted by one box length in X-dir
+pbc wrap -orthorhombic -shiftcenterrel {1 0 0}
+\end{Verbatim}
+
+
+\minisec{Options}
+
+\begin{longtable}{|p{0.3\textwidth}|p{0.64\textwidth}|}
+
+\multicolumn{2}{r}{\dots}
+\endfoot
+\endlastfoot
+
+\hline
+
+\texttt{-molid} \textit{molid}$|$\texttt{top}
+& Which molecule to use (default: \texttt{top})
+\\ \hline
+
+\texttt{-first} \textit{frame}$|$\texttt{first}$|$\texttt{now}
+& The first frame to use (default: \texttt{now}).
+\\ \hline
+
+\texttt{-last} \textit{frame}$|$\texttt{last}$|$\texttt{now}
+& The last frame to use (default: \texttt{now}).
+\\ \hline
+
+\texttt{-all}[\texttt{frames}]
+& Equivalent to \texttt{-first first -last last}.
+\\ \hline
+
+\texttt{-now}
+& Equivalent to \texttt{-first now -last now}.
+\\ \hline
+
+\texttt{-parallelepiped} $|$\texttt{-orthorhombic}
+& Wrap the atoms into the unitcell parallelepiped or the corresponding
+orthorhombic box with the same volume and center as the
+(non-orthrhombic) unitcell. The unitcell displacement vectors are not
+changed (default: \texttt{-parallelepiped}).
+\\ \hline
+
+\texttt{-sel} \textit{sel}
+& The selection of atoms to be wrapped (default: \texttt{"all"}). Use
+this if you don't want to wrap all atoms.
+\\ \hline
+
+\texttt{-nocompound}\linebreak $|$\texttt{-compound} \texttt{res}[\texttt{id}[\texttt{ue}]]$|$\texttt{seg}[\texttt{id}]$|$\texttt{chain}$|$\texttt{fragment}
+& Defines, which atom compounds should be kept together, \ie which
+atoms will not be wrapped if a compound would be split by the
+wrapping: residues, segments or chains (default:
+\texttt{-nocompound}).
+\\ \hline
+
+\texttt{-nocompoundref} $|$\texttt{-compoundref} \textit{refsel}
+& When compounds have been defined via the \texttt{-compound} option,
+this defines a reference selection of atoms. After the wrapping, at
+least one of the atoms in this selection will be in the central
+image. This can be useful, for example, when water molecules should be
+wrapped such that the oxygen atom ends up in the central image
+(default: \texttt{-nocompoundref}).
+\\ \hline
+
+\texttt{-center} \texttt{origin}$|$\texttt{unitcell}\linebreak
+\hspace*{1em}$|$\texttt{com}$|$\texttt{centerofmass}\linebreak 
+\hspace*{1em}$|$\texttt{bb}$|$\texttt{boundingbox}
+& Specify the center of the wrapping cell. The center can be set to
+the origin (\texttt{origin}), to the center of the unit cell
+(\texttt{unitcell}), to the center of mass (\texttt{com} or
+\texttt{centerofmass}) of the selection specified by the option
+\texttt{-centersel}, or to the center of the bounding box (\texttt{bb}
+or \texttt{boundingbox}) of the selection specified by the option
+\texttt{-centersel} (default: \texttt{unitcell}).
+\\ \hline
+
+\texttt{-centersel} \textit{sel}
+& Specify the selection \textit{sel} that defines the center of the
+wrapping cell in the option \texttt{-center} (default:
+\texttt{"all"}). Note that this option only has an effect if used
+together with the arguments \texttt{com}, \texttt{centerofmass},
+\texttt{bb} or \texttt{boundingbox} to the option \texttt{-center}.
+\\ \hline
+
+\texttt{-shiftcenter} \textit{shift}
+& Shift the center of the box by \textit{shift}. \textit{shift} has to
+be a list of three numerical values. (default: \verb!{0 0 0}!)
+\\ \hline
+
+\texttt{-shiftcenterrel} \textit{shift}
+& Shift the center of the box by \textit{shift} (in units of
+the unit cell vectors). \textit{shift} has to be a list of
+three numerical values. (default: \verb!{0 0 0}!)
+\\ \hline
+
+\texttt{-}[\texttt{no}]\texttt{verbose}
+& Turn on/off verbosity of the function (for debugging) (default:
+\texttt{-noverbose}).
+\\ \hline
+
+\texttt{-}[\texttt{no}]\texttt{draw}
+& Draw some test vectors (for debugging) (default: \texttt{-nodraw}).
+\\ \hline
+
+\end{longtable}
+
+\newpage
+\section{\texttt{unwrap} -- Unwrapping atoms}
+\label{sec:unwrap}
+\minisec{Syntax}
+
+\texttt{pbc} \texttt{unwrap} [\textit{options}\dots]
+
+\minisec{Description} 
+
+If a simulation only saves the central image coordinates of a system,
+atoms are wrapped around when they reach the boundaries.  This leads
+to big jumps in the coordinates of the atoms, and to bonds that
+stretch the whole box length. This procedure will reverse these jumps
+and make the movement of the atoms continuous over a series of
+frames. This process is not necessarily unique, so this procedure can
+\emph{not} exactly reverse the effects of the command \texttt{pbc
+  wrap}.
+
+In the case of a simulation trajectory, the following process most
+probably gives the best result:
+\begin{enumerate}
+\item Go to the first frame.
+\item \label{shape} Shape the unitcell of the frame for the best
+  visualization by using the commands\\ \mbox{\texttt{pbc join -now}}
+  and \mbox{\texttt{pbc wrap -now}} with appropriate options.
+\item Unwrap the trajectory, starting from the current frame, by using\\
+  \mbox{\texttt{pbc unwrap -first now}}.
+\item Visually check the result. If the system gets smeared out too
+  fast because the diffusion is too high, repeat the procedure with
+  successively later frames.
+\end{enumerate}
+
+\minisec{Example}
+
+\begin{Verbatim}
+# unwrap all protein atoms
+pbc unwrap -sel "protein"
+\end{Verbatim}
+
+\minisec{Options}
+
+\begin{tabular}{|p{0.3\textwidth}|p{0.64\textwidth}|}
+\hline
+
+\texttt{-molid} \textit{molid}$|$\texttt{top}
+& Which molecule to use (default: \texttt{top})
+\\ \hline
+
+\texttt{-first} \textit{frame}$|$\texttt{first}$|$\texttt{now}
+& The first frame to use (default: \texttt{now}).
+\\ \hline
+
+\texttt{-last} \textit{frame}$|$\texttt{last}$|$\texttt{now}
+& The last frame to use (default: \texttt{now}).
+\\ \hline
+
+\texttt{-all}[\texttt{frames}]
+& Equivalent to \texttt{-first first -last last}.
+\\ \hline
+
+\texttt{-now}
+& Equivalent to \texttt{-first now -last now}.
+\\ \hline
+
+\texttt{-sel} \textit{sel}
+& The selection of atoms to be unwrapped (default: \texttt{"all"}). Use
+this if you don't want to unwrap all atoms.
+\\ \hline
+
+\texttt{-}[\texttt{no}]\texttt{verbose}
+& Turn on/off verbosity of the function (for debugging) (default:
+\texttt{-noverbose}).
+\\ \hline
+\end{tabular}
+
+
+\newpage
+\section{\texttt{join} -- Joining residues, chains, segments, fragments,
+  and connected/bonded groups}
+\label{sec:join}
+
+\minisec{Syntax}
+
+\texttt{pbc} \texttt{join} \textit{compound} [\textit{options}\dots]
+
+\minisec{Description} 
+
+Joins compounds of type \textit{compound} of atoms that have been
+split due to wrapping around the unit cell boundaries, so that they
+are not split anymore. \textit{compound} must be one of the values
+\texttt{res[id[ue]]}, \texttt{chain}, \texttt{seg[id]},
+\texttt{fragment} or \texttt{connected}.
+
+This procedure can help to remove bonds that stretch the whole box.
+Note, however, that \texttt{join} is relatively slow and is required
+only in few cases.  If you have a simulation trajectory that contains
+frames with overstretched bonds, it is usually enough to apply
+\texttt{join} only to the first frame and then the much faster
+procedure \texttt{unwrap} to all of the frames:
+\begin{Verbatim}
+  pbc join \textit{compound} -first 0 -last 0 
+  pbc unwrap
+\end{Verbatim}
+
+Note also, that the (faster) default algorithm only works when none of
+the compounds stretches more than half the periodic box in any direction.
+With the option \texttt{-bondlist} you can select an alternate algorithm
+that joins compounds based on direct bonds and does not suffer from this
+limitation, but can be significantly slower.
+
+\minisec{Examples}
+
+\begin{Verbatim}
+# join all residues such that the Carbon alpha atom 
+# is in the central image
+pbc join res -ref "name CA"
+# join all bonds of long polymer chain molecules
+pbc join fragment -bondlist
+\end{Verbatim}
+
+\minisec{Options}
+
+\begin{longtable}{|p{0.3\textwidth}|p{0.64\textwidth}|}
+\multicolumn{2}{r}{\dots}
+\endfoot
+\endlastfoot
+
+\hline
+
+\texttt{-molid} \textit{molid}$|$\texttt{top}
+& Which molecule to use (default: \texttt{top})
+\\ \hline
+
+\texttt{-first} \textit{frame}$|$\texttt{first}$|$\texttt{now}
+& The first frame to use (default: \texttt{now}). 
+\\ \hline
+
+\texttt{-last} \textit{frame}$|$\texttt{last}$|$\texttt{now}
+& The last frame to use (default: \texttt{now}).
+\\ \hline
+
+\texttt{-all}[\texttt{frames}]
+& Equivalent to \texttt{-first first -last last}.
+\\ \hline
+
+\texttt{-now}
+& Equivalent to \texttt{-first now -last now}.
+\\ \hline
+
+\texttt{-sel} \textit{sel}
+& The selection of atoms to be joined (default: \texttt{"all"}). Use
+this if you don't want to join all atoms.
+\\ \hline
+
+\texttt{-noborder}$|$\texttt{-border} \textit{depth}
+& When only atoms close to the boundaries of the unit cell have
+overstretched bonds, this option can be used to specify the maximal
+depth inside the system. Using this option will significantly speed up
+join (default: \texttt{-noborder}).
+\\ \hline
+
+\texttt{-noref}$|$\texttt{-ref} \textit{refsel}
+& This defines a reference selection of atoms. When joining compounds,
+the first atom matching the selection in each compound will be chosen,
+and all atoms will be wrapped into a unit cell around this atom. If
+\texttt{noref} is used, the first atom in the compound is the
+reference atom (default: \texttt{-noref}).
+\\ \hline
+
+\texttt{-}[\texttt{no}]\texttt{bondlist}
+& Turn on/off alternate, bond topology based joining algorithm (default:
+\texttt{-nobondlist}).
+\\ \hline
+
+\texttt{-}[\texttt{no}]\texttt{verbose}
+& Turn on/off verbosity of the function (for debugging) (default:
+\texttt{-noverbose}).
+\\ \hline
+\end{longtable}
+
+\newpage
+\section{\texttt{box} and \texttt{box\_draw} -- Drawing the unit cell boundaries}
+
+\subsection{\texttt{box} -- Automatically updateing box}
+\label{sec:box}
+
+\minisec{Syntax}
+
+\texttt{pbc} \texttt{box} [\textit{options}\dots]
+
+\minisec{Description} 
+
+(Re)Draws a box that shows the boundaries of the unit cell. The box
+will automatically adapt to changes in the unit cell parameters in the
+course of a trajectory, as for example for simulations at constant
+pressure. Only a single automatically updated box can exist at a time.
+
+\minisec{Example}
+
+\begin{Verbatim}
+# draw a box, centered on the origin
+pbc box -center origin
+\end{Verbatim}
+
+\minisec{Options}
+
+\begin{tabular}{|p{0.3\textwidth}|p{0.64\textwidth}|}
+\hline
+
+\texttt{-molid} \textit{molid}$|$\texttt{top}
+& Which molecule to use (default: \texttt{top})
+\\ \hline
+
+\texttt{-on}$|$\texttt{-off}$|$\texttt{-toggle}
+& Turn the box on, off, or toggle whether it is on or off. (default:
+\texttt{-on})
+\\ \hline
+
+\texttt{-parallelepiped} $|$\texttt{-orthorhombic}
+& Draw the box as a parallelpiped, or as the corresponding
+orthorhombic box. (default: \texttt{-parallelepiped}).
+\\ \hline
+
+\texttt{-color} \textit{color}
+& Draw the box in color \textit{color}. (default: \texttt{blue})
+\\ \hline
+
+\texttt{-material} \textit{Material}
+& Draw the box using the material \textit{Material}. (default: \texttt{Opaque})
+\\ \hline
+
+
+\texttt{-style}
+\texttt{lines}$|$\texttt{dashed}$|$\texttt{arrows}$|$\texttt{tubes}
+& Choose the style of the box (default: \texttt{lines}).
+\\ \hline
+
+\texttt{-width} \textit{width}
+& Define the \textit{width} of the lines/arrows/tubes (default:
+\texttt{3}). 
+\\ \hline
+
+\texttt{-resolution} \textit{res}
+& Use \textit{resolution} faces for the tube style (default:
+\texttt{8}).
+\\ \hline
+
+\texttt{-center} \texttt{origin}$|$\texttt{unitcell}\linebreak
+\hspace*{1em}$|$\texttt{com}$|$\texttt{centerofmass}\linebreak 
+\hspace*{1em}$|$\texttt{bb}$|$\texttt{boundingbox}
+& Specify the center of the box. The center can be set to
+the origin (\texttt{origin}), to the center of the unit cell
+(\texttt{unitcell}), to the center of mass (\texttt{com} or
+\texttt{centerofmass}) of the selection specified by the option
+\texttt{-centersel}, or to the center of the bounding box (\texttt{bb}
+or \texttt{boundingbox}) of the selection specified by the option
+\texttt{-centersel} (default: \texttt{unitcell}).
+\\ \hline
+
+\texttt{-centersel} \textit{sel}
+& Specify the selection \textit{sel} that defines the center of the
+wrapping cell in the option \texttt{-center} (default:
+\texttt{"all"}).
+\\ \hline
+
+\texttt{-shiftcenter} \textit{shift}
+& Shift the center of the box by \textit{shift}. \textit{shift} has to
+be a list of three numerical values. (default: \verb!{0 0 0}!)
+\\ \hline
+
+\texttt{-shiftcenterrel} \textit{shift}
+& Shift the center of the box by \textit{shift} (in units of
+the unit cell vectors). \textit{shift} has to be a list of
+three umerical values. (default: \verb!{0 0 0}!)
+\\ \hline
+\end{tabular}
+
+\newpage
+\subsection{\texttt{box\_draw} -- Drawing a static box}
+\label{sec:box_draw}
+
+\minisec{Syntax}
+
+\texttt{pbc} \texttt{box\_draw} [\textit{options}\dots]
+
+\minisec{Description} 
+
+Draws a static box that shows the boundaries of the unit cell, but
+will not adapt to changes in the unitcell properties. This might be
+useful when you want to draw more than one box at a time (\eg to show
+periodic images of a box), or to show the initial box in a simulation
+with fluctuating box unit cell geometry.
+
+\minisec{Options} 
+
+\texttt{pbc box\_draw} uses the same options as the command
+\texttt{pbc box}, with the exception of the options
+\texttt{-on}$|$\texttt{-off}$|$\texttt{-toggle} and \texttt{-color},
+which can not be used. To set the color of the box, use the
+\texttt{graphics color} command.
+
+\minisec{Example}
+
+\begin{Verbatim}
+# draw a box around the central image 
+set box0 [pbc box_draw -shiftcenterrel { 0 0 0 }] 
+# draw a box around the central image shifted by 
+# the unit cell vector C 
+set box1 [pbc box_draw -shiftcenterrel { 0 0 1 }]
+\end{Verbatim}
+
+\section{Credits}
+
+The \pbctools plugin has been written by (in alphabetical order)
+\begin{itemize}
+\item Toni Giorgino \texttt{<toni.giorgino \_at\_ isib.cnr.it>}
+\item Jerome Henin \texttt{<jhenin \_at\_ cmm.upenn.edu>}
+\item Olaf Lenz \texttt{<olenz \_at\_ icp.uni-stuttgart.de>} (maintainer)
+\item Cameron Mura \texttt{<cmura \_at\_ mccammon.ucsd.edu>}
+\item Jan Saam \texttt{<saam \_at\_ charite.de>}
+\end{itemize}
+The \texttt{pbcbox} procedure copies a lot of the ideas of Axel
+Kohlmeyer's script \texttt{vmd\_draw\_unitcell}.
+Please submit your bug reports, comments and feature requests on the
+\pbctools
+homepage\footnote{\url{http://github.com/olenz/pbctools/}}.
+
+\end{document}

@@ -1,0 +1,27 @@
+<!--#set var="TITLE" value="G96 Plugin, Version 0.9"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads and displays structure/trajectory files in <a
+  href="http://www.igc.ethz.ch/gromos/">Gromos 96</a> format as recognized
+by <a href="http://www.gromacs.org/">GROMACS</a>. More information can be found
+  at <a
+    href="http://www.gromacs.org/documentation/reference_3.1/online/g96.html">http://www.gromacs.org/documentation/reference_3.1/online/g96.html</a>.</p>
+
+<h3>Notes:</h3>
+
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+writing this file type.</p>
+
+<p><b>Trajectories</b>
+<br>G96 files can contain multiple timesteps.</p>
+
+<p><b>Unused data</b>
+<br>G96 files may contain an optional "velocity" block. This data is not
+used by VMD.</p>
+
+<p><b>Compressed files</b>
+<br>Compressed files will need to be expanded before this plugin can read
+them.</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

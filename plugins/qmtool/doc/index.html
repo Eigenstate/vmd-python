@@ -1,0 +1,62 @@
+<!--#set var="TITLE" value="QMTool Plugin, Version 1.2"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<a href="qmtool.png"><img src="qmtool-small.png" align="right"></a>
+QMtool is a graphical user interface for quantum chemical simulations. Currently 
+only Gaussian is supported but future versions will also support GAMESS.
+With QMtool you can easily set up many different kinds of QM simulation such as 
+geometry optimizations and freqency calculations, specify solvents and more.
+After you ran the simulation you can load the QM logfiles and analyze the 
+results such as plotting energies or the IR spectrum. You can also 
+get a detailed thermochemistry analysis and you can graphically study the normal 
+modes or (for frequency calculations).
+Even though QMtool simplifies the setup significantly and does some error 
+checking on the input, it is indispensable that you have an idea of what 
+you're doing. Consult the 
+<href="http://www.gaussian.com/g_ur/g03mantop.htm">Gaussian manual</a>!
+
+<h3>Features of QMtool include:</h3>
+<ul>
+<LI>Reading several input formats</LI>
+   <ul>
+   <li>Z-matrix files</li>
+   <li>Gaussian input files</li>
+   <li>Paratool internal coordinate files</li>
+   <li>Gaussian log files</li>
+   </ul>
+<LI>Parse various info from Gaussian output</LI>
+   <ul>
+   <li>molecular geometries</li>
+   <li>population analysis (Mulliken/NPA charges)</li>
+   <li>ESP charges</li>
+   <li>dipole moments</li>
+   <li>Cartesian and internal coordinate Hessians</li>
+   <li>unit conversion to Kcal/mol</li>
+   <li>assign force constants to internal coordinates</li>
+   <li>thermochemistry analysis</li>
+   </ul>
+<LI>Setup Gaussian input files for different types of simulation</LI>
+   <ul>
+   <li>optimization</li>
+   <li>frequency</li>
+   <li>single point</li>
+   <li>support for continuum solvent models (PCM)</li>
+   </ul>
+<LI>Work with internal coordinates</LI>
+   <ul>
+   <li>Autogeneration</li>
+   <li>pick bonds/angles/diheds/imprps with mouse</li>
+   <li>selecting coordinates from list, vizualizaton in VMD</li>
+   </ul>
+<LI>Analysis</LI>
+   <ul>
+   <li>SCF energy plots</li>
+   <li>plotting vibrational spectra</li>
+   <li>normal mode analysis and animation</li>
+   <li>many different atom labels including Mulliken and NPA charges</li>
+   <li>force constants and internal coordinates are graphically mapped
+     onto the molecule.</li>
+   </ul>
+</ul>
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

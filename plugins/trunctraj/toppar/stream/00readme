@@ -1,0 +1,68 @@
+
+Index of toppar stream files that contain miscellaneous compounds
+and patches that extended the charmm force field functionality
+as well as containing the model compounds used in the force
+field development.
+
+These files are typically streamed into charmm following reading
+of the appropriate topology and parameter files.  During the
+streaming, the additional topology and parameter information for
+the new molecules is read via the "read rtf append" and "read
+param append" commands.
+
+(C) Toppar stream files (see stream subdirectory) listed under the parent
+topology and parameter files required for the individual files.
+
+Parent files: can be used with prot, na and lipid files
+
+ toppar_dum_nobel_gases.str: dummy atom, helium and neon
+ toppar_hbond.str: stream file to estimate hydrogen bond interactions
+
+Parent files: top_all22_prot.inp, par_all22_prot.inp 
+          (or top_all31_prot.rtf, par_all31_prot.prm)
+
+ toppar_all22_prot_model.str: model compounds used in protein parameter development
+                              as well as additional compounds
+ toppar_all22_prot_aldehydes.str: small molecule aldehydes
+ toppar_all22_prot_aliphatic_c27.str: extends all22 protein force field to include
+                              all27 alkane parameters
+ toppar_all22_prot_fluoro_alkanes.str: optimized fluoroalkanes, requires
+                              toppar_all22_prot_aliphatic_c27.str
+ toppar_all22_prot_heme.str: heme, O2, CO, CO2 and related patches
+ toppar_all22_prot_pyridines.str: various substituted pyridines
+ toppar_all22_model_aliphatic.str: model compounds used in protein parameter development
+                              but treated with all27 alkane parameters (not for general use)
+
+Parent files: top_all27_na.rtf, par_all27_na.rtf
+
+ toppar_all27_na_model.str: model compounds used in na parameter development including
+                              individual bases etc.
+ toppar_all27_na_base_modifications.str: various chemical modifications of bases including
+                              inosine
+ toppar_all27_na_bkb_modifications.str: various chemical modificaiton of the na backbone
+                              including abasic variants and phosphoramidate
+ toppar_all27_na_carbocyclic.str: constrained bicyclic sugars
+ toppar_all27_na_nad_ppi.str: NAD, NADH, ADP, ATP and others.  Useful in combination with
+                              protein force field via the top_all27_prot_na.rtf
+                              and par_all27_prot_na.rtf
+
+Parent files: top_all27_lipid.rtf, par_all27_lipid.rtf
+
+ toppar_all27_lipid_model.str: model compounds used in lipid parameter development, including
+                              alkenes
+ toppar_all27_lipid_cholesterol.str: cholesterol and related model compounds
+
+Parent files: top_all27_prot_na.rtf, par_all27_prot_na.rtf
+
+ toppar_prot_na_all.str: all compounds that require both protein and nucleic acid toppar information
+                              includes phosphorylated tyrosine, serine and threonine and some
+                              coenzymes (SAH)
+
+Parent files not needed
+
+ toppar_water_ions.str: contains TIP3P water model and ions.  All of these
+                              are also included in the prot, na and lipid topology
+                              and parameter files.
+ toppar_amines.str: highly optimized neutral aliphatic amines.
+
+

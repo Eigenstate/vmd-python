@@ -1,0 +1,25 @@
+
+/*! \page bugtracking The VMD bug tracking system
+
+<p>
+The VMD development team currently uses the GNATS bug tracking
+system to record and track software bugs incompatibilities with
+VMD releases.  Each bug report is assigned a number by the bug
+tracking system.  When bugs are fixed, we list their numbers in
+the release notes with each version.  The links below allow 
+quick retrieval of active VMD bug lists, and a more detailed 
+search option that can be used to list all VMD bugs.
+
+<ul>
+  <li><strong>View Problem Reports</strong> (using <a href="http://www.gnu.org/software/gnats/">GNATS</a>)
+    <ul>
+      <li> <a href="http://www.ks.uiuc.edu/~gnats/gnatsweb/gnatsweb.cgi?category=vmd-bugs&severity=all&priority=all&responsible=all&state=all&ignoreclosed=Ignore%20Closed&class=all&synopsis=&multitext=&columns=category&columns=state&columns=responsible&columns=synopsis&cmd=submit%20query&sortby=State">Quick search</a>
+      <li> <a href="http://www.ks.uiuc.edu/~gnats/gnatsweb/gnatsweb.cgi">Full interface for advanced search</a>
+    </ul>
+    <br>
+  </ul>
+
+<p>
+$Id: pg_bugtracking.dox,v 1.3 2008/03/04 20:15:49 johns Exp $
+ 
+ */

@@ -1,0 +1,98 @@
+<!--#set var="TITLE" value="Babel Plugin, Version 1.12"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads and displays molecular structure files in 
+   several formats using the Babel program to translate them into
+   PDB files which are easily read by VMD.  In order to use this plugin
+   Babel 1.6 must be installed on your computer and must be executable 
+   in your default command path so that the Babel plugin can run it 
+   via calls to system().  Babel 1.6 is available from the
+   <a href="http://www.eyesopen.com/products/applications/babel.html">OpenEye Babel web site</a>
+</p>
+
+<p>This table lists all of the molecule file formats that Babel will 
+   translate to the PDB format which can be loaded by VMD:
+</p>
+
+<table>
+<tr>
+<td>Alchemy</td>
+<td>AMBER PREP</td>
+<td>Ball and Stick</td>
+
+<tr>
+<td>Biosym .CAR</td>
+<td>Boogie</td> 
+<td>Cacao Cartesian</td>
+
+<tr>
+<td>Cambridge CADPAC</td>
+<td>CHARMm</td>
+<td>Chem3D Cartesian 1</td>
+
+<tr>
+<td>Chem3D Cartesian 2</td>
+<td>CSD CSSR</td>
+<td>CSD FDAT</td>
+
+<tr>
+<td>CSD GSTAT</td>
+<td>Free Form Fractional</td>
+<td>GAMESS Output</td>
+
+<tr>
+<td>Gaussian Z-Matrix</td>
+<td>Gaussian Output</td>
+<td>Hyperchem HIN</td>
+
+<tr>
+<td>Mac Molecule</td>
+<td>Macromodel</td>
+<td>Micro World</td>
+
+<tr>
+<td>MM2 Input</td>
+<td>MM2 Ouput</td>
+<td>MM3</td>
+
+<tr>
+<td>MMADS</td>
+<td>MDL MOLfile</td>
+<td>MOLIN</td>
+
+<tr>
+<td>Mopac Cartesian</td>
+<td>Mopac Internal</td>
+<td>Mopac Output</td>
+
+<tr>
+<td></td>
+<td>ShelX</td>
+<td>Sybyl Mol</td>
+
+<tr>
+<td></td>
+<td>Sybyl Mol2</td>
+<td>XYZ</td>
+</table>  
+
+<h3>Notes:</h3>
+
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+    writing to these formats.</p>
+</p>
+
+<p><b>Unused data</b>
+<br>Babel performs a reasonable translation in most cases, however 
+    it is unavoidable that some formats may contain information which
+    doesn't have a corresponding record in PDB files, so this information
+    may be lost in the translation, and thus unavailble when loaded into VMD.
+</p>
+
+<p><b>Compressed files</b>
+<br>Compressed files will need to be expanded before this plugin can read
+them.
+</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

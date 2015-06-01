@@ -1,0 +1,40 @@
+<!--#set var="TITLE" value="Fsfour Plugin, Version 0.6"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>This plugin reads electron density maps written in Fsfour format, used by
+<a href="http://www.scripps.edu/pub/dem-web/toc.html">XtalView</a>. The
+format is briefly described at <a
+  href="http://www.csb.yale.edu/userguides/datamanip/phases/FSFOUR.html">http://www.csb.yale.edu/userguides/datamanip/phases/FSFOUR.html</a>.</p>
+
+<h1>Feature-specific notes:</h1>
+
+<p><b>Read-only</b>
+<br>This plugin is used only to read files. VMD does not currently support
+writing this file type.</p>
+
+<p><b>Byte-order</b>
+<br>Fsfour files are created using the native byte-order of the machine used
+to create them. This plugin can read maps created with either
+byte-order.</p>
+
+<p><b>Symmetry Records</b>
+<br>Fsfour maps may contain a collection of records that describe the
+symmetry of the crystal. Since VMD does not make use of such information
+currently, these records are ignored.</p>
+
+<p><b>Unit Cell Geometry</b>
+<br>Old versions of the <a
+  href="http://www.scripps.edu/~cdputnam/software/cns2fsfour.html">cns2fsfour</a>
+and <a
+  href="http://www.scripps.edu/~cdputnam/software/ccp2fsfour.html">ccp2fsfour</a>
+utilities produced files that lacked the unit cell information that was not
+used by XTalView. This plugin can currently load these files, but the unit
+cell will almost certainly be incorrect. Support for such files may become
+deprecated, users are encouraged to upgrade the the newest versions of
+these tools.
+
+<p><b>Unit Cell Origin</b>
+<br>Fsfour maps assume a periodic unit cell; therefore, each file contains
+data for a unit cell beginning at the point <0, 0, 0>. 
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

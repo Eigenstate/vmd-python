@@ -1,0 +1,37 @@
+\documentclass[letterpaper]{article}
+
+\usepackage{graphicx}
+\usepackage{html}
+
+% define margins, etc
+\topmargin      0.1in
+\oddsidemargin  0in
+\evensidemargin 0in
+\textheight     8.80in
+\textwidth      6.50in
+\marginparsep   0.25cm
+\headheight     0in
+\headsep        0in
+
+\newcounter{nitems}[section]
+
+
+\input{ug_macros}
+
+
+
+\begin{document}
+
+\input{ug_title}
+
+\pagebreak
+
+\begin{latexonly}
+\tableofcontents
+\pagebreak
+\end{latexonly}
+
+\input{ug_text}
+
+\end{document}
+

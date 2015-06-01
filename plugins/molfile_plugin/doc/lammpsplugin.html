@@ -1,0 +1,122 @@
+<!--#set var="TITLE" value="LAMMPS Plugin, Version 0.18"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>
+This plugin reads text mode LAMMPS trajectory files (aka dumps) in
+atom style or custom style. Not all fields of the custom style
+output are supported in the molfile API and thus cannot be
+communicated directly to VMD. Also the file format itself allows
+for a variable number of atoms which VMD currently cannot handle.
+Therefore the plugin will stop reading any trajectory file
+with an error message at the first frame that has a different
+number of atoms compared the previous ones.</p>
+
+<p>
+A brief summary of the "atom" LAMMPS trajectory 
+<a href="http://lammps.sandia.gov/doc/dump.html">dump</a> format
+for orthorhombic boxes is below. LAMMPS also supports a
+"custom" dump style that is very similar to the "atom" style,
+but it allows to output a custom selection of a large variety 
+of per-atom properties, including data created by "fix"es
+or "compute"s.  Upon writing VMD will currently only write
+"atom" style dump files.</p>
+
+<p>The characters following the BOX BOUNDS keyword indicate the 
+boundary conditions for each side in x-, y-, and z-direction respectively.
+'p' stands for periodic boundaries, but also 'f' (=fixed), 's' (=shrinkwrap),
+and 'm' (=shrinkwrap with minimum) are possible or combinations 
+thereof. When writing LAMMPS dumps, periodic boundaries are assumed
+if non-zero box dimensions are given; if not, then shrinkwrap
+is assumed and the corresponding lo-/hi-values are determined by 
+the plugin.</p>
+
+<p>Coordinates can be given in different variants: regular or
+as fractional coordinates (indicated by the postfix 's'). Similarly
+can they be output as wrapped back into the principal unitcell
+or unwrapped (indicated by the postfix 'u'). In addition to 
+wrapped coordinates, also the image flags ('ix', 'iy', 'iz')
+that are counters for how many times an atom has passed through
+the cell in the respective direction. In "atom" style dumps, the 
+<a href="http://lammps.sandia.gov/doc/dump_modify.html">dump_modify</a>
+command in LAMMPS can be used to change the output format.
+Multiple coordinate representations can be present in "custom" style 
+dumps. The lammpsplugin will make the best effort to reconstruct 
+unscaled (=regular) and unwrapped coordinates from the available 
+information and the simulation cell dimension information.</p>
+
+<p>If the BOX BOUNDS line also optionally contains the 'xy yz yz'
+flags, then the box is no longer orthorhombic and the corresponding
+'tilt factors' are written out in a 3rd column of numbers in the
+following three lines with the box boundaries. The plugin </p>
+
+<pre>
+ITEM: TIMESTEP
+ %d (timestep number)
+ITEM: NUMBER OF ATOMS
+  %d (number of atoms)
+ITEM: BOX BOUNDS pp pp pp
+  %f %f (xlo, xhi)
+  %f %f (ylo, yhi)
+  %f %f (zlo, zhi)
+ITEM: ATOMS id type xs ys zs 
+  %d %d %f %f %f  (atomid, type, x-, y-, z, coordinates)
+  ...
+</pre>
+
+<h3>Notes:</h3>
+
+<p><b>Triclinic Cells</b>
+<p>Support for automatic unscaling and unwrapping of coordinates
+from simulations using triclinic cells is currently not supported.</p>
+
+<p><b>Unused Data</b>
+<p>This plugin only reads from the available data what is compatible
+with the molfile plugin API. Also in keeping with the plugin API only
+coordinates and velocities are read in for every frame; all other 
+properties are taken from the very first frame. Any additional data 
+recorded for an atom is ignored, unless the environment variable
+LAMMPSREMAPFIELDS is used to replace a supported property with an
+unsupported one. For details see below.</p>
+
+<p><b>Legacy LAMMPS Dump Files</b>
+<p>The LAMMPS dump file format described above corresponds to recent
+versions of LAMMPS. It has been incrementally improved over the years.
+Older versions may not provide all the detail. The plugin will make 
+a best effort to guess missing information, but that may not always 
+produce the desired result.</p>
+
+<p><b>Environment Variables</b>
+<p>
+Some aspects of the behavior of the plugin can be controlled 
+through environment variables, that can be set either externally 
+before launching VMD or from the VMD console via manipulation of
+the <tt>env</tt> array (use "global env;" to access it in a subroutine).</p>
+
+<b>LAMMPSDIPOLE2ATOMS</b>
+<p>With this environment variable set to a number > 0.0 any point dipolar
+particle will be converted into two particles a certain distance away
+from the center and thus signifying the direction of the dipole. The
+numerical value of the LAMMPSDIPOLE2ATOMS environment variable is 
+interpreted as a scaling factor for this conversion with respect to
+the magnitude of the dipole moment.
+</p>
+<b>LAMMPSREMAPFIELDS</b>
+<p>
+This environment variable allows to map certain columns in a LAMMPS
+trajectory file to others and thus allows to read in properies, which
+VMD is normally not able to read. The content of the variable
+is the list of mappings in the format <code>old=new</code> and 
+separated by commas. For example to read in forces into the velocities
+fields, the following mapping is required: <code>vx=fx,vy=fy,vz=fz</code>.
+This approach can be applied to any data in the dump file, even the 
+output from variables, fixes, or computes.
+
+Only the fields for coordinates and velocities will be read and
+stored in every time step and thus a suitable to transferring 
+per timestep data into VMD through this mechanism. In addition
+VMD will read in the fields name, type, mass, radius/diameter, 
+and charge and thus those can also be remapped, but those will
+only be read in on the first timestep. 
+</p>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

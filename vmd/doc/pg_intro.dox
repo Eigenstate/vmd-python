@@ -1,0 +1,27 @@
+/*! 
+
+\page intro Introduction  
+
+<p>
+VMD is logically divided into several parts.  Each of these parts
+is built from one ore more main classes, which are listed below.
+
+<ul>
+<li> Molecule objects
+<li> Text command interpreter objects: TextInterp, UIText, Command
+<li> Rendering objects: DisplayDevice
+<li> User interface objects: UIObject 
+<li> Spatial tracking and 3D pointer objects: Tool, Spaceball, Win32Joystick, VMDTracker
+<li> Remote connection objects: IMDSim
+<li> Utility objects: Inform, Matrix4, NameList, Stack, ResizeArray, SortableArray, SymbolTable
+</ul>
+
+The Programmer's Guide describes first the organization
+and conventions used in all source files for VMD, then discusses 
+the program design and relationship between the components, and 
+concludes with individual descriptions of each object class. 
+
+<p>
+$Id: pg_intro.dox,v 1.5 2008/03/04 20:15:49 johns Exp $
+
+ */

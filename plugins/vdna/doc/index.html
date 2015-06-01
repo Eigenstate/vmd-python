@@ -1,0 +1,37 @@
+<!--#set var="TITLE" value="Virtual DNA Viewer Plugin, Version 2.2"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+
+<p>
+This plugin reconstructs a 3D model of chromatin using ideal DNA
+interbasepair helical parameters (in proper r.h.s. ref. frame ordering)
+
+<img align=right src="vdnaimage.png">
+<img align=right src="vdnagui.png">
+
+<p>
+The 3D curve is calculated using
+the DNA interbasepair helical parameters 
+(in proper r.h.s. ref. frame ordering)
+<ul>
+<li>Gamma = (shift,slide,rise)
+<li>Omega = (roll,tilt,twist)
+<li>Default is 14 nucleosomes 146bp each. 
+<li>and a 27bp length of straight linker
+</ul>
+
+This plugin is useful for investigating the folding of chromatin based on the
+"two-angle" model where the total linker length and twist between nucleosomes
+determines the overall geometry of chromatin.  It is a homogenous model of
+chromatin. An inhomogenous model can be obtained from
+<a href="http://dna.ccs.tulane.edu/vdna/">http://dna.ccs.tulane.edu/vdna/</a>.
+
+<pre>
+Author: Tom Bishop 
+    bishop@latech.edu
+    318-257-5209
+    <a href="http://www.latech.edu/~bishop">http://www.latech.edu/~bishop</a>
+</pre>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

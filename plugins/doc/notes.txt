@@ -1,0 +1,326 @@
+
+TODO list:
+----------
+- In a couple of cases, different plugins are trying to recognize the
+  same filename extension.
+
+- The VASP plugins are not using the API for initialization the way all
+  the other plugins do.
+
+Targets for elimination of code duplication centralizing 
+facilities that any plugin could use:
+-------------------------------------
+- frame range selection, initially implemented in pmepot
+- molecule selector (gui)
+- tmp filename generator
+- Also, the usage information should be more uniform. In particular,
+  should we use "error" or "puts" for printing usage information?
+
+
+Interesting items:
+------------------
+  Ligand Protein DataBase
+  http://lpdb.chem.lsa.umich.edu/
+
+
+List of people to take charge of existing and new plugins:
+----------------------------------------------------------
+Leo: dowser, saltbr, rnaview, ssrestraints
+  
+Jan: atomedit, paratool, qmtool, extendedpdb, multiplot, hesstrans,
+optimization, resptool, readcharmmpar, readcharmmtop, pbctools,
+namdserver, utilities, moltoptools
+  
+Peter: autopsf, molefacture, namdenergy, idatm, cionize,
+runante, mutator
+  
+Barry: aligntool, timeline, contactmap, zoomseq, ramaplot
+  
+Rob: inorganicbuilder, mergestructs
+  
+Kirby: biocore, bignum
+  
+Zan's people: multiseq, plotter, phylotree, blast, libbiokit, clustalw,
+colorbar, stamp, seqdata, aultiseqdialog, seqedit
+  
+Axel: clonerep, gofrgui, dipwatch, multimolanim, irspecgui
+  
+Jim: psfgen, pmepot, namdplot
+  
+Anton: fmtool, cgtools
+  
+JC: hbonds
+  
+John: vmdmovie, pdbtool, stingtool, palettetool, vmdtkcon, textview,
+molfile_plugin, navfly, exectool, intersurf, cliptool, ruler, catdcd,
+demomaster, simpleedit, colorscalebar, volmapgui, navigate. viewmaster
+  
+Tom Bishop: vdna
+  
+Orphans: apbsrun, autoimd, autoionize, membrane, updater, rmsd, rmsdtt,
+jmvexport, imdmenu, dataimport, solvate, cluster, namdgui
+  
+- Documentation is number 1 priority
+  
+- Targets: Lingling, David Tanner, Ramya, Aruna, Gemma, Danielle, Jen
+
+
+Leo's documentation comments:
+-----------------------------
+
+Comments about molfile plugins dealing with volumetric data
+===========================================================
+
+General comments
+----------------
+
+- All molfile plugins that deal with volumetric data have the note in
+  the documentation that they are read-only. I have added code for
+  writing Situs and DX maps to the corresponding molfile plugins;
+  however, VMD itself doesn't presently make use of them. Should we
+  state in the documentation that these capabilities are present in
+  these molfile plugins or would that just be confusing?
+
+- The main molfile documentation lists the file extensions recognized by
+  each molfile plugin. I think it would be helpful if the documentation
+  of each particular plugin also listed that information.
+
+
+MAP plugin
+----------
+
+- Reference website describing the file format is no longer available.
+  Browsing a little through AutoDock's website, I could only find this
+  information at the user guide
+
+(http://autodock.scripps.edu/faqs-help/manual/autodock-3-user-s-guide/AutoDock3.
+0.5_UserGuide.pdf).
+
+- The filename extension is *very* unfortunate, but it's not VMD's
+  fault. The EMDB (Electron Microscopy Data Bank,
+  http://www.ebi.ac.uk/msd-srv/docs/emdb/) distributes the EM maps in
+  CPP4 format with a .map file extension.  VMD will automatically try to
+  load these CPP4 files with the AutoDock map plugin.
+
+AVS plugin
+----------
+
+- Reference website describing the file format is no longer available.
+
+Biomocca plugin
+---------------
+
+- The link to the Computational Electronics Group is, at least
+  currently, not working.
+
+BRIX plugin
+-----------
+
+- Link to "O" is broken. The link to the website describing the file
+  format is, at least currently, not working.
+
+CCP4, MRC plugin
+----------------
+
+- It turns out that .map is also an extension that the CCP4 plugin
+  recognizes. So currently we have two molfile plugins, namely mapplugin
+  and ccp4plugin considering .map as a valid filename extension. It
+  seems that the .map extension gets assigned to the mapplugin
+  currently, since I cannot read CCP4 files with .map extension
+  automatically. Luckly the documentation in the molfile website is
+  correct, since .map is not listed there for the ccp4plugin.
+
+DX plugin
+---------
+
+- The APBS website has been moved to http://apbs.sourceforge.net/. There
+  is a redirection, but we should update it.
+
+GRD plugin
+----------
+
+- None of the external links is currently working for me, but that
+  doesn't mean they are broken. The external link to format_phi is
+  password restricted.
+
+PHI plugin
+----------
+
+- No comments.
+
+CUBE plugin
+-----------
+
+- In the molfile website, only the .cube extension is listed as
+  recognized by the cubeplugin; however, .cub is also recognized.
+
+GRID plugin
+-----------
+
+- No comments.
+
+PLT plugin
+----------
+
+- The link to the website describing the file format is begin redirected
+  to the main gOpenMol website.
+
+DSN6 plugin
+-----------
+
+- There seems to be some issues listed in as comments in dsn6plugin.C
+  that have not been addressed.
+
+Situs plugin
+------------
+
+- No comments.
+
+Spider plugin
+-------------
+
+- No comments.
+
+UHBD plugin
+-----------
+
+- The molfile documentation lists the recognized filename extension as
+  .uhbd, but in reality the plugin recognizes .uhbdgrd and .grd; and
+  here comes another problem: the GRD plugin also recognizes the .grd
+  extension (I don't know which plugin is actually invoked when a .grd
+  file is given).
+
+- There is no link to a description of the file format in the plugin
+  documentation.
+
+VASP plugins
+------------
+
+- The link to 'VASP plugins' should probably be changed to
+  http://www.uni-ulm.de/~ssakong/vmdplugins/?file=vmdplugins.html&lang=en
+
+- The VASP plugins don't follow the same patter as the other molfiles
+  plugins, using VMDPLUGIN_init for initialization; instead, it sets
+  everything when initializing the molfile_plugin_t variables.
+
+X-PLOR, CNS plugin
+------------------
+
+- The link to X-PLOR in the documentation should be removed, since it is
+  redirected to the CNS website.
+
+XSF plugin
+----------
+
+- Link to Quantum Expresso is broken.
+
+Fsfour plugin
+-------------
+
+- Link to XtalView is broken.
+
+PBEQ plugin
+-----------
+
+- There is no documentation and no mention of its existence in the VMD
+  website.
+
+GAMESS plugin
+-------------
+
+- The file extension automatically recognized is .log. I'm not sure if it
+  is a good idea to have .log being automatically recognized as anything.
+
+- The documentation says that it will display electron orbital data in
+  version 0.2, but the current version is already 0.5.
+
+- The documentation says it reads coordinate data only, but the plugin
+  provides code to read volumetric data. (In cases like this, should we
+  have the plugin listed twice, i.e., also under the volumetric data
+  molfile plugins?
+
+
+
+Jan's notes from plugin discussion on December 21, 2007
+=======================================================
+
+A) Plugin related stuff:
+-----------------------------
+Plugin API: Since different plugins fight over the same data (i.e. the
+moelule) at the same time we need some mechanism of API that defines a
+registration of the plugin to receive callbacks from VMD whenever the
+state of the molecule changed in a way that is crucial for the plugin
+(e.g. timestep deleted). There should also be some regulation which
+plugin currently has the focus. Only one plugin should have the control
+at a time. This is important for instance for two-way atom picking (see
+next item).
+
+Atom picking: Several different plugins would profit from being able to
+select atoms from a list which highlights them in the molecule or by
+picking them in the OpenGL window which highligts them in a list. If
+several plugins use that functionality at the same time, the must be
+some rules which plugin currently has precedence and what happens to the
+rest.
+
+Atom Property list: One possible incarnation of the picklist described
+above could be a widget that displays an editable table of atom
+properties A general problem with such lists is that they cannot handle
+large amounts of data, so the user has to prevented from trying to
+generate too long lists. Since looking at a list with more than 100 or
+1000 entries is not ergonomic at all one could simply limit the size or
+come up with an intelligent way of recalculating only the visible stuff
+and its neighboring regions.
+
+Table widgets: Having scrollable tables with a variable number of rows
+and columns that can also be edited would be a generally useful feature.
+It is unclear yet what's the best way to realize it using TK. It could
+be done using textwidgets, lists with formatted strings or by drawing
+boxes into a canvas.
+
+Text widgets: We need an embeddable text widget. TK has a text widget,
+but there are way too many options to control. We should have a wrapper
+command that automatically selects decent settings.
+
+Plot widget: We also want embedded plot windows. This is probably a
+minor change in multiplot.
+
+B) VMD related stuff
+----------------------------
+Graph based selections:
+An Extension of the atomselect language so that the bond graph can be
+used for selection.
+Examples:
+* within x bonds of (selection)
+* within x bonds along (bond defined by atom1, atom2); this is a
+"directional subgraph"
+* all along (bond defined by atom1, atom2); OR: all left/right of (bond
+defined by atom1, atom2);
+* ring selections
+
+Non-atom selections:
+Ability to select parts of volumetric data and surfaces.
+Examples:
+* voxels within x of (atomselection)
+* surface within x of (atomselection)
+* (atomselection) within density x of (volumetric)
+* CSG style: (volumetric selection 1) minus|union|intersect (volumetric
+selection 2)
+
+Elizabeth's request:
+* Arbitrary clipping planes and capping of cut surfaces.
+
+Multiple Viewports:
+* Multiple viewports (3D windows) for a single instance of VMD
+* CAD like view with front, top and side projections of the molecule
+
+Materials per graphics object
+Allow to set the material for each graphics object not just for each
+molecule
+
+Movable/rotatable hierarchical graphics objects:
+* graphics primitives can be organized hierarchically into objects
+* objects can be moved and rotated using the mouse just like molecules
+
+
+
+

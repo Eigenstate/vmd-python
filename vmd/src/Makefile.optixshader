@@ -1,0 +1,37 @@
+# Makefile for VMD OptiX shader, for debugging purposes,
+# and for use on platforms that use CUDA 5.5 or CUDA 6.0
+# which both generate PTX output that OptiX 3.5.1 and older
+# versions cannot yet use properly.
+
+# $Id: Makefile.optixshader,v 1.1 2014/04/04 20:21:37 johns Exp $
+
+#.SILENT:
+
+# Header files
+VMD_PTX     = 	OptiXShaders.ptx
+
+NVCC        = /usr/local/encap/cuda-5.0/bin/nvcc
+#NVCC        = /opt/nvidia/cudatoolkit/5.0.35/bin/nvcc
+#NVCC        = /opt/nvidia/cudatoolkit/5.0.35.102/bin/nvcc
+NVCCFLAGS   = --ptxas-options=-v -gencode arch=compute_10,code=sm_10 -gencode arch=compute_13,code=sm_13 -gencode arch=compute_20,code=sm_20 -gencode arch=compute_20,code=compute_20 --ftz=true  --machine 64 -O3  -DARCH_LINUXAMD64 $(DEFINES) $(INCDIRS)
+OPTIXINCS = -I/usr/local/encap/NVIDIA-OptiX-SDK-3.5.1-PRO-linux64/include
+#OPTIXINCS = -I/u/sciteam/stonej/local/NVIDIA-OptiX-SDK-3.5.1-PRO-linux64/include
+#OPTIXINCS = -I/ccs/home/stonej1/local/NVIDIA-OptiX-SDK-3.5.1-PRO-linux64/include
+
+
+.SUFFIXES: .C .c .cu ..c .i .o .ptx
+
+############################### 
+# default rules 
+###############################
+
+.cu.ptx:
+	@echo "Compiling " $< " --> " $*.ptx " ..."; 
+	$(NVCC) $(OPTIXINCS) -gencode arch=compute_20,code=compute_20 -ptx $< -o ../LINUXAMD64/$@
+
+#	$(NVCC) $(OPTIXINCS) -gencode arch=compute_20,code=compute_20 -ptx $<
+
+
+### Source targets
+all default:  $(VMD_PTX)
+

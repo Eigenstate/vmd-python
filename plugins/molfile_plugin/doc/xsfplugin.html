@@ -1,0 +1,66 @@
+<!--#set var="TITLE" value="XSF Plugin, Version 0.7"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<p>
+This plugin reads the regular and the animated form of XCrySDen structure
+files (.xsf and .axsf) as they are read and written by the 
+<a href="http://www.xcrysden.org/">XCrySDen</a> visualization 
+program and created by the <a href="http://www.quantum-espresso/">Quantum Espresso</a>
+(also known as <a href="http://www.pwscf.org/">PWScf</a>)
+package of plane wave DFT based electronic 
+structure and MD programs. The format allows storing of atomic
+data with or without periodicity in 1, 2, or 3 dimensions, variable
+cell size trajectories and multiple 2d, and 3d grid data set.
+See the extensive
+<a href="http://www.xcrysden.org/doc/XSF.html">format description</a>
+on the XCrySDen home page for more details.
+
+<h3>Notes:</h3>
+
+<p><b>Trajectories</b>
+<br>This plugin supports animation XSF files (axsf) even in 
+combination with grid data sets.  All timesteps, however 
+have to have the same number of atoms (VMD does not support this
+currently anyways). Also the elements have to always be in the same
+order, only the first timestep will be used to read the element names.
+From all successive timesteps only the coordinates will be read.
+
+<p><b>Coordinate Rotation / Periodic Display</b>
+<br>VMD currently can only display periodic images of the 
+unit cell correctly, if the first cell vector is collinear
+with the x-axis and the second cell vector in the xy-plane.
+Upon loading of the xsf file, the coordinates and the 
+grid vectors are rotated accordingly. Unfortunately, that
+may make the atomic positions incompatible to some other
+coordinate files containing matching coordinates, but no
+unit cell information.
+
+<p><b>Atom Masses</b>
+<br>The plugin assigns masses to the atoms according to the 
+natural isotope distribution of the elements (see e.g.
+<a href="http://www.webelements.com/">http://www.webelements.com/</a>).
+If an element could not been recognized, a mass of 0 is assigned.
+To set the mass for those elements or assign a different mass for
+the other atoms, you have to use to create a selection with
+<b>atomselect</b> and then use the selection subcommands to set
+the mass.
+
+<p><b>Conventional Cell Coordinates</b>
+<br>This plugin currently only reads the primitive unit
+cell vectors and coordinates. Data for the conventional
+cell will be ignored.
+
+<p><b>2D Data Grids</b>
+<br>VMD does not currently provide visualizations for 
+two-dimensional data grids or means to store them, so this
+plugin ignores those data sets.
+
+<p><b>Incompatibilities</b>
+<br>The plugin follows the description of the format on the XCrySDen
+homepage, but due to the differences between the parsers, files that may
+be readable without a problem in XCrySDen, will not read completely or
+correctly by this plugin. A few examples were already spotted 'in the
+wild' and the required amendmends to the plugins were made.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->
+

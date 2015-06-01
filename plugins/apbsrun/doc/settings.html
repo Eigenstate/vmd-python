@@ -1,0 +1,38 @@
+<!--#set var="TITLE" value="APBS Plugin: Settings Window"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+<img src="settings.png" align="right">
+
+<p>This window provides access to plugin-specific configuration options.
+
+<h3>APBS Location and Working Directory</h3>
+
+<p>The full path to the APBS executable and Working Directory can be entered
+in these fields. The "Browse" button opens a file/directory selector to help
+find the path of either field. 
+
+<p>The APBS configuration file and all necessary molecules (in PQR format)
+are written to the working directory before APBS is run. Any files created
+by APBS will also be located here, including maps. Note that the APBS plugin
+doesn't automatically delete any files created during the course of an APBS
+Run, so it may be necessary to manually empty the working directory
+periodically.
+
+<h3>Miscellaneous Options</h3>
+
+<p>If the "Setup files only..." option is selected, the plugin will write an
+APBS configuration file and all necessary molecules to the working
+directory, without calling APBS to make any calculations. This allows the
+plugin to be used for more complicated APBS runs, in case an option is
+unavailable in the <a href="elec.html">ELEC Window</a>. It is also useful if
+APBS is to run on a different host than the one upon which VMD is running.
+
+<!--update the following paragraph when auto-charges are available--> 
+
+<p>The plugin can be configured to override the atom radii currently loaded
+in VMD with those listed in a CHARMM parameter file. This is useful when
+VMD's simple radius-guessing heuristic is inappropriate for electrostatics
+calculations. Note that atom radii are only guessed by VMD when no radius
+information has been explicitly loaded by a file-format that supports it.
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

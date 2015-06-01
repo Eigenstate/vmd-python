@@ -1,0 +1,77 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_form_color.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.17 $      $Date: 2012/01/10 19:30:04 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+% the Color window
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\subsection{Color Window}
+\label{ug:ui:window:color}
+\index{window!color}
+\index{color!window}
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{ug_color}{The Color window}{fig:ug:color}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+\VMD\ maintains a database of the colors used for the molecules and the
+other graphical objects in the display window.  The database consists
+of several color \index{color!category}{\em categories}; each color
+category contains a list of names, and each name is assigned a color.
+The assignment of colors to names can be changed with this window.
+There are 16 colors, as well as black (the \VMD\ color
+\index{color!map}{\em map}), and this window can also be used to modify
+the definitions of these 17 colors.  For more about colors, see the
+chapter on
+\hyperref{Coloring}{Coloring [\S }{]}{ug:topic:coloring}.
+
+To see the names associated with a color category, click on the
+category in the {\sf Category} browser located on the left side of the
+window.  Click on the name to see the color to which it is mapped.  To
+change the mapping, click on a new color in the browser to the right
+of the {\sf Category} browser.  For instance, to change the
+\index{color!background}background to white, pick `Display' in the
+left browser and `Background' in the center one.  The right browser
+will indicate the current color (which is initially {\tt black} for
+the background).  Scroll through the right browser and select {\tt
+white} to change the background.
+
+
+\subsubsection{Changing the RGB Value of a Color}
+\index{color!redefinition}
+
+The {\sf Color Definitions} tab at the bottom of the Color menu lets
+you change the RGB definition of the 17 palette colors.  Select a color
+to edit using the browser at the bottom left corner of the menu, then
+slide the three sliders to set the amount of each red, green and blue
+component.  {\sf Default} restores the original color definition, and
+{\sf Grayscale} toggles whether or not the three sliders will move 
+together as a unit.  Color definitions are immediately updated in the
+graphics window, so you can see the result of your editing right away.
+
+\subsubsection{Color Scale}
+\label{ug:ui:window:color:scale}
+\index{color!scale!changing}
+
+Several of the coloring methods in the graphics window (e.g., Beta, 
+Index, Position) are used to color
+a range of values, as opposed to a list of names.  The actual
+coloring is determined by the \index{color!scale} \hyperref{color
+scale}{color scale [\S }{]}{ug:topic:coloring:scale}.
+
+The color scale used to assign these colors is set in the {\sf Color Scale}
+tab of the color menu.  Choose one of the ten color scales from the
+chooser, and adjust the {\sf Offset} and {\sf Midpoint} sliders until
+the color scale shown at the bottom of the tab is as desired.  
+
