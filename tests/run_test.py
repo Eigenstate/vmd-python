@@ -9,6 +9,6 @@ class TestImport(unittest.TestCase):
         with self.assertRaises(ValueError):
             molecule.load('pdb','bbb')
 
-if __name__ == '__main__':
+def run():
     unittest.main()
 

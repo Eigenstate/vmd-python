@@ -3,6 +3,7 @@ from distutils.core import setup
 from distutils.util import convert_path
 from distutils.command.install import install as DistutilsInstall
 from distutils.command.build import build as DistutilsBuild
+from distutils.cmd import Command
 from subprocess import check_call
 import platform
 import os
@@ -92,7 +93,20 @@ class VMDInstall(DistutilsInstall):
 
 ###############################################################################
 
-setup(name='vmd',
+class VMDTest(Command):
+    description = "Runs VMD tests"
+    user_options = []
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        import tests
+
+###############################################################################
+
+setup(name='vmd-python',
       version='1.9.2',
       description='Visual Molecular Dynamics Python module',
       author='Robin Betz',
@@ -104,8 +118,8 @@ setup(name='vmd',
       cmdclass={
           'build': VMDBuild,
           'install': VMDInstall,
-      }
-      test_suite="tests"
+          'test': VMDTest,
+      },
 )
 
 
