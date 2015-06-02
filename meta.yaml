@@ -15,13 +15,11 @@ build:
 
 requirements:
     build:
-        - python
+        - python >=2.7.0
         - libnetcdf >=4.3.2
         - expat >=2.1.0
         - numpy
     run:
-        - imp
-        - pkg_resources
         - numpy
         - libnetcdf >=4.3.2
 
