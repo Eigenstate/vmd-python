@@ -8,7 +8,7 @@ INSTDIR="$4"
 vmd_src="$PWD"
 
 #TODO: Auto-detect this
-export LD_LIBRARY_PATH="$ANACONDIR/lib:$LD_LIBRARY_PATH"
+export LIBRARY_PATH="$ANACONDIR/lib:$LIBRARY_PATH"
 
 # Set needed variables
 echo "Setting environment variables"
