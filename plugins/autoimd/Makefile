@@ -11,7 +11,7 @@ staticlibs:
 win32staticlibs:
 
 
-distrib: pdf
+distrib:
 	@echo "Copying autoimd $(AUTOIMDVERSION) files to $(DIR)"
 	mkdir -p $(DIR) 
 	cp -f $(AUTOIMDFILES) $(DIR) 
