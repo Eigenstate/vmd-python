@@ -121,10 +121,7 @@ static PyMethodDef Methods[] = {
 };
 
 void initvmdnumpy() {
-  if (_import_array() < 0) {
-    PyErr_SetString(PyExc_ValueError, "vmdnumpy module not available.");
-    return;
-  }
   (void)Py_InitModule((char *)"vmdnumpy", Methods);
+  import_array();
 }
 
