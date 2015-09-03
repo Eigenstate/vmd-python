@@ -115,7 +115,8 @@ void initvmd() {
   VMDreadInit(app);
 
   // read user-defined startup files
-  VMDreadStartup(app);
+  // ROBIN: Don't read user-defined startup files
+  // VMDreadStartup(app);
 
   set_vmdapp(app);
 

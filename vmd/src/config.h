@@ -1,11 +1,11 @@
 #ifndef CONFIG_OPTIONS_H
 #define CONFIG_OPTIONS_H
 #define VMDVERSION "1.9.3a3"
-#define VERSION_MSG "VMD for LINUXAMD64, version 1.9.3a3 (June 1, 2015)"
+#define VERSION_MSG "VMD for LINUXAMD64, version 1.9.3a3 (August 27, 2015)"
 /* You should not change this value */
 #define CMDLEN 15
 #define DEF_VMDIMAGEVIEWER "display %s"
-#define DEF_VMDENVVAR "/home/robin/Programs/vmd-python/build/lib"
+#define DEF_VMDENVVAR "/home/robin/Work/Code/vmd-python/build/lib/vmd"
 #define INIT_DEFDISPLAY DISPLAY_WIN
 #define INIT_DEFTITLE TITLE_ON
 #define INIT_DEFHEIGHT 6.0

@@ -1,6 +1,6 @@
 
 # Makefile for vmd-1.9.2-python
-# VMD for LINUXAMD64, version 1.9.3a3 (June 1, 2015)
+# VMD for LINUXAMD64, version 1.9.3a3 (August 27, 2015)
 
 #.SILENT:
 
@@ -465,11 +465,11 @@ VMD_MAIN_DIR_FILES = 	Announcement FEEDBACK LICENSE README configure
 # Turn things into objects
 VMD_OBJS    =   $(VMD_CCPP:.C=.o) $(VMD_CC:.c=.o) $(VMD_CU:.cu=.o)
 
-INCDIRS     =  -I/opt/anaconda/envs/vcompile/include/python2.7 -I/opt/anaconda/envs/vcompile/lib/python2.7/site-packages/numpy/core/include -I/opt/anaconda/envs/vcompile/lib/python2.7/site-packages/numpy/core/lib   -I/opt/anaconda/envs/vcompile/include -I../plugins/include -I../plugins/LINUXAMD64/molfile -I../lib/netcdf/include -I.
+INCDIRS     =  -I/opt/anaconda/include/python2.7 -I/opt/anaconda/lib/python2.7/site-packages/numpy/core/include -I/opt/anaconda/lib/python2.7/site-packages/numpy/core/lib   -I/opt/anaconda/include -I../plugins/include -I../plugins/LINUXAMD64/molfile -I../lib/netcdf/include -I.
 
 LIBS        =  -lpython2.7 -lpthread -lpthread  -ltcl8.5  -lmolfile_plugin -lnetcdf -lm -ldl -lutil $(VMDEXTRALIBS)
 
-LIBDIRS     =  -L/opt/anaconda/envs/vcompile/lib/python2.7   -L/opt/anaconda/envs/vcompile/lib  -L../plugins/LINUXAMD64/molfile -L../lib/netcdf/lib_LINUXAMD64 
+LIBDIRS     =  -L/opt/anaconda/lib/python2.7   -L/opt/anaconda/lib  -L../plugins/LINUXAMD64/molfile -L../lib/netcdf/lib_LINUXAMD64 
 
 DEFINES     =  -DVMDCOLVARS -DVMDPYTHON -DVMDTHREADS -DWKFTHREADS -DUSEPOSIXTHREADS -D_REENTRANT -DVMDNUMPY -DVMDQUICKSURF -DVMDWITHCARBS -DVMDPOLYHEDRA -DVMDSURF -DVMDMSMS -DVMDNANOSHAPER -DVMDTCL  -DVMDSTATICPLUGINS  
 
@@ -522,71 +522,71 @@ YFLAGS      = -d
 ########## Targets
 
 ### Source targets
+    #if [ ! -r ./foobar ]; then \
+    #  ln -s ../src/foobar ./foobar ; \
+    #fi; \
 all default:   vmd.so
 
 vmd.so: y.tab.h $(VMD_OBJS) $(VMD_PTX)
 	$(ECHO) "Linking " $@ "..."; \
 	$(CD) ../LINUXAMD64 ; \
-	if [ ! -r ./foobar ]; then \
-	  ln -s ../src/foobar ./foobar ; \
-	fi; \
 	$(CCPP) $(CPPFLAGS) -I../src -o $@ $(VMD_OBJS) $(LOADLIBES) ; 
 	$(COMPILERC) $(RCFLAGS)
 
 install:
-	if [ ! -d "/home/robin/Programs/vmd-python/build/lib" ]; then \
-		$(MAKEDIR) "/home/robin/Programs/vmd-python/build/lib" ; \
+	if [ ! -d "/home/robin/Work/Code/vmd-python/build/lib/vmd" ]; then \
+		$(MAKEDIR) "/home/robin/Work/Code/vmd-python/build/lib/vmd" ; \
 	fi ; \
-	if [ ! -d "/home/robin/Programs/vmd-python/build/lib" ]; then \
-		$(MAKEDIR) "/home/robin/Programs/vmd-python/build/lib" ; \
+	if [ ! -d "/home/robin/Work/Code/vmd-python/build/lib/vmd" ]; then \
+		$(MAKEDIR) "/home/robin/Work/Code/vmd-python/build/lib/vmd" ; \
 	fi ; \
-	if [ ! -d "/home/robin/Programs/vmd-python/build/lib"/doc ]; then \
-		$(MAKEDIR) "/home/robin/Programs/vmd-python/build/lib"/doc; \
+	if [ ! -d "/home/robin/Work/Code/vmd-python/build/lib/vmd"/doc ]; then \
+		$(MAKEDIR) "/home/robin/Work/Code/vmd-python/build/lib/vmd"/doc; \
 	fi
-	-$(COPY) ../Announcement  "/home/robin/Programs/vmd-python/build/lib"
-	-$(COPY) ../README        "/home/robin/Programs/vmd-python/build/lib"
-	-$(COPY) ../LICENSE       "/home/robin/Programs/vmd-python/build/lib"
-	-$(COPY) ../doc/ug.pdf        "/home/robin/Programs/vmd-python/build/lib"/doc
-	if [ -f /home/robin/Programs/vmd-python/build/lib/vmd.so ]; then \
-           $(MOVE) "/home/robin/Programs/vmd-python/build/lib/vmd.so" "/home/robin/Programs/vmd-python/build/lib/OLD_vmd.so" ; $(DELETE) "/home/robin/Programs/vmd-python/build/lib/OLD_vmd.so" ; fi
-	-$(COPY) ../LINUXAMD64/vmd.so "/home/robin/Programs/vmd-python/build/lib"
+	-$(COPY) ../Announcement  "/home/robin/Work/Code/vmd-python/build/lib/vmd"
+	-$(COPY) ../README        "/home/robin/Work/Code/vmd-python/build/lib/vmd"
+	-$(COPY) ../LICENSE       "/home/robin/Work/Code/vmd-python/build/lib/vmd"
+	-$(COPY) ../doc/ug.pdf        "/home/robin/Work/Code/vmd-python/build/lib/vmd"/doc
+	if [ -f /home/robin/Work/Code/vmd-python/build/lib/vmd/vmd.so ]; then \
+           $(MOVE) "/home/robin/Work/Code/vmd-python/build/lib/vmd/vmd.so" "/home/robin/Work/Code/vmd-python/build/lib/vmd/OLD_vmd.so" ; $(DELETE) "/home/robin/Work/Code/vmd-python/build/lib/vmd/OLD_vmd.so" ; fi
+	-$(COPY) ../LINUXAMD64/vmd.so "/home/robin/Work/Code/vmd-python/build/lib/vmd"
 	if [ -d "../lib/redistrib/lib_LINUXAMD64" ]; then \
 		$(CD) ../lib/redistrib/lib_LINUXAMD64; $(TAR) -cf - ./* | \
-		(cd "/home/robin/Programs/vmd-python/build/lib" ; $(TAR) -xf -) \
+		(cd "/home/robin/Work/Code/vmd-python/build/lib/vmd" ; $(TAR) -xf -) \
 	fi ;
-	-$(COPY) ../lib/stride/stride_LINUXAMD64 ../lib/surf/surf_LINUXAMD64 ../lib/tachyon/tachyon_LINUXAMD64 "/home/robin/Programs/vmd-python/build/lib"
+	-$(COPY) ../lib/stride/stride_LINUXAMD64 ../lib/surf/surf_LINUXAMD64 ../lib/tachyon/tachyon_LINUXAMD64 "/home/robin/Work/Code/vmd-python/build/lib/vmd"
 	-$(CD) ..; $(TAR) -cf - scripts | \
-	(cd "/home/robin/Programs/vmd-python/build/lib" ; $(TAR) -xf -)
+	(cd "/home/robin/Work/Code/vmd-python/build/lib/vmd" ; $(TAR) -xf -)
 	-$(CD) ../lib; $(TAR) -cf - scripts | \
-	(cd "/home/robin/Programs/vmd-python/build/lib" ; $(TAR) -xf -)
+	(cd "/home/robin/Work/Code/vmd-python/build/lib/vmd" ; $(TAR) -xf -)
 	-$(CD) ..; $(TAR) -cf - python | \
-	(cd "/home/robin/Programs/vmd-python/build/lib"/scripts ; $(TAR) -xf -)
+	(cd "/home/robin/Work/Code/vmd-python/build/lib/vmd"/scripts ; $(TAR) -xf -)
 	-$(CD) ..; $(TAR) -cf - plugins | \
-	(cd "/home/robin/Programs/vmd-python/build/lib" ; $(TAR) -xf -)
+	(cd "/home/robin/Work/Code/vmd-python/build/lib/vmd" ; $(TAR) -xf -)
 	-$(CD) ..; $(TAR) -cf - shaders | \
-	(cd "/home/robin/Programs/vmd-python/build/lib" ; $(TAR) -xf -)
+	(cd "/home/robin/Work/Code/vmd-python/build/lib/vmd" ; $(TAR) -xf -)
 	if [ -f ../LINUXAMD64/OptiXShaders.ptx ]; then \
-		$(COPY) ../LINUXAMD64/OptiXShaders.ptx "/home/robin/Programs/vmd-python/build/lib/shaders"; \
+		$(COPY) ../LINUXAMD64/OptiXShaders.ptx "/home/robin/Work/Code/vmd-python/build/lib/vmd/shaders"; \
 	fi; 
-	-$(COPY) ../data/.vmdrc ../data/.vmdsensors ../data/vmd_completion.dat "/home/robin/Programs/vmd-python/build/lib"
+	-$(COPY) ../data/.vmdrc ../data/.vmdsensors ../data/vmd_completion.dat "/home/robin/Work/Code/vmd-python/build/lib/vmd"
 	$(CD) ../bin ; \
 	if [ -f run_vmd_tmp ]; then $(DELETE) run_vmd_tmp; fi ; \
 	if [ ! -x "/bin/csh" ]; then \
 		$(ECHO) "Info: /bin/csh shell not found, installing Bourne shell startup script instead" ; \
 		$(ECHO) '#!/bin/sh' >> run_vmd_tmp ; \
-		$(ECHO) 'defaultvmddir="/home/robin/Programs/vmd-python/build/lib"' >> run_vmd_tmp ; \
+		$(ECHO) 'defaultvmddir="/home/robin/Work/Code/vmd-python/build/lib/vmd"' >> run_vmd_tmp ; \
 		$(ECHO) 'vmdbasename=vmd' >> run_vmd_tmp ; \
 		cat vmd.sh >> run_vmd_tmp ; \
 	else \
 		$(ECHO) '#!/bin/csh' >> run_vmd_tmp ; \
-		$(ECHO) 'set defaultvmddir="/home/robin/Programs/vmd-python/build/lib"' >> run_vmd_tmp ; \
+		$(ECHO) 'set defaultvmddir="/home/robin/Work/Code/vmd-python/build/lib/vmd"' >> run_vmd_tmp ; \
 		$(ECHO) 'set vmdbasename=vmd' >> run_vmd_tmp ; \
 		cat vmd.csh >> run_vmd_tmp ; \
 	fi ; \
 	chmod +x run_vmd_tmp ; \
-	$(COPY) run_vmd_tmp "/home/robin/Programs/vmd-python/build/lib"/vmd-1.9.2-python ; \
+	$(COPY) run_vmd_tmp "/home/robin/Work/Code/vmd-python/build/lib/vmd"/vmd-1.9.2-python ; \
 	$(DELETE) run_vmd_tmp
-	$(ECHO) Make sure "/home/robin/Programs/vmd-python/build/lib"/vmd-1.9.2-python is in your path.
+	$(ECHO) Make sure "/home/robin/Work/Code/vmd-python/build/lib/vmd"/vmd-1.9.2-python is in your path.
 	$(ECHO) "VMD installation complete.  Enjoy!"
 
 ##### remove most of the cruft

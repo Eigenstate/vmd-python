@@ -3255,14 +3255,14 @@ YFLAGS      = $arch_yflags
 ########## Targets
 
 ### Source targets
+    #if [ ! -r ./$arch_template_repository ]; then \\
+    #  ln -s $vmd_src_dir/$arch_template_repository ./$arch_template_repository ; \\
+    #fi; \\
 all default:   $config_progname
 
 $config_progname: y.tab.h \$(VMD_OBJS) \$(VMD_PTX)
 	\$(ECHO) "Linking " \$\@ "..."; \\
 	\$(CD) $vmd_arch_dir ; \\
-	if [ ! -r ./$arch_template_repository ]; then \\
-	  ln -s $vmd_src_dir/$arch_template_repository ./$arch_template_repository ; \\
-	fi; \\
 	\$(CCPP) \$(CPPFLAGS) -I$vmd_src_dir -o \$\@ \$(VMD_OBJS) \$(LOADLIBES) ; 
 	\$(COMPILERC) \$(RCFLAGS)
 

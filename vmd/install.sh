@@ -8,7 +8,7 @@ INSTDIR="$4"
 vmd_src="$PWD"
 
 #TODO: Auto-detect this
-export LIBRARY_PATH="$ANACONDIR/lib:$LIBRARY_PATH"
+export LD_LIBRARY_PATH="$ANACONDIR/lib:$LD_LIBRARY_PATH"
 
 # Set needed variables
 echo "Setting environment variables"
@@ -71,4 +71,3 @@ cd $vmd_src/vmd/src
 make veryclean
 make vmd.so
 make install
-

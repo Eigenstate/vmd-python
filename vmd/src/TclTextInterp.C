@@ -278,10 +278,10 @@ void TclTextInterp::doInit() {
     msgErr << "Using compiled in VMDDIR" << sendmsg;
 #if defined(_MSC_VER)
     //vmddir = "c:/program files/university of illinois/vmd";
-    vmddir = "/opt/anaconda/envs/vcompile/lib/python2.7/site-packages/vmd";
+    vmddir = "/home/robin/Work/Code/vmd-python/build/lib/vmd";
 #else
     //vmddir = "/usr/local/lib/vmd";
-    vmddir = "/opt/anaconda/envs/vcompile/lib/python2.7/site-packages/vmd";
+    vmddir = "/home/robin/Work/Code/vmd-python/build/lib/vmd";
 #endif
     startuperror = 1;
   } 
