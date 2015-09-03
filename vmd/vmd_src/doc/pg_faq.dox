@@ -1,0 +1,32 @@
+/*! \page faq VMD development frequently asked questions
+
+\section nopluginh When I try to compile VMD I get the error message: cannot find "vmdplugin.h"; what should I do?
+You must compile the VMD plugin library before you begin compiling VMD
+itself.  Please see the plugin programmer's documentation for information on
+<a href="http://www.ks.uiuc.edu/Research/vmd/plugins/doxygen/compiling.html">compilation of the VMD plugins</a>.
+
+
+\section noCC When I try to compile VMD I get the error message: CC: Not found; what should I do?
+<p>
+That means the C++ compiler could not be found. Check your path or install 
+your vendor's C++ tools. If you do not have the commercial CC compiler, 
+you could build VMD using gcc/g++.  This is typically only an issue on 
+platforms like AIX, HP-UX, Tru64, and Solaris where the current build
+settings for VMD target the vendor-provided development tools.  We use
+the vendor compilers for VMD as they tend to have the best performance,
+as well as good support for OpenGL etc.
+
+
+\section tclbomb When I try to compile VMD, I get an error message stating "tcl.h non-existant." What is wrong?
+<p>
+You should be aware that pre-compiled binaries for AIX, HPUX, IRIX, Linux
+and Solaris can be directly downloaded from the VMD ftp site.  If you still
+feel you need to re-compile VMD, these messages indicate that you will have to
+download some of the libraries VMD requires for compilation.  See the
+document on \ref compiling for more information on what libraries must
+be installed prior to building VMD.
+
+<p>
+$Id: pg_faq.dox,v 1.4 2008/03/04 20:15:49 johns Exp $
+
+*/

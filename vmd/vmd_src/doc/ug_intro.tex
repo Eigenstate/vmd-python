@@ -1,0 +1,112 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%cr                                                                       
+%cr            (C) Copyright 1995 The Board of Trustees of the            
+%cr                        University of Illinois                         
+%cr                         All Rights Reserved                           
+%cr                                                                       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_intro.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.32 $      $Date: 2014/12/28 22:57:43 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%
+% USERS GUIDE : introduction chapter
+%   1) General description of document and purpose
+%   2) Organization of document
+%   4) For more information ...
+%   5) Contacting the authors
+%   6) Referencing this work
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Introduction}
+
+% general intro text
+\VMD~\cite{HUMP96} is a molecular graphics program designed for the
+interactive visualization and analysis of biopolymers such as proteins,
+nucleic acids, lipids, and membranes.  \VMD\ runs on all major 
+Unix workstations, Apple MacOS X, and Microsoft Windows.
+Online information about VMD is available from:
+\\ 
+\htmladdnormallink{{\tt http://www.ks.uiuc.edu/Research/vmd/}}
+		   {http://www.ks.uiuc.edu/Research/vmd/}
+\vspace{0.1in}
+\\
+List of key \VMD\ features:
+\begin{itemize}
+  \BOLDLISTITEM{General molecular visualization} At its heart, \VMD\
+is a general application for displaying molecules containing
+any number of atoms and is similar to other molecular visualization 
+programs in its basic capabilities.
+\VMD\ reads data files using an extensible plugin system, and supports
+Babel\mycite{}{} for conversion of other formats.
+User-defined atom selections can be displayed in any of the
+standard molecular representations.
+Displayed graphics can be exported to an image file, 
+to a scene file usable by ray tracing programs, or to
+a geometry description file suitable for use with 3-D printers.
+
+\BOLDLISTITEM{Visualization of dynamic molecular data}
+\VMD\ can load atomic coordinate trajectories from 
+AMBER, Charmm, DLPOLY, Gromacs, MMTK, NAMD, X-PLOR, and many other 
+simulation packages.  The data can be used to animate the molecule or 
+to plot the change in molecular properties such as angles, dihedrals, 
+interatomic distances, or energies over time.
+
+\BOLDLISTITEM{Visualization of volumetric data}
+\VMD\ can load, generate, and display, volumetric maps.  Supported
+map formats include CryoEM maps, electrostatic potential maps, 
+electron density maps, and many other map file formats.
+
+\BOLDLISTITEM{Interactive molecular dynamics simulations} 
+\VMD\ can be used as a graphical front-end to a live molecular
+dynamics program running on a remote supercomputer or
+high-performance workstation.  \VMD\ can interactively apply
+and visualize forces in an MD simulation as it runs.
+
+\BOLDLISTITEM{Molecular analysis commands}
+Many commands are provided for molecular analysis.  
+These include commands to extract information on sets of atoms and molecules, 
+vector and matrix routines for coordinate manipulation, and 
+functions for computing values such as center of mass and radius 
+of gyration.
+
+\BOLDLISTITEM{Tcl and Python scripting languages}
+\VMD\ uses the freely available Python and Tcl scripting languages 
+for processing text commands.  These popular languages which contain
+variables, loops, subroutines, and much more.
+\VMD\ also uses the Tk Toolkit - a simple user interface toolkit 
+that interfaces with Tcl.
+
+\BOLDLISTITEM{Easy to extend}
+\VMD\ is written in C and C++ and employs object-oriented design.
+\VMD\ implements a plugin interface for extending its file format
+support and for general purpose extensions in functionality.
+
+\BOLDLISTITEM{Support for multimodal input and various display systems}
+A number of different visual display and control systems are
+supported in addition to the usual monitor, keyboard, and mouse.  
+The VRPN library\mycite{}{} is used to get position and orientation
+information from a wide variety of spatial input devices, including 
+magnetic trackers, haptic (force feedback) devices, Spaceballs, etc.
+\VMD\ works with WireGL and Chromium on tiled display walls,
+and immersive VR environments via compiled-in CAVE and FreeVR support.
+
+
+\end{itemize}
+
+% contacting the authors
+\input{vmd_authors}
+
+% credits, and referencing this work
+\input{vmd_ref}
+
+% for more information ...
+\input{vmd_moreinfo}
+
+

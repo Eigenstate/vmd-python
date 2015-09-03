@@ -1,0 +1,133 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%cr                                                                       
+%cr            (C) Copyright 1995 The Board of Trustees of the            
+%cr                        University of Illinois                         
+%cr                         All Rights Reserved                           
+%cr                                                                       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ig_intro.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.9 $      $Date: 2000/05/16 18:52:35 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%
+% INSTALLATION GUIDE : introduction chapter
+%   1) General description of document and purpose
+%   2) Organization of document
+%   3) How to use this guide
+%   4) For more information ...
+%   5) Contacting the authors
+%   6) Referencing this work
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Introduction}
+\label{chapter:ig:intro}
+
+% general intro text
+\VMD\ is a molecular visualization and analysis program designed to
+be used for interactive display of molecular systems, particularly
+biopolymers such as proteins, nucleic acids, and biological
+assemblies such as membrane lipid bilayers.  As described in the
+\VMD\ Programmer's and User's Guides, \VMD\ has several goals:
+\begin{itemize}
+  \item General molecular visualization;
+  \item Visualization of dynamic molecular data;
+  \item Analysis of molecular structures;
+  \item Display and control of molecular dynamics simulations;
+  \item Support for several input and display (output) devices,
+       including output image files;
+  \item Modifiable and extensible program structure.
+\end{itemize}
+
+This manual, along with the Users
+Guide and Programmers Guide, documents the use of \VMD.
+
+% how the guide is organized
+\section{Guide organization}
+
+This \DOCTITLE\ details how to compile and install \VMD.  You have the
+option of simply installing a precompiled version of
+\VMD\ provided in the standard distribution, or the option of recompiling \VMD\
+with a different set of features and options.  Depending on the method
+preferred, different chapters of this Guide will be relevant.  This
+manual is organized into the following chapters following this
+introduction:
+
+\begin{itemize}
+  \BOLDLISTITEM{Obtaining and unpacking \VMD\ (chapter
+\ref{chapter:ig:unpack})} The first step in installing \VMD;
+this chapter should be read first.
+
+  \BOLDLISTITEM{Compiling \VMD\ (chapter \ref{chapter:ig:compile})}
+Describes how to compile \VMD.  The program may be compiled for a
+variety of operating system versions, and may optionally include
+or exclude a number of features.  Chapter \ref{chapter:ig:compile}
+lists all the operating systems for which \VMD\ may be compiled,
+describes all the optional program features which may be included
+in the compiled executable, and mentions all the configurable
+parameters which may be preferentially customized.  The
+\VMD\ executables provided with the standard distribution are compiled
+with a default set of features, as described in chapter
+\ref{chapter:ig:install}.
+
+  \BOLDLISTITEM{Installing \VMD\ (chapter \ref{chapter:ig:install})} 
+Describes how to install the \VMD\ executables and data files, once
+\VMD\ has been properly compiled.  The standard distribution includes
+precompiled versions of \VMD\ for several different Unix operating
+systems, as listed in table \ref{table:ig:execs}.  You may install
+one of these precompiled versions as is, or you may refer to
+chapter \ref{chapter:ig:compile} to first compile a new version of \VMD\
+before installing it.
+
+  \BOLDLISTITEM{Customizing \VMD\ (chapter \ref{chapter:ig:custom})} 
+Mentions how to edit the \VMD\ configuration data files in order to
+customize the appearance and behavior of \VMD\ for a particular
+environment.  This is done after \VMD\ has been successfully compiled
+and installed.
+\end{itemize}
+
+\section{How to use this guide}
+\label{section:ig:howtouse}
+
+There are two ways to install \VMD:
+\begin{enumerate}
+  \item Use a provided precompiled version of \VMD; to do this, use
+chapter \ref{chapter:ig:unpack} and chapter \ref{chapter:ig:install}. 
+Currently, precompiled versions of \VMD\ are supplied for the following
+operating systems (see table \ref{table:ig:execs}):
+  \begin{itemize}
+    \item SGI IRIX 5.X or IRIX 6.X.
+  \end{itemize}
+For other operating systems, the second method must be used. 
+  \item Compile \VMD\ with a selected set of features and
+parameters.  This requires first unpacking the distribution (chapter
+\ref{chapter:ig:unpack}), compiling the program (chapter
+\ref{chapter:ig:compile}), and then installing the executables and
+data files (chapter \ref{chapter:ig:install}).  Chapter
+\ref{chapter:ig:compile} lists the operating systems for which
+\VMD\ is supported, and all possible program features and
+user-selectable parameters.  You are also strongly advised to
+get and install the FLTK or XForms, Tcl, and Tcl-X packages.
+\end{enumerate}
+
+Finally, after installation is complete, several factors may be customized
+about how \VMD\ appears to users upon startup.
+This is done by following the instructions in chapter \ref{chapter:ig:custom}.
+
+% for more information ...
+\input{vmd_moreinfo}
+\label{section:ig:moreinfo}
+
+% contacting the authors
+\input{vmd_authors}
+\label{section:ig:authors}
+
+% credits, and referencing this work
+\input{vmd_ref}
+\label{section:ig:ref}
+

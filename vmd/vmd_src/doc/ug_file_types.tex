@@ -1,0 +1,172 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_file_types.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.29 $      $Date: 2007/12/20 02:09:55 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%  file types \VMD\ can use
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Loading A Molecule}
+\label{ug:topic:filetypes}
+\index{files!reading}
+\index{file types!input} 
+\index{topology files}
+\index{trajectory!files}
+\index{AMBER!files}
+\index{CHARMM!files}
+\index{NAMD!files}
+\index{Gromacs!files}
+\index{XPLOR!files}
+
+The File menu is the primary means for loading molecules and other
+data into \VMD.  The built-in file readers will load molecular structures 
+from combinations of topology files, coordinate files, and trajectory files.  
+Readers are also included for data such as potential maps, 
+electron density maps, Grasp surface data, and arbitrary 3-D geometric 
+data from Raster3D scene files.  
+\VMD\ can load structures directly from Protein Data Bank
+over the internet, provided that a network connection is present.  
+Entering the four-character PDB accession code in the molecule file
+broswer form will retrieve and load the structure over the network.
+
+\section{Notes on common molecular file formats}
+\VMD\ natively understands several popular molecular data file formats: 
+PDB coordinate files, 
+CHARMM, NAMD, and X-PLOR style PSF topology files, 
+CHARMM, NAMD, and X-PLOR style DCD trajectory files, 
+NAMD binary restart (coordinate) files,
+AMBER structure (PARM) and trajectory (CRD) files  including
+both the old format and the new formats used by AMBER 7.0, 
+and Gromacs (e.g. GRO, G96, XTC, TRR) structure and trajectory files.  
+These files may contain some redundant information and can be loaded 
+in different combinations.
+
+PDB files contains data about atoms, residues, segment names,
+occupancy and beta factor, and one coordinate set.  
+PSF and PARM files contain atoms, residues, segment names, residue
+types, atomic mass and charge, and the bond connectivity.  
+VMD supports four file formats used by Gromacs: GRO, G96, TRR and XTC.  
+GRO and G96 files contain structure information including atoms, 
+residue and segment data, and one coordinate set.  
+CRD, DCD, TRR and XTC files contain only coordinate data (\timesteps).  
+It should be noted that while PDB, GRO and G96 files were designed
+to contain only one coordinate set, multiple files can be 
+concatenated into one larger file to create a makeshift trajectory file
+which can be loaded by \VMD.
+
+When \VMD\ loads a file it requires information about atom names and
+coordinates and tries to fill in the rest.  Since the PDB file
+contains all this information, it does not need to be loaded with any
+other data files.  However, the PDB file doesn't contain the atom
+types, masses, and charges, so these are guessed or assigned default
+values.  In particular, charges will be assigned a value of 0.0 if the
+file does not contain explicit charge information.
+
+A PSF file does not contain coordinate information so it must be
+loaded along with a PDB or DCD file.  If a PDB and PSF are given there
+is no missing data and \VMD\ makes no assumptions.  If a PSF and DCD
+are given then only the chain identifier and occupancy and beta values
+are missing so they are given a default value.
+A PARM file is similar to a PSF in that it too contains no coordinate
+information.  It must be loaded along with a CRD trajectory file.
+If a PARM and CRD file are loaded together, then only the segname and
+chain ID for the atoms are left blank.  
+A CRD or DCD file can be specified along with the PDB, in which case
+the PDB file will be read as normal, and then coordinate sets are read
+from the DCD or CRD until the end of the file is reached.
+Gromacs GRO and G96 files can be loaded on their own since they contain
+the necessary atom data and coordinates.  They can also be loaded
+along with TRR and XTC files to obtain trajectory data.
+Additional coordinates from a PDB, CRD, or DCD file can be appended to
+the current coordinate set using the {\sf Molecule File Browser} form.
+
+
+
+\section{What happens when a file is loaded?}
+\label{ug:topic:filetypes:loading}
+When a coordinate file is loaded by itself (i.e. just a PDB, no PSF),
+\VMD\ uses heuristics to replace missing values that would normally 
+be provided by a structure file.  If necessary, \VMD\ does a 
+distance-based bond search \index{bonds!determining} to determine
+connectivity.  A bond is formed whenever two atoms are within 
+($R_1 + R_2) * 0.6$ of each other, where $R_1$ and $R_2$ 
+are the respective radii of candidate atoms.
+If both structure and coordinate files are loaded, 
+no approximations or guesses are made.  
+
+After the molecule is read in, new names are added to the
+\hyperref{coloring categories}{coloring categories [\S }{]}
+         {ug:topic:coloring:categories},
+and assigned colors.
+Next, bond connectivity is established and the molecule is
+analyzed to identify its components, i.e., to determine which
+residues are protein, nucleic acids, and waters, etc.
+A search is then made to connect these into larger fragments of the same type,
+and summary information is printed to the screen.  
+An example output for BPTI is:
+\begin{verbatim}
+        Info 1) Analyzing structure ...
+        Info 1)    Atoms: 898   Bonds: 909
+        Info 1)    Backbone bonds: Protein: 231  DNA: 0
+        Info 1)    Residues: 58
+        Info 1)    Waters: 0
+        Info 1)    Segments: 1
+        Info 1)    Fragments: 1   Protein: 1   Nucleic: 0
+\end{verbatim}
+
+There are several types of fragments.  Protein and nucleic
+fragments are homogeneous; either all proteins, or all nucleic acids.
+However, it is possible for a protein to be connected to a
+nucleic acid or some other non-protein.  
+When this occurs, a warning message is printed, as in:
+\index{bonds!unusual}
+\begin{verbatim}
+        Warning 1) Unusual bond between residues 1 and 2
+\end{verbatim}
+These warnings will occur with terminal amino acids, zinc
+fingers, myristolated residues, and poorly defined structures.
+
+\section{Babel interface}
+\label{ug:topic:filetypes:babel}
+\VMD\ can use the program \index{Babel}Babel, if installed, to
+translate a wide variety of different molecular data files into the
+PDB format.  Not all of these have been tested for use with \VMD, 
+so your results may vary.
+\VMD\ only uses Babel to read files and does not
+allow the use of Babel to save files to other formats.
+\index{environment variables!VMDBABELBIN}
+The {\tt VMDBABELBIN} 
+\hyperref{environment variable}{environment variable [\S }{]}{ug:exec_env:variables}
+is used to specify the absolute path to the the Babel executable 
+(including the executable name).
+For more information about Babel, see \htmladdnormallink{{\tt
+http://smog.com/chem/babel/}}{http://smog.com/chem/babel/}.  
+VMD currently supports version 1.6 of Babel.  
+
+\section{Raster3D file format}
+
+In addition to the molecular file formats, \VMD\ can read the input
+file for \index{Raster3D}Raster3D.  (Raster3D converts an input file
+into a shaded raster image for use in making high quality pictures.
+It is often used with MolScript.)  The ability to read Raster3D allows
+users to view MolScript files in 3D and incorporate special images
+into the display without having to edit the \VMD\ code.  
+The file format, which is part of the Raster3D documentation,
+describes a simple collection of triangles, spheres, and cylinders
+with either flat or spherical ends.  Each shape is colored by an RGB
+triplet.
+
+Certain newer Raster3D objects are ignored, such as quadrics. Also,
+nearly all of the header information is ignored---most notably, the
+viewing matrix.  Raster3D uses many cylinders with spherical
+(rounded) ends. \VMD\ deliberately omits these rounded ends since the
+resultant image would be very slow to render interactively.
+\VMD\ uses a fixed size palette of colors, each triplet is
+converted into its ``nearest'' indexed color.  This may cause images
+to be colored slightly differently than expected.
+

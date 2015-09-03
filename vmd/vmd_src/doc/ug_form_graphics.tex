@@ -1,0 +1,232 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_form_graphics.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.40 $      $Date: 2012/01/10 19:30:05 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%    The graphics form
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\subsection{Graphics Window}
+\label{ug:ui:window:graphics}
+\index{window!graphics}
+\index{graphics!window}
+
+The {\sf Graphical Representations} or ``Graphics'' window controls how 
+molecules are drawn.  Molecules are represented by {\it reps}, 
+which are defined by four main parameters: the
+\hyperref{selection}{selection [\S~}{]}{ug:topic:selections}, the
+\hyperref{drawing method}{drawing method [\S~}{]}{ug:topic:drawing}, the 
+\hyperref{coloring method}{coloring method [\S~}{]}{ug:topic:coloring},
+and the \hyperref{material}{material [\S~}{]}{ug:topic:coloring:materials}.
+\index{representation!style}
+\index{drawing!method} 
+\index{coloring!methods}
+\index{material!methods}
+\index{selection} 
+The selection determines which part of the
+molecule is drawn, the drawing method defines which graphical
+representation is used, the coloring method gives the the color
+of each part of the representation, and the material determines
+the effects of lighting, shading, and transparency on the representation.
+
+\subsubsection{Draw Style Tab}
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{ug_graphics_draw_style}{The Graphics window (in Draw Style mode)}
+{fig:ug:graphics:drawstyle}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+Select a molecule for editing using the `Selected Molecule' chooser
+at the top of the window.  The browser below this chooser lists the
+reps available for the molecule.  Each line of the browser summarizes 
+information about the drawing method, the coloring method, and the
+selection.  Below this browser, choosers and a text input filed reflect 
+the current state of the rep, and provide controls for changing the
+properties of the rep.  Each drawing method has specific controls 
+which will appear when it is selected.
+\label{ug:ui:window:graphics:controls}
+\label{ug:ui:window:graphics:material}
+\index{transparency}
+When the `ColorID' coloring method is selected,
+a text entry box is shown allowing you to specify the index of a color
+to use for the selection, which may be a number from 0 to 16.
+\index{color!id}
+
+\paragraph{Changing a rep.}
+\index{representation!changing}
+To change a representation, select it in the representation browser.  
+The atom selection for that rep will
+appear in the {\sf Selected Atoms} text area and the controls will update
+to reflect the current settings.  Changing the settings will immediately
+affect the displayed representation if the 
+{\sf Apply Changes Automatically} check box is selected.
+When it is disabled updates will only occur when the {\sf Apply} button 
+is pressed.  
+Changing the drawing method brings up method-specific controls and defaults.
+If you go back to the previous draw style,
+\VMD\ restores any changes that you may have made to the settings.  
+Pressing the {\sf Default} button will restore the default settings.
+The display will be updated after every change.  
+
+\paragraph{Adding a rep.}
+\index{representation!add new}
+To add a new \index{representation!adding}representation of the molecule, 
+enter the selection into the {\sf Atom Selection} text area (or keep what is
+there) and press {\sf Create Rep}.  This adds the representation to the
+currently selected molecule.
+
+\paragraph{Deleting a rep.}
+\index{representation!deleting}
+To delete a \index{representation!deleting}representation, 
+select the representation in the browser and press the {\sf Delete} button.  
+Bear in mind that this does not delete the molecule, it only deletes 
+one of its graphical representations.
+
+\paragraph{Hiding a rep.}
+\index{representation!hiding}
+To hide a rep, double-click its entry in the browser.
+The text will turn pink to indicate that the rep is hidden.
+Turn the rep back on by double-clicking again on the same line.
+Hidden reps will not recalculate their geometry if the
+animation frame changes until the rep is turned back on.
+
+\subsubsection{Selections Tab}
+\index{atom!name lists}
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{ug_graphics_selection}{The Graphics window (in Selections mode)}
+{fig:ug:graphics:selection}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+The {\sf Selections} tab\index{atom!name lists} 
+provides access to
+browsers which display the lists of atom names, residue names, and so
+forth for the selected molecule.
+When the {\sf Selections} tab is pressed, several browsers
+appear in place of the drawing and coloring method controls.  
+These are used to list the available keywords, macros, and values for use in 
+selecting atoms for the associated representation.
+The top browser lists singlewords and macros such as {\tt all}, {\tt water},
+and {\tt hydrophobic}. 
+The botton left browser contains a list of the keywords and functions
+understood by the
+\index{atom!selection!keywords}
+\index{selection!keywords}
+\hyperref{selection command}{selection command [\S}{]}{ug:topic:selections}.
+If a keyword is selected which can take on a value (for instance, {\tt
+name} and {\tt index}), then the possible names will be displayed in
+the bottom-rightmost browser.  The functions can be
+identified by the {\tt (} to the right of the name.  After selecting a
+keyword, the right browser will display all the names associated with the
+keyword.  For example, selecting {\sf resname} in the left browser will show
+all the three-letter residue names known for the selected molecule.
+
+Clicking on a field in the value browser will add it to the selection
+text field.  {\it Double} clicking a keyword field adds the keyword
+to the text field.  Press {\sf Apply} to actually change the atom selection
+for the current rep.  Press {\sf Reset} to restore the atom selection to
+its original value.
+
+\index{atom!selection!macros}
+The {\sf Selections} tab also shows the atom selection macros that have
+been defined.  These macros let you define a commonly used atom selection
+as a single word so that it can be inserted into a rep more
+conveniently.  Atom selection macros can currently be defined only through the 
+\hyperref{Tcl}{Tcl [\S}{]}{ug:ui:text:atomselect} or
+\hyperref{Python}{Python [\S}{]}{ug:ui:text:python:atomselect}
+text interfaces; see these sections for details.
+
+
+\subsubsection{Trajectory Tab}
+
+\paragraph{Selection and Color auto-update.} 
+\index{representation!auto-update} 
+When an atom selection such as {\tt water within 3 of protein} is made, the
+atoms in the selection are computed for the current animation frame.  When the
+animation frame changes, the selection is not normally recalculated; thus the
+displayed atoms may not correspond to those that would be selected if the atom
+selection were performed for the new animation frame.  If the {\sf Update
+Selection Every Frame} checkbox is highlighted by clicking on the checkbox,
+then the atom selection for the current rep will be recalculated every time the
+animation frame changes.  Similarly, if the {\sf Update Color Every Frame}
+checkbox is activated, the color will be recalculated for every frame. 
+
+\paragraph{Color Scale Data Range.}
+Several of the coloring methods available in {\sf Draw Style} tab
+operate over data fields that have no specifically implied range of 
+values.  It is often useful to highlight a very specific range of data
+values, in order to accomplish this the color scale range can be manually
+set to a specific starting and ending values, overriding the default 
+behavior which is to autoscale from the minimum value to the maximum value.
+This feature is particularly useful when displaying trajectories, since
+the range of values of interest may be quite different from the autoscaled 
+range for a single frame or all frames. 
+
+\paragraph{Draw Multiple Frames.}
+\index{trajectory!draw multiple frames}
+Draw multiple trajectory frames or coordinate sets simultaneously.
+This setting allows the user to select one or more ranges of frames
+to display simultaneously.  The frame specification takes one of the
+following forms {\bf now}, {\it frame\_number}, {\it start:end}, or
+{\it start:step:end}.  
+
+\paragraph{Trajectory Smoothing.}
+\index{trajectory!smoothing}
+\index{animation!smoothing}
+The {\sf Trajectory Smoothing Window Size} is used to control the application
+of a per-representation windowed-averaging smoothing function.  This simple
+smoothing feature can be used to eliminate much of the thermal noise inherent
+in a molecular dynamics trajectory so that one can more easily see structural
+changes occuring over a wider time scale.  The window size parameter controls
+how many \timesteps are averaged together to produce the coordinates which
+are actually displayed.  One important consideration
+when using the trajectory smoothing feature is that \VMD\ does not take
+periodic boundary conditions into consideration when smoothing trajectory
+coordinates, so any atoms which wrap around within the span of the window will
+cause erratic motions in the displayed representation.  This can be avoided by
+unwrapping trajectory coordinates prior to loading into \VMD\ or by using atom
+selections to eliminate atoms which wrap around.
+
+
+\subsubsection{Periodic Tab}
+\index{periodic image display}
+\index{periodic boundary conditions}
+\index{unit cell information}
+The {\sf Periodic} tab controls the display of periodic images of a
+molecule.  In order to display periodic images, a molecule must have
+unit cell information set for {\tt a}, {\tt b}, {\tt c}, 
+{\tt alpha}, {\tt beta}, and {\tt gamma}, which are discussed in 
+section~\ref{ug:topic:molinfo}.  
+When the proper unit cell information is present, the periodic display
+feature can show periodic images of the unit cell by transforming and 
+rendering additional copies of the structure.  The current implementation
+of this feature doesn't provide for complex crystallographic symmetry 
+operations.  Unit cells that can be replicated by translation along the 
+three unit cell axes are the only ones supported presently.  The periodic
+images to be drawn are selected by enabling images in one or more of 
+the six faces of the unit cell.  The {\sf Self} image selects the 
+untranslated unit cell itself, so that one my render a representation
+consisting of only replica images.  This feature allows the unit cell
+and its periodic images to be displayed using different materials, for
+cases where it is desirable to draw more attention to the original unit
+cell or to one ore more of the replicas.  The {\sf Number of Images}
+counter controls how many replicas are made in each of the six directions.
+Some file formats read by \VMD\ may not include unit cell information, 
+in such cases you can use the scripting interface to set the unit cell 
+information manually.  {PDB} files containing {CRYST1} records are an 
+example of a file format that provides unit cell information.
+
+

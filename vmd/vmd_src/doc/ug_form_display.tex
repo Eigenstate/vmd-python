@@ -1,0 +1,241 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_form_display.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.30 $      $Date: 2014/12/29 03:13:32 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%  the Display window 
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\subsection{Display Menu and Display Settings Window}
+\label{ug:ui:window:display}
+\index{window!display}
+\index{display!window}
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{ug_display}{The Display menu}{fig:ug:display}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+The {\sf Display} menu controls many of the characteristics of the graphics
+display window.  The characteristics which may be modified include:
+\begin{itemize}
+  \item{\bf Reset View}\index{reset view} --
+This menu item can be used to force \VMD\ to reset the scene back to the
+default viewing orientation and scale as is done when a molecule is 
+first loaded.
+  
+  \item{\bf Stop Rotation}\index{stop rotation} --
+This menu item stops autorotation of the scene.  The scene can be 
+autorotated by quickly dragging the mouse while briefly depressing 
+and releaseing the mouse button, leaving the scene spinning until it
+is stopped either by this menu item or by further mouse interactions. 
+
+  \item{\bf Perspective}\index{perspective view} --
+The view of the scene can be {\sf Perspective} or {\sf Orthographic}. 
+\index{orthographic view}
+In the perspective view (the default), objects which are far away are
+smaller than those near by.  In the orthographic view, both objects
+appear at the same scale.  Note that several of the supported external
+rendering programs do not support orthographic rendering.  As such, it may
+be necessary to ``fake it'' by translating the scene far away from the 
+camera, and apply a zoom factor.  This has the effect of significantly
+reducing the perspective, while not truly an orthographic view.
+
+  \item {\bf Antialiasing}\index{antialiasing} --
+Turns antialiasing on or off.  Antialiasing helps smooth out
+the jagged appearance of displayed geometry resulting from the inherently 
+discrete pixels on the display device.  The antialiasing feature is 
+only available on platforms which support full-screen antialiasing,
+sometimes known as ``multisample antialiasing''.  Several SGI and Sun
+graphics systems fully support this feature.  
+On platforms lacking the multisample
+capability, there may be alternate ways to perform full-screen antialiasing
+by selecting an option in the display driver setup.  Windows machines most
+commonly place these controls in the display driver configuration panel.
+
+  \item {\bf Depth Cueing}\index{depth cueing} --
+Turns depth cueing on or off.  Depth cueing causes distant objects to 
+blend into the background color, in order to aid in 3-D depth perception.
+The depth cueing settings controlled in the {Display Settings} window.
+The {\bf Cue Mode} parameter controls which type of fog equation is
+used.  The {\bf Linear} depth cueing mode provides a simple depth
+gradient with a defined starting point and endpoint.  The 
+{\bf Exp} and {\bf Exp2} depth cueing modes take a density parameter,
+and generally blend into the background color much more sharply than
+the linear depth cueing mode.
+Scaling up the molecule will increase the amount of depth cueing
+effect that is visible, since it will occupy a larger depth range.
+Scaling the molecule size down decreases the depth cueing effect.  
+Translating the molecule into and out of the screen will cause it
+to blend into and out of the background color.
+
+  \item {\bf Culling}\index{backface culling} --
+Turns backface culling on or off.  This feature is primarily used
+to accelerate rendering performance on software based implementations
+of OpenGL, such as Mesa.  Backface culling actually reduces performance
+on some hardware renderers, so you'll have to use your own best judgement
+on whether or not it is helpful to use on your specific computer system.
+
+  \item {\bf FPS}\index{frames per second indicator} --
+This option enables or disables on-the-fly display of the achieved
+\VMD\ rendering frame rate.  The frame rate is displayed in the upper
+right hand corner of the graphics window when it is enabled.
+
+  \item {\bf Lights}\index{light!toggle} --
+\index{image!lighting controls}
+The graphics display window can use up to four separate light sources
+to add a realistic effect to displayed graphical objects.
+The {\sf Lights On} browser turns these light sources on or off.  If the
+number is highlighted, the light is on, and clicking on it turns the
+light off.  See 
+section \ref{ug:ui:disp:lights}
+for more discussion regarding lights.
+
+  \item {\bf Axes}\index{axes} --
+A set of XYZ axes may be displayed at any one of five places on
+the screen (each of the corners or the center) or turned off.  This is
+controlled by the {\sf Axes} chooser.
+
+  \item {\bf Background}\index{display!backgroundgradient} --
+The display background can either be set to a uniform color over
+the entire scene, or a vertical gradient can be set with a linearly
+changing color from the top of the viewport to the bottom.
+
+  \item {\bf Stage}\index{stage} --
+The {\sf Stage} browser controls the stage, which is a checkerboard plane
+that can be located in any one of six places or turned off.
+
+  \item {\bf Stereo, Eye Sep, and Focal Length}\index{stereo!parameters} --
+\label{ug:ui:window:stereo}
+These controls are found in the {\sf Display Settings} window.
+These controls set the stereo mode and parameters; stereo is discussed
+fully in
+chapter \ref{ug:topic:stereo}.
+The {\sf Stereo} chooser changes the stereo mode, while the {\sf Eye Sep}
+and {\sf Focal Length} controls change the eye separation distance and the
+focal length, respectively.
+The {\sf Stereo Eye Swap} control optionally reverses the left/right eyes
+when displaying on projectors or other devices that for one reason or
+another don't preserve the correct left/right eye assignments.
+
+  \item {\bf Cachemode}\index{cachemode} --
+The {\sf Cachemode} toggle controls whether or not \VMD\ uses
+a display list caching mechanism to accelerate rendering of 
+static geometry.  This feature can be extremely beneficial for
+achieving good interactive display performance on tiled display walls,
+and for remote display over a network.  Caching cannot be performed
+while animating trajectories, so the performance benefit is only possible
+interactive rotation and zooming of static molecular structures.
+
+  \item {\bf Rendermode}\index{rendermode} --
+The {\sf Rendermode} chooser controls which low-level rendering method
+\VMD\ uses.  The {\bf Normal} rendering mode is the default VMD rendering
+algorithm based on standard fixed-function OpenGL.  The {\bf GLSL} 
+rendering mode uses OpenGL Programmable Shading Language to implement
+real-time ray tracing of spheres, alpha-blended transparency,
+and high-quality per-pixel lighting for all geometry.  On machines
+with high performance graphics boards supporting programmable shading,
+the {\bf GLSL} rendering mode provides quality on par with many of
+the external software renderers supported by \VMD\, but at interactive 
+display rates.
+
+\item {\bf Clipping Planes (Near Clip and Far Clip)}\index{clipping planes} --
+These controls are found in the {\sf Display Settings} window.
+Only those parts of the scene between the near and far clipping planes 
+are drawn.  
+The display clipping planes also set the depth cueing start and endpoints.
+Objects at the near clipping plane are distinct and crisp, 
+objects at the far clipping plane will be blended into the background.
+Clipping planes positions are changed with the {\sf Near Clip} 
+and {\sf Far Clip} controls.  It is not possible for the near
+clip to be farther away than the far clip.  When using stereo, it may
+be useful to set the near clip plane much lower than the default value.
+This makes the geometry ``pop out of the screen'' a bit more, 
+and can be used for greater dramatic effect.
+
+\item {\bf Screen Height (Hgt) and Distance (Dist)} --
+\label{ug:ui:window:screen_size}
+\index{screen parameters}
+These controls are found in the {\sf Display Settings} window.
+The screen height, along with the screen distance, defines the geometry
+and position of the display screen relative to the viewer.  The screen
+height is the vertical size of the display screen, in `world' coordinates.
+Each molecule is initially scaled and translated to fit within a 2 x 2 x 2
+box centered at the origin; so the screen height helps determine how large
+the molecule appears initially to the viewer.  
+
+The screen distance parameter determines the distance, in `world' coordinates, 
+from the origin to the display screen.  If this is zero, the origin of the
+coordinate system in which molecules (and all other graphical objects) are
+drawn coincides with the center of the display.  If distance is negative
+the origin is located between the viewer and the screen, if it is 
+positive, the screen is closer to the viewer than the origin.
+A negative value puts any stereo image in front of the screen, aiding the
+three-dimensional effect; a positive value results in a stereo image that is
+behind the screen, a less dramatic effect (but easier to see, for some
+people) stereo effect.
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myhugefigure{screen_params}{Relationship between screen height, distance to origin, and the viewer}{Relationship between screen height
+(SCRHEIGHT), screen distance to origin (SCRDIST), and the viewer}
+{fig:ug:screen}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+Figure \ref{fig:ug:screen} describes the relationship between the screen
+height, the screen distance, and the world coordinate space.
+
+
+\item {\bf Shadows}\index{Shadows} --
+The shadows control enables and disables direct lighting 
+shadowing when using the built-in Tachyon CPU or GPU renderers 
+or when exporting the VMD molecular scene to external renderers 
+that implement shadowing algorithms.
+The simple direct lighting model implemented in most renderers yields
+shadows that are completely dark, producing a somewhat harsh lighting
+quality akin to what would be expected in a desert under full sunlight
+with no clouds.  
+
+\item {\bf Ambient Occlusion}\index{Ambient Occlusion} --
+The ambient occlusion (AO) lighting control enables the use of 
+so-called ambient occlusion indirect lighting when using the built-in
+Tachyon CPU or GPU renderers, or external renderers that implement AO.
+Images with much higher quality shading can be produced by augmenting 
+direct lighting with ambient occlusion or broad angle or indirect 
+lighting techniques.
+Ambient occlusion lighting emulates the broad lighting effects 
+similar to what would be experienced on a cloudy or overcast day with
+omnidirectional light arriving on all surfaces.
+The AO ambient coefficient controls the strength of the omnidirectional
+lighting components.  The AO direct coefficient scales the direct 
+lighting contribution associated with the directional and 
+positional lights.
+
+\item {\bf Depth of Field (DoF)}\index{Depth of Field}\index{DoF} --
+The depth of field (DoF) control enables or disables emulation of 
+depth of field focal blur effects associated with fast focal ratio
+camera optics and close focus distances.  The depth of field 
+implementation provided by the built-in Tachyon ray tracer and most
+other renderers yields a plane of perfect focus at a specified distance
+from the camera.  The degree of focal blurring with increasing distance
+from the plane of perfect focus depends on both the simulated f/stop
+and the distance between the plane of perfect focus and the camera.
+
+
+\end{itemize}
+
+
+
+

@@ -1,0 +1,5 @@
+VMD 1.8.6b15 for Windows (32-bit)
+Theoretical and Computational Biophysics Group
+Copyright (c)2007 Board of Trustees of 
+the University of Illinois and others.
+http://www.ks.uiuc.edu/Research/vmd/

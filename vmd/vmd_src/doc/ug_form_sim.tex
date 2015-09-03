@@ -1,0 +1,97 @@
+\subsection{IMD Connect Simulation Window}
+\label{ug:ui:window:sim}
+\index{window!IMD simulation}
+
+\VMD\ has the ability to work with a molecular dynamics program
+running on another computer, to interact with and display the results 
+of a simulation as they are calculated.
+A major feature in \VMD\ is the ability to add
+perturbative steering forces to a running simulation, which are
+incorporated directly into the dynamics calculation;
+we refer to this capability as Interactive Molecular Dynamics (IMD).  
+\index{imd!requirements}
+In order to run and IMD simulation it is necessary to have a molecular 
+dynamics program that supports the IMD communication protocol.  
+To date, two such programs exist; NAMD, developed at University of Illinois,
+and Protomol, developed at Notre Dame.
+The rest of the discussion in this chapter assumes you are using \NAMD.
+See \htmladdnormallinkfoot{the \NAMD\ home page}
+{http://www.ks.uiuc.edu/Research/namd/} for information on obtaining \NAMD.
+
+\subsubsection{Interactive Molecular Dynamics}
+\index{IMD}
+\index{Interactive Molecular Dynamics}
+IMD works by establishing a TCP connection between \VMD\ and the 
+molecular dynamics simulation program.  NAMD, or whichever MD program is 
+being used, acts as the server. 
+In order to prepare \NAMD to accept \VMD's IMD connection request, 
+\NAMD must be configured to listen for incoming connections on a network port.
+Once NAMD has started up, may wait for the user to connect through 
+that port.  When \VMD connects to \NAMD succesfully, the simulation commences.
+Before connecting to the remote simulation, the \VMD user must first load a 
+molecule corresponding to the system being simulated.  The structure file
+should correspond to the same structure file used by \NAMD.
+Once the molecule is loaded and NAMD has been started and is listening for a 
+connection, you are ready to connect to the simulation and start receiving 
+coordinates.  To establish a connection, open the Simulation window, enter 
+the hostname
+on which NAMD is running and the port on which NAMD is listening for incoming
+connections, then press the Connect button to establish the connection.
+If NAMD is running on several distributed nodes, VMD must connect to the root 
+node on which NAMD initially started out.  
+
+\subsubsection{IMD Using the Simulation window}
+The {\sf Simulation} window allows you to control the behavior of a 
+molecular dynamics
+simulations which has been previously connected to through use of the
+Remote window.  This window contains controls to change parameters for the
+simulation and to affect how \VMD\ displays the results of the simulation.
+The window also contains informative displays, which show the current status
+of the simulation connection, and such things as the current energy,
+temperature, and timestep of the molecular system being simulated.
+
+At the top of the window are two entry fields and a button for establishing
+a connection to a running MD simulation.  Enter both the hostname on which 
+the simulation is running, and the port on which the simulation is listening,
+then press the Connect button to establish the connection.  See the text 
+console for possible error messages and status updates.
+Below the connection display is a browser used to set some connection 
+parameters.  These include:
+\index{remote!connection!modifiable parameters}
+\begin{itemize}
+  \item {\bf Transfer Rate}: How often a timestep is transferred from the
+remote simulation program to \VMD.  By default, this is 1, which means
+every calculated timestep is sent.  If this is set to some value N,
+then only every Nth step will send from the remote computer, 
+thereby decreasing the amount of network processing and rendering 
+that needs to be done.
+
+  \item {\bf Keep Rate}: How often \VMD\ saves the timestep in its
+animation list, instead of just discarding it after displaying it.  By
+default, this is 0, which means that \VMD\ does not save any timesteps.
+When this is 0, then when \VMD\ receives a new timestep it {\em replaces} the
+last timestep in the animation list with the new timestep, instead of
+{\em appending} it.  When it is set to some number N larger than 0, then
+every Nth timestep received from the remote simulation will be appended to
+the molecule. 
+\end{itemize}
+
+Parameters may be changed by entering text into the appropriate entry field
+and pressing {\tt <return>}.
+When a new value is entered, a command is sent to the remote simulation 
+to change it.  There may be some delay between when the simulation gets 
+commands, acts on them, and the results propagate back to \VMD.
+Connection state is shown in the center of the window.
+The simulation status text area displays energy values for the 
+system being simulated (kinetic, electrostatic, etc.),
+as well as the current timestep and the temperature.  
+It is updated each time a new coordinate set (timestep) 
+is received by \VMD.
+\index{remote!connection!killing}
+The {\sf Stop Sim} button will terminate the remote simulation, but
+will not delete the molecule in \VMD.
+\index{remote!connection!detaching}
+The {\sf Detach Sim} button will sever the connection
+between \VMD\ and \NAMD, 
+but will allow the simulation to continue running.
+

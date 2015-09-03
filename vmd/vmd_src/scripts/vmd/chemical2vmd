@@ -1,0 +1,119 @@
+#!/usr/bin/env perl
+
+# chemical2vmd -- version 1.1
+#
+#    This program is used by the .mailcap file to tell VMD to
+# load a given chemical/* MIME type.  The format of the command line is
+#   chemical2vmd <format name> <file name> <other options>
+#
+# Examples:  chemical/x-pdb; chemical2vmd pdb %s
+#            chemical/x-mol; chemical2vmd XYZ %s
+#
+# All the format names, except "vmd" and "pdb" are used for the Babel
+# interface.  The "vmd" name is used for a VMD script file, and "pdb"
+# is understood by VMD without the Babel interface.
+#
+# I think it should be possible to get the chemical/* name somehow, 
+# but I can't figure that out, so you'll have to add a line to the
+# .mailcap file for every chemical type VMD's Babel interface supports.
+#
+# These are the valid names that VMD 1.x understand
+#        "Alchemy", "AMBERPREP", "BallStick", "BiosymCAR", "Boogie",
+# "Cacao", "CADPAC", "CHARMm", "Chem3d-1", "Chem3d-2", "CSSR", "FDAT",
+# "GSTAT", "Feature", "Fractional", "GAMESSoutput", "Z-matrix",
+# "Gaussianoutput", "HIN", "Isis", "MacMolecule", "Macromodel",
+# "MicroWorld", "MM2Input", "MM2Output", "MM3", "MMADS", "MDLMOL",
+# "MOLIN", "MopacCartesian", "MopacInternal", "MopacOutput", "PCModel",
+# "Quanta", "ShelX", "Spartan", "SpartanSE", "SpartanMM", "Sybyl",
+# "Sybyl2", "Conjure", "Maccs2d", "Maccs3d", "UniChemXYZ", "XYZ", "XED"
+#
+##  COPYWRITE:  This program is copywrite 1996 by Andrew Dalke.  You are free
+## to do whatever you want with it so long as you don't sell it for
+## profit and don't remove the copywrite and authorship messages.  No
+## warrenties, either express or implied, are made on this code.
+##
+##                                           Andrew Dalke
+##                                           dalke@ks.uiuc.edu
+##                                           Jan. 5, 1996
+#
+#  See also http://www.ks.uiuc.edu/Research/vmd/chemical2vmd/
+
+# This program creates a temporary file containing the commands to
+# load the new file.  VMD is then exec'ed and told to execute
+# the temporary file.
+
+# Make there there are enough command line parameters
+if ($#ARGV < 1) {
+    print STDERR <<EOM;
+chemical2vmd: Usage:
+   chemical2vmd <babel name> <file name> <other>
+   where <babel name> is the name used in Babel or "vmd"
+         <file name> is the file to load
+         <other> are the other parameters for the VMD command line
+
+EOM
+    exit;
+}
+
+# get the VMD/Babel name and the molecule's file name
+$babel = shift @ARGV;
+$filename = shift @ARGV;
+
+
+# Make a temp. file to store the load command
+$ENV{'TMPDIR'} = '/usr/tmp' if !$ENV{'TMPDIR'};
+sub tmpfile {
+    local ($tempfile) = $ENV{'TMPDIR'} . '/chemical2vmd.' . $$;
+    local ($i);
+    foreach $i ('AA' .. 'ZZ') {
+	if (! -f "$tempfile$i") {
+	    return "$tempfile$i";
+	}
+    }
+    return $tempfile;
+}
+$tmpfile = &tmpfile;
+
+# Create the file
+if (!open(OUTFILE, ">$tmpfile")) {
+    die "chemical2vmd: cannot open temporary file $tmpfile";
+}
+
+
+# if this contains executable content (it is a chemical/vmd file)
+if ($babel eq "vmd") {
+    print OUTFILE <<EOL;
+if [feedback confirm {You have downloaded a VMD script file} \\
+                 {containing potentially dangerous untrusted code} \\
+                        {Are you sure you want to run it?}] {
+    source $filename
+} else { 
+    quit
+}
+EOL
+} else {
+    # load the coordinate file
+    # write out the commands to load the new file, then delete the temporary
+    # command file.  This does not delete the molecule file -- that's left
+    # for the web browser.
+    print OUTFILE "mol load $babel $filename\n";
+}
+# tell the script to remove itself
+print OUTFILE "exec rm $tmpfile\n";
+close OUTFILE;
+
+# and start VMD
+
+# need to do this since the vmd script spawns its own xterm and exits.
+# That normally tells the web broswer to delete the downloaded molecule,
+# but VMD hasn't read it yet, so I have to have the browser's child wait
+# before finishing to give VMD a chance.
+if (!fork) {
+    # child process
+    exec "vmd", "-e", "$tmpfile", @ARGV;
+    die "Couldn't start VMD: $!\n";
+} else {
+    wait;    # this will wait until the vmd script ends, but that's
+             # not the same as the vmd executable
+    sleep 90;# so I wait some more
+}

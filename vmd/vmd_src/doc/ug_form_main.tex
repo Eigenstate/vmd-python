@@ -1,0 +1,254 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_form_main.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.40 $      $Date: 2012/01/10 19:30:05 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%  Main window
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\subsection{Main Window}
+\label{ug:ui:window:main}
+\index{window!main}
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{ug_main}{The Main window}{fig:ug:main}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+The {\sf Main} window is the main way to access other windows,
+load and save files, control trajectory playback,
+change various global program settings, access help, and to quit
+the program.  
+Many of these actions can also be performed with the menu shortcut keys
+described in Table~\ref{table:ug:menushortcuts}.
+
+The {\sf Quit} menu item exits \VMD.  This will bring up
+another window which verifies that you do indeed wish to exit.  
+Press {\sf Yes} to quit, or {\sf No} to return to \VMD.
+\index{quit}
+
+
+\subsubsection{Help}
+ \label{ug:ui:disp:help}
+ \index{help}
+ The {\sf Help} menu items each start a web browser to display on-line \VMD\
+ help documents.  The browser is designated by the environment variable
+ \hyperref{{\tt VMDHTMLVIEWER}}{{\tt VMDHTMLVIEWER} [\S~}{]}
+ {ug:exec_env:variables}. Selecting a help item multiple times may start
+ multiple browsers.  The default web browser is Mozilla for Unix systems, and
+ the built-in Explorer shell for Windows systems.  The menu contains items for the VMD Quick Help
+ page, as well as the current User's Guide, FAQ, and links to various helpful
+ information and programs.  
+
+
+\subsection{Main Window Molecule List browser}
+\label{ug:ui:window:mol}
+\label{ug:ui:window:mol:top}
+\index{molecule!list}
+The {\sf Main} window shows the global status of the loaded molecules.  Any
+number of molecules may be displayed by \VMD\ simultaneously.  Each molecule
+can separately be hidden from view or fixed in place (e.g., prevented from
+being affected by mouse rotation commands).  The window contains controls to
+change the status of the molecules individually or in groups.
+
+The browser displays information about each molecule.  A unique integer ID
+is assigned to each molecule by \VMD\ when it is loaded.  The {\sf Molecule}
+is the file name which contained the topology information.  {\sf Atoms}
+shows the number of atoms in the molecule, and \index{frames}{\sf Frames}
+gives the number of \timesteps associated with the file.
+
+Next to each molecule is a set of status flags, which indicate the current
+{\sf Status} of each molecule.  Each molecule has the following
+characteristics, which can be {\em on} or {\em off}:\index{molecule!status}
+\begin{itemize}
+
+  \item {\bf Top (T)}\index{molecule!top} \\
+{\em Top} indicates the
+default molecule used in the text commands when nothing is specified
+for the {\tt mol} text command.  It is also used in some forms (like
+Graphics and Animate) to determine certain values.  There can be only
+one top molecule at a time.
+
+  \item {\bf Active (A)}\index{molecule!active} \\
+Several commands and actions in \VMD\ operate on many molecules.
+These commands, unless specifically specified otherwise, will do their
+action for all the {\em active} molecules.  The primary use for this
+control is to prevent some molecules from being animated.  Inactive
+molecules will not animate when the play button is pressed.
+
+  \item {\bf Drawn (D)}\index{molecule!drawn} \\
+If a molecule is \index{drawn}{\em Drawn} then it is being displayed
+in the graphics display window.  This is useful for
+temporarily hiding a molecule from view without deleting it.
+
+  \item {\bf Fixed (F)}\index{molecule!fixed} \\
+{\em  Fixed} molecules do not undergo rotation,
+translation, or scaling.  Note that while it may seem that one
+molecule has been moved relative to another, the difference is only
+apparent.  The internal coordinates do not change when a standard rotation
+is applied by using, for example, the mouse.  It is possible, however, to
+change the coordinates of atoms in a molecule, using the text command
+interface, and by using the atom move picking modes.
+
+\end{itemize}
+
+
+\subsubsection{Changing the Molecule's Status}
+\index{molecule!status!changing}
+
+The status of a given molecule can be changed by selecting the molecule in
+the browser and double-clicking the appropriate flag. Only one molecule can
+be top at any one time, so the previous top molecule will change status when
+another is toggled.
+
+\subsubsection{Saving Trajectory Frames}
+\label{ug:ui:window:edit:write}
+\index{animation!write}
+\index{file types!output}
+\index{files!writing}
+\index{trajectory!write}
+
+Using the {\sf Save Coordinates\ldots} menu item, you can write trajectory frames to 
+a file in one of several file formats including PDB, DCD, Amber CRD, etc.
+This feature may be used to write out a new trajectory in a single file 
+after assembling many frames from different sources 
+(such as PDB CRD, DCD or Gromacs files, or even from a remote
+simulation).  You can also use this, in combination with the 
+molecule file browser as a way to make PDB files from a DCD/CRD trajectory.
+
+You can either save the entire stored trajectory, or a slice of
+the data by using the
+\hyperref{{\sf Amount} chooser}{{\sf Amount} chooser [\S~}{]}{ug:ui:window:edit:amount}.
+Then select the appropriate output file type in the {\sf File Type}
+chooser, and press the {\sf Save} button in the bottom right corner.
+This brings up the file browser, which you can use to enter the new
+filename.  Once you press the {\sf Save}
+button in the browser, the file will be written without further
+confirmation. See the section on the
+\hyperref{\tt atomselect writexxx}{{\tt atomselect writexxx} [\S~}{]}{ug:ui:text:atomselect:writexxx}
+command for information on how to write atom coordinates for an atom selection
+in a PDB file.
+
+\subsubsection{Deleting Trajectory Frames}
+\label{ug:ui:window:main:delete:frames}
+\index{animation!delete}
+\index{frame!delete}
+
+You can delete frames from memory through a dialog box. To bring it up, start by
+ selecting a molecule and choosing the 
+{\sf Delete Frames\ldots} from the {\sf Molecule} menu, or by double-clicking 
+on the {\sf Frames} column for that molecule in the Molecule Browser.
+On this is done, choose the
+range of frames you wish to delete with the {\sf First} and {\sf Last} controls, 
+and then press the {\sf Delete} button.  There is
+no confirmation of deletions.
+
+The {\sf Stride} control allows you to keep some frames in the range using the 
+specified interval. For example, if your range contains 10 frames labeled 0 
+through 9, and you use a stride of 4, the frames numbered 0, 4 and 8 will be kept.
+A stride of 0 (zero) implies that all frames will be deleted.
+
+
+\subsubsection{Deleting a Molecule}
+\label{ug:ui:window:main:delete:molecule}
+\index{molecule!deleting}
+
+The {\sf Delete Molecule} menu item deletes all the selected molecules.  There
+is no prompt verifying the deletion, so take some care.  If a deleted molecule
+was the top molecule, a new top molecule will be set from the remaining
+structures.
+
+\subsubsection{GUI Shortcuts}
+\label{ug:ui:window:main:guishortcuts}
+\index{window!main}
+
+There are a few useful mouse-based shortcuts that can be used in the Molecule List browser. Here is a list:
+
+\begin{itemize}
+\item Double-clicking on a molecule's name brings up the Rename Molecule dialog box.
+
+\item Double-clicking on a molecule's number of frames brings up the Delete Frames dialog box.
+
+\item Triple-clicking on the T (top) in front of a molecule focusses on that molecule by making it the only molecule to be displayed (D) and active (A). Furthermore, the view is reset and the molecule gets selected in the Representations window.
+\end{itemize}
+ 
+
+\subsection{Main Window Animation Controls}
+\label{ug:ui:window:animate}
+\index{animate!window controls}
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{ug_animate}{The Main window animation controls}{fig:ug:animate}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+Each molecule in \VMD\ can contain multiple sets of atomic coordinates, 
+which may be animated to show its motion over time.  
+The coordinate sets can come from a molecular dynamics simulation, 
+or simply multiple versions of the same molecular structure.  
+The Main window contains controls for animated playback of these trajectories.
+The controls contains several buttons which act like the
+buttons on a VCR or DVD player.  The buttons provide a way to play
+the trajectory, step forward, stop, go to a specific frame, and go to 
+the beginning or end.
+The status and frame counters shown in the animation control reflects 
+the state of the {\em top} molecule.  
+Commands entered via this control, however, affect all 
+\index{molecule!active}
+\hyperref{active molecules}{active molecules [\S }{]}{ug:ui:window:mol:top},
+not just the top molecule, allowing concurrent animation of multiple molecules. 
+
+\subsubsection{Animation Speed}
+\index{animation!speed}
+\index{animation!step}
+The rate of playback can be controlled in two ways.  The
+{\sf Step} control changes the animation step size.  By default, the frame
+step is 1, so each step of the playback increases (or decreases) the
+animation frame number by one.  If the frame step is 5 then the animation
+proceeds five times faster because only a fifth of the frames are shown.
+The {\sf Speed} slider at the bottom of the window also affects the
+playback speed.  Internally, this controls how many screen updates are
+needed between each step.  By default, the slider is at the far right
+indicating that one step is performed for each screen redraw.  Moving the
+slider to the left increases the minimum time required between updates.
+
+\subsubsection{Jumping to Specific Frames}
+\index{animation!jump}
+The start and end buttons are used to simplify the
+comparison between the initial and final structures.
+The start button resets the current animation to the first frame, 
+and end jumps to the last frame.  
+If you need to jump to a specific frame, enter the
+frame number in the frame counter text area next to the start button and 
+press enter.
+One thing to bear in mind is that the frame number starts at 0, so to jump
+to the 5th frame, you must actually enter 4 here.
+The animation controls are all relative to the 
+\hyperref{top molecule}{top molecule [\S }{]}{ug:ui:window:mol:top}.
+\index{molecule!top}
+
+\subsubsection{Looping Styles}
+\index{animation!style!loop}
+\index{animation!style!once}
+\index{animation!style!rock}
+When the animation is playing forward and reaches the end of
+the data available for the top molecule, one of three possible actions
+takes place, as specified in the style chooser.  The default is
+`Loop', which will reset the active molecules to the first frame and
+continue playing forward.  `Once' will stop the animation when it
+reaches the last frame, and \index{rock}`Rock' reverses the direction of
+animation.  The actions are symmetrical when the animation is playing
+in reverse.
+

@@ -1,0 +1,413 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_mouse_display.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.30 $      $Date: 2012/01/10 19:30:06 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%  The controls available from the OpenGL Display window
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Using the Mouse in the Graphics Window}
+\label{ug:ui:disp}
+\index{mouse!using}
+
+The graphics window is labeled {\sf VMD OpenGL Display} and contains a
+view of the molecules and other objects which make up the scene.  
+When the mouse is in the graphics display window, it may be used to perform 
+the following actions such as:
+\begin{itemize}
+  \item Rotate, translate, or scale the displayed molecules
+  \item Select, or `pick' atoms or other objects in order to 
+        move them, or label them 
+  \item Translate and rotate a set of atoms
+  \item Apply a force (acceleration) to a set of atoms
+  \item Move the lights
+\end{itemize}
+User-defined keyboard accelerators, or {\em hot keys}, are also available
+when the mouse is in the graphics display window.  
+These keys are bound to \VMD\ text commands, which are executed when the key
+is pressed.  \VMD\ has many built-in default hot key commands (see 
+Tables~\ref{table:ug:mouse:control}, \ref{table:ug:rotations},
+\ref{table:ug:menushortcuts} and \ref{table:ug:animationhotkeys}). 
+Users can add new hot keys, overriding default settings if desired.  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Mouse Modes }
+\label{ug:ui:disp:modes}
+\index{mouse!modes}
+
+The mouse is in one of several {\em modes} at any time; 
+the current mouse mode determines the effect of pressing
+and releasing mouse buttons or the mouse wheel while the mouse
+is in the graphics window.
+Each mouse mode, except the lights mode (see below), 
+sets the mouse cursor to a characteristic shape.  
+The mouse mode is selected via the Mouse menu.
+
+The available mouse modes are as follows:
+\begin{itemize}
+
+\item {\bf Rotate Mode}
+\hspace{0.2in} (hot key 'r')
+\\
+\label{ug:ui:disp:rotate}
+\index{rotation!using mouse}
+When the mouse is in rotate mode, holding the left mouse button down 
+and moving the mouse rotates the molecules about axes parallel to the
+screen, in a `virtual trackball' behavior.  To get a rotation around
+the axes coming out of the screen (the `z' axis), hold the middle
+button down and move the mouse left or right.
+
+You can leave \index{rotation!continuous}molecules rotating
+without continuously moving the mouse.  Start the molecule moving with
+the mouse, as above, then release the mouse button before you stop
+moving the mouse.  With some practice it becomes easy to impart a
+slight spin on the molecule, or whirl it about madly.  To stop the
+rotation, either press and hold the left mouse button down until the
+molecule stops moving, or select `Stop Rotation' in the Mouse menu.
+Also, pressing the rotation hot key {\tt r} or any of the other mouse 
+mode hot keys causes \index{rotation!stop}rotation to stop.
+
+\item {\bf Translate Mode} 
+\hspace{0.2in} (hot key 't')
+\\
+\label{ug:ui:disp:trans}
+\index{translation!using mouse}
+When the mouse is in translate mode, holding the left button
+down allows you to move the molecules parallel to the screen plane 
+(left, right, up, and down).  To move
+the molecule towards or away from you, hold the middle button down and
+move the mouse right or left, respectively.
+
+\item {\bf Scale Mode} 
+\hspace{0.2in} (hot key 's')
+\\
+\label{ug:ui:disp:scale}
+\index{scaling!using mouse}
+Pressing either the left or middle button down and moving to the right 
+enlarges the molecules, and moving the mouse left shrinks them.  
+The difference is that the middle button scales faster than the left button.
+Scaling can also be accomplished with the mouse wheel (irrespective
+of the current mode setting) on computers equipped with an appropriate
+mouse.
+
+\item {\bf Move Light} 
+\\
+\label{ug:ui:disp:lights}
+\index{light!controlling with mouse}
+\index{image!lighting controls}
+\VMD\ provides four directional lights to illuminate the molecular scene.  
+The lights provide diffuse lighting and specular highlights 
+and help the user perceive surface shape in rendered objects.
+You can use the mouse to rotate each of the light source directions
+to a new position.
+If the light isn't on, moving it will not affect the displayed image.
+To turn a light on or off, use the {\sf Lights} item within the 
+{\sf Mouse} menu.
+
+\item {\bf Add/Remove Bonds} \\
+\label{ug:ui:disp:addbonds}
+\index{bonds!add or remove}
+\index{mouse!add or remove bonds}
+When the mouse is in add/remove bonds mode, clicking on atoms in a 
+molecule will add a bond between those atoms if one is not already present,
+or remove the bond between those atoms if there is already a bond.  The
+two atoms must belong to the same molecule.  
+
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Pick Modes}
+\label{ug:ui:disp:pick}
+\index{picking!modes}
+\index{picking!atoms}
+\index{picking!bonds}
+\index{picking!angles}
+\index{picking!dihedrals}
+\index{labels!picking with mouse}
+Mouse picking can be used to turn on or off various types
+of labels, to query for information about an object, or to move items
+around on the screen.  You can label an atom (and display the atom
+name), or you can label geometric values such as the
+distance between two atoms (a {\em bond} label), an angle between three
+atoms (an {\em angle} label), or the dihedral angle formed by four
+atoms (a {\em dihedral} label).  This is done by setting the mouse
+into the proper picking mode and then selecting the relevant atoms
+with the mouse.  Picking modes are selected from the {\sf Mouse} menu.
+
+The available pick mode actions are:
+\begin{itemize}
+
+\item {\bf Center}\index{picking!center}
+\hspace{0.2in} (hot key 'c')
+\\ 
+This mode is used to change the point about which a molecule
+rotates when the molecule is rotated.  To cause a molecule to rotate
+about a specific atom, select this mode and then click on that atom.
+The rotation point may be restored to its default position (the center
+of volume of the molecule) by executing the `Reset View' option from
+the Mouse menu.  
+
+\item {\bf Query}\index{picking!query} 
+\hspace{0.2in} (hot key '0')
+\\
+Clicking on an item will print out the name of the item (e.g. the 
+atom name) to the text console window.
+
+\item {\bf Label $\rightarrow$ Atom}\index{picking!atoms} 
+\hspace{0.2in} (hot key '1')
+\\
+Clicking on an atom will toggle on/off a label for the atom.  
+
+\item {\bf Label $\rightarrow$ Bond}\index{picking!bonds} 
+\hspace{0.2in} (hot key '2')
+\\
+Clicking on two atoms in a row will toggle on/off a bond distance
+label between the two atoms (a dotted line with the distance printed
+at the midpoint).  
+
+\item {\bf Label $\rightarrow$ Angle}\index{picking!angles} 
+\hspace{0.2in} (hot key '3')
+\\
+Clicking on three atoms in a row will toggle on/off a label showing
+the angle formed by the three atoms. 
+
+\item {\bf Label $\rightarrow$ Dihedral}\index{picking!dihedrals} 
+\hspace{0.2in} (hot key '4')
+\\
+Clicking on four atoms in a row toggles on/off a label showing the
+dihedral angle formed by the four atoms.  
+
+\item {\bf Move $\rightarrow$ Atom}\index{picking!move atom} 
+\hspace{0.2in} (hot key '5')
+\\
+In this mode, the position of an atom can be changed by clicking on 
+the desired atom, and dragging with the mouse while the button is still
+pressed.  This will change the atom coordinates.  
+
+\item {\bf Move $\rightarrow$ Residue}\index{picking!move residue} 
+\hspace{0.2in} (hot key '6')
+\\
+This mode may be used to move all the atoms in a selected residue at
+the same time.  Select an atom in a residue, and move it to a new
+position while keeping the mouse button pressed.  All the atoms in the
+same residue as the selected one will be moved the same amount.  
+Holding down the <shift> key and the left mouse button while moving the mouse
+will rotate the atoms in the residue about the selected atom.  If the middle
+mouse button is held down instead, the atoms in the residue will rotate about
+a line drawn through the picked atom and parallel to a line coming directly
+out of the screen.  This behavior is similar to the usual Rotate mode, except
+that coordinates of atoms are changed. 
+
+\item {\bf Move $\rightarrow$ Fragment}\index{picking!move fragment} 
+\hspace{0.2in} (hot key '7')
+\\
+A {\em fragment} is a set of atoms all connected by a series of
+covalent bonds.  This mode acts just like MoveResidue, except that the
+atoms which are moved are all in the selected fragment rather than in
+the selected residue.  This will change the atom coordinates.
+Holding down the <shift> key and the left mouse button while moving the mouse
+will rotate the atoms in the fragment about the selected atom.  If the middle
+mouse button is held down instead, the atoms in the fragment will rotate about
+a line drawn through the picked atom and parallel to a line coming directly
+out of the screen.  This behavior is similar to the usual Rotate mode, except
+that coordinates of atoms are changed. 
+
+\item {\bf Move $\rightarrow$ Molecule}\index{picking!move molecule} 
+\hspace{0.2in} (hot key '8')
+\\
+This mode may be used to move all the atoms in a selected molecule at
+the same time.  Select an atom in a molecule, and move it to a new
+position while keeping the mouse button pressed.  All the atoms in the
+same molecule as the selected one will be moved the same amount.  
+Holding down the <shift> key and the left mouse button while moving the mouse
+will rotate the atoms in the molecule about the selected atom.  If the middle
+mouse button is held down instead, the atoms in the molecule will rotate about
+a line drawn through the picked atom and parallel to a line coming directly
+out of the screen.  This behavior is similar to the usual Rotate mode, except
+that coordinates of atoms are changed. 
+
+\item {\bf Move $\rightarrow$ Rep}\index{picking!move highlighted rep} 
+\hspace{0.2in} (hot key '9')
+\\
+This mode may be used to move all the atoms in a selected representation at
+the same time.  You select a representation by clicking on one of the reps
+in the browser window of the Graphics window.  In order to move the atoms in 
+this rep, the atom you pick with the mouse must be selected by that rep.
+
+When you have clicked on an atom in the rep, move the mouse to a new position
+while  keeping the mouse button pressed.  All the atoms selected by the 
+highlighted rep will be moved the same amount.  
+Holding down the <shift> key and the left mouse button while moving the mouse
+will rotate the atoms in the rep about the selected atom.  If the middle
+mouse button is held down instead, the atoms in the rep will rotate about
+a line drawn through the picked atom and parallel to a line coming directly
+out of the screen.  This behavior is similar to the usual Rotate mode, except
+that coordinates of atoms are changed. 
+
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Hot Keys}
+\label{ug:ui:hotkeys}
+\index{hot keys}
+
+When the mouse is in the graphics window, many commands are
+accessible via programmable hot keys.  Hot keys allow you to do things
+like change mouse modes or advance the animation by a frame by simply
+pressing a key.  
+There are a number of predefined hot keys,
+as listed in tables \ref{table:ug:mouse:control},
+\ref{table:ug:rotations}, \ref{table:ug:menushortcuts},
+and \ref{table:ug:animationhotkeys}.
+They can be printed out with the command {\tt user print keys}.
+The commands listed are the text commands which are executed
+when the hot key is pressed; these text commands are explained in
+section \ref{ug:section:text}.  
+
+\index{hot keys!customizing}
+To add or modify a hot key, use the command
+{\tt user add key {\it key} {\it command}}.
+The {\em key} parameter must be a single character.  
+If {\em command} contains more than one word, it must be enclosed in 
+braces so that the subsequent command words are not ignored.  
+When that key is pressed while the mouse cursor is in the 
+graphics display window, the associated command will be executed.
+\index{VMD!customizing}
+Once you have a set of commands which are particularly
+useful and familiar for you, you will want these
+hot key commands automatically available every time you run \VMD.  
+This can be done by placing the commands to add these items
+in your {\tt .vmdrc} file, which is a file containing \VMD\ text
+commands that is executed every time
+\VMD\ starts up. 
+\index{{\tt .vmdrc}} 
+\index{startup files}
+\index{files!startup}
+The basic method for setting up this file is described
+in section \ref{ug:section:vmdrc}.  
+Once you have such a file, put the {\tt user add} commands in it.
+
+
+\begin{table}[htb]
+  \hspace{1in}
+  \begin{tabular}{|c|l|l|} \hline
+    Hot Key & \multicolumn{1}{|c}{Command} &
+		\multicolumn{1}{|c|}{Purpose}\\ \hline\hline
+	{\tt r, R}	& {\tt mouse mode 0 0} 	& enter rotate mode; stop rotation \\
+	{\tt t, T}	& {\tt mouse mode 1 0} 	& enter translate mode \\
+	{\tt s, S}	& {\tt mouse mode 2 0} 	& enter scaling mode \\
+	{\tt 0}		& {\tt mouse mode 4 0}	& query item \\
+	{\tt c}		& {\tt mouse mode 4 1}	& assign rotation center \\
+	{\tt 1}		& {\tt mouse mode 4 2} 	& pick atom \\
+	{\tt 2} 	& {\tt mouse mode 4 3}	& pick bond (2 atoms) \\
+	{\tt 3}		& {\tt mouse mode 4 4}	& pick angle (3 atoms) \\
+	{\tt 4}		& {\tt mouse mode 4 5} 	& pick dihedral (4 atoms) \\
+	{\tt 5}		& {\tt mouse mode 4 6}	& move atom \\
+	{\tt 6}		& {\tt mouse mode 4 7} 	& move residue \\
+	{\tt 7}		& {\tt mouse mode 4 8} 	& move fragment \\
+	{\tt 8}		& {\tt mouse mode 4 9}	& move molecule \\
+	{\tt 9}		& {\tt mouse mode 4 13}	& move highlighted rep \\
+	{\tt \%}	& {\tt mouse mode 4 10} & apply force on atom \\
+	{\tt ${}^\wedge$}	& {\tt mouse mode 4 11}	& apply force on residue \\
+	{\tt \&}	& {\tt mouse mode 4 12} & apply force on fragment \\ \hline
+  \end{tabular}
+  \caption{Mouse control hot keys.}
+  \label{table:ug:mouse:control}
+\index{hot keys!mouse control}
+\index{mouse!modes}
+\index{picking!hot keys}
+\end{table}
+
+
+\begin{table}[htb]
+  \hspace{1in}
+  \begin{tabular}{|c|l|l|} \hline
+%    Hot Key & \multicolumn{1}{|c}{Command} &
+%		\multicolumn{1}{|c|}{Purpose}\\ \hline\hline
+    Hot Key & Command & Purpose\\ \hline\hline
+	{\tt x}		& {\tt rock x by 1 -1} 	& spin about x axis \\
+	{\tt X}		& {\tt rock x by 1 70} 	& rock about x axis \\
+	{\tt y}		& {\tt rock y by 1 -1} 	& spin about y axis \\
+	{\tt Y}		& {\tt rock y by 1 70} 	& rock about y axis \\
+	{\tt z}		& {\tt rock z by 1 -1} 	& spin about z axis \\
+	{\tt Z}		& {\tt rock z by 1 70} 	& rock about z axis \\
+	{\tt j, Cntl-n}	& {\tt rotate x by 2}	& rotate $2^{\circ}$ about x \\
+	{\tt k, Cntl-p}	& {\tt rotate x by -2}	& rotate $-2^{\circ}$ about x \\
+	{\tt l, Cntl-f}	& {\tt rotate y by 2}	& rotate $2^{\circ}$ about y \\
+	{\tt h, Cntl-b}	& {\tt rotate y by -2}	& rotate $-2^{\circ}$ about y \\
+	{\tt g}		& {\tt rotate z by 2}	& rotate $2^{\circ}$ about z \\
+	{\tt G}		& {\tt rotate z by -2}	& rotate $-2^{\circ}$ about z \\
+	{\tt Cntl-a}	& {\tt scale by 1.1}	& enlarge 10 percent \\
+	{\tt Cntl-z}	& {\tt scale by 0.9}	& shrink 10 percent \\ \hline
+  \end{tabular}
+  \caption{Rotation \& scaling hot keys.}
+  \label{table:ug:rotations}
+\index{hot keys!rotation and scaling}
+\index{rotation!hot keys}
+\end{table}
+
+
+\begin{table}[htb]
+  \hspace{1in}
+  \begin{tabular}{|c|l|l|} \hline
+%    Hot Key & \multicolumn{1}{|c}{Command} &
+%		\multicolumn{1}{|c|}{Purpose}\\ \hline\hline
+    Hot Key & Command &
+		Purpose\\ \hline\hline
+{\tt Alt-M}	& {\tt menu main off;menu main on}	& Show main menu  \\
+{\tt Alt-f}	& {\tt menu files off;menu files on}	& Show files menu \\
+{\tt Alt-g}	& {\tt menu graphics off;menu graphics on} & Show graphics menu \\
+{\tt Alt-l}	& {\tt menu labels off;menu labels on}	& Show labels menu \\
+{\tt Alt-r}	& {\tt menu render off;menu render on} 	& Show render menu \\
+{\tt Alt-d}	& {\tt menu display off;menu display on}& Show display menu \\
+{\tt Alt-c}	& {\tt menu color off;menu color on} 	& Show color menu \\
+{\tt Cntl-r}	& {\tt display resetview}		& Reset display \\
+{\tt Alt-q}	& {\tt quit confirm}			& Quit VMD with confirmation \\
+{\tt Alt-Q}	& {\tt quit}				& Quit VMD \\
+{\tt Alt-h}	& {\tt hyperref invert}			& Invert hyper text mode (NOT help) \\ \hline
+  \end{tabular}
+  \caption{Menu control hot keys.}
+  \label{table:ug:menushortcuts}
+\index{hot keys!menu control}
+\index{window!hot keys}
+\end{table}
+
+
+
+
+
+
+\begin{table}[htb]
+  \hspace{1in}
+  \begin{tabular}{|c|l|l|} \hline
+%    Hot Key & \multicolumn{1}{|c}{Command} &
+%		\multicolumn{1}{|c|}{Purpose}\\ \hline\hline
+    Hot Key & Command &
+		Purpose\\ \hline\hline
+	{\tt +,f,F}	& {\tt animate next}	& move to next frame\\
+	{\tt -,b,B}	& {\tt animate prev}	& move to previous frame \\
+	{\tt .,>}	& {\tt animate forward} & play animation forward \\
+	{\tt ,}		& {\tt animate reverse} & play animation reverse \\
+	{\tt <}		& {\tt animate reverse}	& play animation reverse \\
+	{\tt /, ?}	& {\tt animate pause}	& stop animation \\ \hline
+  \end{tabular}
+  \caption{Animation hot keys.}
+  \label{table:ug:animationhotkeys}
+\index{hot keys!animation control}
+\index{animation!hot keys}
+\end{table}
+
+
+\newpage
+

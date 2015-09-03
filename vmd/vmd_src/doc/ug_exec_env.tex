@@ -1,0 +1,565 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_exec_env.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.56 $      $Date: 2013/03/07 16:02:07 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%   execution environment - command line, startup files, env. variables, etc.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Customizing \VMD\ Sessions}
+\label{ug:topic:customizing}
+\index{VMD!customizing}
+There are a number of ways to change the behavior of \VMD\ from the
+default settings, both in how the program starts up and in how the
+program behaves during a session.  This Chapter describes the data files,
+command-line options, and environment variables which are used to
+customize a \VMD\ session.
+
+These files control the initial appearance and behavior of \VMD\ at
+the start, and may be customized to suit each user's particular tastes.
+Default versions of these files are placed in the \VMD\ installation
+directory (On Unix this is usually {\tt /usr/local/lib/vmd}, on Windows
+this defaults to {\tt \verb+C:\Program Files\University of Illinois\VMD+} ).  
+Each user may specify
+their own versions of some of these files, but unless this is done the
+commands and values in the default files are used.  In this way, an
+administrator may customize the default behavior of \VMD\ for all
+users, while giving each user the option to change the default
+behavior however they choose.
+
+Several configurable parameters may also be set in a number of ways,
+including use of command-line options or environment variables.  The
+order of precedence of these methods is as follows (highest precedence
+to lowest):
+
+\begin{enumerate}
+  \item Command-line options.
+  \item Environment variable settings.
+  \item Built-in defaults, as specified by compilation configurable
+parameters.  These are used only if no other values are specified by
+the other methods mentioned in this list.  The Installation Guide
+describes how to change these default values when compiling \VMD.
+\end{enumerate}
+
+\section{VMD Command-Line Options}
+\index{VMD!command line options}
+\index{Command line options}
+
+When started, the following command-line options may be given to \VMD. Note
+that if a command-line option does not start with a dash (-), and is not
+part of another option, it is assumed to be a filename, and its extension is
+matched to the extension registered by the proper plugin. Thus, the Unix
+command
+\begin{verbatim}
+        vmd molecule.pdb 
+\end{verbatim}
+will start \VMD\ and load a molecule from the file {\tt molecule.pdb}, while
+the command
+\begin{verbatim}
+        vmd molecule.psf molecule.dcd
+\end{verbatim}
+will load the corresponding structure and coordinate files into the same
+molecule.
+On the Windows platform, one must preface the \VMD\ invocation
+with the Windows {\tt start} command 
+\begin{verbatim}
+        start vmd molecule.pdb 
+\end{verbatim}
+
+\begin{itemize}
+  \item {\tt -h | --help} : 
+     Print a summary a command-line options to the console. 
+  \item {\tt -e filename} : 
+     After initialization, execute the text commands in filename, and
+     then resume normal operation. \index{play!command}
+  \item {\tt -python} :
+     After initialization, switch to the Python interpreter before executing
+     commands in the file specified by {\tt -e} (if any), and leave the text 
+     interpreter in Python mode. \index{python!startup}
+  \item {\tt filename} :
+     Load the specified file at startup.  The file type will be determined
+     from the filename extension; if there is no filename extension, and
+     the filename contains 4 letters, it is assumed to be a PDB accession
+     code and will be loaded accordingly; otherwise the format is assumed
+     to be PDB.
+  \item {\tt -<filetype> filename} :
+     Load the specified file using the given filetype.
+  \item {\tt -f} :
+    Load all subsequent files into the same molecule.  This is the default.
+    A new molecule is created for each invocation of {\tt -f}; thus,
+    {\tt vmd -f 1.pdb 2.pdb -f 3.pdb} loads {\tt 1.pdb and 2.pdb} into the
+    same molecule and {\tt 3.pdb} into a different molecule.
+  \item {\tt -m} :
+    Load all subsequent files into separate molecules.  The {\tt -f} and
+    {\tt -m} options may be specified multiple times on the command line
+    in order to load multiple molecule containing one or more files.
+  \item {\tt -dispdev < win | text | cave | caveforms | none >} : 
+\index{display!device}
+   Specify the type of graphical display to use. The possible display devices
+   include: 
+     \begin{itemize}
+       \item {\tt win}: a standard graphics display window.
+       \item {\tt text}: do not provide any graphics display window. 
+       \item {\tt cave}: use the CAVE virtual environment for display,
+                         windows are disabled.
+       \item {\tt caveforms}: use the CAVE virtual environment for display
+          and with windows enabled.  This is useful with {\tt -display machine:0}
+          for remote display of the windows when the CAVE uses the local screen.
+       \item {\tt none}: same as text. 
+     \end{itemize}
+     It is possible to use \VMD\ as a filter to convert coordinate files
+     into rendered images, by using the {\tt-dispdev text} and {\tt -e} options.
+  \item {\tt -dist z} : 
+     Specify the distance to the \VMD\ image plane.
+  \item {\tt -height y} : 
+     Specify the height of the \VMD\ image plane.
+  \item {\tt -pos x y} : 
+     Specify the position for the graphics display window. The position
+     (x,y) is the number of pixels from the lower-left corner of the
+      display to the lower-left corner of the graphics window. 
+  \item {\tt -size x y} :
+     Specify the size for the graphics display window, in pixels. 
+  \item {\tt -nt} :
+     Do not display the \VMD\ title at startup. 
+  \item {\tt -eofexit} :
+\index{batch mode}
+     Make VMD exit when EOF on stdin is reached; for example, when a script
+       is redirected to VMD.  The combination 
+       {\tt vmd -dispdev text -eofexit < input.tcl > output.log} 
+       is useful for batch mode scripting.
+  \item {\tt -startup filename} :
+\index{startup files}
+\index{files!startup}
+   Use filename as the \VMD\ startup command script, instead of the
+default {\bf .vmdrc} or {\bf vmd.rc} file.
+\item {\tt -args} :
+  Pass subsequent command line arguments to the text interpreter.  The Tcl
+  interpreter will store these arguments in the list variable {\tt argv}.
+  By default, no arguments are stored in this variable.
+  \item {\tt -debug [level} :
+   Turn on output of debugging messages, and optionally set the current debug
+   level (1=few messages ... 5=many verbose messages). Note this is only useful
+   if \VMD\ has been compiled with debugging option included. 
+\end{itemize}
+
+\section{Environment Variables}
+\label{ug:exec_env:variables}
+\index{environment variables}
+
+Several environment variables are used by \VMD\ to determine the
+location of certain files and directories. These variables are
+accessible to text interface through array {\tt env}.
+\index{variables!env}
+These variables include:
+
+\begin{itemize}
+% XXX Unix-only feature
+  \item {\tt DISPLAY} :
+\index{environment variables!DISPLAY}
+   {\bf (Unix-only)}
+   The X-Windows display that \VMD\ should use for displaying the
+   \VMD\ windows and menus, as well as the graphics window.  If this
+   environment variable is not overridden by VMDGDISPLAY all 
+   \VMD\ windows will be directed to this display.
+    
+
+  \item {\tt VMDDIR} :
+\index{environment variables!VMDDIR}
+   The directory which contains the \VMD\ data files (such as this help
+   file) and architecture-specific executables. By default, this is
+   /usr/local/lib/vmd on Unix systems, and 
+   \verb+C:\Program Files\University of Illinois\VMD+ on Windows sytems.
+
+  \item {\tt VMDTMPDIR} :
+\index{environment variables!VMDTMPDIR}
+   The directory which VMD should use for temporary data files. By
+   default, this is /tmp, or /usr/tmp on Unix systems, and \verb+C:\+ 
+   on Windows.
+
+  \item {\tt VMDCUSTOMIZESTARTUP} :
+   {\bf (Unix-only)}
+\index{environment variables!VMDCUSTOMIZESTARTUP}
+   The name of a C-shell script to source prior to running the actual
+   VMD process.  This shell script can contain any commands necessary for
+   performing machine-specific spaceball, graphics, and other customizations
+   necessary to run VMD.  This can be anything from a simple script that 
+   sets the right serial port for a Spaceball based on the hostname, or 
+   it can be a complex script for turning on a projection system, logging
+   demos, configuring multi-display stereo-framelock features, etc.
+
+  \item {\tt VMDBABELBIN} :
+\index{environment variables!VMDBABELBIN}
+   The complete path and filename for the program babel, which is used
+   by VMD to convert molecular structure/coordinates files into PDB
+   files which \VMD\ can actually understand. If this is not set
+   explicitly, the \VMD\ startup script will attempt to find babel in
+   the current path. If Babel cannot be found or is not installed, \VMD\
+   will not be able to read molecular file formats other than PDB,
+   PSF, and binary DCD files.
+
+  \item {\tt VMDFILECHOOSER} :
+\index{environment variables!VMDFILECHOOSER}
+   Specifies which file chooser to use for loading and saving files from the
+   GUI.  At present, this should be either FLTK, which uses Fltk's platform-
+   independent file chooser, or TK, which uses Tk's file chooser.  The Tk
+   file chooser is the default and uses a native Windows interface on Windows 
+   platforms. The Fltk file chooser looks the same on all platforms, supports
+   tab completion but not drive letters, and is probably most appropriate for 
+   Unix environments.  The file chooser can be overridden at any time by
+   changing the environment variable (e.g., in Tcl, {\tt
+   set env(VMDFILECHOOSER) FLTK}).  
+
+  \item {\tt VMDFORCECPUCOUNT} :
+\index{environment variables!VMDFORCECPUCOUNT}
+   Specifies the maximum number of CPUs or CPU cores that VMD should
+   use when running on a multiprocessor or multicore computer system.
+   By default, VMD will use all of the processors on the host machine.
+   This option can be used to prevent VMD from ``hogging'' CPUs or to
+   make it abide by job submission policies required on large
+   supercomputer systems, when running batch mode.
+
+% XXX Unix-only feature
+  \item {\tt VMDCAVEMEM} :
+\index{environment variables!VMDCAVEMEM}
+   {\bf (Unix-only)}
+   This overrides the default size of the shared memory arena 
+   which is allocated by VMD when the CAVE starts up.  The variable
+   must be an integer number of megabytes.  Since this is the only 
+   shared memory pool allocated, and it is done only once, you must
+   choose a value sufficient to account for the largest scene you
+   intend to render in VMD in that CAVE session.  The default value
+   unless otherwise specified is 80 Megabytes.  Values of 200MB to 512MB
+   are commonly needed for large molecular systems containing several
+   hundred thousand atoms. 
+
+% XXX Unix-only feature
+  \item {\tt VMDFREEVRMEM} :
+\index{environment variables!VMDFREEVRMEM}
+   {\bf (Unix-only)}
+   This overrides the default size of the shared memory arena 
+   which is allocated by VMD when the FreeVR starts up.  The variable
+   must be an integer number of megabytes.  Since this is the only 
+   shared memory pool allocated, and it is done only once, you must
+   choose a value sufficient to account for the largest scene you
+   intend to render in VMD in that FreeVR session.  The default value
+   unless otherwise specified is 80 Megabytes.  Values of 200MB to 512MB
+   are commonly needed for large molecular systems containing several
+   hundred thousand atoms. 
+
+% XXX Unix-only, intended for clusters
+  \item {\tt VMDFORCECONSOLETTY} :
+\index{environment variables!VMDFORCECONSOLETTY}
+   {\bf (Unix-only, intended only for clusters}
+   This environment variable forces \VMD\ to treat the text console
+   as an interactive terminal, despite what the operating system says.
+   This is only useful for running an interactive VMD session on a 
+   Clustermatic or Scyld Linux cluster node. 
+
+% XXX Unix-only feature
+  \item {\tt VMDGDISPLAY} :
+\index{environment variables!VMDGDISPLAY}
+   {\bf (Unix-only)}
+   The name of an X-Windows display that VMD will use to display
+   the graphics window.  This environment variable is only used
+   on Unix systems.  Through the use of the the DISPLAY and
+   VMDGDISPLAY envrironment variables, the VMD graphics window can
+   be placed on a separate screen from the windows and menus.  This is
+   particularly useful when giving 3-D demonstrations using a projector.
+   The windows and menus can be kept on a different screen from the graphics
+   so that they do not distract the audience.
+
+  \item {\tt VMDGLSLVERBOSE} :
+\index{environment variables!VMDGLSLVERBOSE}
+   OpenGL Shading language compiler diagnostic errors only printed
+   only when this environment variable is set.
+
+  \item {\tt VMDHTMLVIEWER} :
+\index{environment variables!VMDHTMLVIEWER}
+   The name of a command that will run a web browser in the background 
+   (Netscape, Mozilla, Firefox or whatever you prefer)
+   that \VMD\ should use to display HTML documents (such as this help
+   file). By default, on UNIX, this is mozilla. (usage examples in Tcl: 
+   {\tt set env(VMDHTMLVIEWER) ``mozilla -remote openURL(\%s)"}, 
+   {\tt set env(VMDHTMLVIEWER) ``mozilla \%s \&"})
+
+  \item {\tt VMDIMAGEVIEWER} :
+\index{environment variables!VMDIMAGEVIEWER}
+   The name of the external program to use for displaying \VMD\
+   snapshots (or other images), in various formats.
+
+  \item {\tt VMDIMMERSADESKFLIP} :
+\index{environment variables!VMDIMMERSADESKFLIP}
+   Enable a special reversed/reflected stereo projection mode for 
+   use with experimental displays based on LCD panels, phase plates, 
+   and beam splitters.
+
+  \item {\tt VMDMACENABLEEEXTENSIONS} :
+\index{environment variables!VMDMACENABLEEEXTENSIONS}
+   Enable performance-oriented OpenGL rendering extensions
+   which are disabled by default.  These extensions have been 
+   observed to trigger instability on some MacOS X systems.
+
+  \item {\tt VMDMAXAASAMPLES} :
+\index{environment variables!VMDMAXAASAMPLES}
+   Override the maximum requested OpenGL multisample antialiasing
+   sample depth with a user-specified value.  The VMD default is
+   normally 8 samples per pixel.  Some video cards exhibit poor 
+   performance with large numbers of antialiasing samples and must
+   be restricted to 5 or fewer samples per pixel.
+
+  \item {\tt VMDMSECDELAYHACK} :
+\index{environment variables!VMDMSECDELAYHACK}
+   Add in a user-specified delay which causes \VMD\ to sleep for
+   specified number of milliseconds each time it renders the molecular
+   scene on the display.  This feature is meant as a workaround to 
+   poor performing display drivers which make the windowing system
+   unresponsive if VMD is allowed to run unrestricted at maximum drawing rate.
+
+  \item {\tt VMDMSMSUSEFILE} :
+\index{environment variables!VMDMSMSUSEFILE}
+   Force \VMD\ to communicate with MSMS through the filesystem rather
+   than with the socket-based network interface.  This option can be
+   used when the socket interface isn't working properly for some reason.
+   This is the default behavior when using \VMD\ on Windows.
+
+  \item {\tt VMDNOCUDA} :
+\index{environment variables!VMDNOCUDA}
+   Force VMD not to use CUDA-based GPU acceleration, even if CUDA 
+   support was compiled in, and CUDA-capable devices are detected at startup.
+   This can be used in cases where a GPU or GPU drivers prove to be unreliable
+   for computation, for benchmarking vs. CPU-only implementations, and
+   to prevent VMD from using a GPU that's already oversubscribed by other
+   processes running on the same machine.
+
+% XXX Unix-only feature
+  \item {\tt VMDDISABLESTEREO} :
+\index{environment variables!VMDDISABLESTEREO}
+   {\bf (Unix)}
+   Prevents VMD from enabling stereoscopic display features.  This is
+   normally only used as a workaround for buggy display drivers.
+
+  \item {\tt VMDPREFERSTEREO} :
+\index{environment variables!VMDPREFERSTEREO}
+   {\bf (Unix, MacOS X)}
+   On Unix systems using X11, this environment variable allows NVidia Quadro
+   users to override the normal X11 visual search order, skipping multisample
+   capable visuals in favor of stereo visuals.  VMD still attempts to get the  
+   more complex visuals first, but if it comes down to a choice between stereo
+   and multisample as mutually exclusive options, this variable provides 
+   the ability to force the use of stereo if available.
+   On MacOS X, this environment variable tells \VMD\ to create a
+   a stereo-capable display window, even at the risk of terminating the 
+   program if the request is denied.
+
+  \item {\tt VMDSCRDIST} :
+\index{environment variables!VMDSCRDIST}
+   Distance to the \VMD\ image plane.
+
+  \item {\tt VMDSCRHEIGHT} :
+\index{environment variables!VMDSCRHEIGHT}
+   Height of the \VMD\ image plane.
+
+  \item {\tt VMDSCRPOS} :
+\index{environment variables!VMDSCRPOS}
+   Position of the \VMD\ graphics window (x,y).
+
+  \item {\tt VMDSCRSIZE} :
+\index{environment variables!VMDSCRSIZE}
+   Size of the \VMD\ graphics window (x,y).
+
+%%
+%% Graphics rendering related controls
+%%
+  \item {\tt VMD\_EXCL\_GL\_EXTENSIONS} :
+\index{environment variables!VMD\_EXCL\_GL\_EXTENSIONS}
+  Disable the use of named OpenGL extensions according to their
+  official OpenGL extension names.  This is intended to be used 
+  only when one encounters severe stability problems caused by 
+  buggy display drivers.
+
+
+  \item {\tt VMDSHEARSTEREO} :
+\index{environment variables!VMDSHEARSTEREO}
+   Enable the use of an alternative perspective projection mode 
+   which may result in improved stereoscopic display.  Uses the
+   shear-matrix stereo formulation rather than eye rotation.
+
+
+  \item {\tt VMDSIMPLEGRAPHICS} :
+\index{environment variables!VMDSIMPLEGRAPHICS}
+   Forces VMD to use absolutely minimalistic graphics features with no 
+   use of OpenGL extensions.  Essentially, nothing but bread-and-butter 
+   vertex arrays and immediate mode rendering will be used.  This mode
+   is intended to be used only when one encounters severe stability 
+   problems caused by buggy display drivers.
+
+\item {\tt VMDWIREGL} :
+\index{environment variables!VMDWIREGL}
+   This environment variable disables several graphics features which
+   are unsupported (or poorly supported) by WireGL and Chromium.
+   This variable will be superceded with a more general
+   implementation in a future release.
+
+\end{itemize}
+
+\section{Startup Files}
+\index{startup files}
+\index{files!startup}
+\subsection{Core Script Files}
+
+In the following, the value of {\tt \$VMDDIR} is the vmd installation
+directory.  During the original installation this is the value of {\tt
+INSTALLLIBDIR}.  It can also be found by looking at the first few
+lines of the vmd startup script ({\tt head `which vmd`}) or by
+starting \VMD\ and using the command {\tt set env(VMDDIR)}.
+\index{variables!env}
+
+As mentioned elsewhere, \VMD\ uses the Tcl interpreter.  \VMD\ 
+read Tcl scripts at initialization, which are contained in \VMD\
+distribution. The locations of the scripts is determined by the
+{\tt TCL\_LIBRARY} environment variable, which
+\index{environment variables!TCL\_LIBRARY}
+is set in the vmd startup script to {\tt \$VMDDIR/scripts/tcl}. 
+In addition, \VMD\ has its own directory of core Tcl routines.
+
+The most important of these is {\tt \$VMDDIR/scripts/vmd/vmdinit.tcl}.  This
+file sets up the basic Tcl initialization commands, defines some environment
+variables, and adds the vmd script directory to the Tcl autoindex path.
+Most of the other files are referenced through the {\tt auto\_path}.
+
+There are a few non-Tcl scripts in this directory.  Currently these
+are perl scripts used for the {\tt urlload} command and {\tt web
+client} startup (see 
+section \ref{ug:ui:text:mol} and section \ref{ug:topic:www:client}).
+
+\subsection{User Script Files}
+
+A user-written run-time command file, {\tt .vmdrc} on Unix,
+{\tt vmd.rc} on Windows, can be used with a list
+of initial \VMD\ text commands to process.  This file may be changed
+to customize individual user's initial screen appearance and to set
+the proper display characteristics for displaying in stereo.  If it
+does not exist, default values are used.
+
+\subsection{{\tt .vmdrc} and {\tt vmd.rc} Files}
+\label{ug:section:vmdrc}
+\index{{\tt .vmdrc}}
+\index{{\tt vmd.rc}}
+\index{startup files}
+\index{files!startup}
+
+After everything is initialized, \VMD\ reads the {\em startup} file
+using the equivalent of the command {\tt play .vmdrc}.  
+This file contains text commands for \VMD\ to execute just as if they had been
+entered at the \VMD\ text console command prompt.  The file can
+contain any number of commands, including blank lines and comment
+lines (which begin with the {\tt \#} character).  If an error is
+encountered while reading this file, the command in error is skipped
+and processing of the file continues.
+
+\VMD\ searches for this file in three locations on Unix;
+{\tt ./.vmdrc}, {\tt \$HOME/.vmdrc} and {\tt \$VMDDIR/.vmdrc}.
+On Windows, \VMD\ searches in
+{\tt ./vmd.rc}, {\tt \$HOME/vmd.rc} and {\tt \$VMDDIR/vmd.rc}.
+Only the first file found will be read in and processed.
+
+%??? Idea is to refer to place for script -- go to new
+%ug\_user\_scripts.tex file ???  
+See chapter \ref{chapter:ug:text} 
+for a description of the \VMD\ text
+commands which may be put in this file.  Also,
+section \ref{ug:ui:hotkeys} discusses how to put
+commands into the {\tt .vmdrc} file to customize the behavior of the
+hot keys.
+
+Here is an example of a startup file:
+\index{example scripts!Tcl!customized startup file example}
+\begin{verbatim}
+# add personalized keyboard shortcuts 
+user add key E echo on
+user add key e echo off
+user add key g display reset
+user add key A stage location bottom
+user add key m mol list
+
+# position the stage and axes
+axes location lowerleft
+stage location off
+
+# position and turn on menus
+menu main move 5 196
+menu display move 386 90
+menu graphics move 5 455
+menu files move 5 496
+
+menu main on
+
+# start the scene a-rockin'
+rock y by 1
+\end{verbatim}
+
+\section{Using \VMD\ as a WWW Client (for chemical/* documents)}
+\label{ug:topic:www:client}
+
+Mosaic, Netscape, and possibly other browsers can be configured to use VMD as a helper application for viewing some {\tt chemical/*} documents.
+
+\subsection{MIME types}
+
+\index{VMD!as MIME helper application}
+When a web browser receives a document from a server it actually gets
+two pieces of information: the header and the body.  The header
+contains information about the message and body.  One of the most
+important pieces of data, called the {\it MIME type} specifies what
+the body of text describes.  For instance, a GIF image is given the
+MIME type of {\tt image/gif}, a JPEG image is {\tt image/jpg}, and
+postscript is {\tt application/postscript}.  A class of types, {\tt
+chemical/*}, has been created for chemical models so the MIME type for
+PDB files is {\tt chemical/pdb}, for XYZ is {\tt chemical/xyz}, etc.
+
+\subsubsection{Helper Applications}
+
+The web browser uses the MIME type to determine how to view the body
+of the message.  Some of the documents are viewed by the browser
+itself, like {\tt text/html} which describes HTML documents.  In other
+cases, the browser has to start up another application.  From here on,
+we'll describe how Mosaic and Netscape do this.  First, it saves the
+incoming message body to a temporary file.  It then scans the global
+and local {\it mailcap} files to determine which application is used
+to view the given MIME type.  The application, which must take a file
+name on the command line, is then executed.  When the application
+exits, the temporary file is deleted.
+
+\subsection{Setting up your {\tt .mailcap}}
+
+\index{{\tt .mailcap}}
+The Unix versions of \VMD\ have an extra {\tt -webhelper} 
+command line flag which causes VMD not to be spawned in the 
+background, so that it has time to read temporary files downloaded
+by the web browser.  This command line flag is just slightly simpler
+to use than the {\tt chemical2vmd} script, as it does not depend on having
+Perl installed, so may be more appropriate for some cases.   
+
+\index{chemical2vmd}
+In the \VMD\ installation directory (\$VMDDIR/scripts/vmd/) 
+there is a perl script called {\tt chemical2vmd} 
+which will create a \VMD\ command file and execute VMD.  Since 
+VMD does not block the calling process, Netscape and other web 
+browsers cannot directly call VMD, as they do not know when to 
+delete the temporary file containing the molecule or other data.
+The {\tt chemical2vmd} script starts \VMD\ with the -e command line 
+option which runs the saved VMD script or molecule file.
+
+It is also possible to install the previous script in the global {\tt
+.mailcap} file to make it accessible to everyone.  You will have to
+consult the documentation for your web browser(s) to find out how.
+
+\subsection{Example sites}
+
+Some web sites that send {\tt chemical/pdb} types are the
+Protein Data Bank at {\tt http://www.rcsb.org/} and ``Molecules R
+US'' at {\tt http://www.nih.gov/htbin/pdb}.
+

@@ -1,0 +1,68 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_chapters.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.18 $      $Date: 2014/12/29 06:36:32 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%
+% USERS GUIDE : chapter driver
+%   inputs all the specific chapters in their proper order for
+% the user's guide.  Can be used by another larger document
+% to define a Part, i.e. Part I - Users Guide.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% introduction: purpose of document, organization of document,
+% changing this document
+\input{ug_intro}
+
+\input{ug_hardware}
+
+%% tutorial
+% get up and running with myoglobin
+%   (load, stereo, display various things differently, append trajectory,
+%     change colors, take pictures)
+\input{ug_tutorial}
+
+% loading files
+\input{ug_file_types}
+
+% description of the basic mouse/ menu interface
+\input{ug_basics}
+
+% drawing
+\input{ug_mol_reps}
+
+% coloring
+\input{ug_mol_colors}
+
+% selection command
+\input{ug_mol_selection}
+
+% stereo
+\input{ug_stereo}
+
+% rendering images
+\input{ug_rendering}
+
+% text user interface
+\input{ug_text_ui}
+\input{ug_python}
+
+%% extended tcl commands
+% tcl vector commands
+\input{ug_vectors}
+\input{ug_molecule_info}
+
+% collective variables interface
+% XXX moved the colvars macro inclusion prior to the start of
+%     the document so it doesn't get picked up by latex2html's
+%     parser and incorrectly interpreted.
+%\input{ug_colvars_macros}
+\input{ug_colvars}
+
+% customizing VMD to the user's preferences and environment
+\input{ug_exec_env}
+

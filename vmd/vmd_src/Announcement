@@ -1,0 +1,39 @@
+        VMD "Visual Molecular Dynamics" 1.9.3 Announcement
+        --------------------------------------------------
+The Theoretical and Computational Biophysics group at the Beckman Institute 
+for Advanced Science and Technology of the University of Illinois at
+Urbana-Champaign, is proud to announce the public release of VMD 1.9.3.
+
+VMD is a package for the visualization and analysis of biomolecular systems.  
+VMD includes features for animation of molecular dynamics trajectories, 
+interactive simulation, sequence browsing and structure highlighting, 
+and powerful scripting capabilities. This software is distributed 
+free of charge and includes source code, documentation, and precompiled 
+binaries for MacOS X, Unix platforms, and Microsoft Windows.
+The VMD documentation includes an installation guide, a users guide, and a 
+programmers guide for interested researchers.  VMD also provides on-line 
+help through the use of an external HTML viewer.  VMD development is 
+supported by the NIH National Center for Research Resources.
+
+A full description of VMD is available via the VMD home page:
+  http://www.ks.uiuc.edu/Research/vmd/
+
+Release notes, documentation, and download links for the new version 
+are available here:
+  http://www.ks.uiuc.edu/Research/vmd/vmd-1.9.3/
+
+The authors request that any published work which utilizes VMD includes 
+a reference to the VMD web page and/or the following reference:
+  Humphrey, W., Dalke, A. and Schulten, K., "VMD - Visual Molecular
+  Dynamics", J. Molec. Graphics, 1996, vol. 14, pp. 33-38.
+
+The Theoretical and Computational Biophysics group encourages VMD users 
+to be closely  involved in the development process through reporting bugs, 
+contributing  fixes, periodical surveys and via other means.
+
+We are eager to hear from you, and thank you for using our software!
+
+                                                John E. Stone
+                                                vmd@ks.uiuc.edu
+                                                June, 2015
+

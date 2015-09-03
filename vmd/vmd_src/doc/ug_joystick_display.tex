@@ -1,0 +1,34 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_joystick_display.tex,v $
+%       $Author: justin $        $Locker:  $                $State: Exp $
+%       $Revision: 1.2 $      $Date: 2001/12/19 18:23:16 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%  The controls available from the OpenGL Display window
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Using the Joystick in the Graphics Window}
+\label{ug:joystick}
+\index{joystick!using}
+
+The Windows version of \VMD\ provides support for the 
+Windows joystick driver, and will enumerate all available joystick
+devices at startup time.  The joystick interface employed in VMD 
+is quite simple, allowing the use of three control axes to translate,
+rotate, and scale the molecule.  The joystick interface assumes a 
+device with at least two buttons.  The first joystick button resets
+the view in the display window, and the second button cycles through 
+each of the available joystick modes.  When \VMD\ first attaches to
+each of the joysticks, they are initially disabled so that miscalibrated
+joysticks do not adversely affect the \VMD\ session.  Each joystick is
+initially enabled by pressing its second button to switch modes.  All
+joysticks are independently controlled such that multiple joysticks can
+control different control axes, and multiple users could interact 
+with the program with separate controls.
+
+\newpage
+

@@ -1,0 +1,296 @@
+                        README file for VMD 1.8.5
+---------------------------------------------------------------------------
+
+What is VMD?            See also http://www.ks.uiuc.edu/Research/vmd/
+---------------------------------------------------------------------
+  VMD is designed for the visualization and analysis of biological
+systems such as proteins, nucleic acids, lipid bilayer assemblies,
+etc.  It may be used to view more general molecules, as VMD can read
+standard Protein Data Bank (PDB) files and display the contained
+structure.  VMD provides a wide variety of methods for rendering and
+coloring molecule.  VMD can be used to animate and analyze the trajectory 
+of molecular dynamics (MD) simulations, and can interactively manipulate
+molecules being simulated on remote computers (Interactive MD).
+
+VMD has many features, which include:
+  o No limit on the number of molecules, atoms, residues or
+    number of animation frames, except available memory.
+
+  o Many molecular and volumetric rendering and coloring methods.
+
+  o Extensive atom selection language with boolean and algebraic operators, 
+    regular expressions, distance based selections, and more.
+
+  o Extensive graphical and text interfaces to Tcl, Tk, and Python 
+    to provide powerful scripting and analysis capabilities.
+
+  o Stereoscopic display with shutter glasses, autostereoscopic flat panels,
+    anaglyph stereo glasses, and side-by-side stereo viewing.
+
+  o High-quality on-screen rendering using OpenGL programmable shading on
+    advanced graphics accelerators.
+
+  o 3-D interactive control through the use of joysticks, Spaceballs,
+    haptic devices and other advanced input devices, with support for
+    Virtual Reality Peripheral Network (VRPN).
+
+  o An extensible plugin-based file loading system with support for
+    popular formats such as AMBER, CHARMM, Gromacs, NAMD, PDB, X-PLOR,
+    and many others, as well as automatic conversion through Babel. 
+
+  o Export displayed scene to extenal rendering formats including POV-Ray, 
+    Raster3D, Renderman, Tachyon, Wavefront, as well as STL or VRML2 files 
+    for 3-D printing.
+
+  o Perform interactive molecular dynamics (IMD) simulations using 
+    NAMD, Protomol, or other programs as simulation back-ends.    
+
+  o Integration with the program NAMD, a fast, parallel, and scalable
+    molecular dynamics program developed in conjunction with VMD.
+    See the NAMD page for details: http://www.ks.uiuc.edu/Research/namd
+
+  o Integration with the BioCoRE collaborative research environment.
+    VMD can "publish" molecular graphics scripts to BioCoRE, so that
+    collaborators can work together over the internet.
+    See the BioCoRE page for details: http://www.ks.uiuc.edu/Research/biocore
+
+
+What's new in VMD 1.8.5?
+------------------------
+  General Improvements
+    o MacOS 10.4 versions for PowerPC and Intel processors use the
+      Apple-provided Tcl/Tk and Python frameworks, and support 
+      quad-buffered stereoscopic display on Macs with Quadro 4500
+      graphics cards (or similarly capable hardware).
+    o New MultiSeq 2.0 multiple sequence alignment plugin replaces the 
+      multiple alignment plugin, and allows both structure based sequence
+      and pure sequences to be aligned and analyzed
+    o Support for VRPN 7.03, lower cost HDAPI-based haptic devices
+
+  User documentation updates
+    o MultiSeq 2.0 documentation has been added
+    o APBS plugin docs include a short tutorial on coloring solvent
+      surfaces by potential
+    o Significantly expanded documentation for users interested in developing
+      extensions and plugins in Tcl/Tk, Python, and C/C++.
+    o Minor improvements and corrections to the VMD User's Guide,
+      added documentation for new commands and environment variables.
+
+  User interface changes
+    o "RWB" is now the default color scale (previously "RGB")
+    o New min/max range controls for isosurface representation isovalue slider
+    o The materials menu is now populated with a much larger set of 
+      materials by default.
+    o OpenGL Shading language compiler diagnostic errors are now printed
+      only when the VMDGLSLVERBOSE environment variable is set.
+
+  New representations and display features
+    o NewCartoon representations now draw nucleic acid structures with
+      ribbons for the backbone and cylinders for each nucleotide 
+    o Significant improvements for display of nucleic acids using the existing
+      NewRibbons and NewCartoon representations
+    o Dynamic reclalculation of bonds can now bet set for several
+      atom-oriented representations, for use with trajectory playback
+    o Pick points can now be created for user-defined graphics, to allow
+      the creation of completely customized graphics and behaviors using
+      the scripting interfaces.
+    o The built-in color table and menus now contain 32 
+      user-modifiable base colors rather than the old limit of 16.
+    o Atom labels can now be displayed with user defined format strings,
+      and with a defined offset from the atom coordinate. 
+    o Added new "RGryB" and "BGryR" color scales for use when coloring
+      by potential on white backgrounds
+    o New VMDVMDMACENABLEEEXTENSIONS environment variable enables
+      performance-oriented OpenGL extensions which trigger bugs 
+      on some Mac systems.
+    o New VMDSHEARSTEREO environment variable enables an alternative 
+      perspective projection mode for improved stereoscopic display
+    o New VMDIMMERSADESKFLIP environment variable enables a special
+      reversed/reflected stereo projection mode for use with experimental
+      displays based on LCD panels, phase plates, and beam splitters.
+
+  New analysis features
+    o New 'measure dipole' command for calculating dipole moments
+    o New 'measure gofr' command for calculating radial pair distribution
+      functions
+    o New 'mol reanalyze' command allows one to force VMD to completely 
+      re-analyze the molecular structure due to changes in atom names, 
+      residue names, bonding/topology, etc.  This is intended to be used by
+      structure building tools and other special applications where one wishes
+      to change the structure on-the-fly.
+
+  New and improved plugins and extensions
+    o New MultiSeq 2.0 multiple sequence alignment plugin replaces the 
+      multiple alignment plugin, and allows both structure based sequence
+      and pure sequences to be aligned and analyzed
+    o New BioCoRE collaboration plugins for chatting, 
+      remote file system access, remote job submission, and VMD state exchange
+    o New "Virtual DNA" visualization plugin can display a graphical
+      representation of DNA according to its helical parameters (no atomic
+      structure)
+    o New "g(r)" graphical interface for radial pair distribution 
+      function calculation and plotting
+    o New IR spectral density calculation and plotting tool
+    o New representation cloning visualization plugin makes it easy to 
+      copy a set of representations from one molecule to another
+    o New Palette Tool visualization plugin displays active colors 
+      and materials, for test rendering and printing
+    o Molefacture plugin now allows structures to be built from scratch using
+      a library of fragments and residues
+    o New Salt Bridge plugin finds salt bridges that form over a trajectory
+    o New CGTools plugin for converting between coarse grain 
+      and all-atom models
+    o New 'NavFly' mouse-based flying camera navigation plugin
+    o Mutator plugin now includes support for free energy perturbation
+    o APBS plugin now includes a mobile ion editor, and
+      supports job remote execution
+    o NAMDEnergy plugin now supports remote job execution 
+    o Extended the exectool plugin with support for remote job submission
+      through BioCoRE
+    o Improved the clipping plane tool user interface
+    o Improved Color Scale Bar plugin now has better range controls,
+      improved behavior with white backgrounds, and generally more robust.
+    o Improved Ramachandran plotting plugin includes a new 3-D time averaged
+      histogram display feature.
+
+  New and improved file import and export
+    o New VASP plugins read atomic configurations, trajectories, 
+      charge density and electron localization function volumetric grids. 
+    o AMBER file readers now convert to/from elementary charge units
+    o Improved Gromacs plugin now reads TRJ trajectory files
+    o Improved column alignment in mol2plugin mol2 file writing routines
+    o Improved LAMMPS plugin now reads more structure data out of trajectories
+
+  Bug Fixes
+    o Fixed a potential crash when 'measure contacts' was used with a 
+      very very small distance parameter, on very large structures
+    o Fixed a potential crash in the labels window when molecules were deleted
+    o Fixed a memory leak in the atomselect 'moveby' subcommand
+    o Fixed a potential crash in the 'atomselect macro' command
+    o Fixed the state saving script so that it correctly saves and restores
+      the user-defined clipping planes.  Also made the state loader more
+      robust so that any color settings errors don't abort the loading
+      process, and will continue on with remaining color settings.
+
+Known bugs
+----------
+  Visit the VMD page for information on known bugs, workarounds, and fixes:
+    http://www.ks.uiuc.edu/Research/vmd/
+
+
+Cost and Availability
+---------------------
+  BioCoRE, JMV, MDTools, NAMD, VMD and the Structural Biology Software
+Database represent the broad efforts of the Theoretical and Computational 
+Biophysics Group, an NIH Resource for Macromolecular Modeling and 
+Bioinformatics, designed to develop and distribute free, effective tools 
+(with source code) for molecular dynamics studies in structural biology.  
+For more information, see:
+  http://www.ks.uiuc.edu/Research/biocore/
+  http://www.ks.uiuc.edu/Research/namd/
+  http://www.ks.uiuc.edu/Research/vmd/
+  http://www.ks.uiuc.edu/Research/jmv/
+  http://www.ks.uiuc.edu/Development/biosoftdb/
+  http://www.ks.uiuc.edu/Development/MDTools/
+
+The VMD project is funded by the National Institutes of Health
+(grant number PHS 5 P41 RR05969).
+
+
+Disclaimer and Copyright
+------------------------
+  VMD is Copyright (c) 1995-2006 the Board of Trustees of the 
+University of Illinois and others.
+
+The terms for using, copying, modifying, and distributing VMD are
+specified in the file LICENSE. If you use VMD in a way you think is
+interesting or novel, we would like to know about it.
+
+The authors request that any published work which utilizes VMD 
+includes a reference to the VMD web page:
+  http://www.ks.uiuc.edu/Research/vmd/
+
+and/or the following reference:
+  Humphrey, W., Dalke, A. and Schulten, K., "VMD - Visual Molecular
+  Dynamics", J. Molec. Graphics, 1996, vol. 14, pp. 33-38.
+
+
+Documentation
+-------------
+  The VMD Installation Guide, User's Guide, and Programmer's Guide 
+are available which describe how to install, use, and modify VMD.  
+All three guides are available from the main web site.
+Online help may be accessed via the "Help" menu in the main VMD window 
+or by typing help in the VMD command window.  This will bring up the VMD
+quick help page in a browser, and will lead you to several other VMD help 
+files and manuals. 
+
+
+Quick Installation Instructions
+-------------------------------
+Detailed instructions for compiling VMD from source code
+can be found in the programmer's guide.
+
+The Windows version of VMD is distributed as a self-extracting 
+archive, and should be entirely self explanatory.  
+
+The native MacOS X version of VMD is packaged as a disk image and is
+extracted by opening the disk image, and dragging the "VMD" application
+contained inside into an appropriate directory.
+
+For quick installation of the binary distribution for Unix do the following:
+  1) Uncompress and untar the distribution into a working directory.
+     In this working directory, there are several subdirectories such 
+     as bin, src, doc, data, as well as this README and a configure script.  
+     Change to this working directory after the unpacking is complete.
+
+  2) Edit the file 'configure'; change the values for
+     the $install_library_dir and $install_bin_dir to a directory in 
+     which vmd data files and executables should be installed, be sure
+     that you installing into a clean target directory and not overwriting
+     an existing version of VMD (which would otherwise give problems):
+
+     $install_bin_dir is the location of the startup script 'vmd'.  
+     It should be located in the path of users interested in running VMD.
+
+     $install_library_dir is the location of all other VMD files.  
+     This included the binary and helper scripts.  It should not be 
+     in the path.
+
+  3) A Makefile must be generated based on these configuration variables
+     by running "./configure". 
+
+  4) After configuration is complete, cd to the src directory,
+     and type "make install".  This will install VMD in the two
+     directories listed above.  Note that running "make install" 
+     twice will print error messages because you are attempting to 
+     overwrite some read-only files.  Similarly, if you have incorrectly
+     specified the target installation directories or attempt to overwrite
+     an existing VMD installation, you will get error messages.
+
+  5) When installed, type 'vmd' to start (make sure the
+     $install_bin_dir directory is in your path).
+
+
+Required Libraries
+------------------
+  VMD requires several libraries and programs for various of its functions.
+In particular, it uses GL or OpenGL based 3-D rendering, and will require
+that you have the appropriate GL or OpenGL libraries on your system.  
+Other programs are required by some of VMD's optional features.
+Please visit the VMD web site for more information:
+  http://www.ks.uiuc.edu/Research/vmd/
+
+For problems, questions, or suggestions, send e-mail to 'vmd@ks.uiuc.edu'.
+  VMD Development Team
+  Theoretical and Computational Biophysics Group
+  University of Illinois and Beckman Institute
+  405 N. Matthews
+  Urbana, IL  61801
+  TBG: http://www.ks.uiuc.edu/
+  VMD: http://www.ks.uiuc.edu/Research/vmd/
+
+
+README for VMD; last modified August 19, 2006 by John Stone
+
+

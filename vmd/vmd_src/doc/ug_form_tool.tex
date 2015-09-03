@@ -1,0 +1,196 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_form_tool.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.12 $      $Date: 2012/01/10 19:30:06 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%  tracker/ tool control
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\subsection{Tool Window}
+\label{ug:ui:window:tool}
+\index{window!tool}
+\index{tool!window}
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{ug_tools}{The Tool window}{fig:ug:tool}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+The {\sf Tool} window is used to set up external 3D pointers,
+buttons, force-feedback devices, and the \VMD\ ``tools'' that they
+control.  \VMD\ communicates with input devices through
+CAVElib, FreeVR, or via Virtual Reality Peripheral Network (VRPN),
+or with direct operating system interfaces.  
+Since VRPN provides networked device abstraction, \VMD\ doesn't 
+have to be running on the same computer that VRPN devices are 
+attached to.  With VRPN, you may use buttons, trackers,
+and also force-feedback (haptic) devices such as the PHANToM.
+In the CAVE or FreeVR, \VMD\ recognizes two types of devices: buttons 
+and trackers.  The built-in Spaceball driver can also be used to
+control tools.
+
+\subsubsection{Configuring input devices}
+To use input devices with \VMD\ ``tools'', you need a 
+{\it sensor configuration file},
+\index{sensors}
+\index{sensor configuration file} 
+\index{tool!VRPN}
+\index{tool!CAVE}
+\index{tool!FreeVR}
+\index{tool!Spaceball}
+in your home directory called {\tt
+.vmdsensors}\index{{\tt .vmdsensors}} (see the VMD Installer Guide).  
+In this file, any number of devices
+can be specified, using a {\sl universal sensor locator\/}
+(USL)\index{USL}\index{universal sensor locator}.  
+The format for a USL is as follows:
+\\
+{\it USL\/} -- {\it type{\tt ://}place{\tt /}name{\tt :}nums}
+\begin{itemize}
+  \item{\it type\/} -- the type of sensor
+({\tt vrpntracker}, {\tt vrpnbuttons}, {\tt vrpnfeedback},
+{\tt cavetracker}, {\tt cavebuttons}, or {\tt sballtracker})
+  \item{\it place\/} -- the machine that controls it.  Devices that
+    cannot yet be used on arbitrary computers over the network must
+    have the keyword {\tt local} here to be compatible with future
+    versions.
+  \item{\it name\/} -- the name of the device within that machine.  If
+    multiple devices can't currently exist, such as with the CAVE,
+    then a standard name should be used, such as {\tt cave}, so that
+    the same USL will make sense in the future, when multiple devices
+    are allowed.
+  \item{\it nums\/} -- a comma-separated list of numbers of devices
+    belonging to that names (optional, defaults to zero).  Some
+    devices demand only one number or a specific number but button
+    devices should work correctly now.
+\end{itemize}
+The lines of a sensor configuration file come in four flavors:
+\begin{itemize}
+  \item {\it Comments\/} begin with {\tt \#} and are ignored.
+  \item {\it Empty lines\/} are also ignored.
+  \item {\it Device lines\/} have the form {\it {\tt device} name
+    USL}, where {\it name\/} is the name that \VMD\ will use to refer
+    to the device, and {\it USL\/} is the device's USL.
+  \item {\it Options\/} tell \VMD\ how to use the most recently listed
+    device.  Currently, there are four supported options:
+\begin{itemize}
+  \item ``{\tt scale} $x$'' scales the position of a tracker by a
+    factor~$x$.
+  \item ``{\tt offset} $x$ $y$ $z$'' adds a constant vector to the
+    position of a tracker.
+  \item ``{\tt rot right}|{\tt left} $A_{00}$ $A_{01}\ldots A_{33}$''
+    multiplies the orientation matrix returned by a tracker on either
+    the right or the left by the matrix~$A$.
+  \item ``{\tt forcescale} $x$'' multiplies the force applied to a
+    force-feedback device by the amount~$x$.
+\end{itemize}
+\end{itemize}
+
+Here is a simple example, showing some of the things you can do with a
+sensor configuration file, for a more complete example, please refer
+to the .vmdsensors file that came with your \VMD\ distribution:
+\begin{verbatim}
+### Sensable PHANTOM via VRPN 
+### http://www.sensable.com/
+### The Phantom haptic device connected to the computer "odessa"
+device phantomtracker   vrpntracker://odessa/Phantom0
+scale 10
+rot left 0 0 -1 0 1 0 1 0 0
+device phantombuttons   vrpnbuttons://odessa/Phantom0
+device phantomfeedback vrpnfeedback://odessa/Phantom0
+\end{verbatim}
+
+\subsubsection{Using Tools}
+\label{ug:tools}
+\index{tools} 
+There are several different ``tools'',
+each of which can be used with any of the input
+devices\footnote{The tools have been designed to allow \VMD\ to
+use haptic devices.  Most of the tools can give force-feedback
+to the user, but none of them require haptic devices in order to operate.}:
+\begin{itemize}
+\item The {\bf Grab Tool} mimics a pair of tweezers, and can be
+used to move molecules around on the screen without any keyboard or
+mouse commands.  Pressing a button connects the 3d cursor to the
+nearest molecule.  Then, moving or rotating the tracker will cause the
+molecule to move or rotate around on the screen.
+
+\item The {\bf Rotate Tool} is a tool for precisely rotating
+molecules with haptic devices.  When a button is pressed and released,
+the cursor is again connected to the molecule.  With this tool,
+however, the center of the molecule is fixed, and the end of the
+haptic pointer is forced to lie on the surface of a sphere about this
+center.  Moving the device around the surface of the sphere rotates
+the molecule, and another button click releases the molecule.  There
+are detentes --- like the clicks commonly felt in a 2d dial --- on the
+surface of the sphere, arranged so that the user can rotate the molecule to
+precise 90-degree points.  If the user holds down the button for a
+while initially, he can feel the sphere and the detentes, but do not
+affect the molecule.  This ``preview mode'' allows the user to find a
+good point from which to start the rotation.
+
+\item The {\bf Joystick Tool} is the three-dimensional equivalent of a
+Joystick, for haptic devices.  Pressing the button creates a virtual
+``spring,'' holding the device to its current location.  If it is
+pushed away from this point in some direction, the selected molecule
+starts sliding in that direction, with a velocity that is proportional
+to the displacement of the device.  The joystick tool shows how a
+three dimensional input device can be used to supply relative
+(differential) coordinates instead of absolute coordinates.  
+
+\item The {\bf Tug Tool} is a tool that allows interaction with
+running molecular dynamics simulations.  Pressing the button connects
+the device with a simulated spring to the nearest atom, and pulling on
+it adds a force to the simulation.  If a haptic device is being used,
+the user will feel a force on his hand that is proportional to this
+force.  In this way, the tug tool implements something like the
+click-and-drag that is commonly used with windowing systems.
+
+If an atom selection is assigned to the Tools,
+the the Tug Tool will apply a force to 
+all the atoms in the selection.  The force applied will be proportional to
+the masses of the atoms in the selection, so that all atoms experience the
+same acceleration.  When a Tool Selection has been assigned, the Tug Tool
+will always affect that selection, even if the button is pressed far from
+any atoms in the selection; this is intended to make it easier for the
+user to apply forces only on those atoms he/she intends to steer. 
+
+\item The {\bf Spring Tool} also allows interaction with running
+molecular dynamics simulations.  It works like the Tug Tool {\sl
+except\/} that when the button on the tracker is released near an
+atom, the simulated spring is connected to it.  See
+section~\ref{ug:ui:window:labels} for information on viewing and
+modifying the list of active springs.
+
+\item The {\bf Pinch Tool} is similar to the Tug Tool, except that
+force is applied only along the axis defined by the orientation of the
+tracker.
+
+\item The {\bf Print Tool} is meant to be used as a debugging aid when
+one first sets up VMD for use with VRPN, the CAVE, or other 3-D input
+devices.  When enabled, this tool prints text messages to the VMD console
+indicating the current position of the tool in question.  This tool is 
+useful when calibrating the various transformation matrices that operate on 
+tracker position and orientation data (whether in VMD or in VRPN, CAVElib, 
+etc).
+
+\end{itemize}
+%%
+%%
+To add a new tool to a \VMD\ session, open the {\sf Tool} window and click
+the {\bf Create Tool\/} button.  The tool's number and type are
+displayed in the list to the left.  Devices can be added to the tool
+by selecting them from the {\bf Add Device\/} menu, or removed with
+the {\bf Delete Device\/} button.  Some of the options that can be
+specified in the sensor configuration file can be edited in using the
+controls below, and the tool's type can be changed with the {\bf
+Type\/} menu.
+

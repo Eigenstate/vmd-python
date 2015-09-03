@@ -1,0 +1,322 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_mol_colors.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.32 $      $Date: 2014/12/29 02:50:13 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%  molecule drawing methods
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Coloring Methods}
+\label{ug:topic:coloring}
+\index{coloring!methods}
+
+\VMD\ maintains a database of the colors used for the molecules and
+other graphical objects which are visible in the display window.  It
+keeps track of
+\begin{itemize}
+  \item color name definitions - its RGB value;
+  \item mappings from a color category to color name - so residue name
+MET is colored yellow
+  \item the current color scale - red to white to blue, and several related parameters
+\end{itemize}
+
+\index{color!names}
+\index{color!id}
+There are 1057 colors available in VMD, with color ids ranging from 0 to
+1056.  The first 33 are,
+in order: blue, red, gray, orange, yellow, tan, silver, green, white,
+pink, cyan, purple, lime, mauve, ochre, iceblue, black,
+yellow2, yellow3, green2, green3, cyan2, cyan3, blue2, blue3, 
+violet, violet2, magenta, magenta2, red2, red3, orange2, and orange3.
+
+The next group of 1024 colors (from 33 to 1056) are colors used in
+the color map, These can be set to one of
+several ranges with the {\sf Color} window or the {\tt color} text command:
+\index{window!color}
+\index{color!window}
+\index{color!command}
+red$\rightarrow$green$\rightarrow$blue,
+red$\rightarrow$white$\rightarrow$blue, or black$\rightarrow$white,
+etc.  There are no names for the specific colors.  The color map will
+be discussed in more detail in a section to follow.
+
+
+\subsection{Color categories}
+\label{ug:topic:color:categories}
+\index{color!category}
+
+\VMD\ maintains a database of the colors used for the molecules and the
+other graphical objects in the display window.  The database consists
+of several color {\em categories}; each color
+category contains a list of names, and each name is assigned a color.
+For example, there is a Resname color category, and within this
+category there are many names; one for each of the available residue
+names.  Some of these are {\tt ALA}, {\tt CYS}, and {\tt PRO}.  Each
+name can be assigned a color from a list of 33 available colors called
+the \index{color map}{\it color map}.  The RGB value of each color can
+be modified directly in the
+\hyperref{{\sf Color} window}{{\sf Color} window [\S}{]}{ug:ui:window:color}.
+To color items in a gradation manner,
+there are additional 1024 colors used in the
+\hyperref{color scale}{color scale [\S}{]}{ug:topic:coloring:scale}.
+
+The different color categories in \VMD\ are listed in table
+\ref{table:ug:colorcats}.  The {\sf Color} window\index{color!window}
+\index{window!color}
+can be used to change the assignment
+of colors to the names in each of these categories.  For example, to
+change the color used to draw Arginine residues when molecules are
+colored by residue, you would use the {\sf Color} window, select the `Resname'
+category, select the `Arg' name there, and then pick the color to use
+for Arginine's from the list of colors next to the names.
+
+\begin{table}[htb]
+  \hspace{0.4in}
+  \begin{tabular}{|l|l|} \hline
+    \multicolumn{1}{|c}{Category} &
+        \multicolumn{1}{|c|}{Contents} \\ \hline\hline
+    Display	& Color of background, gradient, depth cueing, text \\
+    Axes	& The components of the axes \\
+    Name	& The available atom names (color by Name) \\
+    Type	& The available atom types (color by Type) \\
+    Element     & Atomic elements  (color by Element), with ''X'' for unknown \\
+    Resname	& The residue names (color by ResName) \\
+    Restype	& The residue types (color by ResType) \\
+    Chain	& The one-character chain identifier. \\
+    Segname	& The segment names (color by SegName)  \\
+    Conformation & The available conformation codes (color by Conformation) \\
+    Molecule	& The names assigned to each molecule (color by Molecule) \\
+    Highlight	& The protein, nucleic, and non-backbone colors \\
+    Structure   & The secondary structure type (helix, sheet, coil) (color by Structure) \\
+    Surface     & The surface types \\
+    Labels	& The different labels (atoms, bonds, etc.) \\
+    Stage	& The colors for the checkboard stage \\
+    \hline
+  \end{tabular}
+  \caption{Color categories used in \VMD.}
+  \label{table:ug:colorcats}
+\index{color!category}
+\end{table}
+
+
+\subsection{Coloring Methods}
+\label{ug:topic:coloring:methods}
+\index{coloring!methods}
+
+As described in chapter \ref{ug:topic:drawing}, each representation
+for a molecule has a specific {\em coloring method}.  The coloring
+method determines how the color for each atom in the representation
+(view) is determined.  These different methods use the colors assigned
+to the names in the categories listed above, and use those names to
+color the atoms.  Molecular drawing methods which also draw the bonds
+between atoms will always color each half of the bond separately,
+using the color of the nearest atom for each half.  
+Table~\ref{table:ug:colormethods} lists the different coloring methods
+available.  The description for each method explains the source of
+the information used to determine the color.
+
+\begin{table}[htb]
+%  \hspace{0.4in}
+  \begin{tabular}{|l|l|} \hline
+    \multicolumn{1}{|c}{Method} &
+        \multicolumn{1}{|c|}{Description} \\ \hline\hline
+    Name	& Atom name, using the Name category \\
+    Type	& Atom type, using the Type category \\
+    Element     & Atomic element, using the Element category \\
+    ResName	& Residue name, using the Resname category \\
+    ResType	& Residue type, using the Restype category \\
+    ResID	& Residue identifier, using the resid mod 16 for the color \\
+    Chain	& The one-character chain identifier,
+			using the Chain category \\
+    SegName	& Segment name, using the Segname category \\
+    Conformation & Conformation, e.g. PDB alternate location identifier \\
+    Molecule	& Molecule all one color, using the Molecule category \\
+    Structure	& Helix, sheet, and coils are colored differently \\
+    ColorID	& Use a user-specified color index (from 0 to 15) \\
+    Beta	& Color scale based on beta value of the PDB file \\
+    Occupancy	& Color scale based on the occupancy field of the PDB file \\
+    Mass	& Color scale based on the atomic mass \\
+    Charge	& Color scale based on the atomic charge \\
+    Pos		& Color scale based on radial distance from the molecule center \\
+    PosX, PosY, PosZ & Color scale based on axial distance from the molecule center \\
+    User, User2, User3, User4  & Color scale assigned by per-atom values 
+                for each timestep \\
+    PhysicalTime, Timestep & Color scale based on the physical (simulation) time or \\
+                & timestep index associated with the displayed trajectory frame \\
+    Velocity    & Color scale based on the per-atom velocity value \\
+                & associated with the displayed trajectory frame \\
+    Fragment    & Color scale based on the VMD fragment index \\
+    Index	& Color scale based on the VMD atom index \\
+    Backbone	& Backbone atoms green, everything else is blue \\ 
+    Throb	& Color scale animated by the current wall clock time \\ 
+    Volume      & Surfaces are colored by the linked volumetric data set \\
+  \hline
+  \end{tabular}
+  \caption{Molecular coloring methods.}
+  \label{table:ug:colormethods}
+\index{coloring!methods}
+\end{table}
+
+
+\subsection{Coloring by color categories}
+\label{ug:topic:coloring:categories}
+\index{color!category}
+\index{coloring!by category}
+
+The default method is to color by the atom name.  The way it works is
+that there is a color category called `Name' which contains a list of
+all the atom names (e.g., CA, N, O5', and H) that have been loaded into
+\VMD.  Each name is assigned one of the 16 main colors (e.g., cyan, blue, red,
+and white).  When the drawing representation needs a color for a
+specific atom, it looks in the appropriate color category and finds
+that CA is colored cyan, N is blue, and so on.
+
+Most of the coloring methods are based on color categories, so
+coloring by `ResName' colors each residue name differently, `SegName'
+colors each segment differently, and so on.  The mapping between a
+given item in a color category and a color can be changed using the
+\hyperref{{\sf Color} window}{{\sf Color} window [\S}{]}{ug:ui:window:color}.
+\index{color!window}
+\index{window!color}
+This allows users to make atoms with the name CA be black and the
+residue CYS be yellow.  Some attention was given to making the colors
+reasonable, so that oxygens are red, nitrogens blue, sulphur and
+cysteines yellow, etc.
+
+\subsection{Color scale}
+\label{ug:topic:coloring:scale}
+\index{color!scale}
+\index{coloring!by color scale}
+
+Several of the coloring methods, including `Beta', `Charge', and
+`Occupancy', describe a range of floating point values rather than a
+set of names.  These are colored via the {\em color scale}, which is a
+list of 1024 smoothly changing colors.  There are many color gradations
+available.  All of them consist of transformations of three colors.
+For instance, ``RGB'' colors the smallest value red, values near the
+middle of the scale are green, and the largest values are blue.
+Colors in-between are linear mixes of the two colors.  The list of 
+available gradations is given below.
+
+
+\begin{table}[htb]
+  \hspace{0.7in}
+  \begin{tabular}{|l|l|} \hline
+    \multicolumn{1}{|c}{Method} &
+        \multicolumn{1}{|c|}{Description} \\ \hline\hline
+    RWB         & small=red,   middle=white, large=blue \\
+    BWR         & small=blue,  middle=white, large=red \\
+    RGryB       & small=red,   middle=gray,  large=blue \\
+    BGryR       & small=blue,  middle=gray,  large=red \\
+    RGB         & small=red,   middle=green, large=blue \\
+    BGR         & small=blue,  middle=green, large=red \\
+    RWG         & small=red,   middle=white, large=green \\
+    GWR         & small=green, middle=white, large=red \\
+    GWB         & small=green, middle=white, large=blue \\
+    BWG         & small=blue,  middle=white, large=green \\
+    BlkW        & small=black, large=white \\
+    WBlk        & small=white, large=black \\ \hline
+  \end{tabular}
+  \caption{Available Color Scale Gradations.}
+  \label{table:ug:gradmethods}
+\index{color!scale}
+\index{coloring!by color scale}
+\end{table}
+
+
+The minimum of the range of values is linearly scaled and shifted to
+start at 0 and end at 1.  Assume the color scale is RGB.  For a given
+value of x in the scale range [0..1], the RGB value is found first
+from a linear scaling based on the midpoint.
+If x $=$ 0, R is 1 (for maximum red).  This continues linearly until x
+$=$ midpoint, at which point, R is 0 and stays 0.
+The green component is 0 at both x $=$ 0 and x $=$ 1 and is 1 at the
+midpoint.  Linear scaling occurs in between.
+The blue component is 0 for x $<=$ midpoint, and 1 for x $=$ 1.
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{ug_color_scale}{Example showing red/green/blue gradients summed to produce the color scale.}
+{fig:ug:color_scale}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+An additional term, ``min'', is added to each of the component terms
+before they are merged.  This shifts the final colors more towards
+white or black.  Min can take on values from -1 to 1.
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{ug_color_scale_min}{The shift to the red component of the RGB 
+scale caused by the value of ``min''.}
+{fig:ug:color_scale_min}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+There is only one color scale used at a time so it is impossible to
+display objects colored by multiple different color scales.
+
+\subsection{Materials}
+\label{ug:topic:coloring:materials}
+
+\VMD\ allows users to apply a materials property to the
+molecular models they create.  The material determines such things
+as how transparent an object is, or how shiny, or how large the specular 
+reflections are.   
+Making objects semi-transparent is a potentially powerful means of
+viewing multiple layers of the molecule simultaneously.  Imagine a
+protein on the surface of, and extending part way into, a membrane.
+One way to visualize the extent of the penetration is to represent the
+lipids as `Bonds' and make them transparent.  That will show the
+membrane without completely obstructing the view of the protein.
+
+\VMD\ maintains a database of materials which can be applied to any
+representation in the system, much like the database for colors.  There
+are two default materials, "Opaque" and "Transparent", which cannot be
+modified.  Each material is defined by five settings, as follows: 
+
+\begin{itemize}
+\item Ambient: The ambient coefficient describes how strongly the 
+            material reflects ambient light.  Ambient light
+            provides a uniform illumination of objects with a
+            background lighting of the object color.  The ambient light
+            factor is generally used to moderate the effects of 
+            shadows from direct lighting, making shadows less dark than
+            they otherwise would be.
+\item Diffuse: Diffuse reflections are independent of the viewing
+            direction, but depend on the direction of the light source
+            with respect to the surface of the displayed object.
+\item Specular: The specular coefficient describes the intensity of
+            specular highlights.  The higher the specular value, 
+            the brighter the resulting highlights.
+\item Shininess: The shininess coefficient describes the breadth of
+            the angle of specular reflection. The smaller the number the
+            broader the angle and the rougher objects appear.  The larger
+            the value of shininess, the narrower the angle of specular
+            reflection, and the smoother the surface.
+            Default corresponds to a Phong exponent of 40.
+\item Mirror: The mirror coefficient describes the mirror
+            reflectivity of a surface.  When the scene is rendered using
+            ray tracing, surfaces with mirror reflectivity will show 
+            reflections much like a mirror-polished metal surface.
+\item Opacity: The opacity coefficient describes how opaque the surface is;
+            1 is solid, 0 is transparent. By default, transparent objects 
+	    are drawn with Opacity set to 0.3.
+\item Outline: The outline coefficient controls shading of sillhouette edges,
+            darkening the visible edges of surfaces where they are nearly 
+            perpendicular to the camera view direction.  The outline parameter
+            scales the degree of edge shading (darkening).
+\item OutlineWidth: The outlinewidth coefficient controls the angular width of
+            nearly perpendicular sillhouette edge that is shaded.
+\end{itemize}
+For details regarding these material properties, consult an elementary
+graphics book such as Foley \& Van Dam (Computer Graphics).  
+

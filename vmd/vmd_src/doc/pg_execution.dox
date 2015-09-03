@@ -1,0 +1,93 @@
+/*! \page execution Overview of VMD flow of execution
+
+<p>
+\section execinit      Startup
+The VMD startup process is somewhat system dependent.  Generally speaking,
+VMD performs various initialization tasks that depend on command line 
+options, environment variables, and Windows Registry keys, depending on 
+the platform.  
+
+<p> 
+On Unix systems, VMD is started via a shell script which is created when
+the program is initially installed.  The startup script sets a few key
+environment variables.  The most important environment variable is the VMDDIR
+variable, which tells VMD where to find its installation directory, so that it
+can source various initialization scripts and find helper programs such as
+Surf, MSMS, and Tachyon.  The VMDGetOptions() routine processes the
+environment variables and command line options.  On Windows, a special
+win32vmdstart() routine does some initial registry queries and environment
+variable manipulations to get the program bootstrapped.
+
+<p>
+Command line options affect the choice of display device which can be
+a text-only command interpreter, text + full GUI and OpenGL, or 
+special CAVE and FreeVR modes which can be run with or without the regular
+GUI forms.  The command line display device options and the environment 
+variables are all documented in the User's Guide.
+After the main routine gets the appropriate VMDApp state initialized,
+the DisplayDevice is initialized and the title screen is displayed.
+
+<p>
+Scripts can be executed at startup time through the use of the -e 
+command line option.  These scripts are then "played" after VMD is
+initialized but before the user's .vmdrc file is read.  This is done
+inside of the VMDreadStartup() routine.
+
+\section execmainloop  Main execution loop
+<p>
+Once the initialization stages are complete, VMD enters an event loop
+that continues until the user quits or the program terminates itself
+due to errors.  The main event loop simply calls the VMDApp::VMDupdate() 
+method to check for events and act on them.
+
+<p>
+Roughly speaking the event loop looks like this:
+<ol>
+<li>The CommandQueue is checked for events.
+
+<li>The VMDApp::VMDupdate() routine requests each UIObject to check for any
+    events such as mouse button presses or GUI button/slider/browser/whatever
+    presses. These events are entered into the CommandQueue as Command object
+    instances.
+
+<li>FLTK gets a Fl::wait() call
+
+<li>If the user has pressed the Quit button in the GUI the event
+    loop returns immediately.
+
+<li>All commands in the CommandQueue are processed until the queue is empty. 
+    Typically, the processing of an event will result in one or more new 
+    Command object being created and placed at the end of the CommandQueue. 
+    The CommandQueue will just continue processing each command until the 
+    queue is complete empty, which will deal with all the events found in 
+    the previous step, as well as any other commands generated while 
+    processing the events. 
+
+<li>Each UIObject is told to do any update that needs to be done each 
+    cycle through the execution loop. This accomplishes such things as 
+    updating the current frame in the form used for molecule trajectory 
+    animation.
+
+<li>The current Scene is rendered to the current DisplayDevice after
+    some prepare calls and checks to see if the update is actually
+    necessary.  
+
+<li>If there is no graphics display or VMD is idle not 
+    requiring a graphics update, or a special environment variable
+    is set, VMD will call vmd_msleep() to prevent from eating excessive
+    amounts of CPU time polling for events while idle. 
+
+</ol>
+
+\section execshutdown Shutdown
+<p>
+When the user quits VMD via the GUI or by text commands, or when VMD
+encounters an unrecoverable error or some kind, the program frees
+all dynamically allocated data, destroys the GUI forms and the 
+DisplayDevice in use, and calls any special termination routines
+before returning from main.
+
+<p>
+$Id: pg_execution.dox,v 1.5 2008/03/04 20:15:49 johns Exp $
+
+ */

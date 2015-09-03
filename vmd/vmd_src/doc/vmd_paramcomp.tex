@@ -1,0 +1,92 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%cr                                                                       
+%cr            (C) Copyright 1995 The Board of Trustees of the            
+%cr                        University of Illinois                         
+%cr                         All Rights Reserved                           
+%cr                                                                       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: vmd_paramcomp.tex,v $
+%       $Author: danorris $        $Locker:  $                $State: Exp $
+%       $Revision: 1.7 $      $Date: 2000/05/23 17:21:10 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%
+% multiple GUIDEs : compilation parameters
+% 	NOTE: should be NO blank line between last comment and begin
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{itemize}
+  \TTLISTITEM{TCL\_INCLUDE\_DIR (default=/usr/local/include)}
+The Tcl library is used by \VMD\ to interpret and execute text scripts; there is also the option to use the Tk library for the graphical user interface.  This parameter determines where to look for Tcl and Tk header files.  If Tcl  is not installed on your system, this option is ignored.  ALso, if Tcl is not installed, do not request the TCL or TK options when configuring \VMD.
+
+  \TTLISTITEM{TCL\_LIBRARY\_DIR (default=/usr/local/lib)}
+This parameter determines where to look for Tcl and Tk library files, just as {\tt TCL\_INCLUDE\_DIR} determines where to look for header files.  If Tcl  is not installed on your system, this option is ignored.
+
+  \TTLISTITEM{DEFBABELBIN (default=INSTALLBINDIR/babel)}
+\VMD\ uses the program {\tt babel} to convert different molecular data files to PDB files, in order to allow it to understand a large number of file formats.  {\tt DEFBABELBIN} determines the location of the {\tt babel} executable which \VMD\ should use.  It should include the complete path and name of the {\tt babel} program.  If \VMD\ cannot find a {\tt babel} executable, only PSF, PDB, binary DCD files and Gromacs files will be understood by the program.  If {\tt babel} is not installed on your system, this option is ignored.  The environment variable {\tt VMDBABELBIN} can also be used to override this value when \VMD\ is run.
+
+  \TTLISTITEM{DEFDISPLAY (default=WIN)}
+The default display device to use
+when \VMD\ starts up, if not set by the initialization file or a
+command-line option.  This can be {\tt WIN}, {\tt CAVE}, or {\tt
+TEXT}.
+
+  \TTLISTITEM{DEFDIST (default=-2.0)}
+The default value for the distance, in `world' coordinates, from the origin to
+the display screen.  If this is zero, the origin of the coordinate system in
+which molecules are drawn coincides with the center of the display.  If it is
+$<$ 0, the origin is located between the viewer and the screen, while if it
+is $>$ 0, the screen is located closer to the viewer than the origin.  A value
+$<$ 0 puts any stereo image in front of the screen, aiding the three-dimensional
+effect; a value $>$ 0 results in a stereo image that is behind the screen, a
+less dramatic (but easier to see, for some people) stereo effect when stereo
+display is in effect.
+
+  \TTLISTITEM{DEFHEIGHT (default=6.0)}
+This parameter, with {\tt DEFDIST}, defines the size and distance of the
+display screen.  {\tt DEFHEIGHT} is the default value for the screen height,
+which is the vertical size of the display screen in `world' coordinates.  Each
+molecule is initially scaled and translated to fit within a 2 x 2 x 2 box
+centered at the origin; so the height of the screen helps determine how large
+the molecule appears initially.  The default value is 6, and with the default
+value of {\tt DEFDIST} this allows the molecule to fill up most of the screen
+at the start.  If \VMD\ is being displayed on a workstation monitor only, it
+is best not to change this value much.  This parameter is used mainly to configure the \VMD\ display to the dimensions and position of a large-screen display, such as a projector, that may be being used as a stereo display.
+See the ``Customizing \VMD'' section of the Installation Guide for more discussion about the {\tt DEFDIST} and {\tt DEFHEIGHT} parameters.
+
+  \TTLISTITEM{DEFHTMLVIEWER (default=Mosaic)}
+Online help information is provided by \VMD\ by displaying a help file in HTML format, using an external HTML viewer.  This parameter sets the default name of the program to use to view HTML files.  The environment variable {\tt VMDHTMLVIEWER} can also be used to override this value when \VMD\ is run.
+
+  \TTLISTITEM{DEFTITLE (default=ON)}
+The default setting for the flag
+which indicates whether to display a title screen when \VMD\ starts
+up.  This can be {\tt ON} or {\tt OFF}.
+
+  \TTLISTITEM{DEFTMPDIR (default=/tmp)}
+The directory which \VMD\ should use to store temporary files.
+
+  \TTLISTITEM{INITFILENAME (default=.vmd\_init)}
+The name of the \VMD\ initialization file.
+
+  \TTLISTITEM{MAXSTRINGLEN (default=6)}
+The maximum number of characters which are considered when words in a text
+command are processed.  It determines how many characters maximum distinguish
+different words.  It is suggested to not change this value, which can be any
+positive integer.
+
+  \TTLISTITEM{PROGVERSION}
+The current version number of the program.
+
+  \TTLISTITEM{PROMPTSTRING (default="vmd >")}
+The string displayed as a prompt for text command input.  This can be any string, and should be enclosed in double quotes.
+
+  \TTLISTITEM{STARTUPFILENAME (default=.vmdrc)}
+The name of the \VMD\ startup command script.
+
+\end{itemize}
+
+

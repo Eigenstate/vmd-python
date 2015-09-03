@@ -1,0 +1,66 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_form_render.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.21 $      $Date: 2012/01/10 19:30:05 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%  render form
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\subsection{Render Window}
+\label{ug:ui:window:render}
+\index{window!render}
+\index{render!window}
+\index{rendering}
+
+The Render window is used to export the currently displayed graphics scene to
+an image file or to a geometric scene description file suitable for use
+by one of several external renderers, which can produce a final image.
+The supported rendering packages are listed in table \ref{ug:table:render}.  
+See Chapter \ref{ug:topic:rendering}
+for detailed information on how rendering is performed using 
+external programs, as well as information on 3-D printing and 
+other uses of the exported scene description files.
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{ug_render}{The Render window}{fig:ug:render}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+The rendering process works in two stages.  The first stage
+exports the displayed \VMD\ scene to a text or image file
+in the selected format.
+The second (optional) stage renders the exported file,
+potentially displaying the results when complete.  
+The exported file is named in the {\sf Filename} field; 
+a default name is given when a new format is selected, 
+so it is best to hold off entering the filename until after
+the file format is selected.  Another way to select the filename is
+available by pressing the {\sf Browse}  button, which opens up a file
+browser.
+Pressing the {\sf Start Rendering} button writes the data file.  After
+that, the {\sf Render Command} is executed.  The default command
+should start the appropriate rendering program if it is available.
+
+Some of the rendering commands have been set to call a display 
+program on the rendered image when it is completed.
+\VMD\ will wait for the display program to finish, which causes \VMD\ 
+to freeze until the display program closes, 
+so you may want to run the job in the background.  This can be done 
+(on Unix) by enclosing the existing text with {\tt ()}'s and putting
+an {\tt \&} at the end.  For example, the way to make the Raster3D render 
+command run in the background is:
+\index{rendering!in background process}
+{\tt 
+\begin{verbatim}
+        (render < %s -sgi %s.rgb; ipaste %s.rgb)&
+\end{verbatim}
+}

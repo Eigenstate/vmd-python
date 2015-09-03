@@ -1,0 +1,153 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_form_sequence.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.14 $      $Date: 2012/01/10 19:30:05 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%  sequence window
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\subsection{Sequence Window}
+\label{ug:ui:window:sequence}
+\index{window!sequence}
+\index{sequence!window}
+\index{sequence!dna}
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{ug_sequence}{The Sequence window}{fig:ug:sequence}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+The Sequence window is used to list the residue sequences of proteins and the 
+base sequences of nucleic acids, and to select residues/bases from the sequence
+list for highlighting in the 3-D structure in the main \VMD\ window.   When
+residues are selected in the main \VMD\ window, the corresponding residue  is
+highlighted in the sequence list in this window.  Color-coded protein structure
+information is displayed for amino-acid residues, and B-factor information is
+displayed for all residues.  In this section, ``residues'' refers both to amino
+acid residues in proteins, and to nucleotide bases with associated backbone in
+DNA and RNA molecules. 
+
+
+\subsubsection {Sequence information}
+	\index{sequence}
+
+	The  Sequence window contains a vertical listing of the residue sequence of a loaded molecule.  The {\sf Molecule} pop-up menu control chooses which molecule to display the sequence of, the current 'top' molecule is displayed the first time the Sequence window is opened.  The name and molecule number of the  sequence displayed is shown in the title frame of the Sequence window.
+       
+   For each residue displayed, the window lists: residue number, residue name/code, and chain letter.  If no chain is specified, chain letter is set to ``X''. To the right of this are two color coded columns, ``B value'' and ``struct''.  ``B-value'' shows the contents of the B-value (temperature factor) field. The ``struct'' field shows protein secondary structure; select {\sf Help:Structure Codes} from the window menu, or see Table~\ref{table:ug:structcodes},  for an explanation of the single letter codes in the color key.
+
+
+
+ 
+\newcommand{\structcode}[2]{
+    {\tt #1}&\parbox[t]{2.5in}{#2}\\
+}
+\begin{table}[htb]
+ \hspace{1.8 in}
+  \begin{tabular}{|c|l|} \hline
+%    \multicolumn{1}{|c}{Code} &
+%	\multicolumn{1}{|c|}{Description} \\ \hline\hline
+Code & Description\\ \hline\hline
+\structcode{T} {Turn}
+\structcode{E} {Extended conformation}
+\structcode{B} {Isolated bridge}
+\structcode{H} {Alpha helix}
+\structcode{G} {3-10 helix}
+\structcode{I} {Pi-helix}
+\structcode{C} {Coil}
+\hline
+\end{tabular}
+	\caption{Description of secondary structure codes in the Sequence window.}
+	\label{table:ug:structcodes}
+    \index{secondary structure codes}
+\end{table}
+
+
+\subsubsection {Selecting residues from the Sequence window listing}
+
+\index{highlight}
+Click anywhere in the vertical listing with the left mouse button to highlight one residue.  Click and drag with the left mouse button
+to  highlight multiple residues,  shift-click to add a single residue to the
+current selection, shift-click and drag to add multiple residues to your
+selection, right-click to de-select a residue.  Highlights appear as thick
+yellow ``Bonds'' representations, these can be  \hyperref{changed or turned
+off}{changed or turned off[\S~}{]}{ug:ui:window:sequence:offchange}.
+
+
+\subsubsection {Selecting residues by clicking on the 3-D structure}
+Use the {\sf Mouse} menu to enter ``Pick Atom'' mode (or press ``1'', the standard keyboard shortcut).  Click on any protein atom or nucleic acid atom, and its residue will highlight, and the sequence list will scroll to display this residue.  Shift-click works the same way, but adds to the current selection. 
+Note that if the zoom factor is smaller than 1.0, the single-residue sequence highlight will be shorter in height than a full line of text. Once the Sequence window has been opened, any ``Pick'' will create or add to selections, until highlighting is  \hyperref{turned off}{turned off[\S~}{]}{ug:ui:window:sequence:offchange}.
+
+
+\subsubsection {Sequence Zooming }
+   \index{sequence!zooming}
+	Larger molecules contain thousands of residues, too many to display in a linear text list all at once.
+The sequence window can only list about 40 text lines;  to work with a molecule of more 
+than 40 residues use the scroll bars to scroll through the long list, or use the {\sf Zoom} controls to fit the data from a long list into a small space.
+
+	The {\sf Zoom} slider, and the {\sf Fit all}, {\sf Every Residue} buttons, zoom in and out of a long sequence list to allow viewing and selecting from the entire list all at once.  To represent more than 40 residues on the window, the text list  seems to ``skip'' residues, but selections, highlights and color-coded data are still active for all residues.  
+
+By setting the {\sf Zoom} slider to a value smaller than 1.0, or by pressing the {\sf Fit all} button, more or all of the sequence information for a large molecule can be seen at once. To show a text line for every residue in the sequence (zoom factor = 1.0), click on the {\sf Every Residue} button.  The {\sf Zoom} slider can be dragged with the left mouse button (to re-scale sequence smoothly) or it can jump to a given value by clicking along the slider track with the middle button (this is useful to work more quickly with very long sequences). 
+
+	
+For a multi-thousand residue protein with {\sf Fit all} selected, hundreds of  residues 
+can be selected at once, and   trends in B-value 
+and structure across the entire protein sequence can be detected.
+In the screen-shot above, a section of 70 residues with lower B-values than surrounding sequence is selected, by dragging a rectangle around the green stretch in the B-value column.
+
+
+	Other controls include:
+
+\begin {itemize} 
+  \item {\bf Toggle display of  3-letter and 1-letter codes} -- Click on {\sf  1-letter code} to switch from 3-letter to 1-letter amino acid codes. The same button then reads {\sf 3-letter code}, click it to switch back from 1-letter to 3-letter codes.
+
+\item {\bf Print contents of sequence window} -- 
+	Select {\sf File:Print to File} to create a postscript file containing the current sequence listing and highlighting.
+
+\end{itemize}
+
+\subsubsection {Turn off highlighting / Change highlight style}
+\label{ug:ui:window:sequence:offchange}
+
+        
+ To clear all highlights, reselect the current molecule from the {\sf Molecule} pop-up menu.
+ To turn the highlight representation off completely for a given molecule, find the representation in the Graphics window which the Sequence window 
+has created (appears with ``{\sf Bonds} {\sf ColorID 4}'') and set  the style to  ``none''.
+To change highlighting style, set this same representation
+to your preferred style and  coloring.  The selection for this
+representation will still change whenever the sequence window selection changes.
+Example application: specify {Multiple Frames} in the {\sf Trajectory} tab of
+the highlight representation. This will display the trajectory motions of the
+residues clicked on in the main VMD window, or in the Sequence window. 
+
+
+
+\subsubsection{Caveats}
+\index{sequence!caveats}
+
+\begin{itemize}
+         	
+  
+  \item Pause on first use:
+       Since the sequence window displays secondary structure of loaded molecules, there may
+       be a pause for structure calculation the first time the sequence for a protein is displayed. 
+
+  \item Selections by chain: 
+      When there are multiple segments in a chain, it is possible for several
+residues to have the same residue number and chain name.  These 
+residues will be highlighted/selected/deselected
+together.
+ 
+  \item B-values can be user assigned: To use the B-value column to view
+arbitrary data, use the selection {\tt set beta} commands to change B-values.
+To refresh the displayed B-value data, re-select the currently displayed
+molecule from the {\sf Molecule} pop-up menu.  \end{itemize}
+

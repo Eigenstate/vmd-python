@@ -1,0 +1,92 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_hardware.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.7 $      $Date: 2014/12/29 05:48:36 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%   Basic hardware requirements, features, etc..               
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Hardware and Software Requirements}
+\label{chapter:requirements:ug}
+\index{hardware requirements}
+
+\section{Basic Hardware and Software Requirements}
+The basic hardware requirements for running VMD vary depending on 
+how it was compiled and how it will be used.  VMD has two primary
+modes of operation, the typical full-featured graphics-enabled mode, 
+and a purely text-based mode of operation suited for remote analysis
+on supercomputers, embedded use in other packages, and similar 
+batch-oriented analytical uses.  
+
+The full-featured graphics-enabled mode of VMD is the most demanding,
+and requires an OpenGL-capable graphics accelerator with up-to-date 
+drivers.  Some graphics chipsets or GPUs come with drivers that are
+below-spec and will not be able to run VMD with full graphics capability.
+These will either automatically, or as the result of 
+user-defined environment variables (e.g. VMDSIMPLEGRAPHICS), 
+use a reduced functionality graphics mode within \VMD.
+Since the choice of the GPU chipset or card has the biggest
+impact on the visualization capabilities and performance of VMD,
+this is the hardware component that is worth spending money on 
+if one's intended use of \VMD\ is primarily focused on visualization related
+tasks.  VMD implements a variety of advanced rendering features that 
+hinge upon the availability of GPU hardware and driver 
+support.  When available, these features enable VMD to interactively
+display very large or complex structures and support a variety of special
+stereoscopic 3-D 
+displays~\cite{HUMP96,SHAR96,SHAR2000,CROS2009-JS,STON2010A,STON2011B}.
+As an added bonus, recent GPUs are now also capable of accelerating
+some of the computationally demanding tasks within VMD, discussed
+in more detail below.
+
+Following the choice of graphics accelerator, the amount of available
+system memory tends to have the next most significant impact on the
+performance and capability of VMD.  The more memory a machine has,
+the more frames can be loaded at once from large molecular
+dynamics trajectory files.  For batch-mode analysis tasks 
+that consist primarily of scripting, system memory is frequently the
+resource that limits feasability of many analysis tasks.
+
+\section{Multi-core CPUs and GPU Acceleration}
+VMD makes full use of multi-core processors and multiple GPUs for 
+acceleration of the most computationally demanding visualization 
+and analysis tasks.  Multi-core CPUs accelerate features including
+interactive molecular dynamics~\cite{ZELL97B,STON2001}, 
+bond determination, ``within'' atom selections and derivatives, 
+so-called streamline or field line visualizations~\cite{CHAV2014-JS},
+radial distribution functions~\cite{LEVI2011-JS}, 
+and high quality renderings using the built-in 
+Tachyon ray tracing engine~\cite{STON96,STON98}.  
+\VMD\ also supports GPU acceleration using CUDA, and takes 
+advantage of both multi-core CPUs and GPUs for acceleration of 
+electrostatics (i.e. ``volmap coulomb'', and 
+``volmap coulombmsm'')~\cite{STON2007,OWEN2008-JS,RODR2008,HARD2009,KIND2009-JS,STON2010,STON2010-JS,ENOS2010-JP,STON2011}, 
+implicit ligand sampling (i.e. ``volmap ils''), 
+computation of radial distribution functions~\cite{LEVI2011-JS},
+and computation and rendering of 
+molecular orbitals~\cite{STON2009,STON2010A,STON2011A} and 
+molecular surfaces~\cite{KRON2012,ROBE2012-ZLS,STON2013,STON2013A,STON2014,SENE2014A}.
+The latest versions of VMD also incorporate a GPU-accelerated batch and 
+interactive versions of the Tachyon ray tracing engine~\cite{STON2013A,SENE2014A}.
+
+\section{Parallel Computing on Clusters and Supercomputers}
+VMD supports large scale batch mode parallel analysis and visualization on
+clusters and supercomputers when it has been compiled with 
+MPI support~\cite{STON2013,STON2013A,STON2014,PHIL2014}.
+When running VMD on clusters and parallel computers it is possible to
+run one MPI rank per CPU core, or more likely, one MPI rank for several 
+CPU cores, or one MPI rank for an entire compute node.  When running more
+than one VMD instance per compute node, it is typically necessary to set 
+environment variables to limit which CPU cores and/or GPUs each VMD 
+instance attempts to use to prevent performance anomalies from arising
+due to resource contention~\cite{KIND2009-JS}.
+
+
+
+
+

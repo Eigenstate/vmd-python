@@ -1,0 +1,113 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_form_file.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.23 $      $Date: 2012/01/10 19:30:04 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%  window for reading in files
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\subsection{Molecule File Browser Window}
+\label{ug:ui:window:files}
+\index{window!molecule file browser}
+\index{files!reading}
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{ug_files}{The Molecule File Browser window}{fig:ug:files}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+The {\sf Files} window is used to load a file from disk into a new or 
+existing \VMD\  molecule. It can be brought up by choosing {\sf New 
+Molecule\ldots} from the {\sf File} menu, or by hilighting a molecule in 
+the \hyperref{{\sf Main} window}{{\sf Main} window}{}{ug:ui:window:main} and 
+choosing the {\sf Load Data Into Molecule\ldots} menu item. 
+Once the window appears, select the file you want by using the file 
+browser or by typing the filename into the text entry area.
+By default \VMD\ will try to guess the type of file you are loading
+by matching the filename extension with one of the file reader plugins 
+in the file type list (the available file types are described 
+in Chapter \ref{ug:topic:filetypes}).
+If \VMD\ is unable to guess the appropriate file type or guesses
+incorrectly, you must select it from the list manually.
+
+You can control into which \VMD\ molecule you want to load your data by 
+selecting it from the {\sf Load files for:} popup menu at the top of the 
+window.
+If the file being loaded is intended for a new molecule, select {\sf New 
+Molecule} instead. If the file being loaded
+contains additional coordinate frames, electron density map, or other
+ancillary data for an existing molecule, choose the appropriate molecule from
+the selection list at the top of the window.  
+If the file being loaded contains trajectory \timesteps, you have the 
+option of loading a subset of the trajectory skipping ranges or strides
+of \timesteps rather than the whole thing.  You can also select for \VMD\
+to load all \timesteps before continuing on, or to load them in the background
+so that you may continue to interact with the menus and windows while it loads
+additional \timesteps.  
+If the file being loaded contains multiple volumetric data, you may 
+select which data sets you would like to load.
+
+Once you have selected the file to be loaded, the appropriate file type,
+and the way it will be loaded, press the {\sf Load} button and \VMD\ will
+being loading the selected file.  Any informational messages, 
+errors or warnings which occur while loading the file will appear 
+in the text window.
+
+
+\subsubsection{Reading Trajectory Frames}
+\label{ug:ui:window:edit:read}
+\index{animation!read}
+\index{animation!appending}
+\index{files!reading}
+\index{file types!input}
+\index{trajectory!read}
+\index{AMBER!files}
+\index{CHARMM!files}
+\index{NAMD!files}
+\index{Gromacs!files}
+\index{XPLOR!files}
+\VMD\ can read in new coordinate sets from one of several file
+formats such as PDB, CRD, DCD, or Gromacs files.
+The new coordinate sets are appended to the end of the
+stored \timesteps for the selected molecule.  
+Loading coordinate data is like loading any other file, select it
+with the file browser make sure the file type is set correctly for
+the file being loaded, and then press the {\sf Load} button.
+
+By default, VMD will load all of the \timesteps contained in a 
+coordinate or trajectory file. 
+
+Sometimes you may not want to read in a whole coordinate or
+trajectory file.  For example, you may only want the last frame, 
+or every tenth frame.  You can do this by changing the options in the 
+{\sf \Timesteps} control of Files window.
+\label{ug:ui:window:edit:amount}
+\index{animation!\timesteps}
+The {\sf \Timesteps} controls consist of three numeric input fields 
+labeled {\sf First}, {\sf Last}, and {\sf Stride}.  These make it
+possible to use a subset of the frames, starting at frame {\sf First}
+and selecting every {\sf Stride} frames until the {\sf Last} is reached.
+For instance, to select every fifth frame between frames 14 and 98,
+set:
+
+\begin{itemize}
+  \item{{\sf First} to 14}
+  \item{{\sf Last} to 98}
+  \item{{\sf Stride} to 5}
+\end{itemize}
+
+(Remember that frame numbers in \VMD\ start at 0, so frame 0 is the
+first frame.)  The value `-1' is a special number; setting {\sf First}
+to -1 is the same as starting at the first frame, {\sf Last} = -1 is
+the same as ending at the last frame, and {\sf Stride} = -1 is the same
+as taking one step.
+

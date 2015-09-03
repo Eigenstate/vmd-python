@@ -1,0 +1,680 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_mol_selection.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.37 $      $Date: 2014/12/29 02:51:54 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%  description of the selection command
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Selection Methods}
+\label{ug:topic:selections}
+\index{atom!selection}
+
+\VMD\ has a rather powerful atom selection language available.  It is
+based around the assumption that every atom has a set of associated with it 
+values which can be
+accessed through \index{selection!keywords}
+\index{atom!selection!keywords}
+keywords.  These values could be
+boolean (is this a protein atom?), numeric (as in the atom
+index or atomic mass), or string (the atom name).  The values can
+even be referenced via a Tcl array.
+
+To start off, here are some examples of valid selection commands in
+\VMD.  Following these will be a more in depth description of how
+selections work.
+
+\index{atom!selection!examples}
+\begin{verbatim}
+        name CA
+        resid 35
+        name CA and resname ALA
+        backbone
+        not protein
+        protein (backbone or name H)
+        name 'A 1'
+        name 'A *'
+        name "C.*"
+        mass < 5
+        numbonds = 2
+        abs(charge) > 1
+        x < 6 and x > 3
+        sqr(x-5)+sqr(y+4)+sqr(z) > sqr(5)
+        within 5 of name FE
+        exwithin 3 of protein
+        protein within 5 of nucleic
+        same resname as (protein within 5 of nucleic)
+        protein sequence "C..C"
+        name eq $atomname 
+\end{verbatim}
+
+\index{selection!modes}
+\index{atom!selection!modes}
+There are two types of selection modes.  The first is a keyword
+followed by a list of either values or a range of values.  For example,
+\begin{verbatim}
+        name CA
+\end{verbatim}
+selects all atoms with the name CA (which could be a C${}_\alpha$ or a calcium);
+\begin{verbatim}
+        resname ALA PHE ASP
+\end{verbatim}
+selects all atoms in either alanine, phenylalanine, or asparagine;
+\begin{verbatim}
+        index 5
+\end{verbatim}
+selects the 6th atom (in the internal \VMD\ numbering scheme).
+
+\VMD\ can also do range selections, similar to X-PLOR's `:' notation:
+\begin{verbatim}
+        mass 5 to 11.5
+\end{verbatim}
+selects atoms with mass between 5 and 11.5 inclusive,
+\begin{verbatim}
+        resname ALA to CYS TYR
+\end{verbatim}
+selects atoms in alanine, arginine, asparagine, aspartic acid, cystine,
+and also tyrosine.
+
+The keyword selection works by checking each term on the list
+following the keyword.  The term is either a single word (eg,
+\verb!name CA!) or a range (eg \verb!resid 35 to 90!).
+
+The method for determining the range checking is determined from the
+keyword data type; numeric comparisons are different than string
+comparisons.  The comparison should work as expected so that ``8'' is
+between ``1'' and ``11'' in a numeric context but not in a string one.
+This may lead to some peculiar problems.  Some keywords, such as {\tt
+segname}, can take on string values but can also be used by some
+people as a number field.  Suppose someone labeled the {\tt segname}
+field with the numbers 1 through 12 on the assumption that they are
+numbers.  That person would be rather confused to find that
+\verb!segname 1 to 11!  only returns two segments.  Also, strings
+will be converted (via {\tt atof()}) to a number so if the string
+isn't a number, it will be given the value of 0.  It is possible to
+force a search to be done in either a string or numeric context
+using the
+\hyperref{relational operator}{relational operator discussed in \S }{}
+         {ug:topic:selections:comparison}
+
+Selections can be combined with the boolean operators {\tt
+and} and {\tt or}, collected inside of parenthesis, and modified by
+{\tt not}, as in
+\begin{verbatim}
+        (name CA or name CB) and mass 12 to 17
+\end{verbatim}
+which selects all atoms name CA or CB and have masses between 
+12 and 17 amu (this could be used to distinguish a C-alpha from a
+calcium).  \VMD\ has operator precedence similar to C so leaving the parentheis out of the previous expression, as in:
+\begin{verbatim}
+        name CA or name CB and mass 12 to 17
+\end{verbatim}
+actually selects all atoms named CA or those that are named CB and
+have the appropriate mass.
+
+\subsection{Definition of Keywords and Functions}
+The keywords available for selecting atoms in \VMD\ are listed in tables
+\ref{table:ug:keywords} and \ref{table:ug:keywords:cont} at the end of
+this chapter.
+If a keyword definition is followed by {\it bool}, it is either
+on or off.  If followed by {\it str} it takes a value in the
+string context.  If followed by {\it num} it takes a value in the
+number context.
+
+
+\begin{table}[htb]
+\hspace{0.25in}
+%  \begin{tabular}{|l|l|l|} \hline
+%    \multicolumn{1}{|c}{Keyword} & 
+%        \multicolumn{1}{|c}{Arg} & 
+%        \multicolumn{1}{|c|}{Description} \\ \hline\hline
+\begin{tabular}{|p{.9 in}| p{.4 in}| p{4.5in}| } 
+\hline
+%\multicolumn{3}{|l}{} \\ 
+Keyword & Arg & Description \\ 
+\hline \hline
+all           & {\it bool}  & everything \\
+none          & {\it bool}  & nothing \\
+name          & {\it str}   & atom name \\
+type          & {\it str}   & atom type \\
+index         & {\it num}   & the atom number, starting at 0 \\
+serial        & {\it num}   & the atom number, starting at 1 \\
+atomicnumber  & {\it num}   & atomic number (0 if undefined) \\
+element       & {\it str}   & atomic element symbol string ('X' if undefined) \\
+altloc        & {\it str}   & alternate location/conformation identifier \\
+chain         & {\it str}   & the one-character chain identifier \\
+residue       & {\it num}   & a set of connected atoms with the same residue number \\
+protein       & {\it bool}  & a residue with atoms named {\tt C, N, CA,} and {\tt O} \\
+nucleic       & {\it bool}  & a residue with atoms named {\tt P, O1P, O2P} and either \\
+              &             & {\tt O3', C3', C4', C5', O5'} or {\tt O3*, C3*, C4*, C5*, O5*}. \\
+              &             & This definition assumes that  the base is phosphorylated, \\
+              &             & an assumption which will be corrected in the future. \\
+backbone      & {\it bool}  & the {\tt C}, {\tt N}, {\tt CA}, and {\tt O} atoms of a protein \\
+              &             & and the equivalent atoms in a nucleic acid. \\
+sidechain     & {\it bool}  & non-backbone atoms and bonds \\
+water,        & {\it bool}  & all atoms with the resname {\tt H2O, HH0, OHH, HOH, } \\
+waters        &             & {\tt OH2, SOL, WAT, TIP, TIP2, TIP3} or {\tt TIP4} \\
+fragment      & {\it num}   & a set of connected residues \\
+pfrag         & {\it num}   & a set of connected protein residues \\
+nfrag         & {\it num}   & a set of connected nucleic residues \\
+sequence      & {\it str}   & a sequence given by one letter names \\
+numbonds      & {\it num}   & number of bonds \\
+resname       & {\it str}   & residue name \\
+resid         & {\it num}   & residue id \\
+segname       & {\it str}   & segment name \\
+x, y, z       & {\it float} & x, y, or z coordinates \\
+radius        & {\it float} & atomic radius \\
+mass          & {\it float} & atomic mass \\
+charge        & {\it float} & atomic charge \\
+beta          & {\it float} & temperature factor \\
+occupancy     & {\it float} & occupancy \\ 
+user          & {\it float} & time-varying user-specified value \\
+at            & {\it bool}  & residues named  {\tt ADA A THY T} \\
+acidic        & {\it bool}  & residues named {\tt ASP GLU} \\
+acyclic       & {\it bool}  & ``protein and not cyclic'' \\
+aliphatic     & {\it bool}  & residues named  {\tt ALA GLY ILE LEU VAL} \\
+alpha         & {\it bool}  & atom's residue is an alpha helix \\
+amino         & {\it bool}  & a residue with atoms named {\tt C, N, CA}, and {\tt O} \\
+aromatic      & {\it bool}  & residues named {\tt HIS PHE TRP TYR} \\
+basic         & {\it bool}  & residues named {\tt ARG HIS LYS} \\
+bonded        & {\it bool}  & atoms for which numbonds {\tt >} 0 \\
+buried        & {\it bool}  & residues named {\tt ALA LEU VAL ILE PHE CYS MET TRP} \\
+cg            & {\it bool}  & residues named {\tt CYT C GUA G} \\
+charged       & {\it bool}  & ``basic or acidic'' \\
+cyclic        & {\it bool}  & residues named {\tt HIS PHE PRO TRP TYR} \\
+\hline
+\end{tabular}
+\caption{Atom selection keywords.}
+\label{table:ug:keywords}
+\index{atom!selection!keywords} 
+\index{selection!keywords}
+\end{table}
+
+\newpage
+\begin{table}[htb]
+\hspace{0.5in}
+\begin{tabular}{|p{.9 in}| p{.4 in}| p{4.8in}| } 
+\hline
+Keyword & Arg & Description \\ 
+\hline \hline
+hetero         & {\it bool}  & ``not (protein or nucleic)'' \\
+hydrogen       & {\it bool}  & name "[0-9]?H.*" \\
+large          & {\it bool}  & ``protein and not (small or medium)'' \\
+medium         & {\it bool}  & residues named {\tt VAL THR ASP ASN PRO CYS} \\
+               &             & {\tt ASX PCA HYP} \\
+neutral        & {\it bool}  & residues named {\tt VAL PHE GLN TYR HIS CYS} \\
+               &             & {\tt MET TRP ASX GLX PCA HYP} \\
+polar          & {\it bool}  & ``protein and not hydrophobic'' \\
+purine         & {\it bool}  & residues named {\tt ADE A GUA G} \\
+pyrimidine     & {\it bool}  & residues named {\tt CYT C THY T URI U} \\
+small          & {\it bool}  & residues named {\tt ALA GLY SER} \\
+surface        & {\it bool}  & ``protein and not buried'' \\
+rasmol         & {\it str}   & translates Rasmol selection string to VMD \\
+alpha\_helix   & {\it bool}  & atom's residue is in an alpha helix  \\
+pi\_helix      & {\it bool}  & atom's residue is in a pi helix   \\
+helix\_3\_10   & {\it bool}  & atom's residue is in a 3-10 helix \\
+helix          & {\it bool}  & atom's residue is in an alpha or pi or 3-10 helix \\
+extended\_beta & {\it bool}  & atom's residue is a beta sheet \\
+bridge\_beta   & {\it bool}  & atom's residue is a beta sheet \\
+sheet          & {\it bool}  & atom's residue is a beta sheet \\
+turn           & {\it bool}  & atom's residue is in a turn conformation \\
+coil           & {\it bool}  & atom's residue is in a coil conformation  \\
+structure      & {\it str}   & single letter name for the secondary structure \\
+phi, psi       & {\it float} & backbone conformational angles \\
+within         & {\it str}   & selects atoms within a specified distance of \\
+               &             & a selection (i.e {\tt within 5 of name FE}). \\
+exwithin       & {\it str}   & exclusive within, equivalent to {\tt(within 3 of X) and not X}. \\
+same           & {\it str}   & selects atoms which have the same keyword as \\
+               &             & the atoms in a given selection (i.e. {\tt same segname as resid 35}) \\
+ufx, ufy, ufz  & {\it num}   & force to apply in the x, y, or z coordinates \\
+                \hline
+\end{tabular}
+\caption{Atom selection keywords (continued).}
+\label{table:ug:keywords:cont}
+\index{atom!selection!keywords} 
+\end{table}
+
+
+Table \ref{table:ug:functions} lists the built-in functions which may
+be used in atom selection expressions with keywords which take on a
+numeric value.
+
+\begin{table}[htb]
+\hspace{1.5in}
+\begin{tabular}{|l|l|} \hline
+\multicolumn{1}{|c}{Function} & 
+\multicolumn{1}{|c|}{Description} \\ \hline\hline
+    sqr(x)      & square of x \\
+    sqrt(x)     & square root of x \\
+    abs(x)      & absolute value of x \\
+    floor(x)    & largest integer not greater than x \\
+    ceil(x)     & smallest integer not less than x \\
+    sin(x)      & sine of x \\
+    cos(x)      & cosine of x \\
+    tan(x)      & tangent of x \\
+    atan(x)     & arctangent of x \\
+    asin(x)     & arcsin of x \\
+    acos(x)     & arccos of x \\
+    sinh(x)     & hyperbolic sine of x \\
+    cosh(x)     & hyperbolic cosine of x \\
+    tanh(x)     & hyperbolic tangent of x \\
+    exp(x)      & ``e to the power x'' \\
+    log(x)      & natural log of x \\
+    log10(x)    & log base 10 of x \\ \hline
+\end{tabular}
+\caption{Atom selection functions.}
+\label{table:ug:functions}
+\index{atom!selection!math functions}
+\index{selection!math functions}
+\end{table}
+
+
+Table \ref{table:ug:volkeywords} lists the built-in atom selection 
+keywords which may be used in atom selection expressions to query the 
+values of an underlying volumetric map in the same molecule. 
+These are read-only.
+
+\begin{table}[htb]
+\begin{center}
+\begin{tabular}{|l|c|l|} 
+  \hline
+  Function & Arg & Description\\ 
+  \hline\hline
+  vol$N$       & \emph{float} & value of the voxel of the volumetric data of ID $N$ \\
+               & & nearest to the atom \\
+  interpvol$N$ & \emph{float} & interpolated value of the voxels of the volumetric \\
+               & & data of ID $N$ around the atom \\ 
+  \hline
+\end{tabular}
+\end{center}
+\caption[Read-only atom selection keywords for volumetric map queries]{Read-only atom selection keywords which may be used to query the values
+of an underlying volumetric map in the same molecule. The value of $N$, which
+can be 0 to 7 inclusively, refers to the volID of the underlying volumetric data
+(\emph{e.g.}, you could type {\tt interpvol2}).}{Read-only atom selection
+keywords for querying volumetric data}
+\label{table:ug:volkeywords}
+\index{atom!selection!volumetric data}
+\index{selection!volumetric data}
+\end{table}
+
+
+\subsection{Boolean Keywords}
+
+\index{selection!keywords!boolean}
+Some selections take no values.  For example, {\tt backbone}
+selects the backbone atoms of the protein and nucleic acids and
+{\tt protein} selects protein atoms.
+Giving options to these selections is an error.
+The selections can be used in the same way as other selections, as in:
+\begin{verbatim}
+        protein and backbone
+        nucleic or protein
+\end{verbatim}
+In addition, if neither {\tt and} nor {\tt or} are located 
+after a boolean keyword, then an implicit {\tt and} is inserted, so
+that the following are valid:
+\begin{verbatim}
+        protein name CA         (same as: protein and name CA)
+        nucleic backbone
+\end{verbatim}
+
+\subsection{Short Circuiting}
+\label{ug:topic:selection:short_circuits}
+\index{atom!selection!logic}
+\index{selection!logic}
+
+The boolean logic in \VMD\ does
+\index{short circuit logic}{\it short circuit} evaluation on an 
+element-wise basis.  For instance, given one atom, if {\tt X} is true
+then {\tt X or Y} will be true regradless of the value of {\tt Y}, so there
+is no need to evaluate it.  Similarly, if {\tt X} is false, then {\tt
+X and Y} will also be false, so {\tt Y} again need not be evaluated.
+
+Knowing how short circuit selections work can speed up several types
+of selections.  Consider a system with a large number of waters and a
+protein.  The expression \verb!protein and segname < 10! is faster
+than \verb!segname < 10 and protein! since in the first selection only the
+atoms which are proteins have the {\tt segname} converted to a number,
+while in the second selection, all the segment names are converted.
+
+The {\tt within} selection has its own form of short circuiting.  The
+command can be interpreted as ``find the atoms of A which are withing
+a given distance from B,'' and if A isn't given, search all the atoms.
+The search done in \VMD\ takes a time roughly proportional to the
+number of atoms in A multiplied by the number of atoms in B, so
+reducing the number of atoms in A (i.e., by not testing every atoms)
+make the search faster.
+
+Using the system with a lot of water and a protein, compare the
+selection \\ 
+\verb!    protein within 5 of resid 1! \\
+to
+\verb!    (within 5 of resid 1) and protein!. \\
+The first is very fast as it 
+does a distance search between all the protein atoms and all the atoms
+in resid 1.  However, the second selection searches through all the
+atoms for those which are within 5 \AA\ of resid and then finds which
+of those are protein atoms.
+
+
+\subsection{Quoting with Single Quotes}
+\index{quoting}
+\index{atom!selection!quoting}
+  \VMD\ allows two types of quoting mechanisms, single and
+double quotes.  Single quotes are used to include spaces and other
+non-alphanumeric characters.  Believe it or not, there are some
+residue names with a space in them, so they can be referenced as, for
+example, 
+
+\begin{verbatim}
+        resname 'A 1'
+\end{verbatim}
+
+  More importantly, ribose atoms can be given names like {\tt
+C5'} or {\tt C5*} (depending on the age of the PDB record).  The lexer
+in \VMD\ has been modified so that {\tt C5'}, {\tt O"}, and {\tt N''}
+can be used without quotes, but it cannot handle an
+unquoted asterisk ({\tt *} conflicts with multiplication and the parser
+is not able to resolve the difference).  Some examples are:
+
+\begin{verbatim}
+        name 'O5*'
+        segname 'A *'
+        name O5'
+\end{verbatim}
+
+  Quotes may also be used to get around a reserved selection
+word, like {\tt x}.  The selection command {\tt segname x} will give
+an error because {\tt x} is another keyword.  Instead, use {\tt
+segname 'x'}.  There is an escape mechanism for including single
+quotes inside a single quoted string which uses a backslash
+('\verb!\!') before the single quote.  This allows unusual names like
+{\tt C '} to be quoted as \verb!'C \''!.
+
+\begin{verbatim}
+        segname x      <---- error; conflicts with the 'x' keyword
+        segname 'x'
+        name 'O5\''
+\end{verbatim}
+
+\noindent Also, double quotes (discussed in the next section) can be used, 
+as in \verb!"C '"! or \verb!"C \*"!.
+
+\subsection{Double Quotes and Regular Expressions}
+\label{ug:topic:selections:regex}
+\index{atom!selection!regular expression}
+Double quotes around a string are used to specify a \index{regular
+expression}regular expression search (compatible with Perl 5.005, using 
+the Perl-compatible regular expressions library written by Philip Hazel).
+If you don't know how to use them, try consulting the man pages for {\tt ed},
+{\tt egrep}, {\tt vi}, or {\tt regex}.  If not, read the Perl docs, or get
+any one of a number of books including the O'Reilly and Associates Sed
+and Awk book.  The following examples show just a few ways that regular
+expressions can be used within \VMD.
+
+\noindent Selection of all atoms with a name starting with {\tt C}:
+
+\begin{verbatim}
+        name "C.*"
+\end{verbatim}
+
+\noindent Segment names containing a number:
+
+\begin{verbatim}
+        segname ".*[0-9]+.*"
+\end{verbatim}
+
+\noindent Multiple terms can be provided on the list of
+matching keywords.  This example selects residues starting with 
+an {\tt A}, the glycine residues, and residues ending with a {\tt T}.  
+As with a string, a regular expression in a numeric context gets 
+converted to an integer, which will always be zero:
+
+\begin{verbatim}
+        resname "A.*" GLY ".*T"
+\end{verbatim}
+
+
+\noindent Selections containing special characters such as $+$, $-$,
+or $*$, must be escaped with the \verb$\$ character.  In order to select
+atoms named \verb$Na+$, one would use the selection:
+   
+\begin{verbatim}
+        name "Na\+"
+\end{verbatim}
+
+In brief, a regular selection allows matching to multiple
+possibilities, instead of just one character.  Table
+\ref{table:ug:wildcards} shows some of the methods that can be used.
+
+\begin{table}[htb]
+\hspace{0.5in}
+\begin{tabular}{|c|c|l|} \hline
+Symbol      & Example & \multicolumn{1}{|c|}{Definition} \\ 
+\hline\hline
+.           & \verb!.  , A.C !              & match any character   \\
+{\tt []}    & \verb![ABCabc] , [A-Ca-c]!    & match any char in the list  \\
+\verb![~]!  & \verb![~Z] , [~XYZ] , [^x-z]! & match all except the chars in the list    \\
+\verb!^!    & \verb!^C , ^A.*!              & next token must be the first part of string \\
+\$          & \verb![CO]G$!                 & prev token must be the last part of string \\
+\verb!*!    & \verb!C* , [ab]*!             & match 0 or more copies of prev char or \\
+            &                               & regular expression token \\
++           & \verb!C+ , [ab]+!             & match 1 or more copies of the prev token \\
+\verb!\|!   & \verb!C\|O!                   & match either the 1st token or the 2nd \\
+\verb!\(\)! & \verb!\(CA\)+!                & combines multiple tokens into one \\ \hline
+\end{tabular}
+\caption{Regular expression methods.}
+\label{table:ug:wildcards}
+\index{regular expression}
+\end{table}
+
+
+There are many ways to do some selections.  For example, choosing
+atoms with a name of either CA or CB can be done in the following ways:
+
+\begin{verbatim}
+        name CA CB
+        name "CA|CB"
+        name "C[AB]"
+        name "C(A|B)"
+\end{verbatim}
+
+Several caveats for those who already understand regular expressions.
+\VMD\ automatically prepends ``\verb!^(!'' and appends
+``\verb!)$!'' to the selection string.  This makes the selection {\tt
+O} match only {\tt O} and not {\tt OG} or {\tt PRO}.  On the other
+hand, putting \verb!^!  and \verb!$! into the command won't really
+affect anything, selections that match on a substring must be
+preceded and followed by ``.*'', as in \verb!.*O.*!, and some illegal
+selections could be accepted as correct, but strange, as in
+\verb!C)|(O!
+, which gets converted to
+\verb!^(C)|(O)$!
+and matches anything starting with a C or ending with an O.
+
+A regular expression is similar to wildcard matching in X-PLOR.  Table
+\ref{table:ug:conversions} is a list of conversions from X-PLOR style
+wildcards to the matching regular expression.
+
+\begin{table}[htb]
+\hspace{1.1in}
+\begin{tabular}{|c|c|c|} \hline
+X-PLOR Wildcard & Description & Regular Expression \\ 
+\hline\hline
+*               & matches any string         & .*         \\
+\%              & matches a single character & .          \\
++               & matches any digit          & [0-9]      \\
+\#              & matches any number         & [0-9]+     \\ 
+\hline
+\end{tabular}
+\caption{Regular expression conversions.}
+\label{table:ug:conversions}
+\index{regular expression!X-PLOR conversion}
+\end{table}
+
+
+\subsection{Comparison selections}
+\label{ug:topic:selections:comparison}
+\index{selection!comparison}
+\index{atom!selection!comparison}
+Comparisons can be used in \VMD\ to do atom selections like {\tt mass
+{\tt <} 5}, which selects atoms with mass less than 5 amu, and {\tt
+name eq CA}, which is another way of choosing the CA atoms.  The
+underlying idea for the comparison selection is also based on the
+concept that every atom has a property as specified by a keyword.
+When the keyword is given in the expression, the array (or vector) of
+the corresponding values is constructed, and the size of the array is
+the same as the number of atoms in the molecule.  (If a single number
+or string is given instead of a keyword, the array consists of copies
+of that given value.)  The operations, like addition, multiplication,
+string matching, and comparison, are then applied element-wise along
+the array.  This type of selection is similar to the vector statement
+in X-PLOR.
+
+Take the example {\tt mass {\tt <} 5} when applied on water, which has
+an oxygen of mass 15.9994 and two hydrogens of mass 1.008.  \VMD\ sees
+the keyword {\bf mass} and constructs the array [15.9994, 1.008,
+1.008], then sees the ``5'' and makes the array [5, 5, 5].  It then
+compares each term of the array and returns with the boolean array
+[False, True, True] (since 15.9994 is not less than 5, but 1.008 is).
+This final boolean array is then used to determine which atoms are
+selected; in this case, the hydrogens.
+
+More complicated comparison selections can be constructed, either from
+arithmetic operations or by using some of the standard math functions
+(the functions are listed in Table~\ref{table:ug:functions}).  
+Probably the most often used
+function will be {\tt sqr}, which squares each element of the array.
+Thus, the command to select all atoms within 5 \AA\ of a point (x,y,z)
+= (3,4,-5) in space is:
+
+\begin{verbatim}
+        sqr(x-3)+sqr(y-4)+sqr(z+5) <= sqr(5)
+\end{verbatim}
+
+\subsection{Comparison Operators}
+
+There are two types of comparison operators --- numeric and string ---
+which allow the user to specify the appropriate comparison function.
+Suppose the segment name, which takes on a string value, contains the
+names `11', and `8'.  \VMD\ cannot figure out if `8' should be less
+than `11' (in the numeric sense) or greater than `11' (in the
+lexographical sense).  Instead of trying to resolve this problem
+through some sort of internal heuristics, \VMD\ leaves it up to the
+user so that {\tt 8 < 11} but {\tt 11 lt 8}.  (Perl users should
+recognize this solution.)
+
+The numeric comparisons are the standard ones: {\tt <}, {\tt <=}, {\tt
+=} or {\tt ==}, {\tt >=}, {\tt >}, and {\tt !=}.  The corresponding
+string comparisons are: {\tt lt}, {\tt le}, {\tt eq}, {\tt ge}, {\tt gt}, 
+and {\tt ne}.  As in perl there
+is a ``match'' operator, \verb!=~!, so that
+
+\begin{verbatim}
+        'CA' =~ "C.*"
+        segname =~ "VP[1-4]" (matches VP1, VP2, VP3, and VP4, present in some
+                              virus structures)
+\end{verbatim}
+
+\noindent are valid.  No distinction is made between single and double quotes.
+
+\subsection{Other selections}
+\subsubsection{sequence}
+\index{atom!selection!sequence}
+  VMD supports selection based on the one-letter amino acid
+sequence with the \verb!sequence! selection keyword.  This allows
+selections of the form
+\begin{verbatim}
+  sequence APD
+  sequence "C..C"       (might be used to pick out zinc fingers)
+  sequence AATCGGAT
+\end{verbatim}
+
+Unlike the other string selection commands which take one of three
+types of strings, all the strings for \verb!sequence! are taken as
+regular expressions (though strings with non-alphanumerics must still
+be quoted to get past the input parser).  The method works by taking
+each of the protein and nucleic acid fragments (pfrag and nfrag) 
+in turn and constructing the one-letter
+amino acid sequence.  If a regular expression matches any of the
+sequence, the atoms in the matching residues are selected.  Multiple
+matches are allowed, though they cannot overlap.  As is usual with
+regular expressions, the largest possible match is made, so take care
+with expressions like
+\verb!C.*C!.
+
+\subsubsection{{\tt within} and {\tt same}}
+\index{atom!selection!within}
+\index{atom!selection!same}
+Two useful types of selection mechanisms available in \VMD are:
+\verb!within <number> of <selection>! 
+and \verb!same <keyword> as <selection>!.  The first selects all atoms 
+within the specified
+distance (in \AA) from a selection, including the selection itself.
+Therefore, the command:
+
+\begin{verbatim}
+        within 5 of name FE
+\end{verbatim}
+
+\noindent selects all atoms within 5 \AA\ of atoms named FE.  One common use for
+this command is to limit the region of atoms shown on the screen.
+Another is to find atoms that may be involved in interactions.  For
+instance:
+
+\begin{verbatim}
+        protein within 5 of nucleic
+\end{verbatim}
+
+\noindent finds the protein atoms that are nearby nucleic acids.  
+Some selections may be sped up
+by 
+\hyperref{short circuiting}{short circuiting [\S }{]}
+         {ug:topic:selection:short_circuits}.
+\index{short circuit logic}
+
+A related atom selection construct is {\tt exwithin}, short for
+'exclusive within'.  The atom selection {\tt (within 3 of protein) and not 
+protein} is equivalent to {\tt exwithin 3 of protein}. 
+
+  The \verb!same <keyword> as <selection>! finds all the atoms
+which have the same `keyword' as the atoms in the selection.  This can
+be used for selections like
+\begin{verbatim}
+        same fragment as resid 35
+\end{verbatim}
+\noindent which finds all the atoms attached to residue id 35.  Any keyword 
+can be used, so selections like
+\begin{verbatim}
+        same resname as (protein within 5 of nucleic)
+\end{verbatim}
+\noindent are fine, although weird.  The perhaps the most useful keyword
+for this command is {\tt residue}, so you can say {\tt same residue as
+\ldots}.
+
+\subsubsection{Finding contact residues}
+
+\index{contact residues}
+Suppose you want to view the atoms in ``A'' which are in contact with
+``B''.  Use the {\tt within <distance> of <selection>} selection
+command.  For purposes of demonstration, let A be protein, B be
+nucleic, and define contact as an atom in A which is within 2 \AA\ of
+an atom in B.  Then the selection command is
+
+\begin{verbatim}
+        protein within 2 of nucleic
+\end{verbatim}
+
+        If you want to see all the residues of A which have at least
+one atom in contact with B, use
+
+\begin{verbatim}
+        same residue as (protein within 2 of nucleic)
+\end{verbatim}
+

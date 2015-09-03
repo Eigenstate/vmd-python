@@ -1,0 +1,69 @@
+/*! \page extprogs Compiling external programs from source code
+
+<p>
+VMD uses several external programs for various tasks, these include
+the \ref stride "STRIDE secondary structure prediction" program,
+the \ref surf   "SURF solvent accessible surface" program, and various
+other optional external rendering programs.  Before one can build a 
+complete VMD distribution, these external programs must be successfully
+compiled and installed into the correct locations in the vmd/lib directories.
+If you already have binaries of Surf or Stride, you can just copy them into
+the appropriate directories.
+
+<p>
+\section stride Compiling STRIDE from source code
+
+STRIDE is used by VMD to compute the secondary structure given the
+protein 3D coordinates.  The appropriate STRIDE binary is included in
+the VMD binary distribution.  To compile it yourself, see the web site at 
+<BR><TT>http://www.embl-heidelberg.de/stride/stride_info.html</TT> for information
+on how to get the source and see <TT>./lib/stride</TT> for information on how
+to use it with VMD.  If you're unable to get the STRIDE source code from 
+the original site, a copy is also available here:
+<a href=http://www.ks.uiuc.edu/Research/vmd/extsrcs/Stride_src.tar.Z>http://www.ks.uiuc.edu/Research/vmd/extsrcs/Stride_src.tar.Z</a>
+  
+
+<P>
+Change line 43 of <TT>stride.h</TT> from<PRE>
+   #define MAX_AT_IN_RES             50
+</PRE>
+
+to<PRE>
+   #define MAX_AT_IN_RES             75
+</PRE>
+because there are many structures with non-standard residues
+containing more than 50 atoms.
+
+<P>
+Change line 96 of <TT>stride.c</TT> from<PRE>
+   return(SUCCESS);
+</PRE>
+to<PRE>
+
+   return(0);
+</PRE>
+since a program should return 0 if everything ended correctly.
+
+
+<p>
+\section surf Compiling SURF from source code
+
+SURF binaries are contained in the VMD distribution, with permission from the
+authors.  The SURF source code is no longer made available at UNC, so we 
+have placed a copy of the SURF source code archive here:
+<a href=http://www.ks.uiuc.edu/Research/vmd/extsrcs/surf.tar.Z>http://www.ks.uiuc.edu/Research/vmd/extsrcs/surf.tar.Z</a>
+
+To get SURF working for VMD:
+<ol>
+<li>uncompress and untar surf.tar.Z
+<li>make depend
+    This uses 'makedepend' which is one of the binaries that comes with X11.
+    It might not be in your path (eg, /usr/openwin/bin for Solaris 2.5).
+<li>make
+<li>mv surf surf_$ARCH   (for example: mv surf surf_IRIX5)
+</ol>
+
+<p>
+$Id: pg_extprogs.dox,v 1.3 2008/03/04 20:15:49 johns Exp $
+
+ */

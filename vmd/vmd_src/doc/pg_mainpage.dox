@@ -1,0 +1,30 @@
+/*! 
+
+\mainpage VMD Programmer's Guide 
+
+<p>
+This Programmer's Guide describes the structure and organization of the 
+program VMD, and provides complete descriptions for all important object 
+classes.  This guide is designed to aid researchers interested in learning 
+how VMD is constructed and who are interested in making modifications or 
+improvements to the existing code.
+
+<ul>
+<li> \ref intro        "Introduction"
+<li> \ref faq          "VMD development frequently asked questions"
+<li> \ref filestruct   "VMD Source files and directory structure"
+<li> \ref cvsget       "Using CVS to retrieve the VMD source code"
+<li> \ref compiling    "Compiling VMD from source code"
+<li> \ref execution    "Overview of VMD flow of execution"
+<li><a href="http://www.ks.uiuc.edu/Research/vmd/plugins/doxygen/">Compiling and developing plugins for VMD</a>
+<li> \ref codestyle    "VMD source code style guidelines"
+<li> \ref makedistrib  "Building source or binary distribution archives"
+<li> \ref bugtracking  "VMD bug tracking system"
+<li> \ref accelerators "VMD graphics acceleration notes"
+<li> \ref devtools     "VMD development tools"
+</ul>
+
+<p>
+$Id: pg_mainpage.dox,v 1.13 2008/03/04 20:15:49 johns Exp $
+
+ */

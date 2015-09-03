@@ -1,0 +1,981 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%cr                                                                       
+%cr            (C) Copyright 1995 The Board of Trustees of the            
+%cr                        University of Illinois                         
+%cr                         All Rights Reserved                           
+%cr                                                                       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RCS INFORMATION:
+%
+%       $RCSfile: ug_molecule_info.tex,v $
+%       $Author: johns $        $Locker:  $                $State: Exp $
+%       $Revision: 1.30 $      $Date: 2012/01/10 18:57:50 $
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+%   How to get information about atoms or a molecule
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Molecular Analysis}
+\label{chapter:analysis}
+\index{molinfo!command}
+\index{atomselect!command}
+\index{molecule!info}
+
+
+\section{Using the {\tt molinfo} command}
+This section covers how to extract information about molecules and
+atoms using the \VMD\ text command {\tt molinfo}.
+
+Examples:
+
+Two functions, one to save the current view position, the other to
+restore it.  The position of the axis is not changed by these
+operations.
+
+\index{save!viewpoint}
+\index{restore!viewpoint}
+\index{example scripts!Tcl!drawing!saving and restoring the viewpoint}
+\begin{verbatim}
+proc save_viewpoint {} {
+   global viewpoints
+   if [info exists viewpoints] {unset viewpoints}
+   # get the current matricies
+   foreach mol [molinfo list] {
+      set viewpoints($mol) [molinfo $mol get {
+	center_matrix rotate_matrix scale_matrix global_matrix}]
+   }
+}
+proc restore_viewpoint {} {
+   global viewpoints
+   foreach mol [molinfo list] {
+      puts "Trying $mol"
+      if [info exists viewpoints($mol)] {
+         molinfo $mol set {center_matrix rotate_matrix scale_matrix
+	   global_matrix} $viewpoints($mol)
+      }
+   }
+}
+\end{verbatim}
+
+Cycle through the list of displayed molecules, turning each one on
+one at a time.  At the end, return the display flags to their original
+state.
+\index{molecule!status!changing}
+\begin{verbatim}
+# save the current display state
+foreach mol [molinfo list] {
+  set disp($mol) [molinfo $mol get drawn]
+}
+# turn everything off
+mol off all
+# turn each molecule on then off again
+foreach mol [molinfo list] {
+  if $disp($mol) {
+     mol on $mol
+     sleep 1
+     mol off $mol
+  }
+}
+# turn the original ones back on
+foreach mol [molinfo list] {
+  if $disp($mol) {mol on $mol }
+}
+\end{verbatim}
+
+The last loop, which turns the originally drawn molecules back on,
+doesn't turn them on at the same time.  That's because some commands
+(those which use the command queue) redraw the graphics when they are
+used.  This can be disabled with the {\tt display update} 
+\index{display!update} (see
+section \ref{ug:ui:text:display} for
+more information).  Using this, the final loop becomes
+\begin{verbatim}
+#turn the original ones back on
+display update off
+foreach mol [molinfo list] {
+  if $disp($mol) {mol on $mol }
+}
+display update on
+\end{verbatim}
+Alternatively, since the {\tt drawn} option is settable, you could
+do:
+\begin{verbatim}
+foreach mol [molinfo list] {
+  if $disp($mol) {molinfo $mol set drawn 1}
+}
+\end{verbatim}
+However, that won't set the flag to redraw the scene so you need to force a
+redraw with {\tt display redraw}.
+
+\section{Using the {\tt atomselect} command}
+\label{ug:topic:atomselect}
+\index{atomselect!command}
+\index{atom!info}
+\index{atom!selection}
+\index{selection}
+
+  Atom selection is the primary method to access information about
+the atoms in a molecule.  It works in two steps. The first step is to create a 
+selection given the selection text, molecule id, and optional frame 
+number. This is done by a function called {\tt atomselect}, which returns the
+name of the new atom selection. the second step is to use the created 
+selection to access the information about the atoms in the selections.
+
+
+  Atom selection is implemented as a Tcl function.  The data
+returned from {\tt atomselect} is the name of the function to use.
+The name is of the form {\tt atomselect\%d} where '\%d' is a non-negative
+number (such as 'atomselect0', atomselect26', ...).
+
+  The way to use the function created by the {\tt atomselect} command
+is to store the name into a variable, then use the variable to get the
+name when needed.
+\index{selection!text}
+\index{atom!selection!text}
+\begin{verbatim}
+vmd> set sel [atomselect top "water"]
+atomselect3
+vmd> $sel text
+water
+\end{verbatim}
+This is equivalent to saying
+\begin{verbatim}
+vmd> atomselect3 text
+\end{verbatim}
+
+The easiest way of thinking about this is that the {\tt atomselect}
+command creates an object.  To get information from the object you
+have to send it a command.  Thus, in the example above ({\tt
+atomselect1 num}) the object "atomselect1" was sent the command "num",
+which asks the object to return the number of atoms in the selection.
+These derived object functions (the ones with names like atomselect3)
+take many options, as described in 
+section \ref{ug:ui:text:atomselect},
+
+For instance, given the selection
+\begin{verbatim}
+vmd> set sel [atomselect top "resid 4"]
+atomselect4
+\end{verbatim}
+you can get the atom names for each of the atoms in the selection with
+\begin{verbatim}
+vmd> $sel get name
+N H CA CB C O
+\end{verbatim}
+  (which, remember, is the same as
+\begin{verbatim}
+vmd> atomselect4 get name
+\end{verbatim}
+)
+
+Multiple attributes can be requested by submitting a list, so if you
+want to see which atoms are on the backbone,
+\begin{verbatim}
+vmd> $sel get {name backbone}
+{N 1} {H 0} {CA 1} {CB 0} {C 1} {O 1}
+\end{verbatim}
+
+and the atom coordinates with
+\begin{verbatim}
+vmd>  $sel get {x y z}
+{0.710000 4.211000 1.093000} {-0.026000 3.700000 0.697000} {0.541000
+4.841000 2.388000} {-0.809000 4.462000 2.976000} {1.591000 4.371000
+3.381000} {2.212000 5.167000 4.085000}
+\end{verbatim}
+
+\index{analysis!scripting}
+Note that the format of the data you get back from the {\tt get} command
+depends on how many attributes you requested.  If you request only one
+attribute, as in the {\tt get name} example above, you will get back
+a simple list of elements.  On the other hand, if you request two or
+more attributes, you will get back a list of sublists.  Specifically,
+it is a list of size $n$ where each element is itself a list of size $i$,
+where $n$ is the number of atoms in the selection and $i$ is the number
+of attributes requested.
+
+\index{analysis!speed}
+Your scripts will run faster if you retrieve only one attribute at a time,
+because then VMD does not have to construct the sublists for each 
+attribute.  Remember that in Tcl you can loop over several lists at once
+using the {\tt foreach} command:
+\begin{verbatim}
+foreach resid [$sel get resid] resname [$sel get resname] {
+  # process each resid and resname here
+}
+\end{verbatim}
+
+One quick function you can build with the coordinates is a method to
+calculate the geometrical center (not quite the center of mass; that's a
+bit harder). This also uses some of the vector commands discussed in
+the section about \hyperref{vectors and matrices}{vectors and matrices [\S}{]}
+{ug:topic:vectors}, but you should be
+able to figure them out from context.
+\index{geometric center}
+\index{example scripts!Tcl!calculation!geometric center of a selection}
+\begin{verbatim}
+proc geom_center {selection} {
+        # set the geometrical center to 0
+        set gc [veczero]
+        # [$selection get {x y z}] returns a list of {x y z} 
+        #    values (one per atoms) so get each term one by one
+        foreach coord [$selection get {x y z}] {
+           # sum up the coordinates
+           set gc [vecadd $gc $coord]
+        }
+        # and scale by the inverse of the number of atoms
+        return [vecscale [expr 1.0 /[$selection num]] $gc]
+}
+\end{verbatim}
+
+With that defined you can say (assuming \$sel was created with the
+previous atomselection example)
+\begin{verbatim}
+vmd> geom_center $sel
+0.703168 4.45868 2.43667
+\end{verbatim}
+I'll go through the example line by line.  The function is named 
+{\tt geom\_center} and takes one parameter, the name of the selection.
+The first line sets the variable ``gc'' to the zero vector, which is {0
+0 0}.  On the second line of code, two things occur.  First, the command
+\begin{verbatim}
+   $selection get {x y z}
+\end{verbatim}
+is executed, and the string is replaced with the result, which is
+\begin{verbatim}
+{0.710000 4.211000 1.093000} {-0.026000 3.700000 0.697000} {0.541000
+4.841000 2.388000} {-0.809000 4.462000 2.976000} {1.591000 4.371000
+3.381000} {2.212000 5.167000 4.085000}
+\end{verbatim}
+This is a list of 6 terms (one for each atom in the selection), and
+each term is a list of three elements, the x, y, and z coordinate, in
+that order.
+
+The "foreach" command splits the list into its six terms and goes down
+the list term by term, setting the variable "coord" to each successive
+term.  Inside the loop, the value of \$coord is added to total sum.
+
+The last line returns the geometrical center of the atoms in the selection.  
+Since the geometrical
+center is defined as the sum of the coordinate vectors divided by the
+number of elements, and so far I have only calculated the sum of
+vectors, I need the inverse of the number of elements, which is
+done with the expression
+\begin{verbatim}
+    expr 1.0 / [$selection num]
+\end{verbatim}
+The decimal in "1.0" is important since otherwise Tcl does integer
+division.  Finally, this value is used to scale the sum of the
+coordinate vectors (with vecscale), which returns the new value, which
+is itself returned as the result of the procedure.
+
+
+  The center of mass function is slightly harder because you have to
+get the mass as well as the x, y, z values, then break that up into
+to components.  
+The formula for the center of mass is 
+$\sum m_i x_i/\sum mass_i$
+
+\index{center of mass}
+\index{mass!center of}
+\index{example scripts!Tcl!calculation!center of mass of a selection}
+\begin{verbatim}
+proc center_of_mass {selection} {
+        # some error checking
+        if {[$selection num] <= 0} {
+                error "center_of_mass: needs a selection with atoms"
+        }
+        # set the center of mass to 0
+        set com [veczero]
+        # set the total mass to 0
+        set mass 0
+        # [$selection get {x y z}] returns the coordinates {x y z} 
+        # [$selection get {mass}] returns the masses
+        # so the following says "for each pair of {coordinates} and masses,
+	#  do the computation ..."
+        foreach coord [$selection get {x y z}] m [$selection get mass] {
+           # sum of the masses
+           set mass [expr $mass + $m]
+           # sum up the product of mass and coordinate
+           set com [vecadd $com [vecscale $m $coord]]
+        }
+        # and scale by the inverse of the number of atoms
+        if {$mass == 0} {
+                error "center_of_mass: total mass is zero"
+        }
+        # The "1.0" can't be "1", since otherwise integer division is done
+        return [vecscale [expr 1.0/$mass] $com]
+}
+
+vmd> center_of_mass $sel
+Info) 0.912778 4.61792 2.78021
+\end{verbatim}
+
+
+The opposite of "get" is "set".  Many keywords (most notably,
+"x", "y", and "z") can be set to new values.  This allows, for
+instance, atom coordinates to be changed, the occupancy values to be
+updated, or user forces to be added.  You can also change the resname,
+segid, and so forth, which may be easier to do within VMD than, for
+example, editing a PDB file by hand.
+\begin{verbatim}
+  set sel [atomselect top "index 5"]
+  $sel get {x y z}
+{1.450000 0.000000 0.000000}
+  $set set {x y z} {{1.6 0 0}}
+\end{verbatim}
+\index{atom!coordinates!changing}
+\index{atom!changing properties}
+
+Note that just as the get option returned a list of lists, the set
+option needs a list of lists, which is why the extra set of curly
+braces were need.  Again, this must be a list of size $n$
+containing elements which are a list of size $i$.  The exeception is
+if $n$ is 1, the list is duplicated enough times so there is one
+element for each atom.
+\begin{verbatim}
+  # get two atoms and set their coordinates
+  set sel [atomselect top "index 6 7"]
+  $sel set {x y z} { {5 0 0} {7.6 5.4 3.2} }
+\end{verbatim}
+
+In this case, the atom with index 6 gets its (x, y, z) values set to
+{5 0 0} and the atom with index 7 has its coordinates changed to {7.6
+5.4 3.2}.
+
+  It is possible to move atoms this way by getting the coordinates,
+changing them (say by adding some offset) and replacing it.  Following is a function which will do just that:
+
+\index{example scripts!Tcl!calculation!move selected atoms}
+\begin{verbatim}
+proc moveby {sel offset} {
+  foreach coord [$sel get {x y z}] {
+    lappend newcoords [vecadd $coord $offset]
+  }
+  $sel set {x y z} $newcoords
+}
+\end{verbatim}
+And to use this function (in this case, to apply an offset of (x y z)
+$=$ (0.1 -2.8 9) to the selection "\$movesel"):
+\begin{verbatim}
+moveby $movesel {0.1 -2.8 9}
+\end{verbatim}
+However, to simplify matters some options have been added to the
+selection to deal with movements (these commands are also implemented
+in C++ and are much faster than the Tcl versions).  These functions
+are {\tt moveby}, {\tt moveto}, and {\tt move}.  The first two take a
+position vector and the last takes a transformation matrix.
+
+\index{translation!change atom coordinates}
+The first command, {\tt moveby}, moves each of the atoms in the
+selection over by the given vector offset.
+\begin{verbatim}
+   $sel moveby {1 -1 3.4}
+\end{verbatim}
+The second, {\tt moveto}, moves all the atoms in a selection to a
+given coordinate (it would be strange to use this for a selection of
+more than one atom, but that's allowed).  Example:
+\begin{verbatim}
+   $sel moveto {-1 1 4.3}
+\end{verbatim}
+  The last of those, {\tt move}, applies the given transformation
+matrix to each of the atom coordinates.  This is best used for
+rotating a set of atoms around a given axis, as in
+\begin{verbatim}
+   $sel move [trans x 90]
+\end{verbatim}
+which rotates the selection 90 degrees about the x axis.  Of course,
+any transformation matrix may be used.
+
+ A more useful
+example is the following, which rotates the side chain atoms around
+the CA-CB bond by 10 degrees. \index{rotate!side chain}
+\begin{verbatim}
+# get the sidechain atoms (CB and onwards)
+set sidechain [atomselect top "sidechain residue 22"]
+# get the CA coordinates -- could do next two on one line ...
+set CA [atomselect top "name CA and residue 22"]
+set CAcoord [lindex [$CA get {x y z}] 0]
+# and get the CB coordinates
+set CB [atomselect top "name CB and residue 22"]
+set CBcoord [lindex [$CB get {x y z}] 0]
+# apply a transform of 10 degrees about the given bond axis
+$sidechain move [trans bond $CAcoord $CBcoord 10 deg]
+\end{verbatim}
+
+
+\section{Analysis scripts}
+\index{molecule!analysis}
+Following are some more examples of routines that could be used for analysing
+molecules.  These are not the best routines to use since many of these can be
+implemented with the {\tt measure} command, which calls a much faster built-in
+function. \index{measure!command}
+
+\paragraph{Finding waters near a protein}
+This example finds the waters near the protein for each frame of a trajectory
+and writes out a PDB file containing those waters:
+
+\index{atom!selection!update}
+\begin{verbatim}
+set sel [atomselect top "water and same residue as (within 2 of protein)"]
+set n [molinfo top get numframes]
+for { set i 0 } { $i < $n } { incr i } {
+  $sel frame $i
+  $sel update
+  $sel writepdb water_$i.pdb
+}
+\end{verbatim}
+
+The {\tt frame} option sets the frame of the selection, {\tt update} tells
+the atom selection to recompute which waters are near the protein, and
+{\tt writepdb} writes the selected waters to a file.  
+
+\paragraph{Total mass of a selection}
+\index{mass!total}
+\index{example scripts!Tcl!calculation!total mass of a selection}
+\begin{verbatim}
+proc total_mass {selection} {
+  set sum 0
+  foreach mass [$selection get mass] {
+    set sum [expr {$sum + $mass}]
+  }
+  return $sum
+}
+\end{verbatim}
+Note the curly braces after the {\tt expr} command in the above example.
+Omitting those braces causes this script to run about three times slower!
+The moral of the story is: always put curly braces around the expression
+that you pass to {\tt expr}.
+
+Here's another (slightly slower) way to do the same thing.  This works 
+because
+the mass returned from the selection is a list of lists.  Putting it
+inside the quotes of the eval makes it a sequence of vectors, so the
+vecadd command will work on it.
+\begin{verbatim}
+proc total_mass1 {selection} {
+  set mass [$selection get mass]
+  eval "vecadd $mass"
+}
+\end{verbatim}
+
+\paragraph{Coordinate min and max}
+\index{atom!coordinates!min and max}
+Find the min and max coordinate values of a given molecule in the x,
+y, and z directions (see also the {\tt measure} command 'minmax').  
+\index{measure!command} The
+function takes the molecule id and returns two vectors; the first
+contains the min values and the second contains the max.
+
+\index{example scripts!Tcl!calculation!min and max atom coordinates}
+\begin{verbatim}
+proc minmax {molid} {
+  set sel [atomselect top all]
+  set sx [$sel get x]
+  set sy [$sel get y]
+  set sz [$sel get z]
+  set minx [lindex $sx 0]
+  set miny [lindex $sy 0]
+  set minz [lindex $sz 0]
+  set maxx $minx
+  set maxy $miny
+  set maxz $minz
+  foreach x $sx y $sy z $sz {
+    if {$x < $minx} {set minx $x} else {if {$x > $maxx} {set maxx $x}}
+    if {$y < $miny} {set miny $y} else {if {$y > $maxy} {set maxy $y}}
+    if {$z < $minz} {set minz $z} else {if {$z > $maxz} {set maxz $z}}
+  }
+  return [list [list $minx $miny $minz] [list $maxx $maxy $maxz]]
+}
+\end{verbatim}
+
+
+\paragraph{Radius of gyration}
+\index{gyration, radius of}
+\index{radius of gyration}
+Compute the radius of gyration for a selection (see also {\tt
+measure rgyr}).  The square of the radius of gyration is
+defined as $\sum_i m_i (\vec r_i - \vec r_c)^2/\sum_i m_i$.  
+This uses the center\_of\_mass function defined earlier in
+this chapter; a faster version would replace that with {\tt measure
+center}.  Note that the {\tt measure rgyr} command does the same thing
+as this script, only much much faster.
+
+\index{example scripts!Tcl!calculation!radius of gyration}
+\begin{verbatim}
+proc gyr_radius {sel} {
+  # make sure this is a proper selection and has atoms
+  if {[$sel num] <= 0} {
+    error "gyr_radius: must have at least one atom in selection"
+  }
+  # gyration is sqrt( sum((r(i) - r(center_of_mass))^2) / N)
+  set com [center_of_mass $sel]
+  set sum 0
+  foreach coord [$sel get {x y z}] {
+    set sum [vecadd $sum [veclength2 [vecsub $coord $com]]]
+  }
+  return [expr sqrt($sum / ([$sel num] + 0.0))]
+}
+\end{verbatim}
+
+Applying this to the alanin.pdb coordinate file
+\begin{verbatim}
+vmd > mol new alanin.pdb
+vmd > set sel [atomselect top all]
+vmd > gyr_radius $sel
+Info) 5.45443
+\end{verbatim}
+
+\paragraph{Root mean square deviation}
+\index{RMSD}
+Compute the rms difference of a selection between two frames of a
+trajectory. This takes a selection and the values of the two frames to compare.
+\index{example scripts!Tcl!calculation!RMSD between two frames}
+\begin{verbatim}
+proc frame_rmsd {selection frame1 frame2} {
+  set mol [$selection molindex]
+  # check the range
+  set num [molinfo $mol get numframes]
+  if {$frame1 < 0 || $frame1 >= $num || $frame2 < 0 || $frame2 >= $num} {
+    error "frame_rmsd: frame number out of range"
+  }
+  # get the first coordinate set
+  set sel1 [atomselect $mol [$selection text] frame $frame1]
+  set coords1 [$sel1 get {x y z}]
+  # get the second coordinate set
+  set sel2 [atomselect $mol [$selection text] frame $frame2]
+  set coords2 [$sel2 get {x y z}]
+  # and compute the rmsd values
+  set rmsd 0
+  foreach coord1 $coords1 coord2 $coords2 {
+    set rmsd [expr $rmsd + [veclength2 [vecsub $coord2 $coord1]]]
+  }
+  # divide by the number of atoms and return the result
+  return [expr $rmsd / ([$selection num] + 0.0)]
+}
+\end{verbatim}
+
+The following uses the frame\_rmsd function to list the rmsd of the
+molecule over the whole trajectory, as compared to the first frame.
+\begin{verbatim}
+vmd > mol new alanin.psf 
+vmd > mol addfile alanin.dcd
+vmd > set sel [atomselect top all]
+vmd > for {set i 0} {$i < [molinfo top get numframes]} {incr i} {
+?   puts [list $i [frame_rmsd $sel $i 0]]
+? }
+0 0.0
+1 0.100078
+2 0.291405
+3 0.523673
+ ....
+97 20.0095
+98 21.0495
+99 21.5747
+\end{verbatim}
+
+\index{beta values}
+The last example shows how to set the beta field.
+%(???)
+This is
+useful because one of the coloring methods is 'Beta', which uses the
+beta values to color the molecule according to the current color
+scale.  (This can also be done with the occupancy field.)  Thus
+redefining the beta values allows you to color the molecules based on
+your own definition.  One useful example is to color the molecule
+based on the distance from a specific point (for this case, coloring a
+poliovirus protomer based on its distance to the center of the virus
+(0, 0, 0) helps bring out the surface features).
+
+\index{example scripts!Tcl!drawing!coloring by distance}
+\begin{verbatim}
+proc betacolor_distance {sel point} {
+  # get the coordinates
+  foreach coord [$sel get {x y z}] {
+   # get the distance and put it in the "newbeta" list
+    set dist [veclength2 [vecsub $coord $point]]
+    lappend newbeta $dist
+  } 
+  # set the beta term
+  $sel set beta $newbeta
+} 
+\end{verbatim}
+And here's one way to use it:
+
+\index{molecule!loading}
+\begin{verbatim}
+# load pdb2plv.ent using anonymous ftp to the PDB
+vmd > mol new 2plv
+vmd > set sel [atomselect top all]
+vmd > betacolor_distance $sel {0 0 0}
+\end{verbatim}
+Then go to the graphics menu and set the 'Coloring Method' to 'Beta'.
+
+\section{RMS Fit and Alignment}
+\label{ug:fit}
+\index{RMS!Fit}
+\index{RMS:Alignment}
+
+When one has two similar structures, one often wants to compare them.
+What's the difference between two X-ray structures?  How much did the
+structure change during a simulation?  To answer these questions, you
+must first figure out how to compare two structures, which usually
+means that you must find the root mean square deviation (RMSD).
+
+Formally, given $N$ atom positions from structure $x$ and the
+corresponding $N$ atoms from structure $y$ with a weighting factor
+\(w\left(i\right)\),
+the RMSD is defined as:
+\begin{center}
+\(
+RMSD\left(N; x,y\right) = {\left[\frac {\sum_{i=1}^N
+w_i {\parallel x_i - y_i \parallel}^2}
+{N \sum_{i=1}^N w_i}\right]}^{\frac {1}{2}}
+\)
+\end{center}
+
+Using this equation by itself probably won't give you the answer you
+are looking for.  Imagine two identical structures offset by some
+distance.  The RMSD should be 0, but the offset prevents that from
+happening.  What you really want is the minimum RMSD between two given
+structures; the best fit.  There are many ways to do this, but for VMD
+we have implemented the method of Kabsch (Acta Cryst. (1978) A34,
+827-828 or see file Measure.C in the VMD source code).
+This algorithm computes the transformation, needed to move one structure
+onto another in order to minimize the RMSD.
+
+With the mathematical prerequisites behind us, we still need to be
+able to specify how to choose the atoms to compare.  If you want to
+compare all the atoms in both structures, and they both have the same
+number of atoms, then the problem is easy -- $N$ is everything.  This
+occurs most often in MD simulations when the only thing different
+between two structures are the coordinates.
+
+But what about homologous sequences?  In this case, the number of
+atoms differ because while the number of residues is the same, the
+sidechains have different numbers of atoms.  The usual solution is to
+determine the RMSD based solely on the backbone atoms or, in some
+X-ray structures where only the $C_{\alpha}$ atoms have been
+determined, based on the $C_{\alpha}$ atoms.  VMD allows you to fit 
+and align based on any valid atom selection, as long as the atom selection
+specifies the same number of atoms in each molecule being compared.
+
+\subsection{RMS Fit and Alignment Extension}
+
+To get started with RMS fitting and alignment, 
+open the RMSD item from the {\bf Extensions} menu.
+You should now have a new window titled RMSD Tool
+We'll describe the RMSD calculator function first.
+
+\subsubsection{RMSD calculation}
+
+\begin{rawhtml}
+<CENTER>
+\end{rawhtml}
+\myfigure{rmsd_extension}{RMS calculation and alignment extension}{fig:ug:rmsdext}
+\begin{rawhtml}
+</CENTER>
+\end{rawhtml}
+
+The RMSD calculator button is used to calculate RMS distances between molecules.
+The upper left corner of the menu is where you specify which atoms are to be
+used in the calculation.  In the input field, type the atom selection text
+just as you would in the Graphics window.  The checkbox below the input field
+entitled {\it Backbone only} restricts whatever atom selection you typed to just
+the backbone atoms of the selection; in effect, it adds "and backbone" to the
+atom selection text. 
+
+The upper right corner of the menu has a button labeled {\bf RMSD}.  Its effect
+depends on which of the {\bf Top}, {\bf Average}, or
+{\bf Selected} radio buttons are selected.
+If {\bf Top} is selected, VMD calculates the RMS distance between the top 
+molecule (which is usually the last molecule loaded) and every other molecule.
+If {\bf Average} is selected, VMD first computes the average x, y, z 
+coordinates of the selected atoms in each molecule, then computes the 
+RMS distance of each molecule from that average structure.
+
+Results of the RMS calculations for each molecule are shown in the browser in 
+the bottom half of the menu.  Note that this list is not updated until you
+presse the RMSD button, so the effects of loading/deleting molecules will 
+not be immediately reflected.  The {\bf Total RMSD} label at the bottom of the
+menu shows the average RMSD for all molecules listed.
+
+\subsubsection{RMS Alignment}
+
+The RMS Alignment button fits molecules based on selected groups of atoms.
+Whereas the RMSD calculator button finds the RMS distance between molecules 
+without disturbing their coordinates, the RMS Alignment button actually moves 
+molecules to new positions.
+
+This button is quite simple: Enter an atom selection in the input field, and 
+press Align to align the molecules based on the atoms in that selection.
+If you recompute the RMSD between molecules with the RMSD calculator button, 
+you will probably find that the values are different; this is because the 
+calculation is made based on the current positions of the atoms.
+
+\subsection{RMS and scripting}
+\label{ug:scripts:rmsd}
+\index{RMSD}
+\index{fit!RMSD}
+
+The same actions can be taken on the scripting level. The Text interface 
+also gives you more flexibility through the atom selection mechanism
+allowing to choose the atoms to fit/compare.
+
+\subsubsection{RMSD Computation}
+\index{RMSD}
+\index{fit!RMSD}
+There are two atom selections needed to do an RMSD computation, the
+list of atoms to compare in both molecules.  The first atom of the
+first selection is compared to the first atom of the second selection,
+fifth to fifth, and so on.  The actual order is identical to the order
+from the input PDB file.
+
+Once the two selections are made, the RMSD calculation is a matter of
+calling the {\tt measure rmsd} function.  Here's an example:
+{\tt \begin{verbatim}
+        set sel1 [atomselect 0 "backbone"]
+        set sel2 [atomselect 1 "backbone"]
+        measure rmsd $sel1 $sel2
+  Info)  10.403014
+\end{verbatim}}
+This prints the RMSD between the backbone atoms of molecule 0 with
+those of molecule 1.  You could also use a weighting factor in these
+calculations.  The best way to understand how to do this is to see
+another example:
+{\tt \begin{verbatim}
+        set weighted_rmsd [measure rmsd $sel1 $sel2 weight mass]
+  Info)  10.403022
+\end{verbatim}}
+
+In this case, the weight is determined by the mass of each atom.
+Actually, the term is really one of the standard keywords available to
+an atom selection.  Other ones include index and resid (which would
+both be rather strange to use) as well as charge, beta and occupancy.
+These last terms useful if you want to specify your own values for the
+weighting factors.
+
+\subsubsection{Computing the Alignment}
+\index{molecule!best-fit alignment}
+
+The best-fit alignment is done in two steps.  The first is to compute
+the $4\times4$ matrix transformation that takes one set of coordinates onto
+the other.  This is done with the {\tt measure fit} command.  Assuming the
+same selections as before:
+{\tt \begin{verbatim}
+        set transformation_matrix [measure fit $sel1 $sel2]
+Info) {0.971188 0.00716391 0.238206 -13.2877}
+{0.0188176 0.994122 -0.106619 3.25415} {-0.23757 0.108029 0.965345 -2.97617}
+{0.0 0.0 0.0 1.0}
+\end{verbatim}
+}
+As with the RMSD calculation, you could also add an optional {\tt weight
+<keyword>} term on the end.
+
+The next step is to apply the matrix to a set of atoms using the move
+command.  So far you have two coordinate sets.  You might think you
+could do something like {\tt \$sel1 move \$transformation\_matrix} to apply
+the matrix to all the atoms of that selection.  You could, but that's
+not the right selection.
+
+The thing to recall is that {\tt \$sel1} is the selection for the backbone
+atoms.  You really want to move the whole fragment to which it is
+attached, or even the whole molecule.  (This is where the discussion
+earlier comes into play.)  So you need to make a third selection
+containing all the atoms which are to be moved, and apply the
+transformation to those atoms.
+{\tt \begin{verbatim}
+        # molecule 0 is the same molecule used for $sel1
+        set move_sel [atomselect 0 "all"]
+        $move_sel move $transformation_matrix
+\end{verbatim}}
+
+As a more complicated example, say you want to  
+align all of molecule 1 with molecule 9 using only the backbone
+atoms of residues 4 to 10 in both systems.  Here's how:
+{\tt \begin{verbatim}
+        # compute the transformation matrix
+        set reference_sel  [atomselect 9 "backbone and resid 4 to 10"]
+        set comparison_sel [atomselect 1 "backbone and resid 4 to 10"]
+        set transformation_mat [measure fit $comparison_sel $reference_sel]
+
+        # apply it to all of the molecule 1
+        set move_sel [atomselect 1 "all"]
+        $move_sel move $transformation_mat
+\end{verbatim} }
+
+\subsubsection{A simulation example script}
+\index{RMSD}
+
+  Here's a longer script which you might find useful.  The problem is
+to compute the RMSD between each \timestep of the simulation and the
+first frame.  Usually in a simulation there is no initial global
+velocity, so the center of mass doesn't move, but because of angular
+rotations and because of numerical imprecisions that slowly build up,
+the script aligns the molecule before computing its RMSD.
+
+\index{example scripts!Tcl!calculation!RMSD for all trajectory frames}
+{\tt \begin{verbatim}
+        # Prints the RMSD of the protein atoms between each \timestep
+        # and the first \timestep for the given molecule id (default: top)
+        proc print_rmsd_through_time {{mol top}} {
+                # use frame 0 for the reference
+                set reference [atomselect $mol "protein" frame 0]
+                # the frame being compared
+                set compare [atomselect $mol "protein"]
+
+                set num_steps [molinfo $mol get numframes]
+                for {set frame 0} {$frame < $num_steps} {incr frame} {
+                        # get the correct frame
+                        $compare frame $frame
+
+                        # compute the transformation
+                        set trans_mat [measure fit $compare $reference]
+                        # do the alignment
+                        $compare move $trans_mat
+                        # compute the RMSD
+                        set rmsd [measure rmsd $compare $reference]
+                        # print the RMSD
+                        puts "RMSD of $frame is $rmsd"
+                }
+        }
+\end{verbatim}}
+  To use this, load a molecule with an animation
+(for example, {\tt \$VMDDIR/proteins/alanin.DCD} from the \VMD\
+distribution).
+Then run {\tt print\_rmsd\_through\_time}.  Example output is shown here:
+{\tt \begin{verbatim}
+vmd > print_rmsd_through_time
+RMSD of 0 is 0.000000
+RMSD of 1 is 1.060704
+RMSD of 2 is 0.977208
+RMSD of 3 is 0.881330
+RMSD of 4 is 0.795466
+RMSD of 5 is 0.676938
+RMSD of 6 is 0.563725
+RMSD of 7 is 0.423108
+RMSD of 8 is 0.335384
+RMSD of 9 is 0.488800
+RMSD of 10 is 0.675662
+RMSD of 11 is 0.749352
+ [...]
+\end{verbatim}}
+
+\section{VMD Script Commands for Colors}
+\label{ug:topic:coloring:scripts}
+
+In order to fine tune color parameters, one typically needs more
+sophisticated controls than those offered in the GUI.  For this reason,
+VMD provides a number of scripting level commands for color access.
+These commands will be discussed in detail in 
+chapter \ref{chapter:ug:text}, 
+but to give
+you a flavor for their use, here are a couple of examples that you
+may find useful right away. Most things can be done with 
+\hyperref{{\tt color}}{{\tt color} [\S}{] }{ug:ui:text:color}
+and
+\hyperref{{\tt colorinfo}}{{\tt colorinfo} [\S}{] }{ug:ui:text:colorinfo}
+commands.
+
+\subsection{Changing the color scale definitions}
+\index{color!scale}
+Suppose that of the 1024 colors, the first 511 should be red, then 2 whites,
+and finally 511 blues.  You can use the `color' command to modify the color
+scale values accordingly.  
+
+\index{example scripts!Tcl!drawing!changing color scales}
+{\tt
+\begin{verbatim}
+proc tricolor_scale {} {
+  set color_start [colorinfo num]
+  display update off
+  for {set i 0} {$i < 1024} {incr i} {
+    if {$i == 0} {
+      set r 1;  set g 0;  set b 0
+    }
+    if {$i == 511} {
+      set r 1;  set g 1;  set b 1
+    }
+    if {$i == 513} {
+      set r 0;  set g 0;  set b 1
+    }
+    color change rgb [expr $i + $color_start     ] $r $g $b
+  }
+  display update on
+}
+
+tricolor_scale
+\end{verbatim}
+}
+
+\subsection{Creating a set of black-and-white color definitions}
+\index{color!redefinition}
+\index{display!update}
+\index{example scripts!Tcl!drawing!defining grayscale colors}
+\label{ug:topic:coloring:scripts:b-and-w}
+To map grayscale on the color ids 0-16 (0=black; 16=white):
+{\tt
+\begin{verbatim}
+proc make_grayscale {} {
+  display update off
+  set coloridcount [colorinfo num]
+  set colordiv [expr $coloridcount - 1.0]
+  for {set i 0} {$i < $coloridcount} {incr i} {
+    set val [expr $i / $colordiv]
+    color change rgb $i $val $val $val
+  }
+  display update on
+}
+\end{verbatim}
+}
+Note that the display updates are switched off for the time of
+redefinition, so that the screen would not be redrawn every time one
+color is changed.  This way the procedure works faster. The only bad
+thing about this idea is that black becomes white, and white changes
+too, so the names of the colors (yellow, orange, etc.)  become
+useless.
+
+\subsection{Revert all RGB values to defaults}
+\index{color!revert to default}
+\index{display!update}
+\label{ug:topic:coloring:scripts:revert}
+After some of the color definitions have been changed and you want to
+restore the default definitions, the following procedure might be useful.
+
+\index{example scripts!Tcl!drawing!reverting colors to defaults}
+{\tt 
+\begin{verbatim}
+proc revert_colors {} { 
+  display update off
+  foreach color [colorinfo colors] {
+    color change rgb $color
+  }
+  display update on
+}
+\end{verbatim}
+}
+
+\subsection{Coloring Trick - Override a Coloring Category}
+
+\index{color!category}
+\index{coloring!methods}
+\index{coloring!by property}
+There is currently no user-defined coloring method.  This makes it
+hard to color residues by property ``X'' if X is not already defined
+in \VMD.  It is possible to get around this limitation somewhat by
+overriding one of the values in the PDB or PSF.  For instance, suppose
+you wanted to color the atoms by the distance of the atom from a given
+point.  One way is to compute the distance and put it in either the
+occupancy or beta field of the PDB file.  Then when the molecule is
+colored by occupancy it is actually coloring by distance.
+
+You could also override, say, the segment name field or even the
+residue name.  Don't override the atom name unless you are really
+desperate as \VMD\ uses it to determine which residues are proteins and
+nucleic acids, and hence which residues can be drawn as a tube or
+ribbon.
+
+
