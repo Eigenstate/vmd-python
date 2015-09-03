@@ -1,8 +1,8 @@
 
 from distutils.core import setup
 from distutils.util import convert_path
-from distutils.command.install import install as DistutilsInstall
 from distutils.command.build import build as DistutilsBuild
+from distutils.command.install import install as DistutilsInstall
 from distutils.cmd import Command
 from subprocess import check_call
 import platform
@@ -20,23 +20,24 @@ class VMDBuild(DistutilsBuild):
 
     def run(self):
         # Setup and run compilation script
+        self.build_lib = convert_path(os.path.abspath(self.build_lib) + "/vmd")
         self.mkpath(self.build_lib)
         self.execute(self.compile, [], msg="Compiling VMD")
-        
         # Run original build code
         DistutilsBuild.run(self)
+        
 
     def compile(self):
         # Determine target to build
         target = self.get_vmd_build_target()
-        srcdir = convert_path(os.path.dirname(os.path.abspath(__file__)))
-        builddir = convert_path(os.path.abspath(self.build_lib))
+        srcdir = convert_path(os.path.dirname(os.path.abspath(__file__)) + "/vmd")
+        builddir = self.build_lib
         pydir = convert_path(sys.executable.replace("/bin/python",""))
-        instdir = convert_path(site.getsitepackages()[0] + "/vmd-python")
+        instdir = convert_path(site.getsitepackages()[0] + "/vmd")
 
         # Execute the build
         cmd = [
-                srcdir + "/vmd/install.sh",
+                srcdir + "/install.sh",
                 target,
                 builddir,
                 pydir,
@@ -75,11 +76,13 @@ class VMDBuild(DistutilsBuild):
 class VMDInstall(DistutilsInstall):
     def initialize_options(self):
         DistutilsInstall.initialize_options(self)
-        self.build_scripts = None
+#        self.build_scripts = None
+        self.install_lib = convert_path(site.getsitepackages()[0] + "/vmd")
+        self.src_dir = convert_path(os.path.dirname(os.path.abspath(__file__)) + "/vmd")
 
     def finalize_options(self):
         DistutilsInstall.finalize_options(self)
-        self.set_undefined_options('build', ('build_scripts', 'build_scripts'))
+#        self.set_undefined_options('build', ('build_scripts', 'build_scripts'))
 
     def run(self):
         # Run original install code
@@ -87,9 +90,9 @@ class VMDInstall(DistutilsInstall):
 
         # Copy all built files
         print("Copying %s to %s" % (self.build_lib, self.install_lib))
-        instdir = convert_path(self.install_lib+ "/vmd-python")
-        self.copy_tree(self.build_lib, instdir)
-
+        #instdir = convert_path(self.install_lib+ "/vmd-python")
+        self.copy_tree(self.build_lib, self.install_lib)
+        self.copy_file(self.src_dir + "/__init__.py", self.install_lib + "/__init__.py")
 
 ###############################################################################
 
@@ -117,7 +120,7 @@ setup(name='vmd-python',
       package_data = { 'vmd' : ['vmd.so']},
       cmdclass={
           'build': VMDBuild,
-          'install': VMDInstall,
+#          'install': VMDInstall,
           'test': VMDTest,
       },
 )

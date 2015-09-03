@@ -2,13 +2,11 @@ include bld.bat
 include build.sh
 include LICENSE
 include meta.yaml
-include __init__.py
 include README.md
 include setup.py
-include README.md
 
-graft vmd-python
-graft plugins
+graft vmd
+graft tests
 
 prune build
 

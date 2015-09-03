@@ -44,9 +44,6 @@ export PYTHON_INCLUDE_DIR="$ANACONDIR/include/python2.7"
 
 export VMDEXTRALIBS="$SQLITELDFLAGS $EXPATLDFLAGS"
 
-# Use python 2.7, in case this is an old configure
-#sed -i 's/-lpython2.5/-lpython2.7/' "$vmd_src/vmd/configure"
-
 # Compile the plugins
 echo "Compiling plugins to $PLUGINDIR"
 mkdir -p $PLUGINDIR
@@ -54,20 +51,26 @@ cd $vmd_src/plugins
 gmake $TARGET
 gmake distrib
 
-echo "Linking $PLUGINDIR -> $vmd_src/vmd/plugins"
-rm -rf $vmd_src/vmd/plugins
-ln -s $PLUGINDIR $vmd_src/vmd/plugins
+echo "Linking $PLUGINDIR -> $vmd_src/vmd_src/plugins"
+ln -s $PLUGINDIR $vmd_src/vmd_src/plugins
 
 # Set the configure options
-echo "$TARGET PTHREADS COLVARS NETCDF TCL PYTHON NUMPY SHARED NOSILENT" > "$vmd_src/vmd/configure.options"
+echo "$TARGET PTHREADS COLVARS NETCDF TCL PYTHON NUMPY SHARED NOSILENT" > "$vmd_src/vmd_src/configure.options"
 
 # Change the source code to include our VMDDIR
-sed "s@DEFAULT@$INSTDIR@" < $vmd_src/vmd/src/TclTextInterp.default > $vmd_src/vmd/src/TclTextInterp.C
+sed "s@DEFAULT@$INSTDIR@" < $vmd_src/vmd_src/src/TclTextInterp.default > $vmd_src/vmd_src/src/TclTextInterp.C
 
 # Compile the main library
-cd $vmd_src/vmd
-$vmd_src/vmd/configure
-cd $vmd_src/vmd/src
+cd $vmd_src/vmd_src
+$vmd_src/vmd_src/configure
+cd $vmd_src/vmd_src/src
 make veryclean
 make vmd.so
 make install
+
+# Remove symlink so install doesn't freak out
+rm $vmd_src/vmd_src/plugins
+
+# Copy init.py file into build directory
+cp "$vmd_src/vmd_src/__init__.py" "$VMDDIR"
+
