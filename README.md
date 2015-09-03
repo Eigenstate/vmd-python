@@ -9,6 +9,7 @@ optional plugins not included in binary distributions:
     * DMS plugin for DESRES molecular file format
     * HOOMD plugin
     * It doesn't crash when you import it
+    * Doesn't care which numpy you compile against
 
 The following python modules:
 
@@ -45,25 +46,23 @@ molecule is a module that allows loading and saving of molecules while tracking 
 integer index.
 
 ## Installation
-Yeah, good luck right now.
-Soon an installable version will be on conda.
-For now, `python setup.py install`
+Easy installation with pip:
 
-Soon, `conda install --channel https://conda.binstar.org/rbetz vmd-python`
+    pip install -i https://pypi.binstar.org/rbetz/simple vmd-python
+
+Or, if you download the source:
+
+    python setup.py install
+
+Installation can take a while since it compiles VMD from source.
 
 ## Dependencies
-This package was designed for use in the [conda](http://conda.pydata.org/)
-Python environment. It has the following dependencies:
+vmd-python has the following dependencies:
 
-    * expat >= 2.1.0 (`conda install --channel https://conda.binstar.org/flynn expat`)
-    * libnetcdf >= 4.3.2
-    * numpy = 1.9.2
-    * python 2.7.\*
-
-VMD really cares about the numpy it was compiled against. Make sure
-the numpy you are currently using in your python environment matches the one used
-when build was invoked. I've required a specific version in hopes of avoiding this
-problem.
+    * expat (`conda install --channel https://conda.binstar.org/flynn expat`)
+    * libnetcdf
+    * numpy
+    * python
 
 ## Licensing
 
