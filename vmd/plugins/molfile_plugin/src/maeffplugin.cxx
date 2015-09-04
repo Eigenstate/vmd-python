@@ -847,6 +847,7 @@ namespace {
       if (i_resid>=0)   get_int(row[i_resid], a.resid);
       if (i_segid>=0)   GET_STR(row[i_segid], a.segid);
       if (i_chain>=0)   GET_STR(row[i_chain], a.chain);
+      if (i_charge>=0)  get_float(row[i_charge], a.charge);
 
 #if defined(DESRES_CTNUMBER)
       a.ctnumber = m_ct;
