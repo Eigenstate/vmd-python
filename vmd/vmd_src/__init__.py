@@ -27,7 +27,7 @@ sys.path.append(resource_filename(__name__, "scripts/python/VMD.py").replace("VM
 # vmd.so was dynamically linked to at compile time
 # This is only during the duration of this executable
 libdir = os.path.abspath(sys.executable.replace("/bin/python","/lib"))
-os.environ['LD_LIBRARY_PATH'] = "%s:%s" % (libdir, os.environ['LD_LIBRARY_PATH'])
+os.environ['LD_LIBRARY_PATH'] = "%s:%s" % (libdir, os.environ.get('LD_LIBRARY_PATH', default=""))
 
 # Load the library
 imp.load_dynamic(__name__, resource_filename(__name__, "vmd.so"))
