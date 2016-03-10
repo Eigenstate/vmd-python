@@ -1,6 +1,9 @@
 # vmd-python
 Installable VMD as a python module
 
+![CI status](https://travis-ci.org/Eigenstate/vmd-python.svg?branch=master)
+![Downloads](https://img.shields.io/github/downloads/atom/atom/total.svg)
+
 ## Features
 All features of VMD from the current CVS tree, plus some 
 optional plugins not included in binary distributions:
@@ -46,6 +49,10 @@ molecule is a module that allows loading and saving of molecules while tracking 
 integer index.
 
 ## Installation
+Okay, installation is super broken.
+The pip thing doesn't work right now. I'm working on fixing this.
+Check the CI status for an idea of if installation is working.
+
 Easy installation with pip:
 
     pip install -i https://pypi.binstar.org/rbetz/simple vmd-python
