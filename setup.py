@@ -1,5 +1,6 @@
 
-from distutils.core import setup
+from setuptools import setup
+
 from distutils.util import convert_path
 from distutils.command.build import build as DistutilsBuild
 from distutils.command.install import install as DistutilsInstall
@@ -112,15 +113,17 @@ class VMDTest(Command):
 
 ###############################################################################
 
-setup(name='vmd-python',
-      version='1.9.2',
+setup(name='vmd',
+      version='1.9.2a1',
       description='Visual Molecular Dynamics Python module',
       author='Robin Betz',
       author_email='robin@robinbetz.com',
       url='http://github.com/Eigenstate/vmd-python',
       license='VMD License',
       zip_safe=False,
-      packages=packages,
+#      setup_requires=['libnetcdf', 'numpy'],
+
+      packages=['vmd'],
       package_data = { 'vmd' : ['vmd.so']},
       cmdclass={
           'build': VMDBuild,
@@ -128,5 +131,4 @@ setup(name='vmd-python',
           'test': VMDTest,
       },
 )
-
 
