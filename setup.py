@@ -85,27 +85,30 @@ class VMDInstall(DistutilsInstall):
 #        self.set_undefined_options('build', ('build_scripts', 'build_scripts'))
 
     def run(self):
+        # Dir stuff I guess
+        if not os.path.isdir(self.install_lib):
+            os.path.mkdir(self.install_lib)
+
         # Run original install code
-        DistutilsInstall.run(self)
+        #DistutilsInstall.run(self)
 
         # Copy all built files
         print("Copying %s to %s" % (self.build_lib, self.install_lib))
-        #instdir = convert_path(self.install_lib+ "/vmd-python")
         self.copy_tree(self.build_lib, self.install_lib)
-        self.copy_file(self.src_dir + "/__init__.py", self.install_lib + "/__init__.py")
+        self.copy_file(self.src_dir + "/__init__.py", self.install_lib+"/__init__.py")
 
 ###############################################################################
 
 class VMDTest(Command):
-    description = "Runs VMD tests"
     user_options = []
     def initialize_options(self):
         pass
     def finalize_options(self):
         pass
-
     def run(self):
-        import tests
+        import sys, subprocess, os
+        errno = subprocess.call([sys.executable, os.path.abspath('test/run_tests.py')])
+        raise SystemExit(errno)
 
 ###############################################################################
 
@@ -116,11 +119,12 @@ setup(name='vmd-python',
       author_email='robin@robinbetz.com',
       url='http://github.com/Eigenstate/vmd-python',
       license='VMD License',
+      zip_safe=False,
       packages=packages,
       package_data = { 'vmd' : ['vmd.so']},
       cmdclass={
           'build': VMDBuild,
-#          'install': VMDInstall,
+          'install': VMDInstall,
           'test': VMDTest,
       },
 )

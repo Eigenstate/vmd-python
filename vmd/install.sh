@@ -44,6 +44,12 @@ export PYTHON_INCLUDE_DIR="$ANACONDIR/include/python2.7"
 
 export VMDEXTRALIBS="$SQLITELDFLAGS $EXPATLDFLAGS"
 
+# Clean up previous installation
+if [[ -d $PLUGINDIR ]]; then
+    echo "Deleting previous plugin directory $PLUGINDIR"
+    rm -r $PLUGINDIR
+fi
+
 # Compile the plugins
 echo "Compiling plugins to $PLUGINDIR"
 mkdir -p $PLUGINDIR
@@ -72,5 +78,5 @@ make install
 rm $vmd_src/vmd_src/plugins
 
 # Copy init.py file into build directory
-cp "$vmd_src/vmd_src/__init__.py" "$VMDDIR"
+cp "$vmd_src/__init__.py" "$VMDDIR"
 

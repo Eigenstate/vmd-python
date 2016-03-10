@@ -15,7 +15,7 @@ build:
 
 requirements:
     build:
-        - python >=2.7.0
+        - python <3
         - libnetcdf >=4.3.2
         - expat >=2.1.0
         - numpy
