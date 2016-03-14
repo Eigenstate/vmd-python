@@ -126,7 +126,7 @@ setup(name='vmd',
       cmdclass={
           'build': VMDBuild,
 #          'install': VMDInstall,
-#          'test': VMDTest,
+          'test': VMDTest,
       },
 )
 
