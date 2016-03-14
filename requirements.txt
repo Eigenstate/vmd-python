@@ -1,5 +1,4 @@
 python >=2.7.0
-libnetcdf
-expat
+netcdf
 numpy
 
