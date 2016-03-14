@@ -118,7 +118,7 @@ setup(name='vmd',
       license='VMD License',
       zip_safe=False,
       #setup_requires=['netcdf', 'numpy'],
-      install_requires=["netcdf"],
+      #install_requires=["netcdf"],
       extras_require = { 'hoomdplugin': ["expat"] },
 
       packages=['vmd'],
