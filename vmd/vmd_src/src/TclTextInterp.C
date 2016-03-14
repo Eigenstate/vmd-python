@@ -274,14 +274,11 @@ void TclTextInterp::doInit() {
 
   // read the VMD initialization script
   if (vmddir == NULL) {
-    //msgErr << "VMDDIR undefined, startup failure likely." << sendmsg;
-    msgErr << "Using compiled in VMDDIR" << sendmsg;
+    msgErr << "VMDDIR undefined, startup failure likely." << sendmsg;
 #if defined(_MSC_VER)
-    //vmddir = "c:/program files/university of illinois/vmd";
-    vmddir = "DEFAULT";
+    vmddir = "";
 #else
-    //vmddir = "/usr/local/lib/vmd";
-    vmddir = "DEFAULT";
+    vmddir = "";
 #endif
     startuperror = 1;
   } 

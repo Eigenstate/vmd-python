@@ -4,7 +4,6 @@ set -e
 TARGET="$1"
 VMDDIR="$2"
 ANACONDIR="$3"
-INSTDIR="$4"
 vmd_src="$PWD"
 
 #TODO: Auto-detect this
@@ -63,9 +62,6 @@ ln -s $PLUGINDIR $vmd_src/vmd_src/plugins
 # Set the configure options
 echo "$TARGET PTHREADS COLVARS NETCDF TCL PYTHON NUMPY SHARED NOSILENT" > "$vmd_src/vmd_src/configure.options"
 
-# Change the source code to include our VMDDIR
-sed "s@DEFAULT@$INSTDIR@" < $vmd_src/vmd_src/src/TclTextInterp.default > $vmd_src/vmd_src/src/TclTextInterp.C
-
 # Compile the main library
 cd $vmd_src/vmd_src
 $vmd_src/vmd_src/configure
@@ -78,5 +74,5 @@ make install
 rm $vmd_src/vmd_src/plugins
 
 # Copy init.py file into build directory
-cp "$vmd_src/__init__.py" "$VMDDIR"
+#cp "$vmd_src/__init__.py" "$VMDDIR"
 

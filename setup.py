@@ -21,8 +21,7 @@ class VMDBuild(DistutilsBuild):
 
     def run(self):
         # Setup and run compilation script
-        self.build_lib = convert_path(os.path.abspath(self.build_lib) + "/vmd")
-        self.mkpath(self.build_lib)
+        #self.build_lib = convert_path(os.path.abspath(self.build_lib) + "/vmd")
         self.execute(self.compile, [], msg="Compiling VMD")
         # Run original build code
         DistutilsBuild.run(self)
@@ -32,9 +31,8 @@ class VMDBuild(DistutilsBuild):
         # Determine target to build
         target = self.get_vmd_build_target()
         srcdir = convert_path(os.path.dirname(os.path.abspath(__file__)) + "/vmd")
-        builddir = self.build_lib
+        builddir = convert_path(os.path.abspath(self.build_lib) + "/vmd")
         pydir = convert_path(sys.executable.replace("/bin/python",""))
-        instdir = convert_path(site.getsitepackages()[0] + "/vmd")
 
         # Execute the build
         cmd = [
@@ -42,7 +40,6 @@ class VMDBuild(DistutilsBuild):
                 target,
                 builddir,
                 pydir,
-                instdir
               ]
         check_call(cmd, cwd=srcdir)
 
@@ -74,29 +71,28 @@ class VMDBuild(DistutilsBuild):
 
 ###############################################################################
 
-class VMDInstall(DistutilsInstall):
-    def initialize_options(self):
-        DistutilsInstall.initialize_options(self)
-#        self.build_scripts = None
-        self.install_lib = convert_path(site.getsitepackages()[0] + "/vmd")
-        self.src_dir = convert_path(os.path.dirname(os.path.abspath(__file__)) + "/vmd")
-
-    def finalize_options(self):
-        DistutilsInstall.finalize_options(self)
-#        self.set_undefined_options('build', ('build_scripts', 'build_scripts'))
-
-    def run(self):
-        # Dir stuff I guess
-        if not os.path.isdir(self.install_lib):
-            os.path.mkdir(self.install_lib)
-
-        # Run original install code
-        #DistutilsInstall.run(self)
-
-        # Copy all built files
-        print("Copying %s to %s" % (self.build_lib, self.install_lib))
-        self.copy_tree(self.build_lib, self.install_lib)
-        self.copy_file(self.src_dir + "/__init__.py", self.install_lib+"/__init__.py")
+#class VMDInstall(DistutilsInstall):
+#    def initialize_options(self):
+#        DistutilsInstall.initialize_options(self)
+##        self.build_scripts = None
+#        self.src_dir = convert_path(os.path.dirname(os.path.abspath(__file__)) + "/vmd")
+#
+#    def finalize_options(self):
+#        DistutilsInstall.finalize_options(self)
+##        self.set_undefined_options('build', ('build_scripts', 'build_scripts'))
+#
+#    def run(self):
+#        # Dir stuff I guess
+#        if not os.path.isdir(self.install_lib):
+#            os.path.mkdir(self.install_lib)
+#
+#        # Run original install code
+#        #DistutilsInstall.run(self)
+#
+#        # Copy all built files
+#        print("Copying %s to %s" % (self.build_lib, self.install_lib))
+#        self.copy_tree(self.build_lib, self.install_lib)
+#        self.copy_file(self.src_dir + "/__init__.py", self.install_lib+"/__init__.py")
 
 ###############################################################################
 
@@ -121,14 +117,16 @@ setup(name='vmd',
       url='http://github.com/Eigenstate/vmd-python',
       license='VMD License',
       zip_safe=False,
-#      setup_requires=['libnetcdf', 'numpy'],
+      #setup_requires=['netcdf', 'numpy'],
+      install_requires=["netcdf"],
+      extras_require = { 'hoomdplugin': ["expat"] },
 
       packages=['vmd'],
       package_data = { 'vmd' : ['vmd.so']},
       cmdclass={
           'build': VMDBuild,
-          'install': VMDInstall,
-          'test': VMDTest,
+#          'install': VMDInstall,
+#          'test': VMDTest,
       },
 )
 
