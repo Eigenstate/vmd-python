@@ -1,7 +1,7 @@
 # Makefile for molecule file readers
 # $Id: Makefile,v 1.124 2015/04/17 21:13:20 johns Exp $
 
-.SILENT:
+#.SILENT:
 
 .SUFFIXES:
 
