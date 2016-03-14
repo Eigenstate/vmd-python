@@ -53,8 +53,8 @@ fi
 echo "Compiling plugins to $PLUGINDIR"
 mkdir -p $PLUGINDIR
 cd $vmd_src/plugins
-gmake $TARGET
-gmake distrib
+make $TARGET
+make distrib
 
 echo "Linking $PLUGINDIR -> $vmd_src/vmd_src/plugins"
 ln -s $PLUGINDIR $vmd_src/vmd_src/plugins
