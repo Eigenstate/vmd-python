@@ -32,7 +32,8 @@ class VMDBuild(DistutilsBuild):
         target = self.get_vmd_build_target()
         srcdir = convert_path(os.path.dirname(os.path.abspath(__file__)) + "/vmd")
         #builddir = convert_path(os.path.abspath(self.build_lib) + "/vmd")
-        builddir = self.build_lib
+        builddir = convert_path(os.path.abspath(self.build_lib))
+        #if not os.path.isdir(builddir): os.makedirs(builddir)
         pydir = convert_path(sys.executable.replace("/bin/python",""))
 
         # Execute the build
@@ -126,6 +127,7 @@ setup(name='vmd',
       package_data = { 'vmd' : ['vmd.so']},
       cmdclass={
           'build': VMDBuild,
+          #'build_py': VMDBuild,
 #          'install': VMDInstall,
           'test': VMDTest,
       },
