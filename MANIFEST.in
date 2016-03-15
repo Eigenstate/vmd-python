@@ -6,7 +6,7 @@ include README.md
 include setup.py
 
 graft vmd
-graft tests
+graft test
 
 prune build
 

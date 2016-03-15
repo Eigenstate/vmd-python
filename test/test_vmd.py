@@ -21,3 +21,11 @@ def test_load_mae():
 
 #==============================================================================
 
+def test_list_egg():
+    import os
+    os.listdir("/home/travis/miniconda/envs/test-environment/lib/python2.7/site-packages/vmd-1.9.2a1-py2.7.egg")
+    os.listdir("/home/travis/miniconda/envs/test-environment/lib/python2.7/site-packages/")
+    raise ValueError
+
+#==============================================================================
+

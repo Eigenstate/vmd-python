@@ -11,10 +11,11 @@ install:
     - conda info -a
     - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy pytest libnetcdf
     - source activate test-environment
-    - echo $(which python)
     - python setup.py build
     - python setup.py install
     #- pip install -r requirements.txt
     #- pip install .
-script: "python setup.py test"
+script:
+    - source activate vmdtest
+    - python test/run_tests.py
 
