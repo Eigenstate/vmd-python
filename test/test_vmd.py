@@ -20,13 +20,3 @@ def test_load_mae():
     assert chrg == set([0.0, 1.0, -1.0])
 
 #==============================================================================
-
-def test_list_egg(capfd):
-    import os
-    print(os.listdir("/home/travis/miniconda/envs/test-environment/lib/python2.7/site-packages/vmd-1.9.2a1-py2.7.egg/vmd"))
-    print(os.listdir("/home/travis/miniconda/envs/test-environment/lib/python2.7/site-packages/vmd-1.9.2a1-py2.7.egg"))
-    print(os.listdir("/home/travis/miniconda/envs/test-environment/lib/python2.7/site-packages/"))
-    raise ValueError
-
-#==============================================================================
-
