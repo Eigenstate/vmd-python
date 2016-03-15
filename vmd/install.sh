@@ -16,7 +16,7 @@ export VMDINSTALLBINDIR="$VMDDIR"
 export VMDINSTALLLIBRARYDIR="$VMDDIR"
 export PLUGINDIR="$VMDDIR/plugins"
 
-export NETCDFLIB="-L$ANACONDDIR/lib"
+export NETCDFLIB="-L$ANACONDIR/lib"
 export NETCDFINC="-I$ANACONDIR/include"
 export NETCDFLDFLAGS="-lnetcdf"
 
@@ -42,10 +42,6 @@ export PYTHON_LIBRARY_DIR="$ANACONDIR/lib/python2.7"
 export PYTHON_INCLUDE_DIR="$ANACONDIR/include/python2.7"
 
 export VMDEXTRALIBS="$SQLITELDFLAGS $EXPATLDFLAGS"
-
-# debug prints
-ls $ANACONDIR/include
-ls $ANACONDIR/lib
 
 # Clean up previous installation
 if [[ -d $PLUGINDIR ]]; then
