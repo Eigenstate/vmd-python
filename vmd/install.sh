@@ -43,6 +43,10 @@ export PYTHON_INCLUDE_DIR="$ANACONDIR/include/python2.7"
 
 export VMDEXTRALIBS="$SQLITELDFLAGS $EXPATLDFLAGS"
 
+# debug prints
+ls $ANACONDIR/include
+ls $ANACONDIR/lib
+
 # Clean up previous installation
 if [[ -d $PLUGINDIR ]]; then
     echo "Deleting previous plugin directory $PLUGINDIR"
