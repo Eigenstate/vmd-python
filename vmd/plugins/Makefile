@@ -5,7 +5,7 @@
 ##
 ## $Id: Makefile,v 1.138 2015/05/20 15:29:20 johns Exp $
 ## 
-#.SILENT:
+.SILENT:
 
 default: make-arch-help
 

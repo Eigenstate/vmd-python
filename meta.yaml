@@ -7,21 +7,22 @@ source:
     git_tag: master
 
 build:
+    number: 1
+    #preserve_egg_dir: True
     features:
-        - it doesn't crash
-        - it imports
-
-    script: python setup.py install
+        - It may actually work this time
 
 requirements:
     build:
-        - python <3
-        - libnetcdf >=4.3.2
-        - expat >=2.1.0
+        - libnetcdf
         - numpy
     run:
+        - libnetcdf
         - numpy
-        - libnetcdf >=4.3.2
+
+test:
+    commands:
+        - python setup.py test
 
 about:
     home: https://github.com/Eigenstate/vmd-python

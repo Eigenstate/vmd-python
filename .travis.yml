@@ -13,8 +13,6 @@ install:
     - source activate test-environment
     - python setup.py build
     - python setup.py install
-    #- pip install -r requirements.txt
-    #- pip install .
 script:
     - source activate test-environment
     - python test/run_tests.py
