@@ -70,6 +70,11 @@ make veryclean
 make vmd.so
 make install
 
+# Clean up built files in src dir
+make clean
+cd $vmd_src/plugins
+make clean
+
 # Remove symlink so install doesn't freak out
 rm $vmd_src/vmd_src/plugins
 
