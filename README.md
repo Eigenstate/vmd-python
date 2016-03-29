@@ -1,8 +1,8 @@
 # vmd-python
 Installable VMD as a python module
 
-![CI status](https://travis-ci.org/Eigenstate/vmd-python.svg?branch=master)
-![Downloads](https://img.shields.io/github/downloads/atom/atom/total.svg)
+![CI status](https://anaconda.org/rbetz/vmd-python/badges/build.svg)
+![Downloads](https://anaconda.org/rbetz/vmd-python/badges/downloads.svg)
 
 ## Features
 All features of VMD from the current CVS tree, plus some 
@@ -49,16 +49,21 @@ molecule is a module that allows loading and saving of molecules while tracking 
 integer index.
 
 ## Installation
-Okay, installation is super broken.
-The pip thing doesn't work right now. I'm working on fixing this.
-Check the CI status for an idea of if installation is working.
+Wow it is INSTALLABLE NOW! This has been really hard to get working
+so please be happy for me.
 
+Simple binary installation with conda (currently linux-x86\_64 only)
+
+    conda install -c https://conda.anaconda.org/rbetz vmd-python
+
+For other architectures, use pip:
 Easy installation with pip:
 
-    pip install -i https://pypi.binstar.org/rbetz/simple vmd-python
+    pip install -i https://pypi.anaconda.org/rbetz/simple vmd-python
 
 Or, if you download the source:
 
+    python setup.py build
     python setup.py install
 
 Installation can take a while since it compiles VMD from source.
@@ -66,7 +71,6 @@ Installation can take a while since it compiles VMD from source.
 ## Dependencies
 vmd-python has the following dependencies:
 
-    * expat (`conda install --channel https://conda.binstar.org/flynn expat`)
     * libnetcdf
     * numpy
     * python
