@@ -71,6 +71,7 @@ make vmd.so
 make install
 
 # Clean up built files in src dir
+cd $vmd_src/vmd_src/src
 make clean
 cd $vmd_src/plugins
 make clean
