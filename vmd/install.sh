@@ -72,7 +72,7 @@ make install
 
 # Clean up built files in src dir
 cd $vmd_src/vmd_src/src
-make clean
+make veryclean 
 cd $vmd_src/plugins
 make clean
 
