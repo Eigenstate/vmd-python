@@ -7,10 +7,8 @@ source:
     git_tag: master
 
 build:
+    preserve_egg_dir: False
     number: 1
-    #preserve_egg_dir: True
-    features:
-        - It may actually work this time
 
 requirements:
     build:
@@ -19,10 +17,6 @@ requirements:
     run:
         - libnetcdf
         - numpy
-
-test:
-    commands:
-        - python setup.py test
 
 about:
     home: https://github.com/Eigenstate/vmd-python
