@@ -96,7 +96,8 @@ static int read_parm7_flag(FILE *file, const char *flag, const char *format) {
   fscanf(file, "%s\n", buf);
   if (format != NULL) {
     if (strcmp(format, buf)) {
-      if (!strcmp(flag, "TITLE") && !strcmp(format, "%FORMAT(20a4)")) {
+      if ( (!strcmp(flag, "TITLE") || !strcmp(flag, "CTITLE") )
+          && !strcmp(format, "%FORMAT(20a4)")) {
         if (!strcmp(buf, "%FORMAT(a80)"))
           return 1; /* accept a80 as substitute for 20a4 */
       }
@@ -191,7 +192,7 @@ static int parse_parm7_atoms(const char *fmt,
     int natoms, molfile_atom_t *atoms, FILE *file) {
   char buf[85];
 
-  if (strcasecmp(fmt, "%FORMAT(20a4)"))
+  if (strncasecmp(fmt, "%FORMAT(20a4)", 13))
     return 0;
 
   int j=0;
@@ -211,7 +212,8 @@ static int parse_parm7_atoms(const char *fmt,
 
 static int parse_parm7_charge(const char *fmt, 
     int natoms, molfile_atom_t *atoms, FILE *file) {
-  if (strcasecmp(fmt, "%FORMAT(5E16.8)")) 
+  if (strncasecmp(fmt, "%FORMAT(5E16.8)", 15) &&
+      strncasecmp(fmt, "%FORMAT(3E24.16)", 16)) 
     return 0;
 
   for (int i=0; i<natoms; i++) {
@@ -229,7 +231,7 @@ static int parse_parm7_charge(const char *fmt,
 
 static int parse_parm7_mass(const char *fmt,
     int natoms, molfile_atom_t *atoms, FILE *file) {
-  if (strcasecmp(fmt, "%FORMAT(5E16.8)")) return 0;
+  if (strncasecmp(fmt, "%FORMAT(5E16.8)", 15)) return 0;
   for (int i=0; i<natoms; i++) {
     double m=0;
     if (fscanf(file, " %lf", &m) != 1) {
@@ -244,7 +246,7 @@ static int parse_parm7_mass(const char *fmt,
 
 static int parse_parm7_atype(const char *fmt,
     int natoms, molfile_atom_t *atoms, FILE *file) {
-  if (strcasecmp(fmt, "%FORMAT(20a4)")) return 0;
+  if (strncasecmp(fmt, "%FORMAT(20a4)", 13)) return 0;
   char buf[85];
   int j=0;
   for (int i=0; i<natoms; i++) {
@@ -263,7 +265,7 @@ static int parse_parm7_atype(const char *fmt,
 
 static int parse_parm7_resnames(const char *fmt,
     int nres, char *resnames, FILE *file) {
-  if (strcasecmp(fmt, "%FORMAT(20a4)")) return 0;
+  if (strncasecmp(fmt, "%FORMAT(20a4)", 13)) return 0;
   char buf[85];
   int j=0;
   for (int i=0; i<nres; i++) {
@@ -281,7 +283,7 @@ static int parse_parm7_resnames(const char *fmt,
 
 static int parse_parm7_respointers(const char *fmt, int natoms, 
     molfile_atom_t *atoms, int nres, const char *resnames, FILE *file) {
-  if (strcasecmp(fmt, "%FORMAT(10I8)")) return 0;
+  if (strncasecmp(fmt, "%FORMAT(10I8)", 13)) return 0;
   int cur, next;
   fscanf(file, " %d", &cur);
   for (int i=1; i<nres; i++) {
@@ -315,7 +317,7 @@ static int parse_parm7_respointers(const char *fmt, int natoms,
 
 static int parse_parm7_bonds(const char *fmt,
     int nbonds, int *from, int *to, FILE *file) {
-  if (strcasecmp(fmt, "%FORMAT(10I8)")) 
+  if (strncasecmp(fmt, "%FORMAT(10I8)", 13)) 
     return 0;
 
   int a, b, tmp;
@@ -365,7 +367,24 @@ static parmstruct *read_parm7_header(FILE *file) {
   fgets(sdum, 512, file);
 
   /* READ TITLE */
-  if (!read_parm7_flag(file, "TITLE", "%FORMAT(20a4)")) {
+  fscanf(file, "%s\n", sdum); // "%FLAG"
+  if (strcmp("%FLAG", sdum)) {
+    printf("AMBER 7 parm read error, can't find TITLE flag.\n");
+    printf("        expected %%FLAG, got %s\n", sdum);
+    delete prm;
+    return NULL;
+  }
+  fscanf(file, "%s\n", sdum); // "TITLE/CTITLE"
+  if (strcmp("TITLE", sdum) && strcmp("CTITLE", sdum)) {
+    printf("AMBER 7 parm read error, at flag section TITLE,\n");
+    printf("        expected TITLE/CTITLE  but got %s,\n", sdum);
+    delete prm;
+    return NULL;
+  }
+  fscanf(file, "%s\n", sdum); // "FORMAT (20a4)"
+  if (strcmp(sdum, "%FORMAT(20a4)") && strcmp(sdum, "%FORMAT(a80)")) {
+    printf("AMBER 7 parm read error, at flag section TITLE,\n");
+    printf("        expected %%FLAG but got %s,\n", sdum);
     delete prm;
     return NULL;
   }

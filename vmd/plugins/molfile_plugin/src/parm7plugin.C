@@ -65,10 +65,13 @@ static int read_parm7_structure(void *mydata, int *optflags, molfile_atom_t *ato
     // find the next line starting with %FLAG, indicating a new section
     if (strncmp(buf, "%FLAG ", 6)) 
       continue;
-
-    // parse field and format indicators
     sscanf(buf+6, "%s\n", field); // type of record
-    fscanf(file, "%s\n", buf);    // format
+
+    // skip any number of lines until we get to "FORMAT". This handles
+    // the %COMMENT lines that may or may not be present
+    while (strncmp(buf, "%FORMAT", 7)) {
+        fgets(buf, 85, file);
+    }
 
     if (!strcmp(field, "ATOM_NAME")) {
       if (!parse_parm7_atoms(buf, prm->Natom, atoms, file)) break;
