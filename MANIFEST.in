@@ -7,8 +7,8 @@ include setup.py
 
 graft vmd
 graft test
-graft build
 
 prune vmd/vmd_src/LINUXAMD64
-prune vmd/plugins
+prune vmd/plugins/build
+
 
