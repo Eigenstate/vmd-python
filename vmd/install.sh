@@ -4,7 +4,7 @@ set -e
 TARGET="$1"
 VMDDIR="$2"
 ANACONDIR="$3"
-vmd_src="$PWD"
+vmd_src="$(dirname $0)"
 
 #TODO: Auto-detect this
 export LD_LIBRARY_PATH="$ANACONDIR/lib:$LD_LIBRARY_PATH"
