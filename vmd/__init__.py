@@ -26,7 +26,7 @@ sys.path.append(resource_filename(__name__, "scripts/python/VMD.py").replace("VM
 # Need to put python installation libs in LD_LIBRARY_PATH since that is what
 # vmd.so was dynamically linked to at compile time
 # This is only during the duration of this executable
-libdir = os.path.abspath(sys.executable.replace("/bin/python","/lib"))
+libdir = os.path.abspath(os.path.dirname(sys.executable).replace("bin", "lib"))
 os.environ['LD_LIBRARY_PATH'] = "%s:%s" % (libdir, os.environ.get('LD_LIBRARY_PATH', ""))
 
 # Load the library
