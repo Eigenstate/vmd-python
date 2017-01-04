@@ -16,11 +16,16 @@ packages = ['vmd']
 ###############################################################################
 
 class VMDBuild(DistutilsBuild):
+
     def initialize_options(self):
         DistutilsBuild.initialize_options(self)
 
+    #==========================================================================
+
     def finalize_options(self):
         DistutilsBuild.finalize_options(self)
+
+    #==========================================================================
 
     def run(self):
         # Setup and run compilation script
@@ -29,6 +34,7 @@ class VMDBuild(DistutilsBuild):
         # Run original build code
         DistutilsBuild.run(self)
         
+    #==========================================================================
 
     def compile(self):
         # Determine target to build
@@ -39,6 +45,8 @@ class VMDBuild(DistutilsBuild):
         #if not os.path.isdir(builddir): os.makedirs(builddir)
         pydir = convert_path(sys.executable.replace("/bin/python",""))
 
+        self.set_environment_variables(pydir)
+
         # Execute the build
         cmd = [
                 srcdir + "/install.sh",
@@ -47,6 +55,42 @@ class VMDBuild(DistutilsBuild):
                 pydir,
               ]
         check_call(cmd, cwd=srcdir)
+
+    #==========================================================================
+
+    def set_environment_variables(self, pydir):
+        os.environ["LD_LIBRARY_PATH"] = "%s/lib:%s" % (pydir,
+                                           os.environ.get("LD_LIBRARY_PATH",""))
+        os.environ["NETCDFLIB"] = "-L%s/lib" % pydir
+        os.environ["NETCDFINC"] = "-I%s/include" % pydir
+        os.environ["NETCDFLDFLAGS"] = "-lnetcdf"
+
+        os.environ["TCLLIB"] = "-L%s/lib" % pydir
+        os.environ["TCLINC"] = "-I%s/include" % pydir
+        os.environ["TCLLDFLAGS"] = "-ltcl"
+
+        os.environ["SQLITELIB"] ="-L%s/lib" % pydir
+        os.environ["SQLITEINC"] ="-I%s/include" % pydir
+        os.environ["SQLITELDFLAGS"] ="-lsqlite3"
+
+        os.environ["EXPATLIB"] ="-L%s/lib" % pydir
+        os.environ["EXPATINC"] ="-I%s/include" % pydir
+        os.environ["EXPATLDFLAGS"] ="-lexpat"
+
+        # Ask numpy where it is
+        import numpy
+        os.environ["NUMPY_INCLUDE_DIR"] = numpy.get_include()
+        os.environ["NUMPY_LIBRARY_DIR"] = numpy.get_include().replace("include","lib")
+
+        from distutils import sysconfig
+        os.environ["TCL_LIBRARY_DIR"] ="%s/lib" % pydir
+        os.environ["TCL_INCLUDE_DIR"] ="%s/include" % pydir
+        os.environ["PYTHON_LIBRARY_DIR"] = sysconfig.get_python_lib()
+        os.environ["PYTHON_INCLUDE_DIR"] = sysconfig.get_python_inc()
+        os.environ["VMDEXTRALIBS"] = " ".join([os.environ["SQLITELDFLAGS"],
+                                               os.environ["EXPATLDFLAGS"]])
+
+    #==========================================================================
 
     def get_vmd_build_target(self):
         osys = platform.system()

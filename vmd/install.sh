@@ -6,42 +6,12 @@ VMDDIR="$2"
 ANACONDIR="$3"
 vmd_src="$(dirname $0)"
 
-#TODO: Auto-detect this
-export LD_LIBRARY_PATH="$ANACONDIR/lib:$LD_LIBRARY_PATH"
-
 # Set needed variables
 echo "Setting environment variables"
 export VMDINSTALLNAME="vmd-1.9.2-python"
 export VMDINSTALLBINDIR="$VMDDIR"
 export VMDINSTALLLIBRARYDIR="$VMDDIR"
 export PLUGINDIR="$VMDDIR/plugins"
-
-export NETCDFLIB="-L$ANACONDIR/lib"
-export NETCDFINC="-I$ANACONDIR/include"
-export NETCDFLDFLAGS="-lnetcdf"
-
-export TCLLIB="-L$ANACONDIR/lib"
-export TCLINC="-I$ANACONDIR/include"
-export TCLLDFLAGS="-ltcl"
-
-export SQLITELIB="-L$ANACONDIR/lib"
-export SQLITEINC="-I$ANACONDIR/include"
-export SQLITELDFLAGS="-lsqlite3"
-
-export EXPATLIB="-L$ANACONDIR/lib"
-export EXPATINC="-I$ANACONDIR/include"
-export EXPATLDFLAGS="-lexpat"
-
-export NUMPY_LIBRARY_DIR="$ANACONDIR/lib/python2.7/site-packages/numpy/core/lib"
-export NUMPY_INCLUDE_DIR="$ANACONDIR/lib/python2.7/site-packages/numpy/core/include"
-
-export TCL_LIBRARY_DIR="$ANACONDIR/lib"
-export TCL_INCLUDE_DIR="$ANACONDIR/include"
-
-export PYTHON_LIBRARY_DIR="$ANACONDIR/lib/python2.7"
-export PYTHON_INCLUDE_DIR="$ANACONDIR/include/python2.7"
-
-export VMDEXTRALIBS="$SQLITELDFLAGS $EXPATLDFLAGS"
 
 # Clean up previous installation
 if [[ -d $PLUGINDIR ]]; then
