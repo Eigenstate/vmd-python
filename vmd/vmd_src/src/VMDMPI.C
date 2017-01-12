@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,12 +10,21 @@
  *
  *      $RCSfile: VMDMPI.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.18 $      $Date: 2014/08/21 21:37:37 $
+ *      $Revision: 1.21 $      $Date: 2016/11/28 03:05:05 $
  *
  ***************************************************************************/
 
 #ifdef VMDMPI
 #include <mpi.h>
+
+// Check to see if we have to pass the MPI_IN_PLACE flag
+// for in-place allgather reductions (same approach as Tachyon)
+#if !defined(USE_MPI_IN_PLACE)
+#if (MPI_VERSION >= 2) || defined(MPI_IN_PLACE)
+#define USE_MPI_IN_PLACE 1
+#endif
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <Inform.h>
@@ -135,7 +144,7 @@ int vmd_mpi_nodescan(int *noderank, int *nodecount,
 
     for (i=0; i<numnodes; i++) {
       sprintf(msgtxt,
-              "%4d: %2d CPUs, %3.2fGB (%2ld%%) free mem, "
+              "%4d: %3d CPUs, %4.1fGB (%2ld%%) free mem, "
               "%d GPUs, "
 //              "CPU Speed %4.2f, Node Speed %6.2f "
               "Name: %s",

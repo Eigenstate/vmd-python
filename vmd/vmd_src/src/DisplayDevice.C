@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DisplayDevice.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.141 $	$Date: 2015/05/04 04:17:09 $
+ *	$Revision: 1.143 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -626,7 +626,7 @@ int DisplayDevice::pick(int dim, const float *pos, const VMDDisplayList *cmdList
 
           int i;
           for (i=0; i<cmd->numpicks; i++) {
-            pickpos = crds + i*3;
+            pickpos = crds + i*3L;
             if (cmd->allselected) {
               currTag = i + cmd->firstindex;
             } else {

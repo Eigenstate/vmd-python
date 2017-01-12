@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Orbital.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.129 $	$Date: 2014/08/20 17:13:16 $
+ *	$Revision: 1.144 $	$Date: 2016/11/28 04:19:57 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -21,14 +21,50 @@
  *
  ***************************************************************************/
 
+// pgcc 2016 has troubles with hand-vectorized x86 intrinsics presently
+#if !defined(__PGIC__)
+#if defined(VMDUSEAVX512) && defined(__AVX512F__) && defined(__AVX512ER__)
+// AVX512F + AVX512ER for Xeon Phi
+#define VMDORBUSEAVX512 1
+#define VECPADSZ   16
+#define VECPADMASK (VECPADSZ - 1)
+#else
+// fall-back to SSE 
 #define VMDORBUSESSE 1
-//#define DEBUGORBS 1
+#define VECPADSZ   4
+#define VECPADMASK (VECPADSZ - 1)
+#endif
+#endif
+
+
+// The OpenPOWER VSX code path runs on POWER8 and later hardware, but is
+// untested on older platforms that support VSX instructions.
+// XXX GCC 4.8.5 breaks with conflicts between vec_xxx() routines 
+//     defined in utilities.h vs. VSX intrinsics in altivec.h and similar.
+//     For now, we disable VSX for GCC for this source file.
+#if !defined(__GNUC__) && defined(__VSX__)
+#define VMDORBUSEVSX 1
+#define VECPADSZ   4
+#define VECPADMASK (VECPADSZ - 1)
+#endif
+
+// #define DEBUGORBS 1
 
 #include <math.h>
 #include <stdio.h>
-#if VMDORBUSESSE & defined(__SSE2__)
+
+#if defined(VMDORBUSESSE) && defined(__SSE2__)
 #include <emmintrin.h>
 #endif
+#if defined(VMDORBUSEAVX512) && defined(__AVX512F__) && defined(__AVX512ER__)
+#include <immintrin.h>
+#endif
+#if defined(VMDORBUSEVSX) && defined(__VSX__)
+#if defined(__GNUC__) && defined(__VEC__)
+#include <altivec.h>
+#endif
+#endif
+
 #include "Orbital.h"
 #include "DrawMolecule.h"
 #include "utilities.h"
@@ -365,7 +401,7 @@ void Orbital::find_optimal_grid(float threshold,
     if (!optimal[ZPOS])
       optimal[ZPOS] = check_plane(ZPOS, threshold, minstepsize, stepsize[ZPOS]);
 
-#ifdef DEBUGORBS
+#if defined(DEBUGORBS)
     printf("origin {%f %f %f}\n", origin[0], origin[1], origin[2]);
     printf("ngrid {%i %i %i}\n", numvoxels[0], numvoxels[1], numvoxels[2]);
     printf("stepsize {%i %i %i %i %i %i}\n", stepsize[0], stepsize[1], stepsize[2],
@@ -382,41 +418,32 @@ void Orbital::find_optimal_grid(float threshold,
 
 // this function creates the orbital grid given the system dimensions
 int Orbital::calculate_mo(DrawMolecule *mol, int density) {
-  wkf_timerhandle timer;
-
-  timer=wkf_timer_create();
+  wkf_timerhandle timer=wkf_timer_create();
   wkf_timer_start(timer);
 
-#ifdef DEBUGORBS
-  printf("num_wave_f=%i\n", num_wave_f);
-#endif
-
-#ifdef DEBUGORBS
-  int i=0;
-  for (i=0; i<num_wave_f; i++) {
-    printf("wave_f[%i] = %f\n", i, wave_f[i]);
-  }
-#endif
-
-
   //
-  // Force SSE 4-element padding for the X dimension to prevent
+  // Force vectorized N-element padding for the X dimension to prevent
   // the possibility of an out-of-bounds orbital grid read/write operation
   //
-#define SSEPADSZ   4
-#define SSEPADMASK (SSEPADSZ - 1)
-  numvoxels[0] = (numvoxels[0] + SSEPADMASK) & ~(SSEPADMASK);
+  numvoxels[0] = (numvoxels[0] + VECPADMASK) & ~(VECPADMASK);
   gridsize[0] = numvoxels[0]*voxelsize;
  
-
   // Allocate memory for the volumetric grid
   int numgridpoints = numvoxels[0] * numvoxels[1] * numvoxels[2];
   grid_data = new float[numgridpoints];
 
-  // let's give the user a warning, since the calculation
-  // could take a while, otherwise they might think the system is borked 
 #ifdef DEBUGORBS
-  printf("Calculating %ix%ix%i orbital grid. \n", numvoxels[0], numvoxels[1], numvoxels[2]);
+  printf("num_wave_f=%i\n", num_wave_f);
+
+  int i=0;
+  for (i=0; i<num_wave_f; i++) {
+    printf("wave_f[%i] = %f\n", i, wave_f[i]);
+  }
+
+  // perhaps give the user a warning, since the calculation
+  // could take a while, otherwise they might think the system is borked 
+  printf("Calculating %ix%ix%i orbital grid.\n", 
+         numvoxels[0], numvoxels[1], numvoxels[2]);
 #endif
 
 
@@ -515,7 +542,22 @@ int Orbital::calculate_mo(DrawMolecule *mol, int density) {
     read_calc_orbitals(devpool, getenv("VMDDUMPORBITALS"));
   }
 #endif
-  if (rc!=0)  rc = evaluate_grid_fast(numatoms, wave_f, basis_array,
+
+
+#if !defined(VMDORBUSETHRPOOL)
+#if defined(VMDTHREADS)
+  int numcputhreads = wkf_thread_numprocessors();
+#else
+  int numcputhreads = 1;
+#endif
+#endif
+  if (rc!=0)  rc = evaluate_grid_fast(
+#if defined(VMDORBUSETHRPOOL)
+                                      mol->cpu_threadpool(), 
+#else
+                                      numcputhreads,
+#endif
+                                      numatoms, wave_f, basis_array,
                                       atompos, atom_basis,
                                       num_shells_per_atom, num_prim_per_shell,
                                       shell_types, numvoxels, voxelsize, 
@@ -530,8 +572,8 @@ int Orbital::calculate_mo(DrawMolecule *mol, int density) {
 
   wkf_timer_stop(timer);
 
-#if 0
-  { 
+#if 1
+  if (getenv("VMDORBTIMING") != NULL) { 
     double gflops = (numgridpoints * flops_per_gridpoint()) / (wkf_timer_time(timer) * 1000000000.0);
 
     char strbuf[1024];
@@ -1101,7 +1143,7 @@ int evaluate_grid(int numatoms,
 
 
 
-#if VMDORBUSESSE & defined(__SSE2__)
+#if defined(VMDORBUSESSE) && defined(__SSE2__)
 
 //
 // Adaptation of the Cephes exp() to an SSE-ized exp_ps() routine 
@@ -1497,6 +1539,534 @@ int evaluate_grid_sse(int numatoms,
 #endif
 
 
+#if defined(VMDORBUSEAVX512) && defined(__AVX512F__) && defined(__AVX512ER__)
+
+// On Xeon Phi, we will depend on the use of AVX512ER 
+// reciprocal and exponential instructions rather than using
+// our own hand-coded approximations for these functions.
+// On future Xeon processors that lack the AVX512ER subset,
+// we will again need the approximations, but we can wait to
+// implement these until we determine what the performance 
+// characteristics will likely be.
+//
+
+#if defined(__GNUC__) && ! defined(__INTEL_COMPILER)
+#define __align(X)  __attribute__((aligned(X) ))
+#else
+#define __align(X) __declspec(align(X) )
+#endif
+
+#define MLOG2EF    -1.44269504088896f
+
+#if 0
+static void print_mm512_ps(__m512 v) {
+  __attribute__((aligned(64))) float tmp[16]; // 64-byte aligned for AVX512
+  _mm512_storeu_ps(&tmp[0], v);
+
+  printf("mm512: ");
+  int i;
+  for (i=0; i<16; i++) 
+    printf("%g ", tmp[i]);
+  printf("\n");
+}
+#endif
+
+int evaluate_grid_avx512er(int numatoms,
+                           const float *wave_f, const float *basis_array,
+                           const float *atompos,
+                           const int *atom_basis,
+                           const int *num_shells_per_atom,
+                           const int *num_prim_per_shell,
+                           const int *shell_types,
+                           const int *numvoxels,
+                           float voxelsize,
+                           const float *origin,
+                           int density,
+                           float * orbitalgrid) {
+  if (!orbitalgrid)
+    return -1;
+
+  int nx, ny, nz;
+  __attribute__((aligned(64))) float sxdelta[16]; // 64-byte aligned for AVX512
+  for (nx=0; nx<16; nx++) 
+    sxdelta[nx] = ((float) nx) * voxelsize * ANGS_TO_BOHR;
+
+  // Calculate the value of the orbital at each gridpoint and store in 
+  // the current oribtalgrid array
+  int numgridxy = numvoxels[0]*numvoxels[1];
+  for (nz=0; nz<numvoxels[2]; nz++) {
+    float grid_x, grid_y, grid_z;
+    grid_z = origin[2] + nz * voxelsize;
+    for (ny=0; ny<numvoxels[1]; ny++) {
+      grid_y = origin[1] + ny * voxelsize;
+      int gaddrzy = ny*numvoxels[0] + nz*numgridxy;
+      for (nx=0; nx<numvoxels[0]; nx+=16) {
+        grid_x = origin[0] + nx * voxelsize;
+
+        // calculate the value of the wavefunction of the
+        // selected orbital at the current grid point
+        int at;
+        int prim, shell;
+
+        // initialize value of orbital at gridpoint
+        __m512 value = _mm512_set1_ps(0.0f);
+
+        // initialize the wavefunction and shell counters
+        int ifunc = 0; 
+        int shell_counter = 0;
+
+        // loop over all the QM atoms
+        for (at=0; at<numatoms; at++) {
+          int maxshell = num_shells_per_atom[at];
+          int prim_counter = atom_basis[at];
+
+          // calculate distance between grid point and center of atom
+          float sxdist = (grid_x - atompos[3*at  ])*ANGS_TO_BOHR;
+          float sydist = (grid_y - atompos[3*at+1])*ANGS_TO_BOHR;
+          float szdist = (grid_z - atompos[3*at+2])*ANGS_TO_BOHR;
+
+          float sydist2 = sydist*sydist;
+          float szdist2 = szdist*szdist;
+          float yzdist2 = sydist2 + szdist2;
+
+          __m512 xdelta = _mm512_load_ps(&sxdelta[0]); // aligned load
+          __m512 xdist  = _mm512_set1_ps(sxdist);
+          xdist = _mm512_add_ps(xdist, xdelta);
+          __m512 ydist  = _mm512_set1_ps(sydist);
+          __m512 zdist  = _mm512_set1_ps(szdist);
+          __m512 xdist2 = _mm512_mul_ps(xdist, xdist);
+          __m512 ydist2 = _mm512_mul_ps(ydist, ydist);
+          __m512 zdist2 = _mm512_mul_ps(zdist, zdist);
+          __m512 dist2  = _mm512_set1_ps(yzdist2); 
+          dist2 = _mm512_add_ps(dist2, xdist2);
+ 
+          // loop over the shells belonging to this atom
+          // XXX this is maybe a misnomer because in split valence
+          //     basis sets like 6-31G we have more than one basis
+          //     function per (valence-)shell and we are actually
+          //     looping over the individual contracted GTOs
+          for (shell=0; shell < maxshell; shell++) {
+            __m512 contracted_gto = _mm512_set1_ps(0.0f);
+
+            // Loop over the Gaussian primitives of this contracted 
+            // basis function to build the atomic orbital
+            // 
+            // XXX there's a significant opportunity here for further
+            //     speedup if we replace the entire set of primitives
+            //     with the single gaussian that they are attempting 
+            //     to model.  This could give us another 6x speedup in 
+            //     some of the common/simple cases.
+            int maxprim = num_prim_per_shell[shell_counter];
+            int shelltype = shell_types[shell_counter];
+            for (prim=0; prim<maxprim; prim++) {
+              // XXX pre-negate exponent value
+              float exponent       = -basis_array[prim_counter    ];
+              float contract_coeff =  basis_array[prim_counter + 1];
+
+              // contracted_gto += contract_coeff * exp(-exponent*dist2);
+#if 1
+              __m512 expval = _mm512_mul_ps(_mm512_set1_ps(-exponent * MLOG2EF), dist2);
+              // expf() equivalent required, use base-2 AVX-512ER instructions
+              __m512 retval = _mm512_exp2a23_ps(expval);
+              contracted_gto = _mm512_fmadd_ps(_mm512_set1_ps(contract_coeff), retval, contracted_gto);
+#else
+              __m512 expval = _mm512_mul_ps(_mm512_set1_ps(-exponent), dist2);
+              // expf() equivalent required, use base-2 AVX-512ER instructions
+              expval = _mm512_mul_ps(expval, _mm512_set1_ps(MLOG2EF));
+              __m512 retval = _mm512_exp2a23_ps(expval);
+              __m512 ctmp = _mm512_mul_ps(_mm512_set1_ps(contract_coeff), retval);
+              contracted_gto = _mm512_add_ps(contracted_gto, ctmp);
+#endif
+
+              prim_counter += 2;
+            }
+
+            /* multiply with the appropriate wavefunction coefficient */
+            __m512 tmpshell = _mm512_set1_ps(0.0f);
+            switch (shelltype) {
+#if 1
+              // use FMADD instructions
+              case S_SHELL:
+                value = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), contracted_gto, value);
+                break;
+
+              case P_SHELL:
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), xdist, tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), ydist, tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), zdist, tmpshell);
+                value = _mm512_fmadd_ps(tmpshell, contracted_gto, value);
+                break;
+
+              case D_SHELL:
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), xdist2, tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(xdist, ydist), tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), ydist2, tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(xdist, zdist), tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(ydist, zdist), tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), zdist2, tmpshell);
+                value = _mm512_fmadd_ps(tmpshell, contracted_gto, value);
+                break;
+
+              case F_SHELL:
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(xdist2, xdist), tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(xdist2, ydist), tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(ydist2, xdist), tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(ydist2, ydist), tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(xdist2, zdist), tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(_mm512_mul_ps(xdist, ydist), zdist), tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(ydist2, zdist), tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(zdist2, xdist), tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(zdist2, ydist), tmpshell);
+                tmpshell = _mm512_fmadd_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(zdist2, zdist), tmpshell);
+                value = _mm512_fmadd_ps(tmpshell, contracted_gto, value);
+                break;
+
+#else
+
+              // original arithmetic
+              case S_SHELL:
+                value = _mm512_add_ps(value, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), contracted_gto));
+                break;
+
+              case P_SHELL:
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), xdist));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), ydist));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), zdist));
+                value = _mm512_add_ps(value, _mm512_mul_ps(tmpshell, contracted_gto));
+                break;
+
+              case D_SHELL:
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), xdist2));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(xdist, ydist)));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), ydist2));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(xdist, zdist)));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(ydist, zdist)));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), zdist2));
+                value = _mm512_add_ps(value, _mm512_mul_ps(tmpshell, contracted_gto));
+                break;
+
+              case F_SHELL:
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(xdist2, xdist)));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(xdist2, ydist)));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(ydist2, xdist)));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(ydist2, ydist)));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(xdist2, zdist)));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(_mm512_mul_ps(xdist, ydist), zdist)));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(ydist2, zdist)));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(zdist2, xdist)));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(zdist2, ydist)));
+                tmpshell = _mm512_add_ps(tmpshell, _mm512_mul_ps(_mm512_set1_ps(wave_f[ifunc++]), _mm512_mul_ps(zdist2, zdist)));
+                value = _mm512_add_ps(value, _mm512_mul_ps(tmpshell, contracted_gto));
+                break;
+#endif
+
+
+ 
+#if 0
+              default:
+                // avoid unnecessary branching and minimize use of pow()
+                int i, j; 
+                float xdp, ydp, zdp;
+                float xdiv = 1.0f / xdist;
+                for (j=0, zdp=1.0f; j<=shelltype; j++, zdp*=zdist) {
+                  int imax = shelltype - j; 
+                  for (i=0, ydp=1.0f, xdp=pow(xdist, imax); i<=imax; i++, ydp*=ydist, xdp*=xdiv) {
+                    tmpshell += wave_f[ifunc++] * xdp * ydp * zdp;
+                  }
+                }
+                value += tmpshell * contracted_gto;
+#endif
+            } // end switch
+
+            shell_counter++;
+          } // end shell
+        } // end atom
+
+        // return either orbital density or orbital wavefunction amplitude
+        if (density) {
+          __mmask16 mask = _mm512_cmplt_ps_mask(value, _mm512_set1_ps(0.0f));
+          __m512 sqdensity = _mm512_mul_ps(value, value);
+          __m512 orbdensity = _mm512_mask_mul_ps(sqdensity, mask, sqdensity,
+                                                 _mm512_set1_ps(-1.0f));
+          _mm512_storeu_ps(&orbitalgrid[gaddrzy + nx], orbdensity);
+        } else {
+          _mm512_storeu_ps(&orbitalgrid[gaddrzy + nx], value);
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
+#endif
+
+
+
+
+#if defined(VMDORBUSEVSX) && defined(__VSX__)
+//
+// John Stone, June 2016
+//
+// aexpfnxsse() - VSX version of aexpfnx().
+//
+#if defined(__GNUC__) && ! defined(__INTEL_COMPILER)
+#define __align(X)  __attribute__((aligned(X) ))
+#else
+#define __align(X) __declspec(align(X) )
+#endif
+
+#define MLOG2EF    -1.44269504088896f
+
+/*
+ * Interpolating coefficients for linear blending of the
+ * 3rd degree Taylor expansion of 2^x about 0 and -1.
+ */
+#define SCEXP0     1.0000000000000000f
+#define SCEXP1     0.6987082824680118f
+#define SCEXP2     0.2633174272827404f
+#define SCEXP3     0.0923611991471395f
+#define SCEXP4     0.0277520543324108f
+
+/* for single precision float */
+#define EXPOBIAS   127
+#define EXPOSHIFT   23
+
+/* cutoff is optional, but can help avoid unnecessary work */
+#define ACUTOFF    -10
+
+#if 0
+vector float ref_expf(vector float x) {
+  vector float result;
+
+  int i;
+  for (i=0; i<4; i++) {
+    result[i] = expf(x[i]);
+  }
+
+  return result;
+}
+#endif
+
+vector float aexpfnxvsx(vector float x) {
+  // scal.f = _mm_cmpge_ps(x, _mm_set_ps1(ACUTOFF));  /* Is x within cutoff? */
+  // 
+  // If all x are outside of cutoff, return 0s.
+  // if (_mm_movemask_ps(scal.f) == 0) {
+  //   return _mm_setzero_ps();
+  // }
+  // Otherwise, scal.f contains mask to be ANDed with the scale factor
+
+  /*
+   * Convert base:  exp(x) = 2^(N-d) where N is integer and 0 <= d < 1.
+   *
+   * Below we calculate n=N and x=-d, with "y" for temp storage,
+   * calculate floor of x*log2(e) and subtract to get -d.
+   */
+  vector float mb = vec_mul(x, vec_splats(MLOG2EF));
+  vector float mbflr = vec_floor(mb);
+  vector float d = vec_sub(mbflr, mb);
+  vector float y;
+
+  // Approximate 2^{-d}, 0 <= d < 1, by interpolation.
+  // Perform Horner's method to evaluate interpolating polynomial.
+  y = vec_madd(d, vec_splats(SCEXP4), vec_splats(SCEXP3));
+  y = vec_madd(y, d, vec_splats(SCEXP2));
+  y = vec_madd(y, d, vec_splats(SCEXP1));
+  y = vec_madd(y, d, vec_splats(SCEXP0));
+
+  return vec_mul(y, vec_expte(-mbflr));
+}
+
+
+int evaluate_grid_vsx(int numatoms,
+                  const float *wave_f, const float *basis_array,
+                  const float *atompos,
+                  const int *atom_basis,
+                  const int *num_shells_per_atom,
+                  const int *num_prim_per_shell,
+                  const int *shell_types,
+                  const int *numvoxels,
+                  float voxelsize,
+                  const float *origin,
+                  int density,
+                  float * orbitalgrid) {
+  if (!orbitalgrid)
+    return -1;
+
+  int nx, ny, nz;
+  __attribute__((aligned(16))) float sxdelta[4]; // 16-byte aligned for VSX
+  for (nx=0; nx<4; nx++) 
+    sxdelta[nx] = ((float) nx) * voxelsize * ANGS_TO_BOHR;
+
+  // Calculate the value of the orbital at each gridpoint and store in 
+  // the current oribtalgrid array
+  int numgridxy = numvoxels[0]*numvoxels[1];
+  for (nz=0; nz<numvoxels[2]; nz++) {
+    float grid_x, grid_y, grid_z;
+    grid_z = origin[2] + nz * voxelsize;
+    for (ny=0; ny<numvoxels[1]; ny++) {
+      grid_y = origin[1] + ny * voxelsize;
+      int gaddrzy = ny*numvoxels[0] + nz*numgridxy;
+      for (nx=0; nx<numvoxels[0]; nx+=4) {
+        grid_x = origin[0] + nx * voxelsize;
+
+        // calculate the value of the wavefunction of the
+        // selected orbital at the current grid point
+        int at;
+        int prim, shell;
+
+        // initialize value of orbital at gridpoint
+        vector float value = vec_splats(0.0f); 
+
+        // initialize the wavefunction and shell counters
+        int ifunc = 0; 
+        int shell_counter = 0;
+
+        // loop over all the QM atoms
+        for (at=0; at<numatoms; at++) {
+          int maxshell = num_shells_per_atom[at];
+          int prim_counter = atom_basis[at];
+
+          // calculate distance between grid point and center of atom
+          float sxdist = (grid_x - atompos[3*at  ])*ANGS_TO_BOHR;
+          float sydist = (grid_y - atompos[3*at+1])*ANGS_TO_BOHR;
+          float szdist = (grid_z - atompos[3*at+2])*ANGS_TO_BOHR;
+
+          float sydist2 = sydist*sydist;
+          float szdist2 = szdist*szdist;
+          float yzdist2 = sydist2 + szdist2;
+
+          vector float xdelta =  *((__vector float *) &sxdelta[0]); // aligned load
+          vector float xdist  = vec_splats(sxdist);
+          xdist = vec_add(xdist, xdelta);
+          vector float ydist  = vec_splats(sydist);
+          vector float zdist  = vec_splats(szdist);
+          vector float xdist2 = vec_mul(xdist, xdist);
+          vector float ydist2 = vec_mul(ydist, ydist);
+          vector float zdist2 = vec_mul(zdist, zdist);
+          vector float dist2  = vec_splats(yzdist2); 
+          dist2 = vec_add(dist2, xdist2);
+ 
+          // loop over the shells belonging to this atom
+          // XXX this is maybe a misnomer because in split valence
+          //     basis sets like 6-31G we have more than one basis
+          //     function per (valence-)shell and we are actually
+          //     looping over the individual contracted GTOs
+          for (shell=0; shell < maxshell; shell++) {
+            vector float contracted_gto = vec_splats(0.0f);
+
+            // Loop over the Gaussian primitives of this contracted 
+            // basis function to build the atomic orbital
+            // 
+            // XXX there's a significant opportunity here for further
+            //     speedup if we replace the entire set of primitives
+            //     with the single gaussian that they are attempting 
+            //     to model.  This could give us another 6x speedup in 
+            //     some of the common/simple cases.
+            int maxprim = num_prim_per_shell[shell_counter];
+            int shelltype = shell_types[shell_counter];
+            for (prim=0; prim<maxprim; prim++) {
+              // XXX pre-negate exponent value
+              float exponent       = -basis_array[prim_counter    ];
+              float contract_coeff =  basis_array[prim_counter + 1];
+
+              // contracted_gto += contract_coeff * exp(-exponent*dist2);
+              vector float expval = vec_mul(vec_splats(exponent), dist2);
+
+              // VSX expf() required here
+              vector float retval = aexpfnxvsx(expval);
+
+              vector float ctmp = vec_mul(vec_splats(contract_coeff), retval);
+              contracted_gto = vec_add(contracted_gto, ctmp);
+              prim_counter += 2;
+            }
+
+            /* multiply with the appropriate wavefunction coefficient */
+            vector float tmpshell = vec_splats(0.0f);
+            switch (shelltype) {
+              case S_SHELL:
+                value = vec_add(value, vec_mul(vec_splats(wave_f[ifunc++]), contracted_gto));
+                break;
+
+              case P_SHELL:
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), xdist));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), ydist));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), zdist));
+                value = vec_add(value, vec_mul(tmpshell, contracted_gto));
+                break;
+
+              case D_SHELL:
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), xdist2));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), vec_mul(xdist, ydist)));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), ydist2));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), vec_mul(xdist, zdist)));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), vec_mul(ydist, zdist)));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), zdist2));
+                value = vec_add(value, vec_mul(tmpshell, contracted_gto));
+                break;
+
+              case F_SHELL:
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), vec_mul(xdist2, xdist)));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), vec_mul(xdist2, ydist)));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), vec_mul(ydist2, xdist)));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), vec_mul(ydist2, ydist)));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), vec_mul(xdist2, zdist)));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), vec_mul(vec_mul(xdist, ydist), zdist)));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), vec_mul(ydist2, zdist)));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), vec_mul(zdist2, xdist)));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), vec_mul(zdist2, ydist)));
+                tmpshell = vec_add(tmpshell, vec_mul(vec_splats(wave_f[ifunc++]), vec_mul(zdist2, zdist)));
+                value = vec_add(value, vec_mul(tmpshell, contracted_gto));
+                break;
+ 
+#if 0
+              default:
+                // avoid unnecessary branching and minimize use of pow()
+                int i, j; 
+                float xdp, ydp, zdp;
+                float xdiv = 1.0f / xdist;
+                for (j=0, zdp=1.0f; j<=shelltype; j++, zdp*=zdist) {
+                  int imax = shelltype - j; 
+                  for (i=0, ydp=1.0f, xdp=pow(xdist, imax); i<=imax; i++, ydp*=ydist, xdp*=xdiv) {
+                    tmpshell += wave_f[ifunc++] * xdp * ydp * zdp;
+                  }
+                }
+                value += tmpshell * contracted_gto;
+#endif
+            } // end switch
+
+            shell_counter++;
+          } // end shell
+        } // end atom
+
+        // return either orbital density or orbital wavefunction amplitude
+        if (density) {
+          value = vec_cpsgn(value, vec_mul(value, value));
+
+          float *ufptr = &orbitalgrid[gaddrzy + nx];
+          ufptr[0] = value[0];
+          ufptr[1] = value[1];
+          ufptr[2] = value[2];
+          ufptr[3] = value[3];
+        } else {
+          float *ufptr = &orbitalgrid[gaddrzy + nx];
+          ufptr[0] = value[0];
+          ufptr[1] = value[1];
+          ufptr[2] = value[2];
+          ufptr[3] = value[3];
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
+#endif
+
+
+
 //
 // Multithreaded molecular orbital computation engine
 //
@@ -1522,11 +2092,15 @@ extern "C" void * orbitalthread(void *voidparms) {
   int numvoxels[3];
   float origin[3];
   orbthrparms *parms = NULL;
+#if defined(VMDORBUSETHRPOOL)
+  wkf_threadpool_worker_getdata(voidparms, (void **) &parms);
+#else
   wkf_threadlaunch_getdata(voidparms, (void **) &parms);
+#endif
 
   numvoxels[0] = parms->numvoxels[0];
   numvoxels[1] = parms->numvoxels[1];
-  numvoxels[2] = 1;
+  numvoxels[2] = 1; // we compute only a single plane
 
   origin[0] = parms->origin[0];
   origin[1] = parms->origin[1];
@@ -1534,12 +2108,42 @@ extern "C" void * orbitalthread(void *voidparms) {
   // loop over orbital planes
   int planesize = numvoxels[0] * numvoxels[1];
   wkf_tasktile_t tile;
-  while (wkf_threadlaunch_next_tile(voidparms, 2, &tile) != WKF_SCHED_DONE) {
+#if defined(VMDORBUSETHRPOOL)
+  while (wkf_threadpool_next_tile(voidparms, 1, &tile) != WKF_SCHED_DONE) {
+#else
+  while (wkf_threadlaunch_next_tile(voidparms, 1, &tile) != WKF_SCHED_DONE) {
+#endif
     int k;
     for (k=tile.start; k<tile.end; k++) {
       origin[2] = parms->origin[2] + parms->voxelsize * k;
-#if VMDORBUSESSE & defined(__SSE2__)
+#if defined(VMDORBUSEAVX512) && defined(__AVX512F__) && defined(__AVX512ER__)
+      evaluate_grid_avx512er(parms->numatoms,
+                    parms->wave_f, parms->basis_array,
+                    parms->atompos,
+                    parms->atom_basis,
+                    parms->num_shells_per_atom,
+                    parms->num_prim_per_shell,
+                    parms->shell_types,
+                    numvoxels,
+                    parms->voxelsize,
+                    origin,
+                    parms->density,
+                    parms->orbitalgrid + planesize*k);
+#elif defined(VMDORBUSESSE) && defined(__SSE2__)
       evaluate_grid_sse(parms->numatoms,
+                    parms->wave_f, parms->basis_array,
+                    parms->atompos,
+                    parms->atom_basis,
+                    parms->num_shells_per_atom,
+                    parms->num_prim_per_shell,
+                    parms->shell_types,
+                    numvoxels,
+                    parms->voxelsize,
+                    origin,
+                    parms->density,
+                    parms->orbitalgrid + planesize*k);
+#elif defined(VMDORBUSEVSX) && defined(__VSX__)
+      evaluate_grid_vsx(parms->numatoms,
                     parms->wave_f, parms->basis_array,
                     parms->atompos,
                     parms->atom_basis,
@@ -1572,7 +2176,13 @@ extern "C" void * orbitalthread(void *voidparms) {
 }
 
 
-int evaluate_grid_fast(int numatoms,
+int evaluate_grid_fast(
+#if defined(VMDORBUSETHRPOOL) 
+                       wkf_threadpool_t *thrpool, 
+#else
+                       int numcputhreads,
+#endif
+                       int numatoms,
                        const float *wave_f,
                        const float *basis_array,
                        const float *atompos,
@@ -1602,17 +2212,17 @@ int evaluate_grid_fast(int numatoms,
   parms.density = density;
   parms.orbitalgrid = orbitalgrid;
 
-#if defined(VMDTHREADS)
-  int numprocs = wkf_thread_numprocessors();
-#else
-  int numprocs = 1;
-#endif
-
   /* spawn child threads to do the work */
   wkf_tasktile_t tile;
   tile.start = 0;
   tile.end = numvoxels[2];
-  rc = wkf_threadlaunch(numprocs, &parms, orbitalthread, &tile);
+
+#if defined(VMDORBUSETHRPOOL) 
+  wkf_threadpool_sched_dynamic(thrpool, &tile);
+  rc = wkf_threadpool_launch(thrpool, orbitalthread, &parms, 1);
+#else
+  rc = wkf_threadlaunch(numcputhreads, &parms, orbitalthread, &tile);
+#endif
 
   return rc;
 }

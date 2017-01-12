@@ -2,8 +2,8 @@
  * RCS INFORMATION:
  *
  *      $RCSfile: ReadPARM7.h,v $
- *      $Author: akohlmey $        $Locker:  $                $State: Exp $
- *      $Revision: 1.29 $      $Date: 2013/07/20 14:37:13 $
+ *      $Author: johns $        $Locker:  $                $State: Exp $
+ *      $Revision: 1.32 $      $Date: 2016/11/06 17:54:56 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -46,7 +46,8 @@
 #include "molfile_plugin.h"  // needed for molfile return codes etc
 
 #if defined(WIN32) || defined(WIN64)
-#define strcasecmp stricmp
+#define strcasecmp  stricmp
+#define strncasecmp strnicmp
 #endif
 
 #if 0 
@@ -169,8 +170,8 @@ static FILE *open_parm7_file(const char *name, int *as_pipe) {
   }
 #else
   if (compressed) {
-    char pcmd[120];
-    sprintf(pcmd, "zcat %s", cbuf);
+    char pcmd[sizeof(cbuf) + 7];
+    sprintf(pcmd, "zcat '%s'", cbuf);
     if ((fp = popen(pcmd, "r")) == NULL) {
       perror(pcmd);
       return NULL;
@@ -374,10 +375,10 @@ static parmstruct *read_parm7_header(FILE *file) {
     delete prm;
     return NULL;
   }
-  fscanf(file, "%s\n", sdum); // "TITLE/CTITLE"
+  fscanf(file, "%s\n", sdum); // "TITLE" or "CTITLE"
   if (strcmp("TITLE", sdum) && strcmp("CTITLE", sdum)) {
     printf("AMBER 7 parm read error, at flag section TITLE,\n");
-    printf("        expected TITLE/CTITLE  but got %s,\n", sdum);
+    printf("        expected TITLE or CTITLE but got %s,\n", sdum);
     delete prm;
     return NULL;
   }

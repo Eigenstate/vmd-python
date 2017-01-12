@@ -2,7 +2,7 @@
 # GUI for chirality plugin
 #
 
-package provide chirality_gui 1.2
+package provide chirality_gui 1.3
 
 namespace eval ::chirality::GUI:: {
 

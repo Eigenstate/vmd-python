@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: PickModeMove.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.21 $       $Date: 2010/12/16 04:08:35 $
+ *      $Revision: 1.23 $       $Date: 2016/11/28 03:05:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -38,7 +38,7 @@ void PickModeMove::get_pointer_pos(DrawMolecule *m, DisplayDevice *d,
   if(!(moveAtom < 0 || ts == NULL)) {
     // get the current pointer position in 3 space
     float atomPos[3];
-    vec_copy(atomPos, ts->pos + moveAtom *3); 
+    vec_copy(atomPos, ts->pos + moveAtom * 3L); 
     const float *newpos;
     float mouseObjPos[3];
     if(dim == 2) {
@@ -73,7 +73,7 @@ void PickModeMove::pick_molecule_start(DrawMolecule *m, DisplayDevice *d,
                                        int dim, const float *pos) {
 
   // convert the pointer position to world coordinates; store in lastPos
-  memcpy(lastCell, cell, 3*sizeof(int));
+  memcpy(lastCell, cell, 3L*sizeof(int));
   get_pointer_pos(m, d, tag, cell, dim, pos, lastPos);
   btn = theBtn;
 }
@@ -119,7 +119,7 @@ void PickModeMove::pick_molecule_move(DrawMolecule *m, DisplayDevice *d,
 
   // Copy the current atom coordinates into a buffer
   Timestep *ts = m->current();
-  memcpy(atomPos, ts->pos + 3*tag, 3*sizeof(float));
+  memcpy(atomPos, ts->pos + 3L*tag, 3L*sizeof(float));
 
   // if the shift key is pressed, do rotations
   if (d->shift_state() & DisplayDevice::SHIFT) {
@@ -154,7 +154,7 @@ void PickModeMove::pick_molecule_move(DrawMolecule *m, DisplayDevice *d,
 }
 
 void PickModeMoveAtom::translate(DrawMolecule *m, int tag, const float *p) {
-  float *pos = m->current()->pos+3*tag;
+  float *pos = m->current()->pos+3L*tag;
   vec_add(pos, pos, p);
 }
 
@@ -165,7 +165,7 @@ void PickModeMoveResidue::rotate(DrawMolecule *m, int tag, const float *p,
   if (res) {
     int natm = (res->atoms).num();
     for (int n=0; n<natm; n++) {
-      float *ap = m->current()->pos + 3 * (res->atoms)[n];
+      float *ap = m->current()->pos + 3L * (res->atoms)[n];
       // Rotate about the picked atom
       vec_sub(ap, ap, p);
       q.multpoint3(ap,ap);
@@ -180,7 +180,7 @@ void PickModeMoveResidue::translate(DrawMolecule *m, int tag, const float *p) {
   if(res) {
     int natm = (res->atoms).num();
     for(int n = 0; n < natm; n++) {
-      float *ap = m->current()->pos + 3 * (res->atoms)[n];
+      float *ap = m->current()->pos + 3L * (res->atoms)[n];
       vec_add(ap, ap, p);
     }
   }
@@ -196,7 +196,7 @@ void PickModeMoveFragment::rotate(DrawMolecule *m, int tag, const float *p,
       Residue *res = m->residue((*frag)[r]);
       int natm = (res->atoms).num();
       for (int n=0; n < natm; n++) {
-        float *ap = m->current()->pos + 3 * (res->atoms)[n];
+        float *ap = m->current()->pos + 3L * (res->atoms)[n];
         vec_sub(ap,ap,p);
         q.multpoint3(ap,ap); 
         vec_add(ap,ap,p);
@@ -213,7 +213,7 @@ void PickModeMoveFragment::translate(DrawMolecule *m, int tag, const float *p){
       Residue *res = m->residue((*frag)[r]);
       int natm = (res->atoms).num();
       for (int n=0; n < natm; n++) {
-        float *ap = m->current()->pos + 3 * (res->atoms)[n];
+        float *ap = m->current()->pos + 3L * (res->atoms)[n];
         vec_add(ap,ap,p);
       }
     }
@@ -224,7 +224,7 @@ void PickModeMoveMolecule::rotate(DrawMolecule *m, int, const float *p,
                                   const Quat &q) {
   int natm = m->nAtoms;
   for (int i=0; i < natm; i++) {
-    float *ap = m->current()->pos + 3*i;
+    float *ap = m->current()->pos + 3L*i;
     vec_sub(ap,ap,p);
     q.multpoint3(ap,ap); 
     vec_add(ap,ap,p);
@@ -235,7 +235,7 @@ void PickModeMoveMolecule::translate(DrawMolecule *m, int, const float *p){
 
   int natm = m->nAtoms;
   for (int i=0; i < natm; i++) {
-    float *ap = m->current()->pos + 3*i;
+    float *ap = m->current()->pos + 3L*i;
     vec_add(ap,ap,p);
   }
 }
@@ -256,7 +256,7 @@ void PickModeMoveRep::rotate(DrawMolecule *m, int tag, const float *p,
   float *ap = m->current()->pos;
   for (int i=0; i<n; i++) {
     if (on[i]) {
-      float *pos = ap + 3*i;
+      float *pos = ap + 3L*i;
       vec_sub(pos, pos, p);
       q.multpoint3(pos, pos);
       vec_add(pos, pos, p);
@@ -280,7 +280,7 @@ void PickModeMoveRep::translate(DrawMolecule *m, int tag, const float *p) {
   float *ap = m->current()->pos;
   for (int i=0; i<n; i++) {
     if (on[i]) {
-      vec_add(ap+3*i, ap+3*i, p);
+      vec_add(ap+3L*i, ap+3L*i, p);
     }
   }
 }

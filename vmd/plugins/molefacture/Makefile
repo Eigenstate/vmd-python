@@ -3,7 +3,7 @@
 VMFILES = molefacture.tcl molefacture_builder.tcl \
 	molefacture_edit.tcl molefacture_geometry.tcl molefacture_gui.tcl \
 	molefacture_internals.tcl molefacture_state.tcl pkgIndex.tcl
-VMVERSION = 1.3
+VMVERSION = 1.4
 DIR = $(PLUGINDIR)/noarch/tcl/molefacture$(VMVERSION)
 
 bins:

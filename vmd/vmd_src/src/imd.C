@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: imd.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.17 $       $Date: 2010/12/16 04:08:55 $
+ *      $Revision: 1.19 $       $Date: 2016/11/28 03:05:07 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -165,11 +165,11 @@ int imd_trate(void *s, int32 rate) {
 /* Data methods */
 int imd_send_mdcomm(void *s,int32 n,const int32 *indices,const float *forces) {
   int rc;
-  int32 size = HEADERSIZE+16*n;
+  int32 size = HEADERSIZE+16L*n;
   char *buf = (char *) malloc(sizeof(char) * size); 
   fill_header((IMDheader *)buf, IMD_MDCOMM, n);
-  memcpy(buf+HEADERSIZE, indices, 4*n);
-  memcpy(buf+HEADERSIZE+4*n, forces, 12*n);
+  memcpy(buf+HEADERSIZE, indices, 4L*n);
+  memcpy(buf+HEADERSIZE+4*n, forces, 12L*n);
   rc = (imd_writen(s, buf, size) != size);
   free(buf);
   return rc;
@@ -188,10 +188,10 @@ int imd_send_energies(void *s, const IMDEnergies *energies) {
 
 int imd_send_fcoords(void *s, int32 n, const float *coords) {
   int rc;
-  int32 size = HEADERSIZE+12*n;
+  int32 size = HEADERSIZE+12L*n;
   char *buf = (char *) malloc(sizeof(char) * size); 
   fill_header((IMDheader *)buf, IMD_FCOORDS, n);
-  memcpy(buf+HEADERSIZE, coords, 12*n);
+  memcpy(buf+HEADERSIZE, coords, 12L*n);
   rc = (imd_writen(s, buf, size) != size);
   free(buf);
   return rc;
@@ -243,8 +243,8 @@ int imd_recv_handshake(void *s) {
 }
 
 int imd_recv_mdcomm(void *s, int32 n, int32 *indices, float *forces) {
-  if (imd_readn(s, (char *)indices, 4*n) != 4*n) return 1;
-  if (imd_readn(s, (char *)forces, 12*n) != 12*n) return 1;
+  if (imd_readn(s, (char *)indices, 4L*n) != 4L*n) return 1;
+  if (imd_readn(s, (char *)forces, 12L*n) != 12L*n) return 1;
   return 0;
 }
 
@@ -254,6 +254,6 @@ int imd_recv_energies(void *s, IMDEnergies *energies) {
 }
 
 int imd_recv_fcoords(void *s, int32 n, float *coords) {
-  return (imd_readn(s, (char *)coords, 12*n) != 12*n);
+  return (imd_readn(s, (char *)coords, 12L*n) != 12L*n);
 }
 

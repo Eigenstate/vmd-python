@@ -38,21 +38,21 @@ class VMDLabel:
 		try:
 			label.show(self.type, self.__dict__)
 		except ValueError:
-			raise ValueError, "Label has been deleted."
+			raise ValueError("Label has been deleted.")
 
 	def hide(self):
 		""" Turns this label off."""
 		try:
 			label.hide(self.type, self.__dict__)
 		except ValueError:
-			raise ValueError, "Label has been deleted."
+			raise ValueError("Label has been deleted.")
 
 	def delete(self):
 		""" Deletes this labe. """ 
 		try:
 			label.delete(self.type, self.__dict__)
 		except ValueError:
-			raise ValueError, "Label was already deleted."
+			raise ValueError("Label was already deleted.")
 
 	def getValues(self):
 		""" Returns a list of the value of this label for all timesteps.  If the
@@ -108,5 +108,5 @@ if __name__=="__main__":
 	for i in range(10):
 		AtomLabel(m,i)
 	
-	print atomLabels()
-	print bondLabels()
+	print(atomLabels())
+	print(bondLabels())

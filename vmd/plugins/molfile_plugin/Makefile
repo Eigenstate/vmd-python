@@ -1,7 +1,7 @@
 # Makefile for molecule file readers
-# $Id: Makefile,v 1.124 2015/04/17 21:13:20 johns Exp $
+# $Id: Makefile,v 1.126 2015/12/15 21:12:07 johns Exp $
 
-#.SILENT:
+.SILENT:
 
 .SUFFIXES:
 
@@ -21,9 +21,9 @@ SCXXFLAGS = $(CCFLAGS) $(DEF)"STATIC_PLUGIN"
 # Rules
 #
 
-STATICPLUGINS = abinitplugin avsplugin babelplugin basissetplugin bgfplugin binposplugin biomoccaplugin brixplugin carplugin ccp4plugin corplugin cpmdplugin crdplugin cubeplugin dcdplugin dlpolyplugin dsn6plugin dxplugin edmplugin fs4plugin gamessplugin graspplugin grdplugin gridplugin gromacsplugin jsplugin lammpsplugin mapplugin mdfplugin mol2plugin moldenplugin molemeshplugin msmsplugin namdbinplugin offplugin parm7plugin parmplugin pbeqplugin pdbplugin phiplugin pltplugin plyplugin pqrplugin psfplugin raster3dplugin rst7plugin situsplugin spiderplugin stlplugin tinkerplugin uhbdplugin vaspchgcarplugin vaspoutcarplugin vaspparchgplugin vaspposcarplugin vasp5xdatcarplugin vaspxdatcarplugin vaspxmlplugin xbgfplugin xsfplugin xyzplugin
+STATICPLUGINS = abinitplugin avsplugin babelplugin basissetplugin bgfplugin binposplugin biomoccaplugin brixplugin carplugin ccp4plugin corplugin cpmdplugin crdplugin cubeplugin dcdplugin dlpolyplugin dsn6plugin dxplugin edmplugin fs4plugin gamessplugin graspplugin grdplugin gridplugin gromacsplugin jsplugin lammpsplugin mapplugin mdfplugin mol2plugin moldenplugin molemeshplugin msmsplugin namdbinplugin offplugin parm7plugin parmplugin pbeqplugin pdbplugin pdbxplugin phiplugin pltplugin plyplugin pqrplugin psfplugin raster3dplugin rst7plugin situsplugin spiderplugin stlplugin tinkerplugin uhbdplugin vaspchgcarplugin vaspoutcarplugin vaspparchgplugin vaspposcarplugin vasp5xdatcarplugin vaspxdatcarplugin vaspxmlplugin vtkplugin xbgfplugin xsfplugin xyzplugin
 
-PLUGINS = abinitplugin.so avsplugin.so babelplugin.so basissetplugin.so bgfplugin.so binposplugin.so biomoccaplugin.so brixplugin.so carplugin.so ccp4plugin.so corplugin.so cpmdplugin.so crdplugin.so cubeplugin.so dcdplugin.so dlpolyplugin.so dsn6plugin.so dxplugin.so edmplugin.so fs4plugin.so gamessplugin.so graspplugin.so grdplugin.so gridplugin.so gromacsplugin.so jsplugin.so lammpsplugin.so mapplugin.so mdfplugin.so mol2plugin.so moldenplugin.so molemeshplugin.so msmsplugin.so namdbinplugin.so offplugin.so parm7plugin.so parmplugin.so pbeqplugin.so pdbplugin.so phiplugin.so pltplugin.so plyplugin.so pqrplugin.so psfplugin.so raster3dplugin.so rst7plugin.so situsplugin.so spiderplugin.so stlplugin.so tinkerplugin.so uhbdplugin.so vaspchgcarplugin.so vaspoutcarplugin.so vaspparchgplugin.so vaspposcarplugin.so vasp5xdatcarplugin.so vaspxdatcarplugin.so vaspxmlplugin.so xbgfplugin.so xsfplugin.so xyzplugin.so
+PLUGINS = abinitplugin.so avsplugin.so babelplugin.so basissetplugin.so bgfplugin.so binposplugin.so biomoccaplugin.so brixplugin.so carplugin.so ccp4plugin.so corplugin.so cpmdplugin.so crdplugin.so cubeplugin.so dcdplugin.so dlpolyplugin.so dsn6plugin.so dxplugin.so edmplugin.so fs4plugin.so gamessplugin.so graspplugin.so grdplugin.so gridplugin.so gromacsplugin.so jsplugin.so lammpsplugin.so mapplugin.so mdfplugin.so mol2plugin.so moldenplugin.so molemeshplugin.so msmsplugin.so namdbinplugin.so offplugin.so parm7plugin.so parmplugin.so pbeqplugin.so pdbplugin.so pdbxplugin.so phiplugin.so pltplugin.so plyplugin.so pqrplugin.so psfplugin.so raster3dplugin.so rst7plugin.so situsplugin.so spiderplugin.so stlplugin.so tinkerplugin.so uhbdplugin.so vaspchgcarplugin.so vaspoutcarplugin.so vaspparchgplugin.so vaspposcarplugin.so vasp5xdatcarplugin.so vaspxdatcarplugin.so vaspxmlplugin.so vtkplugin.so xbgfplugin.so xsfplugin.so xyzplugin.so
 
 
 #
@@ -284,6 +284,9 @@ pbeqplugin.so: ${ARCHDIR}/pbeqplugin.o
 pdbplugin.so: ${ARCHDIR}/pdbplugin.o 
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
+pdbxplugin.so: ${ARCHDIR}/pdbxplugin.o 
+	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
+
 phiplugin.so: ${ARCHDIR}/phiplugin.o 
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
@@ -339,6 +342,9 @@ vaspxdatcarplugin.so: ${ARCHDIR}/vaspxdatcarplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 vaspxmlplugin.so: ${ARCHDIR}/vaspxmlplugin.o
+	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
+
+vtkplugin.so: ${ARCHDIR}/vtkplugin.o 
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 xbgfplugin.so: ${ARCHDIR}/xbgfplugin.o 
@@ -510,6 +516,9 @@ ${ARCHDIR}/pbeqplugin.o: pbeqplugin.C ${PLUGINAPI}
 ${ARCHDIR}/pdbplugin.o: pdbplugin.c readpdb.h ${PLUGINAPI}
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
+${ARCHDIR}/pdbxplugin.o: pdbxplugin.C ${PLUGINAPI}
+	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
+
 ${ARCHDIR}/phiplugin.o: phiplugin.C ${PLUGINAPI} 
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
@@ -579,6 +588,9 @@ ${ARCHDIR}/vtfplugin.o: vtfplugin.c ${PLUGINAPI}
 ${ARCHDIR}/webpdbplugin.o: webpdbplugin.c readpdb.h ${PLUGINAPI} periodic_table.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(TCLINC) $(INCDIR) -c $< $(COPTO)$@
 
+${ARCHDIR}/vtkplugin.o: vtkplugin.C ${PLUGINAPI} 
+	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
+
 ${ARCHDIR}/xbgfplugin.o: xbgfplugin.C ${PLUGINAPI} 
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
@@ -620,7 +632,7 @@ ${ARCHDIR}/tngplugin.o: tngplugin.C ${PLUGINAPI}
 #
 # archive rules
 #
-ARCHIVEOBJS = ${ARCHDIR}/abinitplugin-s.o ${ARCHDIR}/avsplugin-s.o ${ARCHDIR}/babelplugin-s.o ${ARCHDIR}/basissetplugin-s.o ${ARCHDIR}/bgfplugin-s.o ${ARCHDIR}/binposplugin-s.o ${ARCHDIR}/biomoccaplugin-s.o ${ARCHDIR}/brixplugin-s.o ${ARCHDIR}/carplugin-s.o ${ARCHDIR}/ccp4plugin-s.o ${ARCHDIR}/corplugin-s.o ${ARCHDIR}/cpmdplugin-s.o ${ARCHDIR}/crdplugin-s.o ${ARCHDIR}/cubeplugin-s.o ${ARCHDIR}/dcdplugin-s.o ${ARCHDIR}/dlpolyplugin-s.o ${ARCHDIR}/dsn6plugin-s.o ${ARCHDIR}/dxplugin-s.o ${ARCHDIR}/edmplugin-s.o ${ARCHDIR}/fs4plugin-s.o ${ARCHDIR}/gamessplugin-s.o ${ARCHDIR}/graspplugin-s.o ${ARCHDIR}/grdplugin-s.o ${ARCHDIR}/gridplugin-s.o ${ARCHDIR}/gromacsplugin-s.o ${ARCHDIR}/jsplugin-s.o ${ARCHDIR}/lammpsplugin-s.o ${ARCHDIR}/mapplugin-s.o ${ARCHDIR}/mdfplugin-s.o ${ARCHDIR}/mol2plugin-s.o ${ARCHDIR}/moldenplugin-s.o ${ARCHDIR}/molemeshplugin-s.o ${ARCHDIR}/msmsplugin-s.o ${ARCHDIR}/namdbinplugin-s.o ${ARCHDIR}/offplugin-s.o ${ARCHDIR}/parm7plugin-s.o ${ARCHDIR}/parmplugin-s.o ${ARCHDIR}/pbeqplugin-s.o ${ARCHDIR}/pdbplugin-s.o ${ARCHDIR}/phiplugin-s.o ${ARCHDIR}/pltplugin-s.o ${ARCHDIR}/plyplugin-s.o ${ARCHDIR}/pqrplugin-s.o ${ARCHDIR}/psfplugin-s.o ${ARCHDIR}/raster3dplugin-s.o ${ARCHDIR}/rst7plugin-s.o ${ARCHDIR}/situsplugin-s.o ${ARCHDIR}/spiderplugin-s.o ${ARCHDIR}/stlplugin-s.o ${ARCHDIR}/tinkerplugin-s.o ${ARCHDIR}/uhbdplugin-s.o ${ARCHDIR}/vaspchgcarplugin-s.o ${ARCHDIR}/vaspoutcarplugin-s.o ${ARCHDIR}/vaspparchgplugin-s.o ${ARCHDIR}/vaspposcarplugin-s.o ${ARCHDIR}/vasp5xdatcarplugin-s.o ${ARCHDIR}/vaspxdatcarplugin-s.o ${ARCHDIR}/vaspxmlplugin-s.o ${ARCHDIR}/xbgfplugin-s.o ${ARCHDIR}/xsfplugin-s.o ${ARCHDIR}/xyzplugin-s.o
+ARCHIVEOBJS = ${ARCHDIR}/abinitplugin-s.o ${ARCHDIR}/avsplugin-s.o ${ARCHDIR}/babelplugin-s.o ${ARCHDIR}/basissetplugin-s.o ${ARCHDIR}/bgfplugin-s.o ${ARCHDIR}/binposplugin-s.o ${ARCHDIR}/biomoccaplugin-s.o ${ARCHDIR}/brixplugin-s.o ${ARCHDIR}/carplugin-s.o ${ARCHDIR}/ccp4plugin-s.o ${ARCHDIR}/corplugin-s.o ${ARCHDIR}/cpmdplugin-s.o ${ARCHDIR}/crdplugin-s.o ${ARCHDIR}/cubeplugin-s.o ${ARCHDIR}/dcdplugin-s.o ${ARCHDIR}/dlpolyplugin-s.o ${ARCHDIR}/dsn6plugin-s.o ${ARCHDIR}/dxplugin-s.o ${ARCHDIR}/edmplugin-s.o ${ARCHDIR}/fs4plugin-s.o ${ARCHDIR}/gamessplugin-s.o ${ARCHDIR}/graspplugin-s.o ${ARCHDIR}/grdplugin-s.o ${ARCHDIR}/gridplugin-s.o ${ARCHDIR}/gromacsplugin-s.o ${ARCHDIR}/jsplugin-s.o ${ARCHDIR}/lammpsplugin-s.o ${ARCHDIR}/mapplugin-s.o ${ARCHDIR}/mdfplugin-s.o ${ARCHDIR}/mol2plugin-s.o ${ARCHDIR}/moldenplugin-s.o ${ARCHDIR}/molemeshplugin-s.o ${ARCHDIR}/msmsplugin-s.o ${ARCHDIR}/namdbinplugin-s.o ${ARCHDIR}/offplugin-s.o ${ARCHDIR}/parm7plugin-s.o ${ARCHDIR}/parmplugin-s.o ${ARCHDIR}/pbeqplugin-s.o ${ARCHDIR}/pdbplugin-s.o ${ARCHDIR}/pdbxplugin-s.o ${ARCHDIR}/phiplugin-s.o ${ARCHDIR}/pltplugin-s.o ${ARCHDIR}/plyplugin-s.o ${ARCHDIR}/pqrplugin-s.o ${ARCHDIR}/psfplugin-s.o ${ARCHDIR}/raster3dplugin-s.o ${ARCHDIR}/rst7plugin-s.o ${ARCHDIR}/situsplugin-s.o ${ARCHDIR}/spiderplugin-s.o ${ARCHDIR}/stlplugin-s.o ${ARCHDIR}/tinkerplugin-s.o ${ARCHDIR}/uhbdplugin-s.o ${ARCHDIR}/vaspchgcarplugin-s.o ${ARCHDIR}/vaspoutcarplugin-s.o ${ARCHDIR}/vaspparchgplugin-s.o ${ARCHDIR}/vaspposcarplugin-s.o ${ARCHDIR}/vasp5xdatcarplugin-s.o ${ARCHDIR}/vaspxdatcarplugin-s.o ${ARCHDIR}/vaspxmlplugin-s.o ${ARCHDIR}/vtkplugin-s.o ${ARCHDIR}/xbgfplugin-s.o ${ARCHDIR}/xsfplugin-s.o ${ARCHDIR}/xyzplugin-s.o
 
 
 #
@@ -689,10 +701,6 @@ endif
 endif
 endif
 
-#
-# Check to see if we should build plugins that use the Desmond thing
-# XXX non-portable GNU make syntax used here...
-# 
 ifdef SQLITELIB
 ifdef SQLITEINC
 ifdef SQLITELDFLAGS
@@ -835,6 +843,9 @@ ${ARCHDIR}/pbeqplugin-s.o: pbeqplugin.C ${PLUGINAPI}
 ${ARCHDIR}/pdbplugin-s.o: pdbplugin.c readpdb.h ${PLUGINAPI}
 	${CC} ${SCCFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_pdbplugin" -c $< $(COPTO)$@
 
+${ARCHDIR}/pdbxplugin-s.o: pdbxplugin.C ${PLUGINAPI}
+	${CXX} ${SCXXFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_pdbxplugin" -c $< $(COPTO)$@
+
 ${ARCHDIR}/phiplugin-s.o: phiplugin.C ${PLUGINAPI}
 	${CXX} ${SCXXFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_phiplugin" -c $< $(COPTO)$@
 
@@ -891,6 +902,9 @@ ${ARCHDIR}/vaspxdatcarplugin-s.o: vaspxdatcarplugin.c vaspplugin.h ${PLUGINAPI} 
 
 ${ARCHDIR}/vaspxmlplugin-s.o: vaspxmlplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
 	${CC} ${SCCFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_vaspxmlplugin" -c $< $(COPTO)$@
+
+${ARCHDIR}/vtkplugin-s.o: vtkplugin.C ${PLUGINAPI}
+	${CXX} ${SCXXFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_vtkplugin" -c $< $(COPTO)$@
 
 ${ARCHDIR}/xbgfplugin-s.o: xbgfplugin.C ${PLUGINAPI}
 	${CXX} ${SCXXFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_xbgfplugin" -c $< $(COPTO)$@

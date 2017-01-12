@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: MoleculeGraphics.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.73 $	$Date: 2015/05/13 06:32:07 $
+ *	$Revision: 1.75 $	$Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -123,7 +123,7 @@ void MoleculeGraphics::create_cmdlist(void) {
         for (int i=0; i<3; i++) {
           int c = (int)shape->data[18+i];
           c = clamp_int(c, 0, MAXCOLORS-1);
-          vec_copy(colors+3*i, scene->color_value(c));
+          vec_copy(colors+3L*i, scene->color_value(c));
         }
         const float *verts = shape->data+0;
         const float *norms = shape->data+9;

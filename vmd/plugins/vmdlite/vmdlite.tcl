@@ -55,6 +55,9 @@ namespace eval ::VMDlite:: {
 namespace eval ::VMDlite::main {
     set ::VMDlite::main::VMDLITEDIR $env(VMDLITEDIR);
 }
+namespace eval ::VMDlite::lesson {
+}
+
 # call for help
 package require Tk 8.5
 

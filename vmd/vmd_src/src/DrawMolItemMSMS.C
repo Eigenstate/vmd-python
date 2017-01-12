@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolItemMSMS.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.48 $	$Date: 2011/06/08 18:41:42 $
+ *	$Revision: 1.50 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -45,8 +45,8 @@ void DrawMolItem::draw_msms(float *framepos, int draw_wireframe, int allatoms, f
 
     msms.clear();    
     // so I need to recalculate the MSMS surface
-    float *xyzr = new float[4* mol -> nAtoms];
-    int   * ids = new int[mol -> nAtoms];
+    float *xyzr = new float[4L*mol->nAtoms];
+    int    *ids = new int[mol->nAtoms];
     int   *flgs = NULL; // note: this is NOT ALLOCATED
     const float *aradius = mol->radius();
 
@@ -58,15 +58,15 @@ void DrawMolItem::draw_msms(float *framepos, int draw_wireframe, int allatoms, f
       float r;
       for (i=atomSel->firstsel; i <= atomSel->lastsel; i++) {
 	if (atomSel->on[i]) {
-	  xyzr[4*count+0] = framepos[3*i+0];
-	  xyzr[4*count+1] = framepos[3*i+1];
-	  xyzr[4*count+2] = framepos[3*i+2];
+	  xyzr[4L*count+0] = framepos[3L*i+0];
+	  xyzr[4L*count+1] = framepos[3L*i+1];
+	  xyzr[4L*count+2] = framepos[3L*i+2];
 
 	  r = aradius[i];
 	  if (r < 0.2f) 
             r = 0.2f; // work around an MSMS bug
 
-	  xyzr[4*count+3] = r;
+	  xyzr[4L*count+3] = r;
 	  ids[count] = i;
 	  count++;
 	}
@@ -76,15 +76,15 @@ void DrawMolItem::draw_msms(float *framepos, int draw_wireframe, int allatoms, f
       flgs = atomSel->on; // no translation is needed
       float r;
       for (i=0; i < mol->nAtoms; i++) {
-	xyzr[4*count+0] = framepos[3*i+0];
-	xyzr[4*count+1] = framepos[3*i+1];
-	xyzr[4*count+2] = framepos[3*i+2];
+	xyzr[4L*count+0] = framepos[3L*i+0];
+	xyzr[4L*count+1] = framepos[3L*i+1];
+	xyzr[4L*count+2] = framepos[3L*i+2];
 
 	r = aradius[i];
 	if (r < 0.2f) 
           r = 0.2f; // work around an MSMS bug
 
-	xyzr[4*count+3] = r;
+	xyzr[4L*count+3] = r;
 	ids[count] = i;
 	count++;
       }

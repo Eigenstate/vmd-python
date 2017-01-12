@@ -3,7 +3,7 @@
  *
  *      $RCSfile: WKFThreads.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.16 $       $Date: 2013/04/23 03:00:09 $
+ *      $Revision: 1.18 $       $Date: 2016/10/27 05:03:59 $
  *
  ***************************************************************************
  * WKFThreads.C - code for spawning threads on various platforms.
@@ -21,7 +21,7 @@
  ***************************************************************************/
 /* Tachyon copyright reproduced below */
 /*
- * Copyright (c) 1994-2013 John E. Stone
+ * Copyright (c) 1994-2016 John E. Stone
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,6 +62,12 @@
 #endif
 
 #include "WKFThreads.h"
+
+/* needed for CPU info APIs and flag macros */
+#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 1300)
+#include <emmintrin.h>
+#include <immintrin.h>
+#endif
 
 #ifdef _MSC_VER
 #if 0
@@ -212,6 +218,30 @@ int wkf_thread_numprocessors(void) {
 #endif /* WKFTHREADS */
 
   return a;
+}
+
+
+int wkf_cpu_capability_flags(wkf_cpu_caps_t *cpucaps) {
+  int flags=CPU_UNKNOWN;
+
+#if defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 1300)
+  flags = 0;
+  flags |= _may_i_use_cpu_feature(_FEATURE_SSE2)     * CPU_SSE2;
+  flags |= _may_i_use_cpu_feature(_FEATURE_AVX)      * CPU_AVX;
+  flags |= _may_i_use_cpu_feature(_FEATURE_AVX2)     * CPU_AVX2;
+  flags |= _may_i_use_cpu_feature(_FEATURE_FMA)      * CPU_FMA;
+  flags |= _may_i_use_cpu_feature(_FEATURE_AVX512F)  * CPU_AVX512F;
+  flags |= _may_i_use_cpu_feature(_FEATURE_AVX512CD) * CPU_AVX512CD;
+  flags |= _may_i_use_cpu_feature(_FEATURE_AVX512ER) * CPU_AVX512ER;
+  flags |= _may_i_use_cpu_feature(_FEATURE_AVX512PF) * CPU_AVX512PF;
+#endif
+
+  cpucaps->flags = flags;
+
+  if (flags == CPU_UNKNOWN)
+    return 1;
+
+  return 0;
 }
 
 

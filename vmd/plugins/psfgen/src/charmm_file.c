@@ -13,6 +13,7 @@
 
 int charmm_get_tokens(char **tok, int toklen,
 			char *sbuf, int sbuflen,
+			char *lbuf, int *lineno,
 			FILE *stream, int all_caps) {
 
   int ntok;
@@ -25,6 +26,14 @@ int charmm_get_tokens(char **tok, int toklen,
   while ( ! ntok ) {
     s = fgets(sbuf, sbuflen, stream);
     if ( ! s ) return 0;  /* EOF */
+    if ( lbuf ) {
+      char *l;
+      for ( s = sbuf, l = lbuf; *s; ++s, ++l ) {
+        *l = *s;
+      }
+      *l = *s;
+    }
+    if ( lineno ) ++(*lineno);
     for ( s = sbuf; *s; ++s ) {
       fullline = ( *s == '\n' );
     }

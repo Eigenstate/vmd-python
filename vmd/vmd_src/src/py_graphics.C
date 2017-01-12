@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_graphics.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.24 $       $Date: 2011/02/01 16:46:37 $
+ *      $Revision: 1.25 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -64,7 +64,11 @@ static PyObject *graphics_triangle(PyObject *self, PyObject *args) {
 
   
   int result = mol->add_triangle(arr1, arr2, arr3);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(result);
+#else
   return PyInt_FromLong(result);
+#endif
 }
 
 // trinorm: three vertices, followed by three normals
@@ -89,7 +93,11 @@ static PyObject *graphics_trinorm(PyObject *self, PyObject *args) {
     return NULL;
 
   int result = mol->add_trinorm(vert1,vert2,vert3,norm1,norm2,norm3);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(result);
+#else
   return PyInt_FromLong(result);
+#endif
 }
 
 // cylinder: require two vertices
@@ -121,7 +129,11 @@ static PyObject *graphics_cylinder(PyObject *self, PyObject *args, PyObject *key
 
   int result = mol->add_cylinder(vert1, vert2, (float)radius, resolution, 
                                  filled);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(result);
+#else
   return PyInt_FromLong(result);
+#endif
 }
 
 // point: one vertex
@@ -141,7 +153,11 @@ static PyObject *graphics_point(PyObject *self, PyObject *args) {
     return NULL;
 
   int result = mol->add_point(vert);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(result);
+#else
   return PyInt_FromLong(result);
+#endif
 }
 
 // line: two vertices
@@ -186,7 +202,11 @@ static PyObject *graphics_line(PyObject *self, PyObject *args, PyObject *keywds)
   // don't check the line width; I don't know what values different display 
   // devices will accept
   int result = mol->add_line(vert1, vert2, line_style, width);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(result);
+#else
   return PyInt_FromLong(result);
+#endif
 }
 
 // materials: this just turns materials on or off.  Takes an integer
@@ -202,7 +222,11 @@ static PyObject *graphics_materials(PyObject *self, PyObject *args) {
     return NULL;
  
   int result = mol->use_materials(onoff);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(result);
+#else
   return PyInt_FromLong(result);
+#endif
 }
 
 // material(name)
@@ -223,7 +247,11 @@ static PyObject *graphics_material(PyObject *self, PyObject *args) {
     return NULL;
   }
   int result = mol->use_material(mlist->material(matindex));
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(result);
+#else
   return PyInt_FromLong(result);
+#endif
 }
    
 // colors: Takes one argument, either a tuple of three floats, a string 
@@ -240,13 +268,23 @@ static PyObject *graphics_color(PyObject *self, PyObject *args) {
   if (!mol) 
     return NULL;
   
+#if PY_MAJOR_VERSION >= 3
+  if (PyLong_Check(obj)) {
+    int index = PyLong_AsLong(obj);
+#else
   if (PyInt_Check(obj)) {
     int index = PyInt_AsLong(obj);
+#endif
     if (index >= 0 && index < MAXCOLORS) 
       result = mol->use_color(index);
 
+#if PY_MAJOR_VERSION >= 3
+  } else if (PyBytes_Check(obj)) { 
+    char *name = PyBytes_AsString(obj);
+#else
   } else if (PyString_Check(obj)) { 
     char *name = PyString_AsString(obj);
+#endif
     VMDApp *app = get_vmdapp();
     int index = app->color_index(name);
     if (index >= 0) 
@@ -254,7 +292,11 @@ static PyObject *graphics_color(PyObject *self, PyObject *args) {
   }
 
   if (result >= 0)
+#if PY_MAJOR_VERSION >= 3
+    return PyLong_FromLong(result);
+#else
     return PyInt_FromLong(result);
+#endif
 
   PyErr_SetString(PyExc_ValueError, (char *)"Invalid color");
   return NULL;
@@ -287,7 +329,11 @@ static PyObject *graphics_cone(PyObject *self, PyObject *args, PyObject *keywds)
     return NULL;
 
   int result = mol->add_cone(vert1, vert2, (float)radius, (float)radius2, resolution);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(result);
+#else
   return PyInt_FromLong(result);
+#endif
 }
 
 // sphere: center (tuple), radius (float), resolution (integer)
@@ -320,7 +366,11 @@ static PyObject *graphics_sphere(PyObject *self, PyObject *args, PyObject *keywd
       return NULL;
   }
   int result = mol->add_sphere(arr, radius, resolution);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(result);
+#else
   return PyInt_FromLong(result);
+#endif
 }
 
 // text: requires position and string arguments
@@ -348,7 +398,11 @@ static PyObject *graphics_text(PyObject *self, PyObject *args, PyObject *keywds)
     return NULL;
 
   int result = mol->add_text(arr, text, size, 1.0f);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(result);
+#else
   return PyInt_FromLong(result);
+#endif
 }
 
 // delete: takes either an integer argument, which is the index to delete,
@@ -365,11 +419,19 @@ static PyObject *graphics_delete(PyObject *self, PyObject *args) {
   if (!mol) 
     return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  if (PyLong_Check(obj)) {
+    int index = PyLong_AsLong(obj);
+    mol->delete_id(index);
+  } else if (PyBytes_Check(obj)) {
+    char *s = PyBytes_AsString(obj);
+#else
   if (PyInt_Check(obj)) {
     int index = PyInt_AsLong(obj);
     mol->delete_id(index);
   } else if (PyString_Check(obj)) {
     char *s = PyString_AsString(obj);
+#endif
     if (!strcmp(s, "all")) 
       mol->delete_all();
     else {
@@ -418,7 +480,11 @@ static PyObject *graphics_info(PyObject *self, PyObject *args) {
     return NULL;
   } 
   const char *info = mol->info_id(index);
+#if PY_MAJOR_VERSION >= 3
+  return PyUnicode_FromString(info);
+#else
   return PyString_FromString(info);
+#endif
 }
  
 // list: return a list of the valid graphics objects
@@ -437,7 +503,11 @@ static PyObject *graphics_listall(PyObject *self, PyObject *args) {
   for (int i=0; i<num; i++) {
     int index = mol->element_id(i);
     if (index >= 0) {
+#if PY_MAJOR_VERSION >= 3
+      if (PyList_Append(newlist, PyLong_FromLong(index)) < 0)  
+#else
       if (PyList_Append(newlist, PyInt_FromLong(index)) < 0)  
+#endif
         return NULL;
     }
   }
@@ -461,10 +531,25 @@ static PyMethodDef GraphicsMethods[] = {
   {(char *)"replace",(vmdPyMethod)graphics_replace,METH_VARARGS},
   {(char *)"info",(vmdPyMethod)graphics_info,METH_VARARGS},
   {(char *)"listall",(vmdPyMethod)graphics_listall,METH_VARARGS},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef graphicsdef = {
+    PyModuleDef_HEAD_INIT,
+    "graphics",
+    NULL,
+    -1,
+    GraphicsMethods,
+    NULL, NULL, NULL, NULL
+};
+
+PyMODINIT_FUNC PyInit_graphics(void) {
+    PyObject *m = PyModule_Create(&graphicsdef);
+    return m;
+}
+#else
 void initgraphics() {
   (void) Py_InitModule((char *)"graphics", GraphicsMethods);
 }
- 
+#endif

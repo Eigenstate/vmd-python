@@ -10,8 +10,8 @@
 # RCS INFORMATION:
 #
 # 	$RCSfile: loadplugins.tcl,v $
-# 	$Author: ryanmcgreevy $	$Locker:  $		$State: Exp $
-#	$Revision: 1.48 $	$Date: 2015/04/10 21:49:38 $
+# 	$Author: johns $	$Locker:  $		$State: Exp $
+#	$Revision: 1.52 $	$Date: 2016/11/21 23:07:07 $
 #
 ############################################################################
 # DESCRIPTION:
@@ -164,10 +164,10 @@ proc vmd_load_extension_packages {} {
  
 
   ### BioCoRE menu 
-  vmd_install_extension biocorelogin   biocorelogin_tk_cb   "BioCoRE/Login"
-  vmd_install_extension biocorechat    biocorechat_tk_cb    "BioCoRE/Chat"
-  vmd_install_extension biocorepubsync biocorepubsync_tk_cb "BioCoRE/Share VMD Views"
-  vmd_install_extension biocoreutil    biocoreutil_tk       "BioCoRE/Utilities"
+#  vmd_install_extension biocorelogin   biocorelogin_tk_cb   "BioCoRE/Login"
+#  vmd_install_extension biocorechat    biocorechat_tk_cb    "BioCoRE/Chat"
+#  vmd_install_extension biocorepubsync biocorepubsync_tk_cb "BioCoRE/Share VMD Views"
+#  vmd_install_extension biocoreutil    biocoreutil_tk       "BioCoRE/Utilities"
 
   ### Data menu
   vmd_install_extension dataimport dataimport_tk   "Data/Data Import"
@@ -197,9 +197,11 @@ proc vmd_load_extension_packages {} {
 #  vmd_install_extension paratool paratool_tk_cb "Modeling/Parameterization Tool"
 
   ### Simulation menu
+  vmd_install_extension alascan  alascan_tk   "Simulation/Alanine Scan Calculation"
   vmd_install_extension autoimd  autoimd_tk   "Simulation/AutoIMD (NAMD)"
   vmd_install_extension imdmenu  imdmenu_tk   "Simulation/IMD Connect (NAMD)" imd
   vmd_install_extension namdgui  namdgui_tk   "Simulation/NAMD Graphical Interface"
+  vmd_install_extension qwikmd   qwikmd       "Simulation/QwikMD"
   vmd_install_extension qmtool   qmtool_tk_cb "Simulation/QMTool" 
 
 

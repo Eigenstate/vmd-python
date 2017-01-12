@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_molecule.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.68 $       $Date: 2010/12/16 04:08:57 $
+ *      $Revision: 1.69 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -37,7 +37,11 @@ static PyObject *mol_num(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, (char *)":molecule.num"))
     return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(get_vmdapp()->num_molecules());
+#else
   return PyInt_FromLong(get_vmdapp()->num_molecules());
+#endif
 }
 
 static char mol_listall_doc[] =
@@ -51,7 +55,11 @@ static PyObject *mol_listall(PyObject *self, PyObject *args) {
   int num = app->num_molecules();
   PyObject *newlist = PyList_New(num);
   for (int i=0; i<num; i++)
+#if PY_MAJOR_VERSION >= 3
+    PyList_SET_ITEM(newlist, i, PyLong_FromLong(app->molecule_id(i)));
+#else
     PyList_SET_ITEM(newlist, i, PyInt_FromLong(app->molecule_id(i)));
+#endif
 
   return newlist;
 }
@@ -64,7 +72,11 @@ static PyObject *mol_exists(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, (char *)"i:molecule.exists", &molid))
     return NULL;
   VMDApp *app = get_vmdapp();
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->molecule_valid_id(molid));
+#else
   return PyInt_FromLong(app->molecule_valid_id(molid));
+#endif
 }
 
 static char mol_name_doc[] = 
@@ -82,7 +94,11 @@ static PyObject *mol_name(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyUnicode_FromString((char *)name);
+#else
   return PyString_FromString((char *)name);
+#endif
 }
 
 static char mol_numatoms_doc[] = 
@@ -100,7 +116,11 @@ static PyObject *mol_numatoms(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->molecule_numatoms(molid));
+#else
   return PyInt_FromLong(app->molecule_numatoms(molid));
+#endif
 }
 
 static char mol_new_doc[] = 
@@ -118,7 +138,11 @@ static PyObject *mol_new(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Unable to create molecule.");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(molid);
+#else
   return PyInt_FromLong(molid);
+#endif
 }
 
 static char mol_load_doc[] = 
@@ -166,7 +190,11 @@ static PyObject *mol_load(PyObject *self, PyObject *args, PyObject *keywds) {
 
   // Special-case graphics molecules to load as "blank" molecules
   if (!strcmp(structure, "graphics")) {
+#if PY_MAJOR_VERSION >= 3
+    return PyLong_FromLong(app->molecule_new(sfname,0));
+#else
     return PyInt_FromLong(app->molecule_new(sfname,0));
+#endif
   }
   FileSpec spec;
   spec.waitfor=-1; // load all frames at once by default
@@ -178,7 +206,11 @@ static PyObject *mol_load(PyObject *self, PyObject *args, PyObject *keywds) {
   if (cfname) {
     app->molecule_load(molid, cfname, coor, &spec);
   } 
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(molid); 
+#else
   return PyInt_FromLong(molid); 
+#endif
 }
 
 static char mol_cancel_doc[] =
@@ -227,7 +259,11 @@ static PyObject *get_top(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, (char *)":molecule.get_top"))
     return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(get_vmdapp()->molecule_top());
+#else
   return PyInt_FromLong(get_vmdapp()->molecule_top());
+#endif
 }
 
 static char set_top_doc[] =
@@ -283,7 +319,11 @@ static PyObject *readorwrite(PyObject *self, PyObject *args, PyObject *keywds,
       spec.nvolsets = PyList_Size(volsets);
       spec.setids = new int[spec.nvolsets];
       for (int i=0; i<spec.nvolsets; i++) 
+#if PY_MAJOR_VERSION >= 3
+        spec.setids[i] = PyLong_AsLong(PyList_GET_ITEM(volsets, i));
+#else
         spec.setids[i] = PyInt_AsLong(PyList_GET_ITEM(volsets, i));
+#endif
       if (PyErr_Occurred()) return NULL;
     } else {
       // Have a default of {0} for setids so that it isn't always necessary
@@ -293,7 +333,11 @@ static PyObject *readorwrite(PyObject *self, PyObject *args, PyObject *keywds,
       spec.setids = new int[1];
       spec.setids[0] = 0;
     }
+#if PY_MAJOR_VERSION >= 3
+    return PyLong_FromLong(app->molecule_load(molid, filename, type, &spec));
+#else
     return PyInt_FromLong(app->molecule_load(molid, filename, type, &spec));
+#endif
   }
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
@@ -320,7 +364,11 @@ static PyObject *readorwrite(PyObject *self, PyObject *args, PyObject *keywds,
     PyErr_SetString(PyExc_ValueError, (char *)"Unable to save file");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(numframes);
+#else
   return PyInt_FromLong(numframes);
+#endif
 }
 
 static char mol_read_doc[] =
@@ -366,7 +414,11 @@ static PyObject *numframes(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->molecule_numframes(molid));
+#else
   return PyInt_FromLong(app->molecule_numframes(molid));
+#endif
 }
 
 static char get_frame_doc[] =
@@ -382,7 +434,11 @@ static PyObject *get_frame(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->molecule_frame(molid));
+#else
   return PyInt_FromLong(app->molecule_frame(molid));
+#endif
 }
 
 static char set_frame_doc[] =
@@ -621,7 +677,11 @@ static PyObject *get_filenames(PyObject *self, PyObject *args) {
   int num = mol->num_files();
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
+#if PY_MAJOR_VERSION >= 3
+    PyList_SET_ITEM(result, i, PyBytes_FromString(mol->get_file(i)));
+#else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_file(i)));
+#endif
   }
   return result;
 }
@@ -639,7 +699,11 @@ static PyObject *get_filetypes(PyObject *self, PyObject *args) {
   int num = mol->num_files();
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
+#if PY_MAJOR_VERSION >= 3
+    PyList_SET_ITEM(result, i, PyBytes_FromString(mol->get_type(i)));
+#else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_type(i)));
+#endif
   }
   return result;
 }
@@ -657,7 +721,11 @@ static PyObject *get_databases(PyObject *self, PyObject *args) {
   int num = mol->num_files();
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
+#if PY_MAJOR_VERSION >= 3
+    PyList_SET_ITEM(result, i, PyBytes_FromString(mol->get_database(i)));
+#else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_database(i)));
+#endif
   }
   return result;
 }
@@ -675,7 +743,11 @@ static PyObject *get_accessions(PyObject *self, PyObject *args) {
   int num = mol->num_files();
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
+#if PY_MAJOR_VERSION >= 3
+    PyList_SET_ITEM(result, i, PyBytes_FromString(mol->get_accession(i)));
+#else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_accession(i)));
+#endif
   }
   return result;
 }
@@ -693,7 +765,11 @@ static PyObject *get_remarks(PyObject *self, PyObject *args) {
   int num = mol->num_files();
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
+#if PY_MAJOR_VERSION >= 3
+    PyList_SET_ITEM(result, i, PyBytes_FromString(mol->get_remarks(i)));
+#else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_remarks(i)));
+#endif
   }
   return result;
 }
@@ -765,7 +841,7 @@ static char set_visible_doc[] =
 
 static PyObject *get_visible(PyObject *self, PyObject *args, PyObject *kwds) {
   int molid = -1;
-  static char *kwlist[] = { "molid", NULL };
+  static char *kwlist[] = { (char*)"molid", NULL };
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i", kwlist, &molid))
     return NULL;
   VMDApp *app = get_vmdapp();
@@ -781,7 +857,7 @@ static PyObject *set_visible(PyObject *self, PyObject *args, PyObject *kwds) {
   int molid = -1;
   PyObject *obj=NULL;
 
-  static char *kwlist[] = { "molid", "state", NULL };
+  static char *kwlist[] = { (char*)"molid", (char*)"state", NULL };
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "iO", kwlist, &molid, &obj))
     return NULL;
   VMDApp *app = get_vmdapp();
@@ -799,7 +875,7 @@ static PyObject *set_visible(PyObject *self, PyObject *args, PyObject *kwds) {
 static PyObject *get_physical_time(PyObject *self, PyObject *args, PyObject *kwds) {
   int molid = -1;
   int frame = -1;
-  static char *kwlist[] = { "molid", "frame", NULL };
+  static char *kwlist[] = { (char*)"molid", (char*)"frame", NULL };
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii", kwlist, &molid, &frame))
     return NULL;
   Timestep *ts = parse_timestep(get_vmdapp(), molid, frame);
@@ -811,7 +887,7 @@ static PyObject *set_physical_time(PyObject *self, PyObject *args, PyObject *kwd
   int molid = -1;
   int frame = -1;
   double value;
-  static char *kwlist[] = { "value", "molid", "frame", NULL };
+  static char *kwlist[] = { (char*)"value", (char*)"molid", (char*)"frame", NULL };
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "d|ii", kwlist, &value, &molid, &frame))
     return NULL;
   Timestep *ts = parse_timestep(get_vmdapp(), molid, frame);
@@ -856,10 +932,26 @@ static PyMethodDef MolMethods[] = {
   {(char *)"set_visible", (PyCFunction)set_visible, METH_VARARGS | METH_KEYWORDS, set_visible_doc},
   {(char *)"get_physical_time", (PyCFunction)get_physical_time, METH_VARARGS | METH_KEYWORDS },
   {(char *)"set_physical_time", (PyCFunction)set_physical_time, METH_VARARGS | METH_KEYWORDS },
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moleculedef = {
+    PyModuleDef_HEAD_INIT,
+    "molecule",
+    NULL,
+    -1,
+    MolMethods,
+    NULL, NULL, NULL, NULL
+};
+
+PyMODINIT_FUNC PyInit_molecule(void) {
+    PyObject *module = PyModule_Create(&moleculedef);
+    return module;
+}
+#else
 void initmolecule() {
   (void) Py_InitModule((char *)"molecule", MolMethods);
 }
+#endif
 

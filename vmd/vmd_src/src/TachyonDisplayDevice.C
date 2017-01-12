@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
 *
 *      $RCSfile: TachyonDisplayDevice.C,v $
 *      $Author: johns $        $Locker:  $               $State: Exp $
-*      $Revision: 1.125 $        $Date: 2014/12/05 21:53:43 $
+*      $Revision: 1.126 $        $Date: 2016/11/28 03:05:05 $
 *
 ***************************************************************************
 * DESCRIPTION:

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Molecule.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.89 $	$Date: 2015/05/04 03:34:46 $
+ *	$Revision: 1.91 $	$Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -139,7 +139,7 @@ int Molecule::get_new_frames() {
     // Clear old forces out of the timestep
     Timestep *ts = current();
     if (ts && ts->force) {
-      memset(ts->force, 0, 3*nAtoms*sizeof(float));
+      memset(ts->force, 0, 3L*nAtoms*sizeof(float));
     }
 
     // Check for atoms forced last time that didn't show up this time.
@@ -180,14 +180,14 @@ int Molecule::get_new_frames() {
     if (forcecnt) {
       if (ts) {
         if (!ts->force) {
-          ts->force = new float[3*nAtoms];
-          memset(ts->force, 0, 3*nAtoms*sizeof(float));
+          ts->force = new float[3L*nAtoms];
+          memset(ts->force, 0, 3L*nAtoms*sizeof(float));
         }
         for (int i=0; i<forcecnt; i++) {
           int ind = force_indices[i];
-          ts->force[3*ind  ] += force_vectors[3*i  ];
-          ts->force[3*ind+1] += force_vectors[3*i+1];
-          ts->force[3*ind+2] += force_vectors[3*i+2];
+          ts->force[3L*ind  ] += force_vectors[3L*i  ];
+          ts->force[3L*ind+1] += force_vectors[3L*i+1];
+          ts->force[3L*ind+2] += force_vectors[3L*i+2];
         }
       }
       // XXX If we send multiple forces for the same atom, NAMD will keep only
@@ -197,7 +197,7 @@ int Molecule::get_new_frames() {
       int i;
       for (i=0; i<forcecnt; i++) {
         int ind = force_indices[i];
-        summed_forces.append3(&ts->force[3*ind]);
+        summed_forces.append3(&ts->force[3L*ind]);
       }
       app->imd_sendforces(forcecnt, &(force_indices[0]), &(summed_forces[0]));
 
@@ -268,16 +268,16 @@ void Molecule::addPersistentForce(int theatom, const float *f) {
   } else {
     if (mag2 > 0) {
       reset_disp_list();
-      for (int i=0; i<3; i++) persistent_force_vectors[3*ind+i] = f[i];
+      for (int i=0; i<3; i++) persistent_force_vectors[3L*ind+i] = f[i];
     } else {
       // remove the persistent force (a zero will be sent automatically!)
       persistent_force_indices.remove(ind);
 
       // remove same index three times since this is a ResizeArray 
       // and it will shift elements down as they are removed...
-      persistent_force_vectors.remove(3*ind);
-      persistent_force_vectors.remove(3*ind);
-      persistent_force_vectors.remove(3*ind);
+      persistent_force_vectors.remove(3L*ind);
+      persistent_force_vectors.remove(3L*ind);
+      persistent_force_vectors.remove(3L*ind);
     }
   }
 }

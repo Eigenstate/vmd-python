@@ -6,6 +6,7 @@ from distutils.command.build import build as DistutilsBuild
 from distutils.command.install import install as DistutilsInstall
 from distutils.cmd import Command
 from subprocess import check_call
+from glob import glob
 import platform
 import os
 import site
@@ -33,7 +34,7 @@ class VMDBuild(DistutilsBuild):
         self.execute(self.compile, [], msg="Compiling VMD")
         # Run original build code
         DistutilsBuild.run(self)
-        
+
     #==========================================================================
 
     def compile(self):
@@ -87,8 +88,15 @@ class VMDBuild(DistutilsBuild):
         os.environ["TCL_INCLUDE_DIR"] ="%s/include" % pydir
         os.environ["PYTHON_LIBRARY_DIR"] = sysconfig.get_python_lib()
         os.environ["PYTHON_INCLUDE_DIR"] = sysconfig.get_python_inc()
+
+        # Get python linker flag
+        libs = glob(os.path.join(pydir, "lib",
+                                 "libpython%s*.so" % sysconfig.get_python_version()))
+        libs = sorted(libs, key=lambda x: len(x))
+        pythonldflag = libs[-1].split('/')[-1].replace("lib","-l").replace(".so","")
         os.environ["VMDEXTRALIBS"] = " ".join([os.environ["SQLITELDFLAGS"],
-                                               os.environ["EXPATLDFLAGS"]])
+                                               os.environ["EXPATLDFLAGS"],
+                                               pythonldflag])
 
     #==========================================================================
 
@@ -154,7 +162,7 @@ class VMDTest(Command):
 ###############################################################################
 
 setup(name='vmd-python',
-      version='1.9.2a2',
+      version='1.9.3',
       description='Visual Molecular Dynamics Python module',
       author='Robin Betz',
       author_email='robin@robinbetz.com',

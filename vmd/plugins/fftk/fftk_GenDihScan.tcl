@@ -1,5 +1,5 @@
 #
-# $Id: fftk_GenDihScan.tcl,v 1.9 2014/08/26 17:51:14 mayne Exp $
+# $Id: fftk_GenDihScan.tcl,v 1.11 2016/10/20 16:43:04 mayne Exp $
 #
 
 #======================================================
@@ -17,7 +17,7 @@ namespace eval ::ForceFieldToolKit::GenDihScan {
 }
 #======================================================
 proc ::ForceFieldToolKit::GenDihScan::init {} {
-    
+
     # localize variables
     variable psf
     variable pdb
@@ -28,7 +28,7 @@ proc ::ForceFieldToolKit::GenDihScan::init {} {
     variable qmMem
     variable qmMult
     variable qmRoute
-    
+
     variable dihData
 
     # set variables
@@ -42,16 +42,16 @@ proc ::ForceFieldToolKit::GenDihScan::init {} {
     #set qmMem 1
     #set qmMult 1
     #set qmRoute "# opt=modredundant MP2/6-31g(d)"
-    
+
     set dihData {}
 }
 #======================================================
 proc ::ForceFieldToolKit::GenDihScan::sanityCheck {} {
     # checks to see that the appropriate information is set prior to running
-    
+
     # returns 1 if all input is sane
     # returns 0 if there is a problem
-    
+
     # localize relevant variables
     variable psf
     variable pdb
@@ -63,11 +63,11 @@ proc ::ForceFieldToolKit::GenDihScan::sanityCheck {} {
     variable qmMult
     variable qmRoute
     variable dihData
-    
+
     # local variables
     set errorList {}
     set errorText ""
-    
+
     # checks
     # psf
     if { $psf eq "" } {
@@ -75,7 +75,7 @@ proc ::ForceFieldToolKit::GenDihScan::sanityCheck {} {
     } else {
         if { ![file exists $psf] } { lappend errorList "Cannot find PSF file." }
     }
-    
+
     # pdb
     if { $pdb eq "" } {
         lappend errorList "No PDB file was specified."
@@ -89,7 +89,7 @@ proc ::ForceFieldToolKit::GenDihScan::sanityCheck {} {
     } else {
         if { ![file writable $outPath] } { lappend errorList "Cannot write to output path." }
     }
-    
+
     # make sure that basename is not empty
     if { $basename eq "" } { lappend errorList "No basename was specified." }
 
@@ -109,7 +109,7 @@ proc ::ForceFieldToolKit::GenDihScan::sanityCheck {} {
             if { [lindex $ele 2] <= 0 || ![string is double [lindex $ele 2]] } { lappend errorList "Found inappropriate dihedral step size." }
         }
     }
-    
+
     # validate gaussian settings (not particularly vigorous validation)
     # qmProc (processors)
     if { $qmProc eq "" } { lappend errorList "No processors were specified." }
@@ -138,7 +138,7 @@ proc ::ForceFieldToolKit::GenDihScan::sanityCheck {} {
             -icon warning \
             -message "Application halting due to the following errors:" \
             -detail $errorText
-        
+
         # there are errors, return the error response
         return 0
     }
@@ -149,7 +149,7 @@ proc ::ForceFieldToolKit::GenDihScan::sanityCheck {} {
 #======================================================
 proc ::ForceFieldToolKit::GenDihScan::buildGaussianFiles {} {
     # builds gaussian input files for scanning dihedral angles
-    
+
     # localize variables
     variable psf
     variable pdb
@@ -160,9 +160,9 @@ proc ::ForceFieldToolKit::GenDihScan::buildGaussianFiles {} {
     variable qmMem
     variable qmMult
     variable qmRoute
-    
+
     variable dihData
-    
+
     # run an input sanity check
     if { ![::ForceFieldToolKit::GenDihScan::sanityCheck] } { return }
 
@@ -176,7 +176,7 @@ proc ::ForceFieldToolKit::GenDihScan::buildGaussianFiles {} {
         lappend Gnames [$temp get element][expr $i+1]
         $temp delete
     }
-    
+
     # cycle through each dihedral to scan
     set scanCount 1
     foreach dih $dihData {
@@ -186,11 +186,11 @@ proc ::ForceFieldToolKit::GenDihScan::buildGaussianFiles {} {
         foreach ind $zeroInds {
             lappend oneInds [expr {$ind + 1}]
         }
-        
+
         # negative scan
         # open the output file
         set outfile [open ${outPath}/${basename}.scan${scanCount}.neg.gau w]
-        
+
         # write the header
         puts $outfile "%chk=${basename}.scan${scanCount}.neg.chk"
         puts $outfile "%nproc=$qmProc"
@@ -207,13 +207,13 @@ proc ::ForceFieldToolKit::GenDihScan::buildGaussianFiles {} {
        # write scan
        puts $outfile ""
        puts $outfile "D $oneInds S [expr int([expr [lindex $dih 1]/[lindex $dih 2]])] [format "%.6f" [expr {-1*[lindex $dih 2]}]]"
-       
+
        close $outfile
-       
+
        # positive scan
         # open the output file
         set outfile [open ${outPath}/${basename}.scan${scanCount}.pos.gau w]
-        
+
         # write the header
         puts $outfile "%chk=${basename}.scan${scanCount}.pos.chk"
         puts $outfile "%nproc=$qmProc"
@@ -230,13 +230,13 @@ proc ::ForceFieldToolKit::GenDihScan::buildGaussianFiles {} {
        # write scan
        puts $outfile ""
        puts $outfile "D $oneInds S [expr int([expr [lindex $dih 1]/[lindex $dih 2]])] [format "%.6f" [lindex $dih 2]]"
-       
-       close $outfile    
-       
+
+       close $outfile
+
        incr scanCount
-        
+
     }
-    
+
     # clean up
     mol delete top
 }
@@ -281,7 +281,7 @@ namespace eval ::ForceFieldToolKit::GenDihScan::TorExplor {
     variable plotAutoscaling 1
     variable plotData
     variable plotMax
-    
+
     # Color
     variable colorList { red orange green blue magenta purple \
                          pink orange3 lime cyan2 magenta2 mauve \
@@ -312,7 +312,7 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::launchGUI {} {
 
     # style setup
     set vbuttonPadX 5; # vertically aligned std buttons
-    set vbuttonPadY 0 
+    set vbuttonPadY 0
     set hbuttonPadX "5 0"; # horzontally aligned std buttons
     set hbuttonPadY 0
     set entryPadX 0; # single line entry
@@ -374,12 +374,12 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::launchGUI {} {
     wm geometry $w 1400x700
 
     # clean up after yourself when the gui is destroyed
-    bind $w <Destroy> { 
+    bind $w <Destroy> {
         # delete the molecule, if we loaded anything and it still exists
         if { $::ForceFieldToolKit::GenDihScan::TorExplor::molid != -1 && [lsearch [molinfo list] $::ForceFieldToolKit::GenDihScan::TorExplor::molid] != -1 } {
                 mol delete $::ForceFieldToolKit::GenDihScan::TorExplor::molid
             }
-        
+
         # deleting the molecule should trigger the molidCleanupCallback, which deregisters both itself and the frameChangeCallback
         # but to be super cautious, let's search for them and deregister them if they are found
         # molidCleanUpCallback
@@ -407,14 +407,14 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::launchGUI {} {
     ttk::button $w.hlf.inp.psfbrowse -text "Browse" \
         -command {
             set tempfile [tk_getOpenFile -title "Select a PSF File" -filetypes $::ForceFieldToolKit::GenDihScan::TorExplor::psfType]
-            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenDihScan::TorExplor::psf $tempfile }        
+            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenDihScan::TorExplor::psf $tempfile }
         }
 
     ttk::label $w.hlf.inp.pdblbl -text "PDB File:"
     ttk::entry $w.hlf.inp.pdbentry -textvariable ::ForceFieldToolKit::GenDihScan::TorExplor::pdb -width 40
     ttk::button $w.hlf.inp.pdbbrowse -text "Browse" -command {
             set tempfile [tk_getOpenFile -title "Select a PDB File" -filetypes $::ForceFieldToolKit::GenDihScan::TorExplor::pdbType]
-            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenDihScan::TorExplor::pdb $tempfile }        
+            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenDihScan::TorExplor::pdb $tempfile }
         }
 
     ttk::label $w.hlf.inp.loglbl -text "Log Files:"
@@ -434,17 +434,46 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::launchGUI {} {
             if {![string eq $tempfile ""]} { .torexplor.hlf.inp.logtv insert {} end -values [list [file tail $tempfile] $tempfile] }
         }
     }
+    ttk::button $w.hlf.inp.logbuttons.moveUp -text "Move $upArrow" \
+        -command {
+            # ID of current
+            set currentID [.torexplor.hlf.inp.logtv selection]
+            # ID of previous
+            if {[set previousID [.torexplor.hlf.inp.logtv prev $currentID ]] ne ""} {
+                # Index of previous
+                set previousIndex [.torexplor.hlf.inp.logtv index $previousID]
+                # Move ahead of previous
+                .torexplor.hlf.inp.logtv move $currentID {} $previousIndex
+                unset previousIndex
+            }
+            unset currentID previousID
+        }
+    ttk::button $w.hlf.inp.logbuttons.moveDown -text "Move $downArrow" \
+        -command {
+            # ID of current
+            set currentID [.torexplor.hlf.inp.logtv selection]
+            # ID of Next
+            if {[set previousID [.torexplor.hlf.inp.logtv next $currentID ]] ne ""} {
+                # Index of Next
+                set previousIndex [.torexplor.hlf.inp.logtv index $previousID]
+                # Move below next
+                .torexplor.hlf.inp.logtv move $currentID {} $previousIndex
+                unset previousIndex
+            }
+            unset currentID previousID
+        }
+    ttk::separator $w.hlf.inp.logbuttons.sep1 -orient horizontal
     ttk::button $w.hlf.inp.logbuttons.del -text "Delete" -command { .torexplor.hlf.inp.logtv delete [.torexplor.hlf.inp.logtv selection] }
     ttk::button $w.hlf.inp.logbuttons.clear -text "Clear" -command { .torexplor.hlf.inp.logtv delete [.torexplor.hlf.inp.logtv children {}] }
 
-    ttk::separator $w.hlf.inp.logbuttons.sep -orient horizontal
+    ttk::separator $w.hlf.inp.logbuttons.sep2 -orient horizontal
     ttk::button $w.hlf.inp.logbuttons.load -text "   Load   " \
         -command {
             .torexplor.hlf.inp.logbuttons.load configure -text "Loading..."
             .torexplor.hlf.inp.logbuttons.load configure -state disabled
             update idletasks
             set loglist {}
-            foreach ele [.torexplor.hlf.inp.logtv children {}] { lappend loglist [lindex [.torexplor.hlf.inp.logtv item $ele -values] end] } 
+            foreach ele [.torexplor.hlf.inp.logtv children {}] { lappend loglist [lindex [.torexplor.hlf.inp.logtv item $ele -values] end] }
             ::ForceFieldToolKit::GenDihScan::TorExplor::setup $loglist
             .torexplor.hlf.inp.logbuttons.load configure -text "Load"
             .torexplor.hlf.inp.logbuttons.load configure -state normal
@@ -453,7 +482,7 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::launchGUI {} {
 
     # GRID
     grid $w.hlf.inp -column 0 -row 0 -sticky nswe
-            
+
     grid $w.hlf.inp.psflbl    -column 0 -row 0 -sticky nsw
     grid $w.hlf.inp.psfentry  -column 1 -row 0 -sticky nswe -padx $entryPadX   -pady $entryPadY  -columnspan 2
     grid $w.hlf.inp.psfbrowse -column 3 -row 0 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
@@ -463,15 +492,18 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::launchGUI {} {
     grid $w.hlf.inp.pdbbrowse -column 3 -row 1 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
 
     grid $w.hlf.inp.loglbl      -column 0 -row 2 -sticky nsw
-    grid $w.hlf.inp.logtv       -column 0 -row 3 -sticky nswe -columnspan 2 -rowspan 4
-    grid $w.hlf.inp.logtvScroll -column 2 -row 3 -sticky nswe               -rowspan 4
+    grid $w.hlf.inp.logtv       -column 0 -row 3 -sticky nswe -columnspan 2 -rowspan 5
+    grid $w.hlf.inp.logtvScroll -column 2 -row 3 -sticky nswe               -rowspan 5
 
-    grid $w.hlf.inp.logbuttons       -column 3 -row 3 -sticky nwe
-    grid $w.hlf.inp.logbuttons.add   -column 0 -row 0 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    grid $w.hlf.inp.logbuttons.del   -column 0 -row 1 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    grid $w.hlf.inp.logbuttons.clear -column 0 -row 2 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    grid $w.hlf.inp.logbuttons.sep   -column 0 -row 3 -sticky nswe -padx $hsepPadX    -pady $hsepPadY
-    grid $w.hlf.inp.logbuttons.load  -column 0 -row 4 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
+    grid $w.hlf.inp.logbuttons          -column 3 -row 3 -sticky nwe
+    grid $w.hlf.inp.logbuttons.add      -column 0 -row 0 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
+    grid $w.hlf.inp.logbuttons.moveUp   -column 0 -row 1 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
+    grid $w.hlf.inp.logbuttons.moveDown -column 0 -row 2 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
+    grid $w.hlf.inp.logbuttons.sep1     -column 0 -row 3 -sticky nswe -padx $hsepPadX    -pady $hsepPadY
+    grid $w.hlf.inp.logbuttons.del      -column 0 -row 4 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
+    grid $w.hlf.inp.logbuttons.clear    -column 0 -row 5 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
+    grid $w.hlf.inp.logbuttons.sep2     -column 0 -row 6 -sticky nswe -padx $hsepPadX    -pady $hsepPadY
+    grid $w.hlf.inp.logbuttons.load     -column 0 -row 7 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
 
     # dihedral analysis
     # BUILD
@@ -592,7 +624,7 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::launchGUI {} {
         -command {
             incr ::ForceFieldToolKit::GenDihScan::TorExplor::ptSize
             ::ForceFieldToolKit::GenDihScan::TorExplor::adjustPointSize $::ForceFieldToolKit::GenDihScan::TorExplor::ptSize
-        } 
+        }
     ttk::separator $w.hlf.plot.controls.ptln.vsep -orient vertical
     ttk::label $w.hlf.plot.controls.ptln.lnlbl -text "Line Width:" -anchor w
     ttk::button $w.hlf.plot.controls.ptln.lndecr -text "-" -width 0 \
@@ -601,13 +633,13 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::launchGUI {} {
                 incr ::ForceFieldToolKit::GenDihScan::TorExplor::lnSize -1
                 ::ForceFieldToolKit::GenDihScan::TorExplor::adjustLineSize $::ForceFieldToolKit::GenDihScan::TorExplor::lnSize
             }
-        } 
+        }
     ttk::label $w.hlf.plot.controls.ptln.lnsize  -textvariable ::ForceFieldToolKit::GenDihScan::TorExplor::lnSize -width 2 -anchor center
     ttk::button $w.hlf.plot.controls.ptln.lnincr -text "+" -width 0 \
         -command {
             incr ::ForceFieldToolKit::GenDihScan::TorExplor::lnSize
             ::ForceFieldToolKit::GenDihScan::TorExplor::adjustLineSize $::ForceFieldToolKit::GenDihScan::TorExplor::lnSize
-        } 
+        }
 
     # GRID
     grid $w.hlf.plot          -column 1 -row 0 -sticky nswe -rowspan 2
@@ -678,7 +710,7 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::setup {logList} {
     # gather data
     set logData {}
     foreach log $logList {
-        set parseResults [eval ::ForceFieldToolKit::GenDihScan::TorExplor::readLog $log]
+        set parseResults [eval ::ForceFieldToolKit::GenDihScan::TorExplor::readLog [list $log]] ; # note: 'list' is required to protect file paths with spaces
         if { [llength $parseResults] == 3 } { lappend logData $parseResults }
     }
 
@@ -711,7 +743,7 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::setup {logList} {
 
     # replace the original log data with the new combined data
     set logData $combData; unset combData
-    
+
     # find global min
     set globalMin  Inf
     set globalMax -Inf
@@ -799,7 +831,7 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::setup {logList} {
         .torexplor.hlf.plot.controls.sliders.yMin configure -value 0
         .torexplor.hlf.plot.controls.sliders.yMax configure -value $plotMax
     }
-    
+
     # refresh plot
     eval ::ForceFieldToolKit::GenDihScan::TorExplor::plotData
 
@@ -818,7 +850,7 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::readLog {log} {
     #   {
     #    ind_def (0-based)
     #    {step energies}
-    #    {step coordinates} 
+    #    {step coordinates}
     #   }
 
     # initialize some variables
@@ -969,7 +1001,7 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::slopeAnalysis {} {
         # cycle through trajectory
         set f_prev -1; set d_prev ""
         set f 0; set d [expr {abs([measure dihed $ele frame $f])}]
-        
+
         for {set f_next 1} {$f_next < $numframes} {incr f_next} {
             # measure dihedral and compute change in dihedral
             set d_next [expr {abs([measure dihed $ele frame $f_next])}]
@@ -1096,7 +1128,7 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::frameChangeCallback {args} {
     set scanIndsData $scanIndsArr($f)
     set currInds  [lindex $scanIndsData 0]
     set currColor [lindex $scanIndsData 1]
-    
+
     set tempRepID [mol repindex $molid $repNameScanInds]
 
     # test for missing rep or if rep needs updating

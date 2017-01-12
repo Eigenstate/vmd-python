@@ -48,7 +48,7 @@ class MoleculeTestCase(unittest.TestCase):
 
   def testRepStr(self):
     for rep in self.mol1.reps():
-      print rep
+      print(rep)
   
   def testFiles(self):
     m=Molecule()

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: TclTextInterp.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.116 $      $Date: 2014/12/18 05:01:45 $
+ *      $Revision: 1.117 $      $Date: 2016/11/28 03:05:05 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -276,9 +276,9 @@ void TclTextInterp::doInit() {
   if (vmddir == NULL) {
     msgErr << "VMDDIR undefined, startup failure likely." << sendmsg;
 #if defined(_MSC_VER)
-    vmddir = "";
+    vmddir = "c:/program files/university of illinois/vmd";
 #else
-    vmddir = "";
+    vmddir = "/usr/local/lib/vmd";
 #endif
     startuperror = 1;
   } 

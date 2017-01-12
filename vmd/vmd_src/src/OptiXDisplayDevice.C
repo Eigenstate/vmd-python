@@ -11,7 +11,7 @@
 *
 *      $RCSfile: OptiXDisplayDevice.C
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.60 $         $Date: 2015/05/24 02:51:33 $
+*      $Revision: 1.66 $         $Date: 2016/11/04 06:12:40 $
 *
 ***************************************************************************
 * DESCRIPTION:
@@ -24,6 +24,23 @@
 *   UltraVis'13: Proceedings of the 8th International Workshop on
 *   Ultrascale Visualization, pp. 6:1-6:8, 2013.
 *   http://dx.doi.org/10.1145/2535571.2535595
+*
+*  "Atomic Detail Visualization of Photosynthetic Membranes with 
+*   GPU-Accelerated Ray Tracing"
+*   John E. Stone, Melih Sener, Kirby L. Vandivort, Angela Barragan, 
+*   Abhishek Singharoy, Ivan Teo, João V. Ribeiro, Barry Isralewitz, 
+*   Bo Liu, Boon Chong Goh, James C. Phillips, Craig MacGregor-Chatwin, 
+*   Matthew P. Johnson, Lena F. Kourkoutis, C. Neil Hunter, and Klaus Schulten
+*   J. Parallel Computing, 55:17-27, 2016.
+*   http://dx.doi.org/10.1016/j.parco.2015.10.015
+*
+*  "Immersive Molecular Visualization with Omnidirectional 
+*   Stereoscopic Ray Tracing and Remote Rendering"
+*   John E. Stone, William R. Sherman, and Klaus Schulten.
+*   High Performance Data Analysis and Visualization Workshop, 
+*   2016 IEEE International Parallel and Distributed Processing 
+*   Symposium Workshops (IPDPSW), pp. 1048-1057, 2016.
+*   http://dx.doi.org/10.1109/IPDPSW.2016.121
 *
 * Portions of this code are derived from Tachyon:
 *   "An Efficient Library for Parallel Ray Tracing and Animation"
@@ -50,7 +67,6 @@
 #include "OptiXRenderer.h"
 #include "config.h"    // needed for default image viewer
 #include "Hershey.h"   // needed for Hershey font rendering fctns
-
 
 
 // The default radius for points and lines (which are displayed
@@ -188,8 +204,6 @@ void OptiXDisplayDevice::cylinder(float *a, float *b, float r, int filled) {
     }
   }
 }
-
-
 
 
 // draw a sphere array
@@ -487,6 +501,8 @@ void OptiXDisplayDevice::write_materials() {
     ort->set_bg_gradient(updir);
     ort->set_bg_gradient_topval(bspheremag);
     ort->set_bg_gradient_botval(-bspheremag);
+  } else {
+    ort->set_bg_mode(OptiXRenderer::RT_BACKGROUND_TEXTURE_SOLID);
   }
 }
 
@@ -542,7 +558,7 @@ void OptiXDisplayDevice::write_header() {
   ort->set_ao_direct(get_ao_direct());
 
   // render with depth of field, but only for perspective projection
-  if (dof_enabled() && (projection() == DisplayDevice::PERSPECTIVE)) {
+  if (dof_enabled()) {
     msgInfo << "DoF focal blur enabled." << sendmsg;
     ort->dof_on(1); // enable DoF rendering
     ort->set_camera_dof_fnumber(get_dof_fnumber());
@@ -583,9 +599,6 @@ void OptiXDisplayDevice::write_trailer(void){
   send_cylinder_buffer(); // send any unsent accumulated cylinder buffer...
   send_triangle_buffer(); // send any unsent accumulated triangle buffer...
 
-#if 0
-  printf("OptiX: z: %f zDist: %f vSize %f\n", eyePos[2], zDist, vSize);
-#endif
   switch (projection()) {
     case DisplayDevice::ORTHOGRAPHIC:
       ort->set_camera_projection(OptiXRenderer::RT_ORTHOGRAPHIC);
@@ -619,8 +632,10 @@ void OptiXDisplayDevice::write_trailer(void){
     ort->render_to_file(my_filename);  // render the scene in batch mode...
 
 
-  if (getenv("VMDOPTIXNODESTROYCONTEXT") == NULL) {
-    // destroy the current context, because we haven't done enough to ensure
+  // by default the OptiX context is re-used repeatedly,
+  // but this can be overridden by the user
+  if (getenv("VMDOPTIXDESTROYCONTEXT") != NULL) {
+    // destroy the current context, in case we haven't done enough to ensure
     // that we're managing memory well without tearing it all down.
     delete ort;
 

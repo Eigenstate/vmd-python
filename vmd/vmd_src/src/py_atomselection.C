@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_atomselection.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.50 $       $Date: 2013/05/17 19:39:11 $
+ *      $Revision: 1.51 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -57,7 +57,11 @@ static PyObject *create(PyObject *self, PyObject *args) {
   int j=0;
   for (int i=0; i<atomSel->num_atoms; i++) {
     if (atomSel->on[i])
+#if PY_MAJOR_VERSION >= 3
+      PyTuple_SET_ITEM(newlist, j++, PyLong_FromLong(i));
+#else
       PyTuple_SET_ITEM(newlist, j++, PyInt_FromLong(i));
+#endif
   }
   delete atomSel;
   return newlist;
@@ -116,7 +120,11 @@ static PyObject *get(PyObject *self, PyObject *args) {
   int *flgs = new int[num_atoms];
   memset(flgs,0,num_atoms*sizeof(int));
   for (i=0; i<num_selected; i++) 
+#if PY_MAJOR_VERSION >= 3
+    flgs[PyLong_AsLong(PyTuple_GET_ITEM(selected,i))] = 1;
+#else
     flgs[PyInt_AsLong(PyTuple_GET_ITEM(selected,i))] = 1;
+#endif
 
   if (elem->is_a == SymbolTableElement::SINGLEWORD) {
     int *tmp = new int[num_atoms];
@@ -126,9 +134,17 @@ static PyObject *get(PyObject *self, PyObject *args) {
     for (i=0; i<num_atoms; i++) {
       if (flgs[i]) {
         if (tmp[i]) {
+#if PY_MAJOR_VERSION >= 3
+          PyList_SET_ITEM(newlist, j++, PyLong_FromLong(1));       
+#else
           PyList_SET_ITEM(newlist, j++, PyInt_FromLong(1));       
+#endif
         } else {
+#if PY_MAJOR_VERSION >= 3
+          PyList_SET_ITEM(newlist, j++, PyLong_FromLong(0));       
+#else
           PyList_SET_ITEM(newlist, j++, PyInt_FromLong(0));       
+#endif
         }
       }
     }
@@ -142,7 +158,11 @@ static PyObject *get(PyObject *self, PyObject *args) {
         int j=0;
         for (int i=0; i<num_atoms; i++) {
           if (flgs[i]) {
+#if PY_MAJOR_VERSION >= 3
+            PyList_SET_ITEM(newlist, j++, PyBytes_FromString(tmp[i]));
+#else
             PyList_SET_ITEM(newlist, j++, PyString_FromString(tmp[i]));
+#endif
           }
         }
         delete [] tmp;
@@ -155,7 +175,11 @@ static PyObject *get(PyObject *self, PyObject *args) {
         int j=0;
         for (int i=0; i<num_atoms; i++) {
           if (flgs[i]) {
+#if PY_MAJOR_VERSION >= 3
+            PyList_SET_ITEM(newlist, j++, PyLong_FromLong(tmp[i]));
+#else
             PyList_SET_ITEM(newlist, j++, PyInt_FromLong(tmp[i]));
+#endif
           }
         }
         delete [] tmp;
@@ -242,7 +266,11 @@ static PyObject *set(PyObject *self, PyObject *args) {
   int *flgs = new int[num_atoms];
   memset(flgs,0,num_atoms*sizeof(int));
   for (i=0; i<num_selected; i++)
+#if PY_MAJOR_VERSION >= 3
+    flgs[PyLong_AsLong(PyTuple_GET_ITEM(selected,i))] = 1;
+#else
     flgs[PyInt_AsLong(PyTuple_GET_ITEM(selected,i))] = 1;
+#endif
  
   //  
   // set the data
@@ -256,12 +284,20 @@ static PyObject *set(PyObject *self, PyObject *args) {
       int j=0;
       for (int i=0; i<num_atoms; i++) {
         if (flgs[i])
+#if PY_MAJOR_VERSION >= 3
+          list[i] = PyLong_AsLong(PyTuple_GET_ITEM(val, j++));
+#else
           list[i] = PyInt_AsLong(PyTuple_GET_ITEM(val, j++));
+#endif
       }
     } else {
       for (int i=0; i<num_atoms; i++) {
         if (flgs[i])
+#if PY_MAJOR_VERSION >= 3
+          list[i] = PyLong_AsLong(PyTuple_GET_ITEM(val, 0));
+#else
           list[i] = PyInt_AsLong(PyTuple_GET_ITEM(val, 0));
+#endif
       }
     }
     elem->set_keyword_int(&context, num_atoms, list, flgs);
@@ -292,12 +328,20 @@ static PyObject *set(PyObject *self, PyObject *args) {
       int j=0;
       for (int i=0; i<num_atoms; i++) { 
         if (flgs[i])
+#if PY_MAJOR_VERSION >= 3
+          list[i] = PyBytes_AsString(PyTuple_GET_ITEM(val, j++));
+#else
           list[i] = PyString_AsString(PyTuple_GET_ITEM(val, j++));
+#endif
       }
     } else {
       for (int i=0; i<num_atoms; i++) {
         if (flgs[i])
+#if PY_MAJOR_VERSION >= 3
+          list[i] = PyBytes_AsString(PyTuple_GET_ITEM(val, 0));
+#else
           list[i] = PyString_AsString(PyTuple_GET_ITEM(val, 0));
+#endif
       }
     }
     elem->set_keyword_string(&context, num_atoms, list, flgs);
@@ -338,7 +382,11 @@ static PyObject *getbonds(PyObject *self, PyObject *args) {
   int num_selected = PyTuple_Size(atomlist);
   PyObject *newlist = PyList_New(num_selected);
   for (int i=0; i< num_selected; i++) {
+#if PY_MAJOR_VERSION >= 3
+    int id = PyLong_AsLong(PyTuple_GET_ITEM(atomlist, i));
+#else
     int id = PyInt_AsLong(PyTuple_GET_ITEM(atomlist, i));
+#endif
     if (PyErr_Occurred()) {
       Py_DECREF(newlist);
       return NULL;
@@ -351,7 +399,11 @@ static PyObject *getbonds(PyObject *self, PyObject *args) {
     const MolAtom *atom = mol->atom(id);
     PyObject *bondlist = PyList_New(atom->bonds);
     for (int j=0; j<atom->bonds; j++) {
+#if PY_MAJOR_VERSION >= 3
+      PyList_SET_ITEM(bondlist, j, PyLong_FromLong(atom->bondTo[j]));
+#else
       PyList_SET_ITEM(bondlist, j, PyInt_FromLong(atom->bondTo[j]));
+#endif
     }
     PyList_SET_ITEM(newlist, i, bondlist);
   }
@@ -382,7 +434,11 @@ static PyObject *setbonds(PyObject *self, PyObject *args) {
   }
   mol->force_recalc(DrawMolItem::MOL_REGEN); // many reps ignore bonds
   for (int i=0; i<num_selected; i++) {
+#if PY_MAJOR_VERSION >= 3
+    int id = PyLong_AsLong(PyTuple_GET_ITEM(atomlist, i));
+#else
     int id = PyInt_AsLong(PyTuple_GET_ITEM(atomlist, i));
+#endif
     if (PyErr_Occurred()) {
       return NULL;
     }
@@ -401,7 +457,11 @@ static PyObject *setbonds(PyObject *self, PyObject *args) {
     int numbonds = PyList_Size(atomids);
     int k=0;
     for (int j=0; j<numbonds; j++) {
+#if PY_MAJOR_VERSION >= 3
+      int bond = PyLong_AsLong(PyList_GET_ITEM(atomids, j));
+#else
       int bond = PyInt_AsLong(PyList_GET_ITEM(atomids, j));
+#endif
       if (PyErr_Occurred())
         return NULL;
       if (bond >= 0 && bond < mol->nAtoms) {
@@ -440,7 +500,11 @@ static PyObject *macro(PyObject *self, PyObject *args, PyObject *keywds) {
     for (int i=0; i<table->num_custom_singleword(); i++) {
       const char *s = table->custom_singleword_name(i);
       if (s && strlen(s))
+#if PY_MAJOR_VERSION >= 3
+        PyList_Append(macrolist, PyUnicode_FromString(s));
+#else
         PyList_Append(macrolist, PyString_FromString(s));
+#endif
     }
     return macrolist;
   }
@@ -451,7 +515,11 @@ static PyObject *macro(PyObject *self, PyObject *args, PyObject *keywds) {
       PyErr_SetString(PyExc_ValueError, (char *)"No macro for given name");
       return NULL;
     }
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_FromString(s);
+#else
     return PyString_FromString(s);
+#endif
   }
   // must have both and selection.  Define a new macro.
   if (!table->add_custom_singleword(name, selection)) {
@@ -498,7 +566,11 @@ static AtomSel *sel_from_py(int molid, int frame, PyObject *selected, VMDApp *ap
     const int num_selected = PyTuple_Size(selected);
 	  sel->selected = num_selected;
     for (int i=0; i<num_selected; i++) {
+#if PY_MAJOR_VERSION >= 3
+      int ind = PyLong_AsLong(PyTuple_GET_ITEM(selected,i));
+#else
       int ind = PyInt_AsLong(PyTuple_GET_ITEM(selected,i));
+#endif
       if (ind < 0 || ind >= mol->nAtoms) {
         delete sel;
         PyErr_SetString(PyExc_ValueError, "Invalid atom id in selection");
@@ -774,11 +846,16 @@ static PyObject *contacts(PyObject *self, PyObject *args) {
     MolAtom *a1 = mol->atom(p->ind1);
     if (mol1 != mol2 || !a1->bonded(p->ind2)) {
       // Needed to avoid a memory leak. Append increments the refcount 
-      // of whatever gets added to it, but so does PyInt_FromLong.
+      // of whatever gets added to it, but so does PyLong_FromLong.
       // Without a decref, the integers created never have their refcount
       //  go to zero, and you leak memory.
+#if PY_MAJOR_VERSION >= 3
+      tmp1 = PyLong_FromLong(p->ind1);
+      tmp2 = PyLong_FromLong(p->ind2);
+#else
       tmp1 = PyInt_FromLong(p->ind1);
       tmp2 = PyInt_FromLong(p->ind2);
+#endif
       PyList_Append(list1, tmp1);
       PyList_Append(list2, tmp2);
       Py_DECREF(tmp1);
@@ -881,12 +958,31 @@ static PyMethodDef AtomselectionMethods[] = {
   {(char *)"align", (vmdPyMethod)py_align, METH_VARARGS},
   {(char *)"contacts", (vmdPyMethod)contacts, METH_VARARGS, contacts_doc },
   {(char *)"sasa", (vmdPyMethod)sasa, METH_VARARGS | METH_KEYWORDS, sasa_doc },
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
-void initatomselection() {
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef atomselectiondef = {
+    PyModuleDef_HEAD_INIT,
+    "atomselection",
+    NULL,
+    -1, // global state, no sub-interpreters
+    AtomselectionMethods,
+    NULL, 
+    NULL, // m_traverse gc traversal
+    NULL, // m_clear gc clear
+    NULL  // m_free gc free
+};
+PyMODINIT_FUNC PyInit_initatomselection(void) {
+    PyObject *module = PyModule_Create(&atomselectiondef);
+    return module;
+}
+#else
+void initatomselection(void) {
   (void) Py_InitModule((char *)"atomselection", AtomselectionMethods);
 }
+#endif
+
 
   
   

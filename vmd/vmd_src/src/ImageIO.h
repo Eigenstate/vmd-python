@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: ImageIO.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.11 $       $Date: 2010/12/16 04:08:20 $
+ *      $Revision: 1.14 $       $Date: 2016/11/28 03:05:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -30,21 +30,39 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/// copy/convert a 32-bit RGBA color buffer to a 24-bit RGB color buffer
+unsigned char * cvt_rgb4u_rgb3u(const unsigned char * rgb4u, int xs, int ys);
+
+/// copy/convert a 128-bit RGBA float color buffer to a 24-bit RGB color buffer
+unsigned char * cvt_rgb4f_rgb3u(const float *rgb4f, int xs, int ys);
+
+/// Write an unsigned RGB 24-bit color image, by filename extension
+int write_image_file_rgb3u(const char *filename,
+                           const unsigned char *rgb3u, int xs, int ys);
+
+/// Write an unsigned RGBA 32-bit color image, by filename extension
+int write_image_file_rgb4u(const char *filename,
+                           const unsigned char *rgb4u, int xs, int ys);
+
+/// Write an float RGBA 128-bit color image, by filename extension
+int write_image_file_rgb4f(const char *filename,
+                           const float *rgb4f, int xs, int ys);
+
 /// Write 24-bit uncompressed SGI RGB image file
-void vmd_writergb(FILE *dfile, unsigned char * img, int xs, int ys);
+void vmd_writergb(FILE *dfile, const unsigned char * img, int xs, int ys);
 
 /// Write 24-bit uncompressed Windows Bitmap file
-void vmd_writebmp(FILE *dfile, unsigned char * img, int xs, int ys);
+void vmd_writebmp(FILE *dfile, const unsigned char * img, int xs, int ys);
 
 /// Write 24-bit uncompressed NetPBM Portable Pixmap file
-void vmd_writeppm(FILE *dfile, unsigned char * img, int xs, int ys);
+void vmd_writeppm(FILE *dfile, const unsigned char * img, int xs, int ys);
 
 /// Write 24-bit uncompressed Truevision "Targa" file
-void vmd_writetga(FILE *dfile, unsigned char * img, int xs, int ys);
+void vmd_writetga(FILE *dfile, const unsigned char * img, int xs, int ys);
 
-#if defined(VMDPNG)
+#if defined(VMDLIBPNG)
 /// Write 24-bit uncompressed PNG file
-void vmd_writepng(FILE *dfile, unsigned char * img, int xs, int ys);
+void vmd_writepng(FILE *dfile, const unsigned char * img, int xs, int ys);
 #endif
 
 #endif

@@ -1,9 +1,9 @@
 #
-# $Id: fftk_guiProcs.tcl,v 1.37 2015/05/14 21:51:00 mayne Exp $
+# $Id: fftk_guiProcs.tcl,v 1.41 2016/05/31 21:21:23 mayne Exp $
 #
 
 #======================================================
-#   PTE GUI PROCS
+#   ffTK GUI PROCS
 #======================================================
 
 #------------------------------------------------------
@@ -39,7 +39,7 @@ proc ::ForceFieldToolKit::gui::init {} {
     set ::ForceFieldToolKit::gui::gzmVizSpheresBoth {}
     set ::ForceFieldToolKit::gui::gzmCOMfiles {}
     set ::ForceFieldToolKit::gui::gzmLOGfiles {}
-    
+
     # ChargeOpt Tab Setup
     # Initialize ChargeOpt namespace
     ::ForceFieldToolKit::ChargeOpt::init
@@ -58,12 +58,12 @@ proc ::ForceFieldToolKit::gui::init {} {
     ::ForceFieldToolKit::gui::coptClearEditData "cconstr"
     ::ForceFieldToolKit::gui::coptClearEditData "wie"
     ::ForceFieldToolKit::gui::coptClearEditData "results"
-    
+
     # GenBonded Tab Setup
     # Initialize GenBonded Namespace
     ::ForceFieldToolKit::GenBonded::init
     # Initialize GenBonded GUI Settings
-    
+
     # BondAngleOpt Tab Setup
     # Initialize BondAngleOpt Namespace
     ::ForceFieldToolKit::BondAngleOpt::init
@@ -77,7 +77,7 @@ proc ::ForceFieldToolKit::gui::init {} {
     set ::ForceFieldToolKit::gui::baoptEditEq {}
     set ::ForceFieldToolKit::gui::baoptReturnObjCurrent "---"
     set ::ForceFieldToolKit::gui::baoptReturnObjPrevious "---"
-    
+
     # GenDihScan Tab Setup
     # Initialize GenDihScan Namespace
     ::ForceFieldToolKit::GenDihScan::init
@@ -88,8 +88,8 @@ proc ::ForceFieldToolKit::gui::init {} {
     set ::ForceFieldToolKit::gui::gdsEditIndDef {}
     set ::ForceFieldToolKit::gui::gdsEditPlusMinus {}
     set ::ForceFieldToolKit::gui::gdsEditStepSize {}
-    
-    
+
+
     # DihOpt Tabl Setup
     # Initialize DihOpt Namespace
     ::ForceFieldToolKit::DihOpt::init
@@ -118,17 +118,17 @@ proc ::ForceFieldToolKit::gui::init {} {
     set ::ForceFieldToolKit::gui::doptResultsPlotCount {}
     set ::ForceFieldToolKit::gui::doptRefineStatus "IDLE"
     set ::ForceFieldToolKit::gui::doptRefineCount 0
-    
-    
+
+
     # INITIALIZE THE CONSOLE
     set ::ForceFieldToolKit::gui::consoleMessageCount 0
     set ::ForceFieldToolKit::gui::consoleState 1
-    set ::ForceFieldToolKit::gui::consoleMaxHistory 100            
+    set ::ForceFieldToolKit::gui::consoleMaxHistory 100
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::resizeToActiveTab {} {
     # change the window size to match the active notebook tab
-    
+
     # need to force gridder to update
     update idletasks
 
@@ -146,30 +146,30 @@ proc ::ForceFieldToolKit::gui::resizeToActiveTab {} {
     if { $::ForceFieldToolKit::gui::consoleState } {
         set dimH [expr {$dimH + 190}]
     } else {
-        set dimH [expr {$dimH + 90}]
+        set dimH [expr {$dimH + 135}]
     }
     wm geometry .fftk_gui [format "%ix%i" $dimW $dimH]
     # note: 44 and 47 take care of additional padding between nb tab and window edges
-    
+
     update idletasks
 
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::consoleMessage { desc } {
     # send a message to the console
-    
+
     # only send messages to console if it's turned on
     if { $::ForceFieldToolKit::gui::consoleState } {
         # lookup and format some data
         set count [format "%03d" $::ForceFieldToolKit::gui::consoleMessageCount]
         set timestamp [clock format [clock seconds] -format {%m/%d/%Y -- %I:%M:%S %p}]
-        
+
         # write the message to the console
         .fftk_gui.hlf.console.log insert {} 0 -values [list $count $desc $timestamp]
-        
+
         # increment the count
         incr ::ForceFieldToolKit::gui::consoleMessageCount
-        
+
         # if number of messages exceeds max, remove last node
         # this is important to prevent taking too much memory
         set itemList [.fftk_gui.hlf.console.log children {}]
@@ -190,12 +190,12 @@ proc ::ForceFieldToolKit::gui::bparAnalyzeMissingPars {} {
     # localize some variables
     variable bparIdMissingAnalyzeMolID
     set RefParList $::ForceFieldToolKit::BuildPar::idMissingRefParList
-    
+
     # run a sanity check
     if { ![::ForceFieldToolKit::BuildPar::sanityCheck idMissingAnalyze ] } { return }
 
     # Build the missing parameters list
-    # read in the type definitions for reference parameter set    
+    # read in the type definitions for reference parameter set
     set refPars [::ForceFieldToolKit::BuildPar::getRefPars $RefParList]
 
     # read in the type definitions for the molecule parameter set
@@ -274,7 +274,7 @@ proc ::ForceFieldToolKit::gui::bparAnalyzeMissingPars {} {
         } else {
             lappend typeArray($type1,$type2,$type3,$type4) [list $dInd1 $dInd2 $dInd3 $dInd4]
         }
-    } 
+    }
 
     # process nonbonded
     set sel [atomselect top all]
@@ -334,7 +334,7 @@ proc ::ForceFieldToolKit::gui::bparAnalyzeMissingPars {} {
     foreach vdwDef [lindex $missingPars 3] {
         .fftk_gui.hlf.nb.buildpar.missingPars.vizFrame.nonbondedTv insert {} end -value [list $vdwDef 1 $typeArray($vdwDef)]
     }
-    
+
     ::ForceFieldToolKit::gui::consoleMessage "Missing parameter analysis complete"
 }
 #======================================================
@@ -407,31 +407,31 @@ proc ::ForceFieldToolKit::gui::bparShowMissingParsElements {} {
         foreach indSet [.fftk_gui.hlf.nb.buildpar.missingPars.vizFrame.nonbondedTv set $item indsList] {
             ::ForceFieldToolKit::SharedFcns::ParView::addParObject -molid $bparIdMissingAnalyzeMolID -type atom -indices $indSet
         }
-    }    
+    }
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::bparLoadRefVDWData {} {
     # general controller function for loading reference VDW
     # topology+parameter data into the treevew box
-    
+
     #tk_messageBox -type ok -icon info \
     #    -message "Loading a Topology + Parameter File Pair" \
     #    -detail "The following dialogs will first request"
-    
-    
+
+
     # request the topology and parameter files
     set topFile [tk_getOpenFile -title "Select the TOPOLOGY File" -filetypes $::ForceFieldToolKit::gui::topType]
     set parFile [tk_getOpenFile -title "Select the PARAMETER File" -filetypes $::ForceFieldToolKit::gui::parType]
-    
+
     # rudimentary file validation
     if { $topFile eq "" || $parFile eq "" || ![file exists $topFile] || ![file exists $parFile] } {
         tk_messageBox -type ok -icon warning -message "Load FAILED" -detail "Inappropriate files selected."
         return
     }
-    
+
     # process the input files
     array set vdwData [::ForceFieldToolKit::gui::bparBuildVDWarray [list [list $topFile $parFile]]]
-    
+
     # load the information into the treeview box
     foreach key [array names vdwData] {
         set ele [lindex $vdwData($key) 0]
@@ -443,7 +443,7 @@ proc ::ForceFieldToolKit::gui::bparLoadRefVDWData {} {
     }
     # clean up
     array unset vdwData
-    
+
     # rebuild the elements and parSet drop down menus
     set eleList {}
     set parLis {}
@@ -471,30 +471,30 @@ proc ::ForceFieldToolKit::gui::bparLoadRefVDWData {} {
     foreach entry $parList {
         .fftk_gui.hlf.nb.buildpar.vdwPars.refvdw.parSet.menu add command -label $entry -command "set ::ForceFieldToolKit::gui::bparVDWparSet $entry; ::ForceFieldToolKit::gui::bparVDWshowEle"
     }
-    
+
 
     # show only the selected ele
     if { $::ForceFieldToolKit::gui::bparVDWele == {} } { set ::ForceFieldToolKit::gui::bparVDWele "ALL" }
     if { $::ForceFieldToolKit::gui::bparVDWparSet == {} } { set ::ForceFieldToolKit::gui::bparVDWparSet "ALL" }
-    
-    ::ForceFieldToolKit::gui::bparVDWshowEle    
+
+    ::ForceFieldToolKit::gui::bparVDWshowEle
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::bparVDWshowEle {} {
     # shows only the tv items for the selected element and parfile
-    
+
     # detach all nodes currently in tv
     foreach item [.fftk_gui.hlf.nb.buildpar.vdwPars.refvdw.tv children {}] {
         .fftk_gui.hlf.nb.buildpar.vdwPars.refvdw.tv detach $item
     }
-    
+
     # cycle through all nodes in the node list and if ele/parSet match, reattach node using the move cmd
     # the node is added when...
     # ele = ALL    &&  parSet = ALL
     # ele = match  &&  parSet = ALL
     # ele = ALL    &&  parSet = match
     # ele = match  &&  parSet = match
-    
+
     foreach item $::ForceFieldToolKit::gui::bparVDWtvNodeIDs {
         if { $::ForceFieldToolKit::gui::bparVDWele eq "ALL" && $::ForceFieldToolKit::gui::bparVDWparSet eq "ALL" } {
             .fftk_gui.hlf.nb.buildpar.vdwPars.refvdw.tv move $item {} 0
@@ -525,9 +525,9 @@ proc ::ForceFieldToolKit::gui::bparVDWshowEle {} {
 #======================================================
 proc ::ForceFieldToolKit::gui::bparBuildVDWarray { fileList } {
     # builds an array containing VDW information
-    
+
     #puts "filelist: $fileList"; flush stdout
-    
+
     # build an array to match element to atomic weight
     # these are supported atoms
     array set eleByMass {
@@ -553,18 +553,18 @@ proc ::ForceFieldToolKit::gui::bparBuildVDWarray { fileList } {
         127 I
         133 CS
     }
-    
+
     # initialize
     array set vdwData {}
-    
+
     # fileList should read:
     # {  {top1 par1} {top2 par2} ... {topN parN}  }
-    
+
     foreach filePair $fileList {
         #puts "Processing filePair: $filePair"; flush stdout
         set topFile [lindex $filePair 0]
         set parFile [lindex $filePair 1]
-        
+
         # TOPOLOGY FILE
         # parse MASS statments from topology
         set topIn [open $topFile r]
@@ -589,11 +589,11 @@ proc ::ForceFieldToolKit::gui::bparBuildVDWarray { fileList } {
         }; # end of reading topFile (while)
 
         close $topIn
-        
+
         #puts "vdwData After topology parsing"
         #foreach key [array names vdwData] { puts "\t$vdwData($key)" }
         #flush stdout
-        
+
         # PARAMETER FILE
         set rawParData {}
         set parIn [open $parFile r]
@@ -618,26 +618,26 @@ proc ::ForceFieldToolKit::gui::bparBuildVDWarray { fileList } {
                         lappend rawParData $inLine
                     }
                 }
-            
+
             }; # end of lineread (switch)
         }; # end of reading parIn (while)
-        
+
         close $parIn
-        
+
         #puts "rawParData After reading parameter file"
         #foreach ele $rawParData { puts "\t$ele" }
         #flush stdout
-        
+
         # process the vdw parameter data
         # burn the header
         while { [regexp {^[ \t]*!} [lindex $rawParData 0]] } {
             set rawParData [lreplace $rawParData 0 0]
         }
-        
+
         #puts "rawParData After burning the header:"
         #foreach ele $rawParData { puts "\t$ele" }
         #flush stdout
-        
+
         # build the processed vdw par data by folding two-line comments into one line
         set procParData {}
         foreach ele $rawParData {
@@ -649,11 +649,11 @@ proc ::ForceFieldToolKit::gui::bparBuildVDWarray { fileList } {
                 lappend procParData $ele
             }
         }
-        
+
         #puts "procParData After folding comments:"
         #foreach ele $procParData { puts "\t$ele" }
         #flush stdout
-        
+
         # reprocess the parameter data and insert into the vdwData array
         foreach ele $procParData {
             # split along comment denotation (!)
@@ -680,7 +680,7 @@ proc ::ForceFieldToolKit::gui::bparBuildVDWarray { fileList } {
         ::ForceFieldToolKit::gui::consoleMessage "VDW/LJ parameters loaded for [file rootname [file tail [lindex $filePair 1]]]"
 
     }; # end of cycling through file pairs (foreach)
-    
+
     return [array get vdwData]
 }
 #======================================================
@@ -688,7 +688,7 @@ proc ::ForceFieldToolKit::gui::bparCGenFFAnalyze {} {
     # Construct molecule from input; populate parameter tvs
 
     # PASSED:  nothing
-    # RETURNS: nothing 
+    # RETURNS: nothing
 
     # clear out any existing molecules
     if { $::ForceFieldToolKit::gui::bparCGenFFMolID != -1 && [lsearch [molinfo list] $::ForceFieldToolKit::gui::bparCGenFFMolID] > -1 }  {
@@ -704,7 +704,7 @@ proc ::ForceFieldToolKit::gui::bparCGenFFAnalyze {} {
     # analyze the input data (returns molid of the constructed molecule)
     # sanity checking is performed inside this function
     set ::ForceFieldToolKit::gui::bparCGenFFMolID [::ForceFieldToolKit::BuildPar::analyzeCGenFF]
-    
+
     # constuct arrays that map parameter typedefs to indices (used to populate indList columns)
     set molid $::ForceFieldToolKit::gui::bparCGenFFMolID
     array unset bondArr; array set bondArr {}
@@ -842,7 +842,7 @@ proc ::ForceFieldToolKit::gui::bparCGenFFWritePSFPDB {} {
             -icon warning \
             -message "Application halting due to the following errors:" \
             -detail $errorText
-        
+
         # there are errors, return the error response
         return
     }
@@ -904,7 +904,7 @@ proc ::ForceFieldToolKit::gui::bparCGenFFWritePAR {} {
             -icon warning \
             -message "Application halting due to the following errors:" \
             -detail $errorText
-        
+
         # there are errors, return the error response
         return
     }
@@ -937,7 +937,7 @@ proc ::ForceFieldToolKit::gui::bparCGenFFWritePAR {} {
     ::ForceFieldToolKit::SharedFcns::writeParFile [list $bonds $angles $dihedrals $impropers {}] ${fname}.analogy.par
     # write out existing pars
     if { [llength $::ForceFieldToolKit::BuildPar::cgenffExistingPars] > 0 } {
-        ::ForceFieldToolKit::SharedFcns::writeParFile [concat $::ForceFieldToolKit::BuildPar::cgenffExistingPars {}] ${fname}.existing.par    
+        ::ForceFieldToolKit::SharedFcns::writeParFile [concat $::ForceFieldToolKit::BuildPar::cgenffExistingPars {}] ${fname}.existing.par
     }
 
     # done
@@ -1047,19 +1047,21 @@ proc ::ForceFieldToolKit::gui::bparCGenFFTvSelectionDidChange {} {
 #------------------------------------------------------
 proc ::ForceFieldToolKit::gui::gzmToggleLabels {} {
     # toggles atom labels for TOP molecule to help determine donor and acceptor indices
-    
+
     variable gzmAtomLabels
-    
+
     if { [llength $gzmAtomLabels] > 0 } {
         foreach label $gzmAtomLabels {graphics top delete $label}
         set gzmAtomLabels {}
     } else {
         draw color lime
-        foreach ind [[atomselect top all] get index] {
+        set selAll [atomselect top all]
+        foreach ind [$selAll get index] {
             set sel [atomselect top "index $ind"]
             lappend gzmAtomLabels [draw text [join [$sel get {x y z}]] $ind size 3]
             $sel delete
         }
+        $selAll delete
     }
 }
 #======================================================
@@ -1068,14 +1070,14 @@ proc ::ForceFieldToolKit::gui::gzmToggleSpheres {} {
     # blue spheres for donors
     # red spheres for acceptors
     # gree sphere for both donor AND acceptors
-    
+
     variable gzmVizSpheresDon
     variable gzmVizSpheresAcc
     variable gzmVizSpheresBoth
-    
+
     graphics top materials on
     graphics top material Diffuse
-    
+
     # initialize local lists
     set donList $::ForceFieldToolKit::GenZMatrix::donList
     set accList $::ForceFieldToolKit::GenZMatrix::accList
@@ -1095,7 +1097,7 @@ proc ::ForceFieldToolKit::gui::gzmToggleSpheres {} {
         if { $accInd != -1 } { lreplace $accList $accInd $accInd }
     }
 
-    # toggle the graphics elements    
+    # toggle the graphics elements
     if { [llength $gzmVizSpheresDon] > 0 } {
         foreach sphere $gzmVizSpheresDon {graphics top delete $sphere}
         set gzmVizSpheresDon {}
@@ -1107,7 +1109,7 @@ proc ::ForceFieldToolKit::gui::gzmToggleSpheres {} {
             $sel delete
         }
     }
-    
+
     if { [llength $gzmVizSpheresAcc] > 0 } {
         foreach sphere $gzmVizSpheresAcc {graphics top delete $sphere}
         set gzmVizSpheresAcc {}
@@ -1119,7 +1121,7 @@ proc ::ForceFieldToolKit::gui::gzmToggleSpheres {} {
             $sel delete
         }
     }
-    
+
     if { [llength $gzmVizSpheresBoth] > 0 } {
         foreach sphere $gzmVizSpheresBoth {graphics top delete $sphere}
         set gzmVizSpheresBoth {}
@@ -1131,18 +1133,20 @@ proc ::ForceFieldToolKit::gui::gzmToggleSpheres {} {
             $sel delete
         }
     }
-    
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::gzmAutoDetect {} {
     # very simple method to autodetecting donors and acceptors
-    
+
     # add all hydrogens
-    set ::ForceFieldToolKit::GenZMatrix::donList [[atomselect top "element H"] get index]
-    
+    set selHydrogens [atomselect top "element H"]
+    set ::ForceFieldToolKit::GenZMatrix::donList [$selHydrogens get index]
+    $selHydrogens delete
+
     # add all heavy atoms with less than 4 bonded atoms (generally tetrahedral)
     set ::ForceFieldToolKit::GenZMatrix::accList {}
-    foreach hvyatom [[atomselect top "all and not element H"] get index] {
+    set selHeavyAtoms [atomselect top "all and not element H"]
+    foreach hvyatom [$selHeavyAtoms get index] {
         set sel [atomselect top "index $hvyatom"]
         if { [llength [lindex [$sel getbonds] 0]] < 4 } {
             lappend ::ForceFieldToolKit::GenZMatrix::accList $hvyatom
@@ -1152,7 +1156,7 @@ proc ::ForceFieldToolKit::gui::gzmAutoDetect {} {
         }
         $sel delete
     }
-    
+    $selHeavyAtoms delete
 }
 #======================================================
 
@@ -1163,7 +1167,7 @@ proc ::ForceFieldToolKit::gui::gzmAutoDetect {} {
 proc ::ForceFieldToolKit::gui::coptShowAtomLabels {} {
     # shows labels to aid in setting up charge optimizations
     # label can be none, index, name, type, charge
-    
+
     variable coptAtomLabel
     variable coptAtomLabelInd
 
@@ -1172,7 +1176,7 @@ proc ::ForceFieldToolKit::gui::coptShowAtomLabels {} {
     set $coptAtomLabelInd {}
     draw color lime
 
-    # set new labels    
+    # set new labels
     foreach atomInd [[atomselect top all] get index] {
         set sel [atomselect top "index $atomInd"]
         switch -exact $coptAtomLabel {
@@ -1188,7 +1192,7 @@ proc ::ForceFieldToolKit::gui::coptShowAtomLabels {} {
 #======================================================
 proc ::ForceFieldToolKit::gui::coptSetEditData { box } {
     # grabs data from the currently selected Log File entry and copies into the Edit Box
-    
+
 
     if { $box eq "cconstr" } {
         # for the Charge Constraints box (cconstr)
@@ -1231,44 +1235,44 @@ proc ::ForceFieldToolKit::gui::coptClearEditData { box } {
 
 }
 #======================================================
-proc ::ForceFieldToolKit::gui::coptGuessChargeGroups {} {
+proc ::ForceFieldToolKit::gui::coptGuessChargeGroups { molid } {
 
     # initialize some variables
     array set indexTree {}
     set typeFPList {}
-    
+
     set cgNames {}
     set cgInit {}
     set cgLowBound {}
     set cgUpBound {}
-    
-    
+
+
     # set the list of all atoms
-    set allList [lsort -dictionary [[atomselect top all] get index]]
-    
+    set allList [lsort -dictionary [[atomselect $molid all] get index]]
+
     # cycle through each atom as the root
     foreach rootAtom $allList {
-    
+
         # initialize the indexTree array for this particular atom
         # by setting node 0
         set indexTree($rootAtom) $rootAtom
-        
+
         # initialize the traveledList
         set traveledList $rootAtom
-        
+
         # initialize nodeCounter
         set nodeCount 1
         # traverse nodes until all atoms are covered
         while { [lsort -dictionary $traveledList] != $allList } {
-        
+
             # initialize a temporary list to hold new atoms for this node
             set tmpNodeList {}
-        
+
             # find bonded atoms for each atom in the preceeding node
             foreach precNodeAtom [lindex $indexTree($rootAtom) [expr {$nodeCount - 1}]] {
-        
+
                 # find the atoms
-                set bondedAtoms [lindex [[atomselect top "index $precNodeAtom"] getbonds] 0]
+                set bondedAtoms [lindex [[atomselect $molid "index $precNodeAtom"] getbonds] 0]
                 # check to see if we've already traveled to any of these atoms
                 foreach bAtom $bondedAtoms {
                     if { [lsearch -exact -integer $traveledList $bAtom] == -1 } {
@@ -1280,35 +1284,35 @@ proc ::ForceFieldToolKit::gui::coptGuessChargeGroups {} {
                         # we've already been to this atom, so skip it
                     }
                 }; # end of travelList check foreach
-                
+
             }; # end of node cycle foreach
-    
+
             # now that we have only atoms that we haven't traveled to
             # we can write them to the current node
             lappend indexTree($rootAtom) $tmpNodeList
-        
+
             # increment the node counter to move onto the next node
             incr nodeCount
-            
+
         }; # end of while statement that traverses the atom tree
-    
+
         # convert the indexTree into type fingerprint
-        set typeFP {} 
+        set typeFP {}
         foreach node $indexTree($rootAtom) {
             set nodeAtomTypes {}
             foreach atom $node {
-                lappend nodeAtomTypes [[atomselect top "index $atom"] get type]
+                lappend nodeAtomTypes [[atomselect $molid "index $atom"] get type]
             }
             lappend typeFP [lsort -dictionary $nodeAtomTypes]
         }
-    
+
         # append the fingerprint to the full list of fingerprints
         # if everything sorted properly, then the index should match the atom index
         lappend typeFPList $typeFP
-    
+
     }; # end of foreach that cycles through each atom
-    
-    
+
+
     # define charge groups based on the type fingerprints
     set cgInd {}
     foreach atom $allList {
@@ -1321,71 +1325,71 @@ proc ::ForceFieldToolKit::gui::coptGuessChargeGroups {} {
     }
     # remove duplicate matches
     set cgInd [lsort -dictionary -unique $cgInd]
-    
+
     # if charge group is HA (non-polar hydrogens), then remove them
     # work from end to beginning so that items can be removed without shifting contents
     for {set i [expr {[llength $cgInd] - 1}] } {$i >= 0} {incr i -1} {
         set atomInd [lindex [lindex $cgInd $i] 0]
-        set atomType [[atomselect top "index $atomInd"] get type]
+        set atomType [[atomselect $molid "index $atomInd"] get type]
         if { $atomType eq "HA" } {
             set cgInd [lreplace $cgInd $i $i]
         }
     }
-    
+
     # convert to indices to atom name
     foreach cg $cgInd {
         set atomNames {}
         foreach atom $cg {
-            lappend atomNames [[atomselect top "index $atom"] get name]
+            lappend atomNames [[atomselect $molid "index $atom"] get name]
         }
         lappend cgNames $atomNames
     }
-    
+
     # decide some guess parameters
     for {set i 0} {$i < [llength $cgInd]} {incr i} {
         set atomIndex [lindex [lindex $cgInd $i] 0]
-        set temp [atomselect top "index $atomIndex"]
-        
+        set temp [atomselect $molid "index $atomIndex"]
+
         # init value: grab PSF reCharge charge value
         lappend cgInit [format "%.4f" [$temp get charge]]
-        
+
         # bounds
         switch -exact [$temp get element] {
             "H" {
                 lappend cgLowBound "0.0"
                 lappend cgUpBound "1.0"
             }
-            
+
             "C" {
                 lappend cgLowBound "-1.0"
                 lappend cgUpBound "1.0"
             }
-            
+
             "O" {
                 lappend cgLowBound "-1.0"
-                lappend cgUpBound "1.0"
+                lappend cgUpBound "0.0"
             }
-            
+
             "N" {
                 lappend cgLowBound "-1.0"
-                lappend cgUpBound "1.0"
+                lappend cgUpBound "0.0"
             }
-            
+
             default {
                 lappend cgLowBound "-2.0"
                 lappend cgHighBound "2.0"
             }
         }; # end switch
-        
+
         $temp delete
-        
+
     }
-    
+
     #puts "Charge Groups: $cgNames"
     #puts "Init: $cgInit"
     #puts "Lower Bound: $cgLowBound"
     #puts "Upper Bound: $cgUpBound"
-    
+
     # clear the treeview box
     .fftk_gui.hlf.nb.chargeopt.cconstr.chargeData delete [.fftk_gui.hlf.nb.chargeopt.cconstr.chargeData children {}]
     # insert data into treeview box
@@ -1398,7 +1402,7 @@ proc ::ForceFieldToolKit::gui::coptGuessChargeGroups {} {
 proc ::ForceFieldToolKit::gui::coptCalcChargeSum {} {
     # calculates the charge sum based on current charges
     # and the defined charge groups
-    
+
     # build an exclude list for the atoms in the charge groups
     set excludeList {}
     foreach entry [.fftk_gui.hlf.nb.chargeopt.cconstr.chargeData children {}] {
@@ -1406,15 +1410,15 @@ proc ::ForceFieldToolKit::gui::coptCalcChargeSum {} {
             lappend excludeList $atom
         }
     }
-    
+
     # find atom names
     set temp [atomselect top all]
     set atomNames [$temp get name]
     unset temp
-    
+
     # cycle through each atom name
     # if it's not defined in the charge groups,add the current charge
-    set csum 0    
+    set csum 0
     foreach atom $atomNames {
         if { [lsearch $excludeList $atom] == -1 } {
             set temp [atomselect top "name $atom"]
@@ -1423,7 +1427,7 @@ proc ::ForceFieldToolKit::gui::coptCalcChargeSum {} {
         }
     }
 
-    # return the charge sum    
+    # return the charge sum
     return [format "%0.2f" [expr {-1*$csum}]]
 }
 #======================================================
@@ -1434,7 +1438,7 @@ proc ::ForceFieldToolKit::gui::coptCalcChargeSumNEW { molID } {
     set optAtomCharge 0
     set ovrAtomCharge 0
     set psfAtomCharge 0
-       
+
     # build a list of atoms to optimize
     set optAtoms {}
     foreach entry [.fftk_gui.hlf.nb.chargeopt.cconstr.chargeData children {}] {
@@ -1452,12 +1456,12 @@ proc ::ForceFieldToolKit::gui::coptCalcChargeSumNEW { molID } {
             lappend ovrCharge [lindex $ele 1]
         }
     }
-    
+
     # find all atom names in TOP
     set temp [atomselect $molID all]
     set atomNames [$temp get name]
     $temp delete
-    
+
     # cycle through each atom name in TOP
     foreach atom $atomNames {
         if { [lsearch $optAtoms $atom] != -1 } {
@@ -1475,18 +1479,18 @@ proc ::ForceFieldToolKit::gui::coptCalcChargeSumNEW { molID } {
             continue
         }
     }
-    
+
     # calc the charge sum for the optimized atoms
     set optAtomCharge [ expr { (-1 * ($ovrAtomCharge + $psfAtomCharge)) + $::ForceFieldToolKit::gui::coptNetCharge } ]
-    
+
     # return
     return [list [format "%0.2f" $optAtomCharge] [format "%0.2f" $ovrAtomCharge] [format "%0.2f" $psfAtomCharge]]
-    
+
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::coptRunOpt {} {
     # procedure for button to run the charge optimization
-    
+
     # reset some variables
     set ::ForceFieldToolKit::ChargeOpt::parList {}
     set ::ForceFieldToolKit::ChargeOpt::chargeGroups {}
@@ -1495,12 +1499,12 @@ proc ::ForceFieldToolKit::gui::coptRunOpt {} {
     set ::ForceFieldToolKit::ChargeOpt::logFileList {}
     set ::ForceFieldToolKit::ChargeOpt::atomList {}
     set ::ForceFieldToolKit::ChargeOpt::indWeights {}
-    
+
     # build and set the parList from treeview data
     foreach tvItem [.fftk_gui.hlf.nb.chargeopt.input.parFilesBox children {}] {
         lappend ::ForceFieldToolKit::ChargeOpt::parList [lindex [.fftk_gui.hlf.nb.chargeopt.input.parFilesBox item $tvItem -values] 0]
     }
-    
+
     # build and set the charge constraints from treeview data
     foreach tvItem [.fftk_gui.hlf.nb.chargeopt.cconstr.chargeData children {}] {
         set datavals [.fftk_gui.hlf.nb.chargeopt.cconstr.chargeData item $tvItem -values]
@@ -1508,7 +1512,7 @@ proc ::ForceFieldToolKit::gui::coptRunOpt {} {
         lappend ::ForceFieldToolKit::ChargeOpt::chargeInit [lindex $datavals 1]
         lappend ::ForceFieldToolKit::ChargeOpt::chargeBounds [list [lindex $datavals 2] [lindex $datavals 3]]
     }
-    
+
     # build and set the logFileList, atomList, and indWeights from treeview data
     foreach tvItem [.fftk_gui.hlf.nb.chargeopt.qmt.wie.logData children {}] {
         set datavals [.fftk_gui.hlf.nb.chargeopt.qmt.wie.logData item $tvItem -values]
@@ -1516,13 +1520,13 @@ proc ::ForceFieldToolKit::gui::coptRunOpt {} {
         lappend ::ForceFieldToolKit::ChargeOpt::atomList [lindex $datavals 1]
         lappend ::ForceFieldToolKit::ChargeOpt::indWeights [lindex $datavals 2]
     }
-    
+
 
     # print setup settings in debugging mode
     if { $::ForceFieldToolKit::ChargeOpt::debug } {
         ::ForceFieldToolKit::ChargeOpt::printSettings stdout
     }
-    
+
     # run the optimization
     # first, check to see if build script setting is checked
     # if yes, then write a script that can be run independently
@@ -1573,14 +1577,14 @@ proc ::ForceFieldToolKit::gui::coptRunOpt {} {
 
         # update the charge total
         ::ForceFieldToolKit::gui::coptCalcFinalChargeTotal
-        
+
         # set the staus label to idle
         set ::ForceFieldToolKit::gui::coptStatus "IDLE"
         ::ForceFieldToolKit::gui::consoleMessage "Charge optimization finished"
     }
-    
+
     # DONE
-    
+
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::coptParseLog { logFile } {
@@ -1596,11 +1600,11 @@ proc ::ForceFieldToolKit::gui::coptParseLog { logFile } {
     # open the file
     set inFile [open $logFile r]
     set readState 0
-    
+
     # read through the file a line at a time
     while { [eof $inFile] != 1 } {
         set inLine [gets $inFile]
-        
+
         # determine if we've reached the data that we're interested in, and read if we are
         switch -exact $inLine {
             "FINAL CHARGES" { set readState 1 }
@@ -1614,19 +1618,19 @@ proc ::ForceFieldToolKit::gui::coptParseLog { logFile } {
             }
         }; # end switch
     }; # end of log file
-    
+
     # update the charge total
     ::ForceFieldToolKit::gui::coptCalcFinalChargeTotal
-    
+
     # clean up
     close $inFile
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::coptCalcFinalChargeTotal {} {
     variable coptFinalChargeTotal
-    
+
     set cumsum 0
-    
+
     # cycle through all items in the final charge groups box and sum the charge values
     foreach entryItem [.fftk_gui.hlf.nb.chargeopt.results.container1.cgroups children {}] {
         set data [.fftk_gui.hlf.nb.chargeopt.results.container1.cgroups item $entryItem -values]
@@ -1636,14 +1640,14 @@ proc ::ForceFieldToolKit::gui::coptCalcFinalChargeTotal {} {
             continue
         }
     }
-    
+
     # set the final cumulative sum
     set coptFinalChargeTotal [format "%0.3f" $cumsum]
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::coptWriteNewPSF {} {
     # writes a PSF file with the updated charges
-    
+
     # simple validation
     if { $::ForceFieldToolKit::ChargeOpt::psfPath eq "" || ![file exists $::ForceFieldToolKit::ChargeOpt::psfPath] } {
         tk_messageBox -type ok -icon warning -message "Action halted on error!" -detail "Cannot find PSF file."
@@ -1665,7 +1669,7 @@ proc ::ForceFieldToolKit::gui::coptWriteNewPSF {} {
     # reload the PSF/PDB file pair
     mol new $::ForceFieldToolKit::ChargeOpt::psfPath
     mol addfile $::ForceFieldToolKit::ChargeOpt::pdbPath
-    
+
     # reType/reCharge, taking into account reChargeOverride settings (if set)
     # reTypeFromPSF/reChargeFromPSF has been depreciated
     #::ForceFieldToolKit::SharedFcns::reTypeFromPSF $::ForceFieldToolKit::ChargeOpt::psfPath "top"
@@ -1677,17 +1681,17 @@ proc ::ForceFieldToolKit::gui::coptWriteNewPSF {} {
             $temp delete
         }
     }
-    
+
     # cycle through loaded results data
     foreach CGentry [.fftk_gui.hlf.nb.chargeopt.results.container1.cgroups children {}] {
-    
+
         # parse data values as a whole
         set data [.fftk_gui.hlf.nb.chargeopt.results.container1.cgroups item $CGentry -values]
-        
+
         if { [lindex $data 2] ne "" } {
             # parse charge
             set charge [lindex $data 2]
-        
+
             # reset the charge for each atom in the charge groups
             foreach atomName [lindex $data 0] {
                 [atomselect top "name $atomName"] set charge $charge
@@ -1696,10 +1700,10 @@ proc ::ForceFieldToolKit::gui::coptWriteNewPSF {} {
             continue
         }
     }
-    
+
     # write the psf file
     [atomselect top all] writepsf $::ForceFieldToolKit::gui::coptPSFNewPath
-    
+
     # cleanup
     mol delete top
 
@@ -1823,12 +1827,12 @@ proc ::ForceFieldToolKit::gui::baoptGuessPars {} {
 #======================================================
 proc ::ForceFieldToolKit::gui::baoptRunOpt {} {
     # procedure for button to run the bonds/angles optimization
-    
+
     # reset some variables
     set ::ForceFieldToolKit::BondAngleOpt::inputBondPars {}
     set ::ForceFieldToolKit::BondAngleOpt::inputAnglePars {}
     set ::ForceFieldToolKit::BondAngleOpt::parlist {}
-    
+
     # cycle through each item in the treeview box, sort bonds and angles into their respective lists
     foreach tvItem [.fftk_gui.hlf.nb.bondangleopt.pconstr.pars2opt children {}] {
         set itemData [.fftk_gui.hlf.nb.bondangleopt.pconstr.pars2opt item $tvItem -values]
@@ -1838,15 +1842,15 @@ proc ::ForceFieldToolKit::gui::baoptRunOpt {} {
             lappend ::ForceFieldToolKit::BondAngleOpt::inputAnglePars [lrange $itemData 1 3]
         }
     }
-    
+
     # build the list of parameter files
     foreach tvItem [.fftk_gui.hlf.nb.bondangleopt.input.parFiles children {}] {
         lappend ::ForceFieldToolKit::BondAngleOpt::parlist [lindex [.fftk_gui.hlf.nb.bondangleopt.input.parFiles item $tvItem -values] 0]
     }
-    
+
     # add the in-progress par file to the (end of the) list
     lappend ::ForceFieldToolKit::BondAngleOpt::parlist $::ForceFieldToolKit::BondAngleOpt::parInProg
-    
+
     # run the optimization
     # first, check to see if build script setting is checked
     if { $::ForceFieldToolKit::gui::baoptBuildScript } {
@@ -1856,7 +1860,7 @@ proc ::ForceFieldToolKit::gui::baoptRunOpt {} {
         ::ForceFieldToolKit::BondAngleOpt::buildScript BondedOpt-RunScript.tcl
         set ::ForceFieldToolKit::gui::baoptStatus "IDLE"
     } else {
-        # run optimization directly 
+        # run optimization directly
         ::ForceFieldToolKit::gui::consoleMessage "Bonded Optimization Started"
         set ::ForceFieldToolKit::gui::baoptStatus "Running..."
         update idletasks
@@ -1871,7 +1875,7 @@ proc ::ForceFieldToolKit::gui::baoptRunOpt {} {
         set ::ForceFieldToolKit::gui::baoptStatus "IDLE"
         ::ForceFieldToolKit::gui::consoleMessage "Bonded Optimization Finished"
     }
-    
+
     # DONE
 }
 #======================================================
@@ -1883,9 +1887,9 @@ proc ::ForceFieldToolKit::gui::baoptRunOpt {} {
 #======================================================
 proc ::ForceFieldToolKit::gui::gdsToggleLabels {} {
     # toggles atom labels for TOP molecule
-    
+
     variable gdsAtomLabels
-    
+
     if { [llength $gdsAtomLabels] > 0 } {
         foreach label $gdsAtomLabels {graphics top delete $label}
         set gdsAtomLabels {}
@@ -1903,7 +1907,7 @@ proc ::ForceFieldToolKit::gui::gdsImportDihedrals { psf pdb parfile } {
     # reads in a molecule and parameter file
     # if the molecule contains dihedrals that are defined in the parfile
     # returns the indices
-    
+
     # validation
     set errorList {}
     set errorText ""
@@ -1920,7 +1924,7 @@ proc ::ForceFieldToolKit::gui::gdsImportDihedrals { psf pdb parfile } {
         return
     }
 
-    
+
     # read the parameter file and parse out the dihedrals section
     set dihPars [lindex [::ForceFieldToolKit::SharedFcns::readParFile $parfile] 2]
     # build a 1D search index of unique type defs
@@ -1929,14 +1933,14 @@ proc ::ForceFieldToolKit::gui::gdsImportDihedrals { psf pdb parfile } {
         lappend dihTypeIndex [lindex $dih 0]
     }
     set dihTypeIndex [lsort -unique $dihTypeIndex]
-    
+
 
     # load the molecule
     mol new $psf; mol addfile $pdb
     # retype from psf (can be removed once VMD psf reader is fixed to support CGenFF-styled types)
     # reTypeFromPSF has been depreciated
     #::ForceFieldToolKit::SharedFcns::reTypeFromPSF $psf top
-    
+
     # grab the indices for all dihedrals (parse out only index information)
     set indDefList {}
     foreach entry [topo getdihedrallist] {
@@ -1952,7 +1956,7 @@ proc ::ForceFieldToolKit::gui::gdsImportDihedrals { psf pdb parfile } {
             set indDefList [lreplace $indDefList $i $i]
         }
     }
-    
+
     # convert the index def list to type def list and element def list
     set typeDefList {}
     set eleDefList {}
@@ -1981,29 +1985,29 @@ proc ::ForceFieldToolKit::gui::gdsImportDihedrals { psf pdb parfile } {
     for {set i 0} {$i < [llength $typeDefList]} {incr i} {
         if { [lsearch -exact $dihTypeIndex [lindex $typeDefList $i]] != -1 || \
              [lsearch -exact $dihTypeIndex [lreverse [lindex $typeDefList $i]]] != -1 } {
-             
+
                  # check to see if either end index is a hydrogen
                  if { [lindex $eleDefList $i 0] == "H" || [lindex $eleDefList $i 3] == "H" } { continue }
 
                  # check to see if the central bond is a duplicate (repeat scan)
                  set bondInds [lsort -increasing [lrange [lindex $indDefList $i] 1 2]]
                  if { [lsearch $unqCentralBondInds $bondInds] != -1 } { continue } else { lappend unqCentralBondInds $bondInds }
-                                 
+
                  # append the data to return
                  lappend returnData [lindex $indDefList $i]
-                 
+
         } else {
             continue
         }
     }
 
-    
+
     # clean up
     mol delete top
-    
+
     # return the data
     return $returnData
-    
+
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::gdsShowSelRep {} {
@@ -2018,13 +2022,13 @@ proc ::ForceFieldToolKit::gui::gdsShowSelRep {} {
             lappend indexList $ind
         }
     }
-    
+
     # build a list of rep names for the top molecule
     set currRepNames {}
     for {set i 0} {$i < [molinfo top get numreps]} {incr i} {
         lappend currRepNames [mol repname top $i]
     }
-    
+
     # determine if there is already a representation in place
     # and if that rep still exists (i.e., the user hasn't deleted it)
     if { $::ForceFieldToolKit::gui::gdsRepName eq "" || [lsearch $currRepNames $::ForceFieldToolKit::gui::gdsRepName] == -1 } {
@@ -2033,9 +2037,9 @@ proc ::ForceFieldToolKit::gui::gdsShowSelRep {} {
         mol representation CPK
         mol color Name
         mol addrep top
-        
+
         set ::ForceFieldToolKit::gui::gdsRepName [mol repname top [expr {[molinfo top get numreps]-1}]]
-        
+
     } else {
         # update the old rep
         set currRepId [mol repindex top $::ForceFieldToolKit::gui::gdsRepName]
@@ -2050,18 +2054,18 @@ proc ::ForceFieldToolKit::gui::gdsShowSelRep {} {
 #------------------------------------------------------
 proc ::ForceFieldToolKit::gui::doptRunOpt {} {
     # procedure for button to run the dihedral optimization
-    
+
     # initialize/reset some variables that will explicitely set by GUI
     set ::ForceFieldToolKit::DihOpt::parlist {}
     set ::ForceFieldToolKit::DihOpt::GlogFiles {}
     set ::ForceFieldToolKit::DihOpt::parDataInput {}
 ###    array unset ::ForceFieldToolKit::DihOpt::boundsInfo; array set ::ForceFieldToolKit::DihOpt::boundsInfo {}
-    
+
     # build the parameter files list (parlist) from the TV box
     foreach tvItem [.fftk_gui.hlf.nb.dihopt.input.parFiles children {}] {
         lappend ::ForceFieldToolKit::DihOpt::parlist [lindex [.fftk_gui.hlf.nb.dihopt.input.parFiles item $tvItem -values] 0]
     }
-        
+
     # build the gaussian log files list (qm target data) from the TV box
     foreach tvItem [.fftk_gui.hlf.nb.dihopt.qmt.tv children {}] {
         lappend ::ForceFieldToolKit::DihOpt::GlogFiles [.fftk_gui.hlf.nb.dihopt.qmt.tv item $tvItem -values]
@@ -2097,7 +2101,7 @@ proc ::ForceFieldToolKit::gui::doptRunOpt {} {
            lappend ::ForceFieldToolKit::DihOpt::parDataInput [list $typeDef [list $fc $mult $delta 0]]
         }
     }
-    
+
     if { $::ForceFieldToolKit::gui::doptBuildScript } {
         # build a script instead of running directly
         set ::ForceFieldToolKit::gui::doptStatus "Writing to script..."
@@ -2112,7 +2116,7 @@ proc ::ForceFieldToolKit::gui::doptRunOpt {} {
         ::ForceFieldToolKit::gui::consoleMessage "Dihedral optimization started"
         update idletasks
         set finalOptData [::ForceFieldToolKit::DihOpt::optimize]
-        if { $finalOptData == -1 } { 
+        if { $finalOptData == -1 } {
             set ::ForceFieldToolKit::gui::doptStatus "Halted on ERROR"
             ::ForceFieldToolKit::gui::consoleMessage "Dihedral optimization halted on error"
             update idletasks
@@ -2120,7 +2124,7 @@ proc ::ForceFieldToolKit::gui::doptRunOpt {} {
         }
         set ::ForceFieldToolKit::gui::doptStatus "Loading Results..."
         update idletasks
-        
+
         # test QME, MMEi, and dihAll; update status labels in Vis. Results accordingly
         if { [llength $::ForceFieldToolKit::DihOpt::EnQM] != 0 } {
             set ::ForceFieldToolKit::gui::doptQMEStatus "Loaded"
@@ -2138,7 +2142,7 @@ proc ::ForceFieldToolKit::gui::doptRunOpt {} {
             set ::ForceFieldToolKit::gui::doptDihAllStatus "ERROR"
         }
         update idletasks
-        
+
         # clear the Vis. Results treeview
         .fftk_gui.hlf.nb.dihopt.results.data.tv delete [.fftk_gui.hlf.nb.dihopt.results.data.tv children {}]
         set ::ForceFieldToolKit::gui::doptRefineCount 1
@@ -2155,25 +2159,85 @@ proc ::ForceFieldToolKit::gui::doptRunOpt {} {
 #            set delta [lindex $ele 6]
 #            .fftk_gui.hlf.nb.dihopt.refine.parSet.tv insert {} end -values [list $typedef $k $mult $delta]
 #        }
-        
+
         # update the status label
         set ::ForceFieldToolKit::gui::doptStatus "IDLE"
         ::ForceFieldToolKit::gui::consoleMessage "Dihedral optimization finished"
         update idletasks
-        
+
     }
-    
+
     # DONE
 
 }
 #======================================================
+proc ::ForceFieldToolKit::gui::doptRunManualRefine {} {
+    # Preps, runs, and processes MM PES Refinement Parameters
+
+    # Sanity Check
+    # check that there are parameters
+    set errorList {}
+    if { [llength [.fftk_gui.hlf.nb.dihopt.refine.parSet.tv children {}]] == 0 } { lappend errorList "No parameters provided for refinment/refitting." }
+    if { ![file exists $::ForceFieldToolKit::DihOpt::psf] } { lappend errorList "PSF not found." }
+    if { ![file exists $::ForceFieldToolKit::DihOpt::pdb] } { lappend errorList "PDB not found." }
+    if { ![info exists ::ForceFieldToolKit::DihOpt::dihAllData] } { lappend errorList "Dihedral Data is missing.  Rerun the initial optimization."}
+    if { ![info exists ::ForceFieldToolKit::DihOpt::EnQM] } { lappend errorList "QM PES data is missing.  Rerun the initial optimization."}
+    if { ![info exists ::ForceFieldToolKit::DihOpt::EnMM] } { lappend errorList "MMEi PES data is missing.  Rerun the initial optimization."}
+    if { ![info exists ::ForceFieldToolKit::DihOpt::refineCutoff] || ![string is double $::ForceFieldToolKit::DihOpt::refineCutoff ]} { lappend errorList "Inappropriate refinement cutoff energy." }
+
+    set errorText ""
+    if { [llength $errorList] > 0 } {
+        foreach ele $errorList {
+            set errorText [concat $errorText\n$ele]
+        }
+        tk_messageBox \
+            -type ok \
+            -icon warning \
+            -message "Application halting due to the following errors:" \
+            -detail $errorText
+
+        # there are errors, return the error response
+        return 0
+    }
+
+    # build the input
+    set parDataSave {}
+    set parData {}
+    foreach tvItem [.fftk_gui.hlf.nb.dihopt.refine.parSet.tv children {}] {
+        set dihPars [.fftk_gui.hlf.nb.dihopt.refine.parSet.tv item $tvItem -values]
+        lappend parDataSave [join $dihPars]
+        #set typeDef [lindex $dihPars 0]
+        set typeDef {}
+        foreach atype [lindex $dihPars 0] { lappend typeDef $atype }
+        set fc [lindex $dihPars 1]
+        set mult [lindex $dihPars 2]
+        set delta [lindex $dihPars 3]
+        set lock [lindex $dihPars 4]
+        # if phase shift is 180, flip the sign of k and reset delta to 0
+        # append lock and sign info to the boundsInfo array
+        if { [string equal $lock "yes"] } {
+           lappend parData [list $typeDef [list $fc $mult $delta 1]]
+        } else {
+           lappend parData [list $typeDef [list $fc $mult $delta 0]]
+        }
+    }
+
+    # call the function to compute {RMSE EnMMf}
+    set result [::ForceFieldToolKit::DihOpt::manualRefinementCalculation $parData]
+
+    # add the result to the results box
+    #                                                                    label                                                         RMSE                              color   EnMMf data        parameters
+    .fftk_gui.hlf.nb.dihopt.results.data.tv insert {} end -values [list "r[format "%02d" $::ForceFieldToolKit::gui::doptRefineCount]" [format "%.3f" [lindex $result 0]] "blue" [lindex $result 1] $parDataSave]
+    incr ::ForceFieldToolKit::gui::doptRefineCount
+}
+#======================================================
 proc ::ForceFieldToolKit::gui::doptRunRefine {} {
     # procedure for button to run the dihedral refinement/refitting
-    
+
     # initialize some variables that will be explicitely set by GUI
     set ::ForceFieldToolKit::DihOpt::refineParDataInput {}
 ###    array unset ::ForceFieldToolKit::DihOpt::boundsInfo; array set ::ForceFieldToolKit::DihOpt::boundsInfo {}
-    
+
     # build the parameter data input list
     # requires the form:
     # {
@@ -2204,13 +2268,13 @@ proc ::ForceFieldToolKit::gui::doptRunRefine {} {
            lappend ::ForceFieldToolKit::DihOpt::refineParDataInput [list $typeDef [list $fc $mult $delta 0]]
         }
     }
-    
+
     # launch the refinement
     set ::ForceFieldToolKit::gui::doptStatus "Running..."
     ::ForceFieldToolKit::gui::consoleMessage "Dihedral refinement started"
     update idletasks
     set finalRefineData [::ForceFieldToolKit::DihOpt::refine]
-    if { $finalRefineData == -1 } { 
+    if { $finalRefineData == -1 } {
         set ::ForceFieldToolKit::gui::doptStatus "Halted on ERROR"
         ::ForceFieldToolKit::gui::consoleMessage "Dihedral refinement halted on error"
         update idletasks
@@ -2219,24 +2283,24 @@ proc ::ForceFieldToolKit::gui::doptRunRefine {} {
 
     set ::ForceFieldToolKit::gui::doptStatus "Loading Results..."
     update idletasks
-    
+
     # add the data to the Viz. Results treeview
     .fftk_gui.hlf.nb.dihopt.results.data.tv insert {} end -values [list "r[format "%02d" $::ForceFieldToolKit::gui::doptRefineCount]" [format "%.3f" [lindex $finalRefineData 0]] "blue" [lindex $finalRefineData 1] [lindex $finalRefineData 2]]
     incr ::ForceFieldToolKit::gui::doptRefineCount
-    
+
     # update the status label
     set ::ForceFieldToolKit::gui::doptStatus "IDLE"
     ::ForceFieldToolKit::gui::consoleMessage "Dihedral refinement finished"
     update idletasks
-    
+
     # DONE
-    
+
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::doptSetColor {} {
     # sets the color for all selected data sets
     # very simple program, but simplifies menu construction
-    
+
     foreach dataId [.fftk_gui.hlf.nb.dihopt.results.data.tv selection] {
         .fftk_gui.hlf.nb.dihopt.results.data.tv set $dataId color $::ForceFieldToolKit::gui::doptEditColor
     }
@@ -2244,11 +2308,11 @@ proc ::ForceFieldToolKit::gui::doptSetColor {} {
 #======================================================
 proc ::ForceFieldToolKit::gui::doptBuildPlotWin {} {
     # builds the window for plotting the results data
-    
+
     # localize variables
     variable doptP
     variable doptResultsPlotHandle
-    
+
     # if the multiplot window already exists, then deiconify it
     if { [winfo exists .pte_plot] } {
         wm deiconify .pte_plot
@@ -2258,24 +2322,24 @@ proc ::ForceFieldToolKit::gui::doptBuildPlotWin {} {
     # build the window
     set doptP [toplevel ".pte_plot"]
     wm title $doptP "Plot DihOpt Results"
-    
+
     # allow window to expand with .
     grid columnconfigure $doptP 0 -weight 1
     grid rowconfigure $doptP 0 -weight 1
-    
+
     # set a default initial geometry
     wm geometry $doptP 700x580
-    
+
     # build/grid a frame to hold the embedded multiplot
     ttk::frame $doptP.plotFrame
     grid $doptP.plotFrame -column 0 -row 0 -sticky nswe
-    
+
     # build the multiplot
     set doptResultsPlotHandle [multiplot embed $doptP.plotFrame \
         -title "Selected DihOpt Fit Data" -xlabel "Conformation" -ylabel "Energy\n(kcal/mol)" \
         -xsize 680 -ysize 450 -ymin 0 -ymax 10 -xmin auto -xmax auto \
         -lines -linewidth 3]
-    
+
     # build control panel
     ttk::frame $doptP.controls
     grid $doptP.controls -column 0 -row 1 -sticky nswe
@@ -2382,28 +2446,28 @@ proc ::ForceFieldToolKit::gui::doptBuildPlotWin {} {
     grid $doptP.controls.xySet.vsep0 -column 9 -row 0 -sticky nswe -padx "4 0"
     grid $doptP.controls.xySet.points -column 10 -row 0 -sticky nswe -padx "4 0"
 
-    # initialize the points option 
+    # initialize the points option
     set ::ForceFieldToolKit::gui::doptPlotPoints 0
 
     # when the window is closed, clean up
-    bind .pte_plot <Destroy> { 
+    bind .pte_plot <Destroy> {
         #$::ForceFieldToolKit::gui::doptResultsPlotHandle quit
         set ::ForceFieldToolKit::gui::doptResultsPlotHandle {}
         set ::ForceFieldToolKit::gui::doptP {}
     }
-    
+
     # return the window
     return $doptP
-    
+
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::doptPlotData { datasets colorsets legend } {
     # plots input y-coordinate datasets in an embedded multiplot window
-    
+
     # localize variable
     variable doptP
     variable doptResultsPlotHandle
-    
+
     # clear the dataset
     $doptResultsPlotHandle clear
 
@@ -2427,17 +2491,17 @@ proc ::ForceFieldToolKit::gui::doptPlotData { datasets colorsets legend } {
 
         # find/check xMax
         if { [llength $xdata] > $xMax } { set xMax [llength $xdata] }
-        
+
         # parse out the plot color
         set plotColor [lindex $colorsets $i]
-        
+
         # parse out the legend text
         set legendTxt [lindex $legend $i]
-        
+
         $doptResultsPlotHandle add $xdata $ydata -lines -linewidth 3 -linecolor $plotColor -legend $legendTxt
 
     }
-    
+
     # update the plot
     if { $yMax > 10 } { set initYmax 10} else { set initYmax $yMax }
     $doptResultsPlotHandle configure -xmin 0 -xmax $xMax -ymin 0 -ymax $initYmax
@@ -2448,7 +2512,7 @@ proc ::ForceFieldToolKit::gui::doptPlotData { datasets colorsets legend } {
     .pte_plot.controls.sliders.xMax configure -from 0 -to $xMax -value $xMax
     .pte_plot.controls.sliders.yMin configure -from 0 -to $yMax -value 0
     .pte_plot.controls.sliders.yMax configure -from 0 -to $yMax -value $initYmax
-    
+
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::doptAdjustScale {scaleType value} {
@@ -2468,7 +2532,7 @@ proc ::ForceFieldToolKit::gui::doptAdjustScale {scaleType value} {
 proc ::ForceFieldToolKit::gui::doptLogParser { logfile } {
     # parses optimization and refinement logs and loads
     # the relevant information into the gui
-    
+
     # initialize lists
     set qme {}
     set psf {}
@@ -2478,16 +2542,16 @@ proc ::ForceFieldToolKit::gui::doptLogParser { logfile } {
     set rmse {}
     set mmef {}
     set parOut {}
-    
+
     # open the log file for reading
     set inFile [open $logfile r]
-    
+
     set readstate 0
 
     # read through the file a line at a time
     while { ![eof $inFile] } {
         set inLine [gets $inFile]
-        
+
         # outter switch determines if we're entering or exiting a section of interest
         # inner switch write data to the appropriate list, or continues on
         switch -exact $inLine {
@@ -2497,7 +2561,7 @@ proc ::ForceFieldToolKit::gui::doptLogParser { logfile } {
             "MME" { set readstate mme }
             "MMdihARRAY" { set readstate dih }
             "FINAL RMSE" { set readstate rmse }
-            "FINAL STEP ENERGIES" { 
+            "FINAL STEP ENERGIES" {
                 set readstate mmef
                 # burn a line
                 gets $inFile
@@ -2517,13 +2581,13 @@ proc ::ForceFieldToolKit::gui::doptLogParser { logfile } {
                     default { continue }
                 }
             }
-            
+
         }
     }
 
     # close the input log file
     close $inFile
-    
+
     # setup the GUI and appropriate namespace variables
 
     # qme and mme from log are raw and need to be normalized
@@ -2534,20 +2598,20 @@ proc ::ForceFieldToolKit::gui::doptLogParser { logfile } {
     set ::ForceFieldToolKit::DihOpt::dihAllData $dihAll
     set ::ForceFieldToolKit::DihOpt::psf $psf
     set ::ForceFieldToolKit::DihOpt::pdb $pdb
- 
+
     # update labels
     if { $::ForceFieldToolKit::DihOpt::EnQM ne "" } {
         set ::ForceFieldToolKit::gui::doptQMEStatus "Loaded"
     } else {
         set ::ForceFieldToolKit::gui::doptQMEStatus "ERROR"
     }
-    
+
     if { $::ForceFieldToolKit::DihOpt::EnMM ne "" } {
         set ::ForceFieldToolKit::gui::doptMMEStatus "Loaded"
     } else {
         set ::ForceFieldToolKit::gui::doptMMEStatus "ERROR"
     }
-    
+
     if { $::ForceFieldToolKit::DihOpt::dihAllData ne "" } {
         set ::ForceFieldToolKit::gui::doptDihAllStatus "Loaded"
     } else {
@@ -2559,15 +2623,15 @@ proc ::ForceFieldToolKit::gui::doptLogParser { logfile } {
 
 }
 #======================================================
-proc ::ForceFieldToolKit::gui::doptLogWriter { filename rmse mmef parData } { 
+proc ::ForceFieldToolKit::gui::doptLogWriter { filename rmse mmef parData } {
     # writes a dihedral optimization -styled log file
-    
+
     # basename is used for a filename
     # rmse, mmef, and parData are important components of a log file
-    
+
     # open the log file for writing
     set outFile [open $filename w]
-    
+
     # write a header
     puts $outFile "============================================================="
     puts $outFile "Log file written directly from GUI for refit/refinement"
@@ -2575,46 +2639,46 @@ proc ::ForceFieldToolKit::gui::doptLogWriter { filename rmse mmef parData } {
     puts $outFile "refitting/refining, and updating parameters in BuildPar"
     puts $outFile "but it will look a little different than the initial log file"
     puts $outFile "============================================================="
-    
+
     # write "QMDATA"
     # since only QME is read in and stored from logs, this is all we can write
     # but it must be formatted in a similar manner
-    
+
     puts $outFile "\nQMDATA"
     foreach ele $::ForceFieldToolKit::DihOpt::EnQM {
         puts $outFile "placeHolder placeHolder $ele"
     }
     puts $outFile "END"
-    
+
     # write the psf path
     puts $outFile "\nPSF"
     puts $outFile "$::ForceFieldToolKit::DihOpt::psf"
     puts $outFile "END"
-    
+
     # write the pdb path
     puts $outFile "\nPDB"
     puts $outFile "$::ForceFieldToolKit::DihOpt::pdb"
     puts $outFile "END"
-    
+
     # write MME (subsection of MMDATA)
     puts $outFile "\nMME"
     foreach ele $::ForceFieldToolKit::DihOpt::EnMM {
         puts $outFile "$ele"
     }
     puts $outFile "END"
-    
+
     # write the dihAllData
     puts $outFile "\nMMdihARRAY"
     foreach ele $::ForceFieldToolKit::DihOpt::dihAllData {
         puts $outFile "$ele"
     }
     puts $outFile "END"
-    
+
     # write the final rmse
     puts $outFile "\nFINAL RMSE"
     puts $outFile "$rmse"
     puts $outFile "END"
-    
+
     # write the step energies (mmef)
     puts $outFile "\nFINAL STEP ENERGIES"
     puts $outFile "QME\tMME(i)\tMME(f)\tQME-MME(f)"
@@ -2622,17 +2686,17 @@ proc ::ForceFieldToolKit::gui::doptLogWriter { filename rmse mmef parData } {
         puts $outFile "placeholder placeholder $ele placeholder"
     }
     puts $outFile "END"
-    
+
     # write the final paramater data
     puts $outFile "\nFINAL PARAMETERS"
     foreach ele $parData {
         puts $outFile "dihedral [list [lrange $ele 0 3]] [lindex $ele 4] [lindex $ele 5] [lindex $ele 6]"
     }
     puts $outFile "END"
-    
+
     # clean up
     close $outFile
-    
+
 }
 #======================================================
 

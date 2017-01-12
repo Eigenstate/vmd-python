@@ -19,7 +19,7 @@ _deprecation_warning = "The AtomSel module is deprecated; please use atomsel"
 try:
   import warnings
 except:
-  print _deprecation_warning
+  print(_deprecation_warning)
 else:
   warnings.warn(_deprecation_warning, DeprecationWarning)
 
@@ -59,7 +59,7 @@ class AtomSel:
         filetype = filename[ind+1:]
     if molecule.write(self.__molid, filetype, filename, self.__frame, \
         self.__frame, 1, -1, selection=self.__list) != 1:
-      raise IOError, "Unable to write selection to file '%s'." % filename
+      raise IOError("Unable to write selection to file '%s'." % filename)
     return self
   def get(self, *attrlist):
     result = [] 
@@ -161,7 +161,7 @@ class AtomSel:
       try:
         kwds["restrict"] = res.__list
       except:
-        raise ValueError, "'restrict' argument must be an AtomSel instance."
+        raise ValueError("'restrict' argument must be an AtomSel instance.")
     return atomselection.sasa(float(srad), self.__molid, self.__frame, \
       self.__list, **kwds)
 

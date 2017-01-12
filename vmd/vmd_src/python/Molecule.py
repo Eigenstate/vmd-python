@@ -51,7 +51,7 @@ class Molecule:
       self.atoms = molecule.numatoms(self.id)
 
     if not molecule.exists(self.id):
-      raise ValueError, "Molecule with id %d does not exist." % self.id
+      raise ValueError("Molecule with id %d does not exist." % self.id)
   
   def __int__(self):
     """ Casting a Molecule to an int returns the molecule ID."""
@@ -106,7 +106,7 @@ class Molecule:
     if filetype is None:
       filetype = self._guessFiletype(filename)
     if molecule.read(self.id, filetype, filename, first, last, step, waitfor, volsets) < 0:
-      raise IOError, "Unable to load file: %s" % filename
+      raise IOError("Unable to load file: %s" % filename)
     return self
 
   def save(self, filename, filetype=None, first=0, last=-1, step=1, waitfor=-1, sel=None):
@@ -138,7 +138,7 @@ class Molecule:
 ####################################################
     nframes = molecule.write(self.id, filetype, filename, first, last, step, waitfor, selection=sel)
     if nframes < 0:
-      raise IOError, "Unable to save file: %s" % filename
+      raise IOError("Unable to save file: %s" % filename)
     return nframes
 
   def files(self):
@@ -204,7 +204,7 @@ class Molecule:
     """ Add the given rep to the molecule.  Modifications to the rep will
     affect all molecules to which the rep has been added."""
     if rep.molecules.has_key(self.id):
-      raise ValueError, "This molecule already has this rep"
+      raise ValueError("This molecule already has this rep")
     molrep.addrep(self.id, style=rep.style, color=rep.color, selection=rep.selection, material=rep.material)
     repid = molrep.num(self.id)-1
     repname = molrep.get_repname(self.id, repid)
@@ -231,7 +231,7 @@ class Molecule:
     try:
       name = rep.molecules[self.id]
     except KeyError:
-      raise ValueError, "This molecule does not contain this rep."
+      raise ValueError("This molecule does not contain this rep.")
     repid = molrep.repindex(self.id, name)
     if onoff is None:
       return molrep.get_autoupdate(self.id, repid)
@@ -302,7 +302,7 @@ class MoleculeRep:
     for id,name in self.molecules.items():
       repid = molrep.repindex(id, name)
       if not molrep.modrep(id, repid, style=style):
-        raise ValueError, "Invalid style '%s'" % style
+        raise ValueError("Invalid style '%s'" % style)
     self.style = str(style)
   
   def changeColor(self, color):
@@ -310,7 +310,7 @@ class MoleculeRep:
     for id,name in self.molecules.items():
       repid = molrep.repindex(id, name)
       if not molrep.modrep(id, repid, color=color):
-        raise ValueError, "Invalid color '%s'" % color 
+        raise ValueError("Invalid color '%s'" % color)
     self.color = str(color)
   
   def changeSelection(self, selection):
@@ -318,7 +318,7 @@ class MoleculeRep:
     for id,name in self.molecules.items():
       repid = molrep.repindex(id, name)
       if not molrep.modrep(id, repid, sel=selection):
-        raise ValueError, "Invalid selection '%s'" % selection 
+        raise ValueError("Invalid selection '%s'" % selection)
     self.selection = str(selection)
   
   def changeMaterial(self, material):
@@ -326,7 +326,7 @@ class MoleculeRep:
     for id,name in self.molecules.items():
       repid = molrep.repindex(id, name)
       if not molrep.modrep(id, repid, material=material):
-        raise ValueError, "Invalid material'%s'" % material 
+        raise ValueError("Invalid material'%s'" % material)
     self.material = str(material)
 
 # The following functions return strings that can be passed to 

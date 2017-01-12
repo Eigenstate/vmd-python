@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: CUDAQuickSurf.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.4 $	$Date: 2012/09/06 04:02:59 $
+ *	$Revision: 1.6 $	$Date: 2016/11/28 03:04:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -41,15 +41,18 @@ private:
   int free_bufs(void);
 
   int check_bufs(long int natoms, int colorperatom,
+                 int acx, int acy, int acz,
                  int gx, int gy, int gz);
 
   int alloc_bufs(long int natoms, int colorperatom, 
                  VolTexFormat vtexformat,
+                 int acx, int acy, int acz,
                  int gx, int gy, int gz);
 
   int get_chunk_bufs(int testexisting,
                      long int natoms, int colorperatom, 
                      VolTexFormat vtexformat,
+                     int acx, int acy, int acz,
                      int gx, int gy, int gz,
                      int &cx, int &cy, int &cz,
                      int &sx, int &sy, int &sz);

@@ -1,4 +1,7 @@
-/Makefile/1.4/Mon Aug 30 20:14:34 2010//
+/run.tcl/1.2/Tue Mar 31 17:22:33 2009//
+/Makefile/1.4/Fri Oct 15 18:48:04 2010//
+/pkgIndex.tcl/1.3/Fri Oct 15 18:48:04 2010//
+D/src////
 /cluster.tcl/1.2/Mon Apr 15 16:54:14 2013//
 /phylotree.tcl/1.5/Mon Apr 15 16:54:14 2013//
 /phylotree_analysis.tcl/1.2/Mon Apr 15 16:54:14 2013//
@@ -10,6 +13,3 @@
 /phylotree_nexus.tcl/1.3/Mon Apr 15 16:54:15 2013//
 /phylotree_nodeprops.tcl/1.4/Mon Apr 15 16:54:15 2013//
 /phylotree_widget.tcl/1.5/Mon Apr 15 16:54:15 2013//
-/pkgIndex.tcl/1.3/Mon Aug 30 20:14:34 2010//
-/run.tcl/1.2/Tue Mar 31 17:00:43 2009//
-D/src////

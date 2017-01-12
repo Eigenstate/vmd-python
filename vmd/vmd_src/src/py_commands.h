@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_commands.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.40 $       $Date: 2014/08/23 03:25:14 $
+ *      $Revision: 1.41 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -27,6 +27,7 @@
 #else
 #include "Python.h"
 #endif
+#include "bytesobject.h"
 
 class VMDApp;
 class Timestep;
@@ -56,6 +57,7 @@ Timestep *parse_timestep(VMDApp *app, int molid, int frame);
 // is still valid.
 AtomSel * atomsel_AsAtomSel( PyObject *obj );
 
+#if PY_MAJOR_VERSION < 3
 extern void initanimate();
 extern void initatomselection();
 extern void initatomsel();
@@ -77,6 +79,7 @@ extern void inittopology();
 
 #ifdef VMDNUMPY
 extern void initvmdnumpy();
+#endif
 #endif
 
 // use this typedef so that we can define our Python methods as static 

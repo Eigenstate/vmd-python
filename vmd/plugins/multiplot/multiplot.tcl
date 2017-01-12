@@ -1,7 +1,7 @@
 #
 # 2-D plotting tool
 #
-# $Id: multiplot.tcl,v 1.39 2013/01/09 20:43:28 johns Exp $
+# $Id: multiplot.tcl,v 1.40 2016/09/29 16:14:46 jribeiro Exp $
 #
 # Author:
 # Jan Saam
@@ -93,6 +93,7 @@
 # -fillcolor color --- Fill color of datapoint markers (option can be abbreviated with -fill)
 # -linewidth w     --- Width of the lines connecting datapoints
 # -linecolor color --- Color of the lines connecting datapoints
+# -bkgcolor color  --- Color of the canvas background
 # -dash pattern    --- Draw dashed lines. The dash pattern is specified by one of the
 #                      following characters "-,._" (uses the same format as -dash for Tk canvas)
 #                      Note that each line segment is dashed. Hence you'll get a solid line when
@@ -208,6 +209,7 @@ proc ::MultiPlot::init_plot {args} {
       variable linewidth 1;        # width of the line connecting data points
       variable fillcolor Skyblue2; # fill color of data point markers   
       variable linecolor black;    # color of lines connecting data points
+      variable bkgcolor white;    # color of the canvas background
       variable dashed    {{}};     # Draw dashed lines (uses the same format as -dash for Tk canvas)
       variable legend    {{}};     # legend string for current dataset
       variable colorlist {black red green blue magenta orange OliveDrab2 cyan maroon gold2 yellow gray60 SkyBlue2 orchid3 ForestGreen PeachPuff LightSlateBlue}
@@ -303,7 +305,7 @@ proc ::MultiPlot::init_plot {args} {
          frame $w.f 
          pack $w.f -fill x -fill y 
 
-         canvas $c -relief flat -borderwidth 0 -width $canw -height $canh 
+         canvas $c -relief flat -borderwidth 0 -width $canw -height $canh -bg $bkgcolor 
          scrollbar $w.f.y -orient vertical   -command [namespace code {$c yview}]
          scrollbar $w.f.x -orient horizontal -command [namespace code {$c xview}]
          $c configure  -yscrollcommand [namespace code {$w.f.y set}] -xscrollcommand [namespace code {$w.f.x set}]
@@ -699,6 +701,7 @@ proc ::MultiPlot::init_plot {args} {
 
             if {$i=="-hline"}      then { lappend hline $j; variable resize 1 }
             if {$i=="-vline"}      then { lappend vline $j; variable resize 1 }
+            if {$i=="-bkgcolor"}   then { variable bkgcolor $j}
             if {$i=="-radius"}     then { 
                variable radius 
                if {![llength $curset]} {
@@ -879,13 +882,14 @@ proc ::MultiPlot::init_plot {args} {
 
          # Display some statistics in an info frame
          variable printstats
+         variable bkgcolor
          if {![winfo exists $w.info] && $printstats} { draw_infobox }
          if {[winfo exists $w.info] && !$printstats} { destroy $w.info; pack $w.cf }
 
          if {[winfo exists $c] && $resize} {
             variable canw
             variable canh
-            $c configure -width $canw -height $canh
+            $c configure -width $canw -height $canh -bg $bkgcolor
          }
 
          calculate_range
@@ -1501,6 +1505,7 @@ proc ::MultiPlot::init_plot {args} {
          variable canh
          variable title
          variable titlefont
+         variable bkgcolor
          $c create text [expr $canw/2] $rim -anchor n -text $title -font $titlefont -fill brown
 
          # Draw bounding box

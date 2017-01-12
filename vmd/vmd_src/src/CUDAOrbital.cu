@@ -10,7 +10,7 @@
  *
  *      $RCSfile: CUDAOrbital.cu,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.112 $      $Date: 2014/05/27 15:31:50 $
+ *      $Revision: 1.113 $      $Date: 2016/11/28 02:49:09 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -677,6 +677,8 @@ static void * cudaorbitalthread(void *voidparms) {
   int threadid=0;
 #if defined(USE_PINNED_MEMORY)
   int h_orbitalgrid_pinnedalloc=0;
+#endif
+#if defined(USE_ZERO_COPY)
   int h_orbitalgrid_zerocopy=0;
 #endif
   int tilesize = 1; // default tile size to use in absence of other info

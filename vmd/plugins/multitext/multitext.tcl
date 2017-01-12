@@ -1,14 +1,12 @@
 ##
-## MultiText 1.0
+## MultiText 1.1
 ##
 ## A script to view/edit textual (molecule) info via a simple Tk interface
 ##
-## Author: Kirby Vandivort/John Stone
-##         kvandivo@ks.uiuc.edu
-##         johns@ks.uiuc.edu
+## Author: Kirby Vandivort/John Stone/Joao Ribeiro
 ##         vmd@ks.uiuc.edu
 ##
-## $Id: multitext.tcl,v 1.2 2009/02/04 19:03:03 kvandivo Exp $
+## $Id: multitext.tcl,v 1.4 2016/07/06 18:21:46 johns Exp $
 ##
 
 #
@@ -52,16 +50,18 @@
 ### Close the instance/destroy window
 #   $instancehandle quit
 
-package provide multitext 1.0
+package provide multitext 1.1
 
 namespace eval ::MultiText:: {
+   set justsave 0
    proc initialize {} {
       variable instancecount -1
    }
    initialize
 }
 
-proc ::MultiText::init_instance { } {
+proc ::MultiText::init_instance {} {
+   variable justsave
    incr ::MultiText::instancecount
    set ns "::MultiText::Instance${::MultiText::instancecount}"
 
@@ -81,7 +81,7 @@ proc ::MultiText::init_instance { } {
       catch {destroy $w} 
       toplevel $w
       wm title $w "Text Editor: $txtFileName"
-      wm resizable $w 0 0
+      #wm resizable $w 0 0
       wm protocol $w WM_DELETE_WINDOW "[namespace current]::instancehandle quit"
 
       #menu $w.menu -tearoff 0
@@ -91,16 +91,16 @@ proc ::MultiText::init_instance { } {
       #menu $w.menu.file.open -tearoff 0
       
       #$w.menu.file add command -label "Quit" -command "[namespace current]::instancehandle quit"
-      #$w configure -menu $w.menu
-
+      grid columnconfigure $w 0 -weight 1
+      grid rowconfigure $w 0 -weight 0
+      grid rowconfigure $w 1 -weight 1
       ##
       ## make the menu bar
       ##
-      frame $w.menubar -relief raised -bd 2 ;# frame for menubar
-      pack $w.menubar -padx 1 -fill x
+      grid [ttk::frame $w.menubar ] -row 0 -column 0 -padx 1 -sticky ew;# frame for menubar
 
-      menubutton $w.menubar.help -text Help -underline 0 -menu $w.menubar.help.menu
-      menubutton $w.menubar.file -text File -underline 0 -menu $w.menubar.file.menu
+      ttk::menubutton $w.menubar.help -text Help -underline 0 -menu $w.menubar.help.menu
+      ttk::menubutton $w.menubar.file -text File -underline 0 -menu $w.menubar.file.menu
 
       ##
       ## help menu
@@ -111,28 +111,42 @@ proc ::MultiText::init_instance { } {
       $w.menubar.help config -width 5
 
       menu $w.menubar.file.menu -tearoff no
-      $w.menubar.file.menu add command -label "New" -command  [namespace current]::newfile
-      $w.menubar.file.menu add command -label "Open" -command [namespace current]::loadfile
-      $w.menubar.file.menu add command -label "Save" -command  [namespace current]::savefile
-      $w.menubar.file.menu add command -label "Save As" -command  [namespace current]::saveasfile
-      $w.menubar.file.menu add command -label "Print instancehandle in console" -command "puts [namespace current]::instancehandle"
+      if {$justsave} {
+        $w.menubar.file.menu add command -label "Save" -command  [namespace current]::savefile
+      } else {
+        $w.menubar.file.menu add command -label "New" -command  [namespace current]::newfile
+        $w.menubar.file.menu add command -label "Open" -command [namespace current]::loadfile
+        $w.menubar.file.menu add command -label "Save" -command  [namespace current]::savefile
+        $w.menubar.file.menu add command -label "Save As" -command  [namespace current]::saveasfile
+        $w.menubar.file.menu add command -label "Print instancehandle in console" -command "puts [namespace current]::instancehandle"
+      }
+      
       $w.menubar.file config -width 5
-      pack $w.menubar.file -side left
-      pack $w.menubar.help -side right
+      grid $w.menubar.file -row 0 -column 0 -sticky w
+      grid $w.menubar.help -row 0 -column 1 -sticky e
 
 
       ##
       ## main window area
       ## 
       frame $w.txt
+      grid $w.menubar -row 0 -column 0 -sticky ew
+      grid columnconfigure $w.menubar 0 -weight 1
+
+      grid $w.txt -row 1 -column 0 -sticky ewns
+
+      grid rowconfigure $w.txt 0 -weight 0
+      grid rowconfigure $w.txt 1 -weight 1
+      grid columnconfigure $w.txt 0 -weight 1
       label $w.txt.label -width 80 -relief sunken -bg White -textvariable \
                                             [namespace current]::txtFileName
       text $w.txt.text -bg White -bd 2 -yscrollcommand "$[namespace current]::w.txt.vscr set"
       scrollbar $w.txt.vscr -command "$[namespace current]::w.txt.text yview"
-      pack $w.txt.label 
-      pack $w.txt.text $w.txt.vscr -side left -fill y
+      grid $w.txt.label -row 0 -column 0 -sticky ewn
+      grid $w.txt.text  -row 1 -column 0 -sticky nsew
+      grid $w.txt.vscr -row 1 -column 1 -sticky ns
  
-      pack $w.menubar $w.txt
+      
 
 
       # ------------------------------------------------------------
@@ -265,16 +279,18 @@ proc ::MultiText::init_instance { } {
 
         set txtFileName [tk_getSaveFile \
                   -initialdir pwd -initialfile $txtFileName ]
+        if {$txtFileName != ""} {
+          wm title $w "Text Editor: $txtFileName"
+          if {[catch {open $txtFileName "w"} fd] } {
+            tk_dialog .errmsg {Text Editor Error} "Failed to open file $txtFileName\n$fd" error 0 Dismiss
+            return
+          }
 
-        wm title $w "Text Editor: $txtFileName"
-        if {[catch {open $txtFileName "w"} fd] } {
-          tk_dialog .errmsg {Text Editor Error} "Failed to open file $txtFileName\n$fd" error 0 Dismiss
-          return
-        }
+          puts $fd [$w.txt.text get 1.0 {end -1c}]
 
-        puts $fd [$w.txt.text get 1.0 {end -1c}]
-
-        close $fd
+          close $fd
+        }          
+        
       }
       # ------------------------------------------------------------
 
@@ -285,7 +301,12 @@ proc ::MultiText::init_instance { } {
 
 proc multitext { args } {
 #   puts "begin: multitext { args }"
+   variable justsave
    set keyword [lindex $args 0]
+   set justsave 0
+   if {[lsearch -all $args "-justsave"] > -1 } {
+      set justsave 1
+   }
 #   if {![llength $keyword]} { return }
    if {$keyword=="list"} {
       set plist {}

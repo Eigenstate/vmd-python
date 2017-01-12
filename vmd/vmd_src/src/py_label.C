@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_label.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.22 $       $Date: 2011/02/01 18:59:13 $
+ *      $Revision: 1.23 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -34,8 +34,13 @@ static PyObject *geom2dict(GeometryMol *g) {
     PyObject *molid_tuple = PyTuple_New(n);
     PyObject *atomid_tuple = PyTuple_New(n);
     for (int i=0; i<n; i++) {
+#if PY_MAJOR_VERSION >= 3
+      PyTuple_SET_ITEM(molid_tuple, i, PyLong_FromLong(g->obj_index(i)));
+      PyTuple_SET_ITEM(atomid_tuple, i, PyLong_FromLong(g->com_index(i)));
+#else
       PyTuple_SET_ITEM(molid_tuple, i, PyInt_FromLong(g->obj_index(i)));
       PyTuple_SET_ITEM(atomid_tuple, i, PyInt_FromLong(g->com_index(i)));
+#endif
     } 
     PyDict_SetItemString(newdict, (char *)"molid", molid_tuple);
     PyDict_SetItemString(newdict, (char *)"atomid", atomid_tuple);
@@ -49,7 +54,11 @@ static PyObject *geom2dict(GeometryMol *g) {
     PyDict_SetItemString(newdict, (char *)"value", value);
   }
   {
+#if PY_MAJOR_VERSION >= 3
+    PyObject *on = PyLong_FromLong(g->displayed() ? 1 : 0);
+#else
     PyObject *on = PyInt_FromLong(g->displayed() ? 1 : 0);
+#endif
     PyDict_SetItemString(newdict, (char *)"on", on);
   }
   if (PyErr_Occurred()) {
@@ -120,8 +129,13 @@ static PyObject *label_add(PyObject *self, PyObject *args) {
   }
   int m[4], a[4];
   for (i=0; i<numitems; i++) {
+#if PY_MAJOR_VERSION >= 3
+    m[i] = PyLong_AsLong(PyTuple_GET_ITEM(molids, i));
+    a[i] = PyLong_AsLong(PyTuple_GET_ITEM(atomids, i));
+#else
     m[i] = PyInt_AsLong(PyTuple_GET_ITEM(molids, i));
     a[i] = PyInt_AsLong(PyTuple_GET_ITEM(atomids, i));
+#endif
     if (PyErr_Occurred())
       return NULL;
     Molecule *mol = mlist->mol_from_id(m[i]);
@@ -164,8 +178,13 @@ static int dict2geom(PyObject *dict, GeometryMol *g) {
   }
 
   for (int i=0; i<numitems; i++) {
+#if PY_MAJOR_VERSION >= 3
+    int m = PyLong_AsLong(PyTuple_GET_ITEM(molid, i));
+    int a = PyLong_AsLong(PyTuple_GET_ITEM(atomid, i));
+#else
     int m = PyInt_AsLong(PyTuple_GET_ITEM(molid, i));
     int a = PyInt_AsLong(PyTuple_GET_ITEM(atomid, i));
+#endif
     if (PyErr_Occurred()) {
       PyErr_Clear();
       return 0;
@@ -345,14 +364,31 @@ static PyMethodDef LabelMethods[] = {
   {(char *)"getvalues", (vmdPyMethod)label_getvalues, METH_VARARGS },
   {(char *)"textsize", (vmdPyMethod)label_textsize, METH_VARARGS },
   {(char *)"textthickness", (vmdPyMethod)label_textthickness, METH_VARARGS },
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef labeldef = {
+    PyModuleDef_HEAD_INIT,
+    "label",
+    NULL,
+    -1,
+    LabelMethods,
+    NULL, NULL, NULL, NULL
+};
+
+PyMODINIT_FUNC PyInit_label(void) {
+  PyObject *m = PyModule_Create(&labeldef);  
+#else
 void initlabel() {
   PyObject *m = Py_InitModule((char *)"label", LabelMethods);
+#endif
   PyModule_AddStringConstant(m, (char *)"ATOM", (char *)"Atoms"); 
   PyModule_AddStringConstant(m, (char *)"BOND", (char *)"Bonds"); 
   PyModule_AddStringConstant(m, (char *)"ANGLE", (char *)"Angles"); 
   PyModule_AddStringConstant(m, (char *)"DIHEDRAL", (char *)"Dihedrals"); 
+#if PY_MAJOR_VERSION >= 3
+  return m;
+#endif
 }
  

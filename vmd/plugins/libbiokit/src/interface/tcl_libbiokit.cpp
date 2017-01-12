@@ -16,8 +16,40 @@
 #endif
 
 // -------------------------------------------------------------------
+// Variables for returning output to TCL.
+// changed the global var declarations to static to at least make them specific
+// to this file.
+static int maxOutputLength = 8192;
+static char *output = 0;
+
+// Variables for the sequence store.
+static PointerList* sequences = new PointerList();
+static PointerList* colorings = new PointerList();
+
+static Alphabet* proteinAlphabet = AlphabetBuilder::createProteinAlphabet();
+static Alphabet* rnaAlphabet = AlphabetBuilder::createRnaAlphabet();
+static Alphabet* dnaAlphabet = AlphabetBuilder::createDnaAlphabet();
+
+void confirmOutputLength(const int requiredLength)
+{
+   if (requiredLength <= maxOutputLength)
+   {
+      return;
+   }
+
+   free(output);
+   maxOutputLength = requiredLength;
+   output = (char*) malloc(maxOutputLength * sizeof(char));
+}
+
+// -------------------------------------------------------------------
 const char* seq(const char *arg1, const char *arg2, const char *arg3, const char *arg4, const char *arg5, const char *arg6)
 {
+
+    if (!output)
+    {
+       output = (char*) malloc(maxOutputLength * sizeof(char));
+    }
 
     // Figure out how many args we got.
     int argc = 0;
@@ -127,19 +159,6 @@ const char* seq_usage(int argc, const char* argv[])
     printf("  name set <seqid> <name>                 -- set the name of a sequence\n");
     return "";
 }
-
-// -------------------------------------------------------------------
-// Variables for returning output to TCL.
-int maxOutputLength = 65536;
-char output[65536];
-
-// Variables for the sequence store.
-PointerList* sequences = new PointerList();
-PointerList* colorings = new PointerList();
-
-Alphabet* proteinAlphabet = AlphabetBuilder::createProteinAlphabet();
-Alphabet* rnaAlphabet = AlphabetBuilder::createRnaAlphabet();
-Alphabet* dnaAlphabet = AlphabetBuilder::createDnaAlphabet();
 
 /* -------------------------------------------------------------------- */
 const char* seq_cleanup(int argc, const char* argv[])
@@ -334,11 +353,15 @@ const char* seq_get(int argc, const char* argv[])
                 return "";
             }
         }
-        
+      
+        // make sure the output array is actually long enough
+        // to hold this sequence
+        confirmOutputLength( (end-start)*2 );
+
         // Get the sequence.
         int index=0;
         int i;
-        for (i=start; i <= end && index < maxOutputLength-1; i++, index+=2)
+        for (i=start; i <= end; i++, index+=2)
         {
             output[index] = sequence->get(i).getOne();
             output[index+1] = ' ';

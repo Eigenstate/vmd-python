@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: PickModeList.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.16 $       $Date: 2011/02/17 17:04:41 $
+ *      $Revision: 1.17 $       $Date: 2016/11/28 03:05:03 $
  *
  ***************************************************************************
  * DESCRIPTION:

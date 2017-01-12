@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolItemSurface.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.41 $	$Date: 2011/06/08 18:49:35 $
+ *	$Revision: 1.44 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -75,9 +75,9 @@ void DrawMolItem::draw_surface(float *framepos, int draw_wireframe, float radius
     for (int i=0; i<atomSel->selected; i++) {
       j = map[i];
       r[i] = aradius[j];
-      x[i] = framepos[3*j+0];
-      y[i] = framepos[3*j+1];
-      z[i] = framepos[3*j+2];
+      x[i] = framepos[3L*j+0];
+      y[i] = framepos[3L*j+1];
+      z[i] = framepos[3L*j+2];
     }
 
     // make the new surface -- returns 0 on failure
@@ -122,7 +122,7 @@ void DrawMolItem::draw_surface(float *framepos, int draw_wireframe, float radius
     }                                                           
 
     if (draw_wireframe) {
-      int *l = new int[surf.numtriangles * 6];
+      int *l = new int[surf.numtriangles * 6L];
       int i;
       for (i=0; i<surf.numtriangles; i++) {
         int li = i * 6; 

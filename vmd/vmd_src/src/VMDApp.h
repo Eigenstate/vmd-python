@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,7 +10,7 @@
  *
  *      $RCSfile: VMDApp.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.237 $      $Date: 2014/11/08 06:52:31 $
+ *      $Revision: 1.240 $      $Date: 2016/11/28 03:05:05 $
  *
  ***************************************************************************/
 
@@ -23,6 +23,7 @@
 #include "PluginMgr.h"
 class Plugin;
 class CUDAAccel;
+class NVENCMgr;
 class DisplayDevice;
 class SymbolTable;
 class Scene;
@@ -190,7 +191,11 @@ public:
   DisplayDevice *display;       ///< display in which the images are rendered
   Scene *scene;                 ///< list of all Displayable objects to draw
 
+  void *thrpool;                ///< CPU thread pool for low-latency calcs
+
   CUDAAccel *cuda;              ///< CUDA acceleration system handle
+
+  NVENCMgr *nvenc;              ///< GPU hardware H.26[45] video [en|de]coder
 
   QuickSurf *qsurf;             ///< QuickSurf object shared by all reps, 
                                 ///< to help minimize the persistent 

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: SnapshotDisplayDevice.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.44 $	$Date: 2011/03/02 18:30:07 $
+ *	$Revision: 1.46 $	$Date: 2016/11/28 03:05:04 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -90,7 +90,7 @@ void SnapshotDisplayDevice::close_file(void) {
   // write the image to a file on disk
   if (checkfileextension(my_filename, ".bmp")) {
     vmd_writebmp(outfile, img, xs, ys);
-#if defined(VMDPNG)
+#if defined(VMDLIBPNG)
   } else if (checkfileextension(my_filename, ".png")) {
     vmd_writepng(outfile, img, xs, ys);
 #endif

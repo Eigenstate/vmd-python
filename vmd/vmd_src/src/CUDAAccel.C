@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: CUDAAccel.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.46 $	$Date: 2015/01/22 21:42:42 $
+ *	$Revision: 1.48 $	$Date: 2016/11/28 03:04:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -219,8 +219,8 @@ void CUDAAccel::print_cuda_devices(void) {
     } else if (gpumemmb < 10240) {
       sprintf(outstr, ", %.1fGB RAM", gpumemmb / 1024.0);
     } else {
-      // round up one so integer math doesn't bite us
-      sprintf(outstr, ", %dGB RAM", (gpumemmb + 1) / 1024);
+      // round up to nearest GB
+      sprintf(outstr, ", %dGB RAM", (gpumemmb + 512) / 1024);
     }
 
     msgInfo << outstr;

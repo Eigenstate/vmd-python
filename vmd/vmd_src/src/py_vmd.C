@@ -1,21 +1,24 @@
-
 #include "py_commands.h"
 #include "vmd.h"
 #include "DisplayDevice.h"
 #include "UIText.h"
 
+#include "py_axes.C"
+
 #include <tcl.h>
 
+#if PY_MAJOR_VERSION < 3
 extern "C" {
   void initvmd();
 }
+#endif
 
 static PyObject *py_vmdupdate(PyObject *self, PyObject *args) {
   VMDApp *app = get_vmdapp();
   if (!app) {
     fprintf(stderr, "no app!!\n");
     Py_INCREF(Py_None);
-    return Py_None; 
+    return Py_None;
   }
   return Py_BuildValue("i", app->VMDupdate(1));
 }
@@ -31,7 +34,7 @@ static PyObject *py_vmdexit(PyObject *self, PyObject *args) {
   // don't call VMDshutdown, because calling Tcl_Finalize() crashes Tkinter
   // Maybe add a callback to the Python atexit module?
   Py_INCREF(Py_None);
-  return Py_None; 
+  return Py_None;
 }
 
 static PyObject *py_evaltcl(PyObject *self, PyObject *args) {
@@ -43,14 +46,14 @@ static PyObject *py_evaltcl(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, Tcl_GetStringResult(interp));
     return NULL;
   }
-  return PyString_FromString(Tcl_GetStringResult(interp));
+  return PyBytes_FromString(Tcl_GetStringResult(interp));
 }
 
 static PyMethodDef VMDAppMethods [] = {
     { (char *)"VMDupdate", py_vmdupdate, METH_VARARGS },
     { (char *)"VMDexit", py_vmdexit, METH_VARARGS },
     { (char *)"VMDevaltcl", py_evaltcl, METH_VARARGS },
-    { NULL, NULL }
+    {NULL, NULL, 0, NULL}
 };
 
 static VMDApp *the_app=NULL;
@@ -72,14 +75,30 @@ static int vmd_input_hook() {
   return 0;
 }
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef vmddef = {
+    PyModuleDef_HEAD_INIT,
+    "vmd",
+    NULL,
+    -1,
+    VmdAppMethods,
+    NULL, NULL, NULL, NULL
+};
+
+#define INITERROR return NULL
+
+PyMODINIT_FUNC PyInit_vmd(void) {
+#else
+#define INITERROR return
 void initvmd() {
+#endif
   // Assume that VMD should not initialize or use MPI
   // It is conceivable we would want to be able to load the VMD
-  // Python module into a MPI-based Python run, and enable the 
+  // Python module into a MPI-based Python run, and enable the
   // MPI features of VMD, but we'll have to determine the best way
   // to detect this and it will need to be tested since we may have
   // to handle this case differently than the normal MPI case where
-  // VMD explicitly does MPI initialization and shutdown itself. 
+  // VMD explicitly does MPI initialization and shutdown itself.
   int mpienabled = 0;
 
   // If there's already a VMDapp in get_vmdapp, then we must be running
@@ -87,8 +106,12 @@ void initvmd() {
   // Don't throw an error - just load the methods for interoperability
   // in case vmd.so is in the PYTHONPATH of the standalone application.
   if (get_vmdapp() != NULL) {
+#if PY_MAJOR_VERSION >= 3
+    return PyModule_Create(&vmddef);
+#else
     (void)Py_InitModule((char *)"vmd", VMDAppMethods);
     return;
+#endif
   }
 
   int argc=1;
@@ -98,7 +121,7 @@ void initvmd() {
     return;
   }
 
-  // XXX this is a hack, and it would be better to tie this into 
+  // XXX this is a hack, and it would be better to tie this into
   //     VMDApp more directly at some later point, but the regular
   //     VMD startup code is similarly lame, so we'll use it for now.
   const char *disp = getenv("VMDDISPLAYDEVICE");
@@ -115,14 +138,16 @@ void initvmd() {
   VMDreadInit(app);
 
   // read user-defined startup files
-  // ROBIN: Don't read user-defined startup files
-  // VMDreadStartup(app);
+  VMDreadStartup(app);
 
   set_vmdapp(app);
 
   // set my local static
   the_app = app;
 
+#if PY_MAJOR_VERSION >= 3
+  PyObject *vmdmodule = PyModule_Create(&vmddef);
+#else
   PyObject *vmdmodule = Py_InitModule((char *)"vmd", VMDAppMethods);
 
   initanimate();
@@ -144,26 +169,43 @@ void initvmd() {
 #ifdef VMDNUMPY
   initvmdnumpy();
 #endif
+#endif
 
-  if (PyErr_Occurred()) return;
+// DEBUG TEST TODO --Robin
+printf("Testing axes\n");
+PyObject *axes = PyModule_Create(&axesdef);
+int retval = PyModule_AddObject(vmdmodule, "axes", axes);
+printf("Retval %d\n", retval);
+
+  if (PyErr_Occurred()) INITERROR;
 
   static const char *modules[] = {
     "animate", "atomsel", "axes", "color", "display", "graphics",
-    "imd", "label", "material", "molecule", "molrep", "mouse", 
+    "imd", "label", "material", "molecule", "molrep", "mouse",
     "render", "trans", "vmdmenu", "vmdnumpy"
   };
   for (unsigned i=0; i<sizeof(modules)/sizeof(const char *); i++) {
     const char *m = modules[i];
 #if (PY_MAJOR_VERSION == 2) && (PY_MINOR_VERSION < 5)
 #define CAST_HACK (char *)
-#else 
+#else
 #define CAST_HACK
 #endif
-    PyModule_AddObject(vmdmodule, CAST_HACK m, PyImport_ImportModule( CAST_HACK m));
+// I don't like this TODO DEBUG --Robin
+/*
+    int retval = PyModule_AddObject(vmdmodule, CAST_HACK m, PyImport_ImportModule( CAST_HACK m));
+    printf("Added module %s retval %d\n", modules[i], retval);
+*/
   }
   event_tstate = PyThreadState_Get();
 #if defined(VMD_SHARED)
   PyOS_InputHook = vmd_input_hook;
+#endif
+
+
+#if PY_MAJOR_VERSION >= 3
+  printf("returning module\n");
+  return vmdmodule;
 #endif
 }
 

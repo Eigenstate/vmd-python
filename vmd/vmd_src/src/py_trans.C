@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_trans.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.15 $       $Date: 2010/12/16 04:08:57 $
+ *      $Revision: 1.16 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -289,7 +289,11 @@ static PyObject *is_fixed(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(mol->fixed()); 
+#else
   return PyInt_FromLong(mol->fixed()); 
+#endif
 }
 
 // fix(molid, bool)
@@ -323,7 +327,11 @@ static PyObject *is_shown(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(mol->displayed()); 
+#else
   return PyInt_FromLong(mol->displayed()); 
+#endif
 }
 
 // show(molid, bool) 
@@ -362,15 +370,26 @@ static PyMethodDef TransMethods[] = {
   {(char *)"fix", (vmdPyMethod)fix, METH_VARARGS},
   {(char *)"is_shown", (vmdPyMethod)is_shown, METH_VARARGS},
   {(char *)"show", (vmdPyMethod)show, METH_VARARGS},
-  
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef transdef = {
+    PyModuleDef_HEAD_INIT,
+    "trans",
+    NULL,
+    -1,
+    TransMethods,
+    NULL, NULL, NULL, NULL
+};
 
-
+PyMODINIT_FUNC PyInit_trans(void) {
+    PyObject *m = PyModule_Create(&transdef);
+    return m;
+}
+#else
 void inittrans() {
   (void) Py_InitModule((char *)"trans", TransMethods);
 }
+#endif 
 
-
- 

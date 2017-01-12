@@ -47,6 +47,10 @@ int topo_defs_improper(topo_defs *defs, const char *rname, int del,
 int topo_defs_cmap(topo_defs *defs, const char *rname, int del,
 	const char* const anamel[8], const int aresl[8], const int arell[8]);
 
+int topo_defs_exclusion(topo_defs *defs, const char *rname, int del,
+	const char *a1name, int a1res, int a1rel,
+	const char *a2name, int a2res, int a2rel);
+
 int topo_defs_conformation(topo_defs *defs, const char *rname, int del,
 	const char *a1name, int a1res, int a1rel,
 	const char *a2name, int a2res, int a2rel,

@@ -3,7 +3,7 @@
  *
  *      $RCSfile: xsfplugin.C,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.19 $       $Date: 2013/12/10 16:21:24 $
+ *      $Revision: 1.20 $       $Date: 2016/11/09 17:53:21 $
  *
  ***************************************************************************/
 
@@ -44,6 +44,7 @@ static const char *xsf_symtab[] = {
   "PRIMVEC", "CONVVEC", "PRIMCOORD", "CONVCOORD"
 };
 
+
 typedef enum {
   xsf_UNKNOWN = 0,  xsf_COMMENT,
   xsf_BEGINFO,      xsf_ENDINFO, 
@@ -57,6 +58,7 @@ typedef enum {
   xsf_PRIMVEC, xsf_CONVVEC, xsf_PRIMCOORD, xsf_CONVCOORD,
   xsf_NR_KEYWORDS
 } xsf_keyword_t;
+
 
 // list of known alternatives to the keywords above
 // last entry has to be an xsf_UNKNOWN.
@@ -73,8 +75,8 @@ static const struct {
   { NULL,          xsf_UNKNOWN     }
 };
 
-static xsf_keyword_t lookup_keyword(const char* word)
-{
+
+static xsf_keyword_t lookup_keyword(const char* word) {
   int i, j;
   
   if (word == 0) return xsf_UNKNOWN;
@@ -83,7 +85,8 @@ static xsf_keyword_t lookup_keyword(const char* word)
   j=0;
   for (i=0; i < (int)strlen(word); ++i) {
     j=i;
-    if (! isspace(word[i])) break;
+    if (!isspace(word[i])) 
+      break;
   }
   
   for (i=1; i < xsf_NR_KEYWORDS; ++i) {
@@ -97,11 +100,12 @@ static xsf_keyword_t lookup_keyword(const char* word)
 
     if (0 == strncmp(word + j, name, strlen(name)))
       return xsf_aliases[i].kw;
-
   }
 
   return xsf_UNKNOWN;
 }
+
+
 
 // A format-independent structure to hold unit cell data
 typedef struct {
@@ -172,9 +176,9 @@ static int xsf_readbox(xsf_box *box, float *x, float *y, float *z) {
   return 0;
 }
 
+
 // calculate and store rotation matrix to realign everything later.
-static void xsf_buildrotmat(xsf_t *xsf, float *a, float *b)
-{
+static void xsf_buildrotmat(xsf_t *xsf, float *a, float *b) {
   // we rotate first around y and z to align a along the x-axis...
   const double len   = sqrt(a[0]*a[0] + a[1]*a[1]);
   const double phi   = atan2((double) a[2], (double) len);
@@ -191,9 +195,9 @@ static void xsf_buildrotmat(xsf_t *xsf, float *a, float *b)
   const double sps = sin(psi);
 
   const double r[3][3] = { 
-    {               cph*cth,                    cph*sth,      sph},
-    {-sth*cps - sph*cth*sps,      cth*cps - sph*sth*sps,  cph*sps},
-    { sth*sps - sph*cth*cps,     -cth*sps - sph*sth*cps,  cph*cps}
+    {               cph*cth,                cph*sth,      sph},
+    {-sth*cps - sph*cth*sps,  cth*cps - sph*sth*sps,  cph*sps},
+    { sth*sps - sph*cth*cps, -cth*sps - sph*sth*cps,  cph*cps}
   };
 
   for (int i=0; i<3; ++i) {
@@ -203,12 +207,12 @@ static void xsf_buildrotmat(xsf_t *xsf, float *a, float *b)
   }
 }
 
-static void xsf_buildinvmat(xsf_t *xsf, float *a, float *b, float *c)
-{
+
+static void xsf_buildinvmat(xsf_t *xsf, float *a, float *b, float *c) {
   float det, id;
   
   det = a[0]*b[1]*c[2] + b[0]*c[1]*a[2] + c[0]*a[1]*b[2] 
-    - a[0]*c[1]*b[2] - b[0]*a[1]*c[2] - c[0]*b[1]*a[2];
+        - a[0]*c[1]*b[2] - b[0]*a[1]*c[2] - c[0]*b[1]*a[2];
   
   id = 1.0 / det;
   xsf->invmat[0][0] = id * ( b[1]*c[2]-b[2]*c[1] );
@@ -229,14 +233,15 @@ static void eatline(FILE *fd) {
   fgets(readbuf, 1024, fd);    // go on to next line
 }  
 
-static bool xsf_read_cell(FILE *fd, float *a, float *b, float *c)
-{
+
+static bool xsf_read_cell(FILE *fd, float *a, float *b, float *c) {
   return (9 == fscanf(fd, "%f%f%f%f%f%f%f%f%f", 
                       &a[0],&a[1],&a[2],
                       &b[0],&b[1],&b[2],
                       &c[0],&c[1],&c[2]));
 }
 
+// forward declaration for cleanup handling...
 static void close_xsf_read(void *v);
 
 static void *open_xsf_read(const char *filepath, const char *filetype,
@@ -302,16 +307,15 @@ static void *open_xsf_read(const char *filepath, const char *filetype,
         
       case xsf_ATOMS: // no specification for the number of atoms, so we
                       // try to figure them out
-        ++ xsf->numsteps;
+        ++xsf->numsteps;
         if (xsf->numatoms == 0) { // count atoms only, if we don't know how many
           while (fgets(readbuf, 256, xsf->fd)) {
             float x,y,z;
             // the coordinate lines are <index> <x> <y> <z> with optional forces.
             if (3 == sscanf(readbuf, "%*s%f%f%f", &x, &y, &z)) {
-              ++ xsf->numatoms;
+              ++xsf->numatoms;
             } else {
-              // we've most likely read the next keyword.
-              // reparse buffer.
+              // we've most likely read the next keyword. reparse buffer.
               goto again;
               break;
             }
@@ -319,15 +323,14 @@ static void *open_xsf_read(const char *filepath, const char *filetype,
 #ifdef TEST_PLUGIN
           fprintf(stderr, "ATOMS: found %d atoms\n", xsf->numatoms);
 #endif          
-        }  else { // skip over the lines
+        } else { // skip over the lines
           int n;
           for (n=0; n < xsf->numatoms; ++n) eatline(xsf->fd);
         }
         break;
         
       case xsf_PRIMCOORD: // number of atoms is in the next line
-         
-        if(fgets(readbuf, 256, xsf->fd)) {
+        if (fgets(readbuf, 256, xsf->fd)) {
           int mol, mult;
           
           if (xsf->numatoms == 0) {
@@ -340,7 +343,7 @@ static void *open_xsf_read(const char *filepath, const char *filetype,
           // skip over atom coordinates
           int n;
           for (n=0; n < xsf->numatoms; ++n) eatline(xsf->fd);
-          ++ xsf->numsteps; 
+          ++xsf->numsteps; 
 
 #ifdef TEST_PLUGIN
           fprintf(stderr, "PRIMCOORD: found %d atoms\n", xsf->numatoms);
@@ -349,8 +352,7 @@ static void *open_xsf_read(const char *filepath, const char *filetype,
         break;
         
       case xsf_CONVCOORD: // number of atoms is in the next line
-         
-        if(fgets(readbuf, 256, xsf->fd)) {
+        if (fgets(readbuf, 256, xsf->fd)) {
           int mol, mult, num;
           
           num = 0;
@@ -382,7 +384,8 @@ static void *open_xsf_read(const char *filepath, const char *filetype,
       case xsf_CONVVEC: // ignore conventional cells.
       {
         int n;
-        for (n=0; n < 3; ++n) eatline(xsf->fd);
+        for (n=0; n < 3; ++n)
+          eatline(xsf->fd);
       }
       break;
 
@@ -409,9 +412,8 @@ static void *open_xsf_read(const char *filepath, const char *filetype,
               int n;
               molfile_volumetric_t *set;
               float a[3], b[3], c[3];
-	      float orig[3];
-              
-              ++ xsf->nvolsets;
+              float orig[3];
+              ++xsf->nvolsets;
 
               // double the size of the cache for metainfo, if needed
               if (xsf->nvolsets > xsf->numvolmeta) {
@@ -466,15 +468,14 @@ static void *open_xsf_read(const char *filepath, const char *filetype,
                 fgets(readbuf, 256, xsf->fd);
               } while (xsf_END_3D_DATA != lookup_keyword(readbuf));
 
-#if 1
               /*   as of VMD version 1.8.3, volumetric data points are 
-	       *   expected to represent the center of a grid box. xsf format 
-	       *   volumetric data represents the value at the edges of the 
-	       *   grid boxes, so we need to shift the internal origin by half 
-	       *   a grid box diagonal to have the data at the correct position 
+               *   expected to represent the center of a grid box. xsf format 
+               *   volumetric data represents the value at the edges of the 
+               *   grid boxes, so we need to shift the internal origin by half 
+               *   a grid box diagonal to have the data at the correct position 
                *   This will need to be changed again when the plugin interface
-	       *   is updated to explicitly allow point/face-centered data sets.
-	       */
+               *   is updated to explicitly allow point/face-centered data sets.
+               */
               set->origin[0] -= 0.5 * ( set->xaxis[0] / (double) set->xsize
                                         + set->yaxis[0] / (double) set->ysize
                                         + set->zaxis[0] / (double) set->zsize);
@@ -484,7 +485,6 @@ static void *open_xsf_read(const char *filepath, const char *filetype,
               set->origin[2] -= 0.5 * ( set->xaxis[2] / (double) set->xsize
                                         + set->yaxis[2] / (double) set->ysize
                                         + set->zaxis[2] / (double) set->zsize);
-#endif
             }
             break;
 
@@ -872,11 +872,11 @@ static int read_xsf_data(void *v, int set, float *datablock, float *colorblock) 
   for (z=0; z<zsize+1; z++) {
     for (y=0; y<ysize+1; y++) {
       for (x=0; x<xsize+1; x++) {
-        if((x>=xsize) || (y>=ysize) || (z>=zsize)) { 
+        if ((x>=xsize) || (y>=ysize) || (z>=zsize)) { 
           if (fscanf(xsf->fd, "%f", &dummy) != 1) return MOLFILE_ERROR;
         } else {
           if (fscanf(xsf->fd, "%f", &datablock[n]) != 1) return MOLFILE_ERROR;
-          ++ n;
+          ++n;
         }
       }
     }
@@ -909,7 +909,7 @@ VMDPLUGIN_API int VMDPLUGIN_init(void) {
   plugin.prettyname = "(Animated) XCrySDen Structure File";
   plugin.author = "Axel Kohlmeyer, John Stone";
   plugin.majorv = 0;
-  plugin.minorv = 9;
+  plugin.minorv = 10;
   plugin.is_reentrant = VMDPLUGIN_THREADSAFE;
   plugin.filename_extension = "axsf,xsf";
   plugin.open_file_read = open_xsf_read;

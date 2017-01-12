@@ -1,10 +1,10 @@
 #
 # GUI for cispeptide plugin
 #
-# $Id: cispeptide_gui.tcl,v 1.6 2015/04/01 21:11:54 ryanmcgreevy Exp $
+# $Id: cispeptide_gui.tcl,v 1.7 2016/07/07 03:13:13 johns Exp $
 #
 
-package provide cispeptide_gui 1.2
+package provide cispeptide_gui 1.3
 
 namespace eval ::cispeptide::GUI:: {
 

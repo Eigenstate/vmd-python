@@ -8,4 +8,4 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded membrane 1.1 "set env(MEMBRANEDIR) [list $dir]; [list source [file join $dir membrane.tcl]]"
+package ifneeded membrane 1.2 "set env(MEMBRANEDIR) [list $dir]; [list source [file join $dir membrane.tcl]]"

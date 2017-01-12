@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: plyplugin.C,v $
  *      $Author: johns $       $:  $             $State: Exp $
- *      $Revision: 1.6 $       $Date: 2015/04/18 21:37:50 $
+ *      $Revision: 1.8 $       $Date: 2016/11/28 05:01:54 $
  *
  ***************************************************************************/
 
@@ -92,16 +92,15 @@ static void *open_file_read(const char *filepath, const char *filetype,
 
 
 static int read_rawgraphics(void *v, int *nelem, 
-    const molfile_graphics_t **data) {
+                            const molfile_graphics_t **data) {
   ply_t *ply = (ply_t *)v;
   ply->per_vertex_color = 0;
   ply->has_normals = 0;
 
-  int i,j;
-  int elem_count;
-  char *elem_name;
+  int i=0;
   int nverts=0;
   int nfaces=0;
+  char *elem_name=NULL;
   Vertex **vlist=NULL;
   Face **flist=NULL;
   PlyOtherProp *vert_other=NULL;
@@ -113,23 +112,26 @@ static int read_rawgraphics(void *v, int *nelem,
   printf("plyplugin) Processing PLY contents...\n");
   printf("plyplugin) num_elem_types: %d\n", in_ply->num_elem_types);  
 
-  for (i = 0; i < in_ply->num_elem_types; i++) {
+  for (i=0; i<in_ply->num_elem_types; i++) {
+    int elem_count = 0;
+
     /* prepare to read the i'th list of elements */
     elem_name = setup_element_read_ply (in_ply, i, &elem_count);
 
     if (equal_strings ("vertex", elem_name)) {
-      printf("plyplugin) reading vertex elements...\n");
+      int j=0;
+      nverts = elem_count;
+      printf("plyplugin) reading %d vertex elements...\n", nverts);
 
       /* create a vertex list to hold all the vertices */
-      vlist = (Vertex **) calloc (1, sizeof(Vertex *)*elem_count);
-      nverts = elem_count;
+      vlist = (Vertex **) calloc (1, sizeof(Vertex *)*nverts);
 
       /* set up for getting vertex elements */
       setup_property_ply(in_ply, &vert_props[0]);
       setup_property_ply(in_ply, &vert_props[1]);
       setup_property_ply(in_ply, &vert_props[2]);
 
-      for (j = 0; j < in_ply->elems[i]->nprops; j++) {
+      for (j=0; j<in_ply->elems[i]->nprops; j++) {
         PlyProperty *prop;
         prop = in_ply->elems[i]->props[j];
         if (equal_strings ("r", prop->name)) {
@@ -162,8 +164,8 @@ static int read_rawgraphics(void *v, int *nelem,
                                             offsetof(Vertex,other_props));
 
       /* grab all the vertex elements */
-      for (j = 0; j < elem_count; j++) {
-        vlist[j] = (Vertex *) calloc(1, sizeof (Vertex));
+      for (j=0; j<nverts; j++) {
+        vlist[j] = (Vertex *) calloc(1, sizeof(Vertex));
         vlist[j]->r = 1;
         vlist[j]->g = 1;
         vlist[j]->b = 1;
@@ -171,14 +173,15 @@ static int read_rawgraphics(void *v, int *nelem,
       }
 
     } else if (equal_strings ("face", elem_name)) {
-      printf("plyplugin) reading face elements...\n");
+      int j=0;
+      nfaces = elem_count;
+      printf("plyplugin) reading %d face elements...\n", nfaces);
 
       /* create a list to hold all the face elements */
-      flist = (Face **) calloc(1, sizeof (Face *) * elem_count);
-      nfaces = elem_count;
+      flist = (Face **) calloc(1, sizeof(Face *)*nfaces);
 
       /* set up for getting face elements */
-      for (j = 0; j < in_ply->elems[i]->nprops; j++) {
+      for (j=0; j<in_ply->elems[i]->nprops; j++) {
         PlyProperty *prop;
         prop = in_ply->elems[i]->props[j];
         if (equal_strings ("vertex_indices", prop->name)) {
@@ -193,8 +196,8 @@ static int read_rawgraphics(void *v, int *nelem,
                                              offsetof(Face,other_props));
 
       /* grab all the face elements */
-      for (j = 0; j < elem_count; j++) {
-        flist[j] = (Face *) calloc(1, sizeof (Face));
+      for (j=0; j<nfaces; j++) {
+        flist[j] = (Face *) calloc(1, sizeof(Face));
         get_element_ply(in_ply, (void *) flist[j]);
       }
     } else {
@@ -207,7 +210,7 @@ static int read_rawgraphics(void *v, int *nelem,
   free_ply(in_ply);
   in_ply = NULL;
 
-  printf("plyplugin) generating graphics primitives...\n"); 
+  printf("plyplugin) generating %d graphics primitives...\n", nfaces); 
   ply->graphics = new molfile_graphics_t[2*nfaces];
   int vert1, vert2, vert3;
 
@@ -244,9 +247,9 @@ static int read_rawgraphics(void *v, int *nelem,
 
   printf("plyplugin) freeing ply face list\n");
   for (i=0; i<nfaces; i++) {
-    free(flist[j]);
+    free(flist[i]);
   }
-  memset(flist, 0, sizeof(int *)*nfaces);
+  memset(flist, 0, sizeof(Face *)*nfaces);
   free(flist);
   flist = NULL;
 
@@ -285,7 +288,7 @@ VMDPLUGIN_API int VMDPLUGIN_init(void) {
   plugin.prettyname = "PLY";
   plugin.author = "John Stone";
   plugin.majorv = 0;
-  plugin.minorv = 1;
+  plugin.minorv = 2;
   plugin.is_reentrant = VMDPLUGIN_THREADSAFE;
   plugin.filename_extension = "ply";
   plugin.open_file_read = open_file_read;

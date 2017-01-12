@@ -1,15 +1,16 @@
-/top_all27_hybrid.inp/1.3/Sun Jul  5 02:33:55 2009//
-/top_all27_prot_lipid_na.inp/1.6/Tue Feb 16 01:04:31 2010//
-/top_amber2charmm.inp/1.2/Fri Feb  3 00:35:54 2006//
 D/doc////
-/Makefile/1.7/Tue May 12 22:44:41 2015//
-/pkgIndex.tcl/1.6/Tue May 12 22:44:41 2015//
-/readcharmmtop.tcl/1.17/Tue May 12 22:44:41 2015//
+/top_amber2charmm.inp/1.2/Fri Feb  3 00:35:54 2006//
+/top_all27_hybrid.inp/1.3/Mon Jul  6 18:18:25 2009//
+/top_all27_prot_lipid_na.inp/1.6/Wed Mar  3 16:57:09 2010//
 /top_all22_prot.rtf/1.1/Fri Apr 17 16:23:04 2015//
-/top_all36_carb.rtf/1.2/Mon Apr 20 17:05:20 2015//
-/top_all36_cgenff.rtf/1.2/Mon Apr 20 16:46:21 2015//
-/top_all36_lipid.rtf/1.2/Tue May 12 22:44:42 2015//
 /top_all36_na.rtf/1.1/Fri Apr 17 16:23:05 2015//
 /top_all36_prot.rtf/1.1/Fri Apr 17 16:23:05 2015//
-/toppar_all36_carb_glycopeptide.str/1.2/Mon Apr 20 17:05:21 2015//
-/toppar_water_ions_namd.str/1.2/Mon Apr 20 20:54:48 2015//
+/pkgIndex.tcl/1.6/Fri Apr 17 21:12:14 2015//
+/readcharmmtop.tcl/1.17/Fri Apr 17 21:12:14 2015//
+/top_all36_carb.rtf/1.2/Wed May 13 04:54:40 2015//
+/top_all36_cgenff.rtf/1.2/Wed May 13 04:54:40 2015//
+/top_all36_lipid.rtf/1.2/Wed May 13 04:54:40 2015//
+/toppar_all36_carb_glycopeptide.str/1.2/Wed May 13 04:54:40 2015//
+/toppar_water_ions_namd.str/1.2/Wed May 13 04:54:40 2015//
+/top_all36_hybrid.inp/1.1/Wed May  4 22:04:10 2016//
+/Makefile/1.8/Mon Nov 21 15:10:47 2016//

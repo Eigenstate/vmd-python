@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: PythonTextInterp.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.67 $       $Date: 2014/08/23 03:25:14 $
+ *      $Revision: 1.68 $       $Date: 2016/11/28 03:05:04 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -114,9 +114,26 @@ static PyMethodDef CallbackMethods[] = {
   {(char *)"del_callback", (vmdPyMethod)del_callback, METH_VARARGS },
   {NULL, NULL}
 };
-  
+
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef vmdcallbacksdef = {
+    PyModuleDef_HEAD_INIT,
+    "vmdcallbacks",
+    NULL,
+    -1, // global state, no sub-interpreters
+    CallbackMethods,
+    NULL, 
+    NULL, // m_traverse gc traversal
+    NULL, // m_clear gc clear
+    NULL  // m_free gc free
+};
+
+PyMODINIT_FUNC PyInit_vmdcallbacks(void) {
+  PyObject *m = PyModule_Create(&vmdcallbacksdef);
+#else
 static void initvmdcallbacks() {
   PyObject *m = Py_InitModule((char *)"vmdcallbacks", CallbackMethods);
+#endif
   PyObject *dict = PyDict_New();
   PyDict_SetItemString(dict, (char *)"display_update", PyList_New(0));
   PyDict_SetItemString(dict, (char *)"frame", PyList_New(0));
@@ -130,6 +147,10 @@ static void initvmdcallbacks() {
   PyDict_SetItemString(dict, (char *)"userkey", PyList_New(0));
   PyObject_SetAttrString(m, (char *)"callbacks", dict); 
   cbdict = dict;
+
+#if PY_MAJOR_VERSION >= 3
+    return m;
+#endif
 }
 
 extern "C" void initvmd(void);
@@ -141,15 +162,16 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp)
   Py_Initialize();
 
   // Some modules (like Tk) assume that os.argv has been initialized
-  PySys_SetArgv(app->argc_m, (char **)app->argv_m);
+  PySys_SetArgv(app->argc_m, (wchar_t **)app->argv_m);
 
   set_vmdapp(app);
 
   // Set up the prompts
-  PySys_SetObject((char *)"ps1", PyString_FromString((char *)""));
-  PySys_SetObject((char *)"ps2", PyString_FromString((char *)"... "));
- 
-  initvmdcallbacks();
+  PySys_SetObject((char *)"ps1", PyBytes_FromString((char *)""));
+  PySys_SetObject((char *)"ps2", PyBytes_FromString((char *)"... "));
+
+#if PY_MAJOR_VERSION < 3
+  initvmdcallbacks(); 
   initvmd();
   initanimate();
   initatomselection();
@@ -172,6 +194,7 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp)
 
 #ifdef VMDNUMPY
   initvmdnumpy();
+#endif
 #endif
 
   // The VMD module imports all the above modules.

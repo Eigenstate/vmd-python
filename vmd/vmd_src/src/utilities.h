@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: utilities.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.105 $	$Date: 2013/02/11 17:41:53 $
+ *	$Revision: 1.107 $	$Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -330,9 +330,9 @@ inline void make_spline_Q_matrix(float q[4][3], float basis[4][4], const float *
     a = b = c = 0.0;
 
     for (j = 0; j<4; j++) {
-      a += basis[i][j] * pts[j*3    ];
-      b += basis[i][j] * pts[j*3 + 1];
-      c += basis[i][j] * pts[j*3 + 2];
+      a += basis[i][j] * pts[j*3L    ];
+      b += basis[i][j] * pts[j*3L + 1];
+      c += basis[i][j] * pts[j*3L + 2];
     }
 
     q[i][0] = a; 

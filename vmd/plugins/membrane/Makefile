@@ -7,7 +7,7 @@ VMFILES = membrane.tcl pkgIndex.tcl \
 	pope_box.pdb pope_box.psf \
 	top_all27_prot_lipid.inp
 
-VMVERSION = 1.1
+VMVERSION = 1.2
 DIR = $(PLUGINDIR)/noarch/tcl/membrane$(VMVERSION)
 
 bins:

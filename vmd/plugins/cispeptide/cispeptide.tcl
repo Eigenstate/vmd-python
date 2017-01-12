@@ -4,7 +4,7 @@
 # Leonardo Trabuco <ltrabuco@ks.uiuc.edu>
 # Eduard Schreiner <eschrein@ks.uiuc.edu>
 #
-# $Id: cispeptide.tcl,v 1.20 2015/04/01 21:11:54 ryanmcgreevy Exp $
+# $Id: cispeptide.tcl,v 1.21 2016/07/07 03:13:13 johns Exp $
 #
 
 # TODO: 
@@ -18,7 +18,7 @@
 # - check for CISPEP in the PDB file?
 # - make molecule visible when showing selected cis peptide bond
 
-package provide cispeptide 1.2
+package provide cispeptide 1.3
 if [info exists tk_version] {
   package require autoimd
 }
@@ -741,19 +741,21 @@ proc ::cispeptide::cispeptide_list { args } {
   } else {
     set gui 0
   }
-
+  #Initialize returnList
+ set returnList ""  
   foreach i $selectedBonds {
     set pair [lindex $cispeptideResiduesList $i]
     set action [lindex $cispeptideActionsList $i]
     set moved [lindex $cispeptideMovedList $i]
     set residue1 [lindex $pair 0]
     set residue2 [lindex $pair 1]
-    if $gui {
-      lappend returnList [cispeptide_residue_info $residue1 $molid list]
-      lappend returnList [cispeptide_residue_info $residue2 $molid list]
-      lappend returnList $action
-      lappend returnList $moved
-    } else {
+    # populate returnList list to be return not only to the gui, but also to the 
+    # command line
+    lappend returnList [cispeptide_residue_info $residue1 $molid list]
+    lappend returnList [cispeptide_residue_info $residue2 $molid list]
+    lappend returnList $action
+    lappend returnList $moved
+    if !$gui {
       puts "cispeptide) Residue pair $i (action = $action; moved = $moved):"
       puts "  [cispeptide_residue_info $residue1 $molid string]"
       puts "  [cispeptide_residue_info $residue2 $molid string]"
@@ -761,10 +763,12 @@ proc ::cispeptide::cispeptide_list { args } {
     incr i
   }
 
-  if {$gui && [info exists returnList]} {
-    return $returnList
-  }
-  return
+  # if {$gui && [info exists returnList]} {
+  #   return $returnList
+  # }
+  return $returnList
+  
+ 
 
 }
 

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_render.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.13 $       $Date: 2010/12/16 04:08:57 $
+ *      $Revision: 1.14 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -30,7 +30,11 @@ static PyObject *listall(PyObject *self, PyObject *args) {
   PyObject *newlist = PyList_New(0);
   VMDApp *app = get_vmdapp();
   for (int i=0; i<app->filerender_num(); i++)
+#if PY_MAJOR_VERSION >= 3
+    PyList_Append(newlist, PyUnicode_FromString(app->filerender_name(i)));
+#else
     PyList_Append(newlist, PyString_FromString(app->filerender_name(i)));
+#endif
   
   return newlist;
 }
@@ -61,9 +65,25 @@ static PyObject *render(PyObject *self, PyObject *args, PyObject *keywds) {
 static PyMethodDef methods[] = {
   {(char *)"listall", (vmdPyMethod)listall, METH_VARARGS},
   {(char *)"render", (PyCFunction)render, METH_VARARGS | METH_KEYWORDS},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef renderdef = {
+    PyModuleDef_HEAD_INIT,
+    "render",
+    NULL,
+    -1,
+    methods,
+    NULL, NULL, NULL, NULL
+};
+
+PyMODINIT_FUNC PyInit_render(void) {
+    PyObject *m = PyModule_Create(&renderdef);
+    return m;
+}
+#else
 void initrender() {
   (void)Py_InitModule((char *)"render", methods);
 }
+#endif

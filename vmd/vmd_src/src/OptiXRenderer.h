@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
 *
 *      $RCSfile: OptiXDisplayDevice.h
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.83 $         $Date: 2015/05/28 23:07:22 $
+*      $Revision: 1.102 $         $Date: 2016/11/28 03:05:02 $
 *
 ***************************************************************************
 * DESCRIPTION:
@@ -25,7 +25,24 @@
 *   Ultrascale Visualization, pp. 6:1-6:8, 2013.
 *   http://dx.doi.org/10.1145/2535571.2535595
 *
-* Significant portions of this code are derived from Tachyon:
+*  "Atomic Detail Visualization of Photosynthetic Membranes with
+*   GPU-Accelerated Ray Tracing"
+*   John E. Stone, Melih Sener, Kirby L. Vandivort, Angela Barragan,
+*   Abhishek Singharoy, Ivan Teo, João V. Ribeiro, Barry Isralewitz,
+*   Bo Liu, Boon Chong Goh, James C. Phillips, Craig MacGregor-Chatwin,
+*   Matthew P. Johnson, Lena F. Kourkoutis, C. Neil Hunter, and Klaus Schulten
+*   J. Parallel Computing, 55:17-27, 2016.
+*   http://dx.doi.org/10.1016/j.parco.2015.10.015
+*
+*  "Immersive Molecular Visualization with Omnidirectional
+*   Stereoscopic Ray Tracing and Remote Rendering"
+*   John E. Stone, William R. Sherman, and Klaus Schulten.
+*   High Performance Data Analysis and Visualization Workshop,
+*   2016 IEEE International Parallel and Distributed Processing
+*   Symposium Workshops (IPDPSW), pp. 1048-1057, 2016.
+*   http://dx.doi.org/10.1109/IPDPSW.2016.121
+*
+* Portions of this code are derived from Tachyon:
 *   "An Efficient Library for Parallel Ray Tracing and Animation"
 *   John E. Stone.  Master's Thesis, University of Missouri-Rolla,
 *   Department of Computer Science, April 1998
@@ -48,15 +65,28 @@
 #include "ResizeArray.h"
 #include "WKFUtils.h"
 
-// When compiling with OptiX 3.8 or grater, we use the new
+// #define VMDOPTIX_VCA_TABSZHACK 1
+#ifdef VMDOPTIX_VCA_TABSZHACK
+#define ORTMTABSZ 64
+#else
+#define ORTMTABSZ 256
+#endif
+
+// When compiling with OptiX 3.8 or greater, we use the new
 // progressive rendering APIs rather than our previous hand-coded
 // progressive renderer.
-#if (defined(VMDOPTIX_VCA) || (OPTIX_VERSION >= 3080))
+#if (defined(VMDOPTIX_VCA) || (OPTIX_VERSION >= 3080)) // && !defined(VMDUSEOPENHMD)
 #define VMDOPTIX_PROGRESSIVEAPI 1
 #endif
 
 #if 1 || defined(VMDOPTIX_PROGRESSIVEAPI)
 #define VMDOPTIX_LIGHTUSEROBJS 1
+#endif
+
+// Prevent interactive RT window code from being compiled when
+// VMD isn't compiled with an interactive GUI
+#if defined(VMDOPTIX_INTERACTIVE_OPENGL) && !defined(VMDOPENGL)
+#undef VMDOPTIX_INTERACTIVE_OPENGL
 #endif
 
 #if defined(VMDOPTIX_INTERACTIVE_OPENGL)
@@ -87,10 +117,24 @@ typedef struct {
   float color[3]; // XXX ignored for now
 } ort_directional_light;
 
+typedef struct {
+  float pos[3];
+  float color[3]; // XXX ignored for now
+} ort_positional_light;
+
+
 class OptiXRenderer {
 public: 
-  enum FogMode { RT_FOG_NONE=0, RT_FOG_LINEAR=1, RT_FOG_EXP=2, RT_FOG_EXP2=3 };
-  enum CameraProjection { RT_PERSPECTIVE=0, RT_ORTHOGRAPHIC=1 };
+  enum ClipMode { RT_CLIP_NONE=0, RT_CLIP_PLANE=1, RT_CLIP_SPHERE=2 };
+  enum HeadlightMode { RT_HEADLIGHT_OFF=0, RT_HEADLIGHT_ON=1 };
+  enum FogMode  { RT_FOG_NONE=0, RT_FOG_LINEAR=1, RT_FOG_EXP=2, RT_FOG_EXP2=3 };
+  enum CameraProjection { RT_PERSPECTIVE=0, 
+                          RT_ORTHOGRAPHIC=1,
+                          RT_CUBEMAP=2,
+                          RT_DOME_MASTER=3,
+                          RT_EQUIRECTANGULAR=4,
+                          RT_OCULUS_RIFT
+                        };
   enum Verbosity { RT_VERB_MIN=0, RT_VERB_TIMING=1, RT_VERB_DEBUG=2 };
   enum BGMode { RT_BACKGROUND_TEXTURE_SOLID=0,
                 RT_BACKGROUND_TEXTURE_SKY_SPHERE=1,
@@ -132,39 +176,79 @@ private:
   RTvariable accumulation_buffer_v;       ///< accum buffer variable
   RTvariable accum_count_v;               ///< accumulation subframe count 
 
+  int clipview_mode;                      ///< VR fade+clipping sphere/plane
+  RTvariable clipview_mode_v;             ///< VR fade+clipping sphere/plane
+  float clipview_start;                   ///< VR fade+clipping sphere/plane
+  RTvariable clipview_start_v;            ///< VR fade+clipping sphere/plane
+  float clipview_end;                     ///< VR fade+clipping sphere/plane
+  RTvariable clipview_end_v;              ///< VR fade+clipping sphere/plane
+
+  float anim_interp;                      ///< XXX global interpolation value
+  RTvariable anim_interp_v;               ///< XXX used for animation [0:1]
+
+  int headlight_mode;                     ///< VR HMD headlight
+  RTvariable headlight_mode_v;            ///< VR HMD headlight
+
 #if defined(VMDOPTIX_LIGHTUSEROBJS)
-  RTvariable light_list_v;                ///< list of lights
+  RTvariable dir_light_list_v;            ///< list of directional lights
+  RTvariable pos_light_list_v;            ///< list of positional lights
 #endif
-  RTvariable lightbuffer_v;               ///< list of lights
-  RTbuffer lightbuffer;                   ///< list of lights
+  RTvariable dir_lightbuffer_v;           ///< list of directional lights
+  RTbuffer dir_lightbuffer;               ///< list of directional lights
+  RTvariable pos_lightbuffer_v;           ///< list of positional lights
+  RTbuffer pos_lightbuffer;               ///< list of positional lights
 
   RTvariable ao_ambient_v;                ///< AO ambient lighting scalefactor
   float ao_ambient;                       ///< AO ambient lighting scalefactor
   RTvariable ao_direct_v;                 ///< AO direct lighting scalefactor
   float ao_direct;                        ///< AO direct lighting scalefactor
+  RTvariable ao_maxdist_v;                ///< AO maximum occlusion distance 
+  float ao_maxdist;                       ///< AO maximum occlusion distance 
 
   RTprogram exception_pgm;                ///< exception handling program
 
+  int set_accum_raygen_pgm(CameraProjection &proj, int stereo_on, int dof_on);
 
   RTprogram clear_accumulation_buffer_pgm;     ///< clear accum buf
   RTprogram draw_accumulation_buffer_pgm;      ///< copy accum to framebuffer
   RTprogram draw_accumulation_buffer_stub_pgm; ///< progressive mode no-op stub
 
-  RTprogram ray_gen_pgm_dome_master;           ///< planetarium dome master
-  RTprogram ray_gen_pgm_equirectangular;       ///< 360 FoV spherical equirect
+  RTprogram ray_gen_pgm_cubemap;                    ///< VR cubemap for Oculus
+  RTprogram ray_gen_pgm_cubemap_dof;                ///< VR cubemap for Oculus
+  RTprogram ray_gen_pgm_cubemap_stereo;             ///< VR cubemap for Oculus
+  RTprogram ray_gen_pgm_cubemap_stereo_dof;         ///< VR cubemap for Oculus
+
+  RTprogram ray_gen_pgm_dome_master;                ///< planetarium dome master
+  RTprogram ray_gen_pgm_dome_master_dof;            ///< planetarium dome master
+  RTprogram ray_gen_pgm_dome_master_stereo;         ///< planetarium dome master
+  RTprogram ray_gen_pgm_dome_master_stereo_dof;     ///< planetarium dome master
+
+  RTprogram ray_gen_pgm_equirectangular;            ///< 360 FoV for Oculus
+  RTprogram ray_gen_pgm_equirectangular_dof;        ///< 360 FoV for Oculus
+  RTprogram ray_gen_pgm_equirectangular_stereo;     ///< 360 FoV for Oculus
+  RTprogram ray_gen_pgm_equirectangular_stereo_dof; ///< 360 FoV for Oculus
+
+  RTprogram ray_gen_pgm_oculus_rift;                ///< Oculus Rift barrel
+  RTprogram ray_gen_pgm_oculus_rift_dof;            ///< Oculus Rift barrel
+  RTprogram ray_gen_pgm_oculus_rift_stereo;         ///< Oculus Rift barrel
+  RTprogram ray_gen_pgm_oculus_rift_stereo_dof;     ///< Oculus Rift barrel
+
   RTprogram ray_gen_pgm_perspective;           ///< perspective cam (non-stereo)
   RTprogram ray_gen_pgm_perspective_dof;       ///< perspective cam (non-stereo)
   RTprogram ray_gen_pgm_perspective_stereo;    ///< perspective cam (stereo)
   RTprogram ray_gen_pgm_perspective_stereo_dof; //< perspective cam (stereo)
 
-  RTprogram ray_gen_pgm_orthographic;        ///< orthographic cam (non-stereo)
-  RTprogram ray_gen_pgm_orthographic_stereo; ///< orthographic cam (stereo)
+  RTprogram ray_gen_pgm_orthographic;            ///< ortho cam (non-stereo)
+  RTprogram ray_gen_pgm_orthographic_dof;        ///< ortho cam (non-stereo)
+  RTprogram ray_gen_pgm_orthographic_stereo;     ///< ortho cam (stereo)
+  RTprogram ray_gen_pgm_orthographic_stereo_dof; ///< ortho cam (stereo)
 
-  RTprogram closest_hit_pgm_general;       ///< fully general shader
-  RTprogram closest_hit_pgm_special[64];   ///< 2^6 template-specialized fctns 
+  RTprogram closest_hit_pgm_general;             ///< fully general shader
+  RTprogram closest_hit_pgm_special[ORTMTABSZ];  ///< template-specialized fctns
 
   RTprogram any_hit_pgm_opaque;            ///< shadows for opaque objects
-  RTprogram any_hit_pgm_transmission;      ///< shadows with filtering
+  RTprogram any_hit_pgm_transmission;      ///< shadows w/ filtering
+  RTprogram any_hit_pgm_clip_sphere;       ///< shadows w/ clipping+filtering
 
   RTprogram miss_pgm_solid;                ///< miss/background shader
   RTprogram miss_pgm_sky_sphere;           ///< miss/background shader
@@ -172,8 +256,8 @@ private:
 
 
   RTmaterial material_general;             ///< fully-general material
-  RTmaterial material_special[64];         ///< 2^6 specialized materials
-  int material_special_counts[64];         ///< usage count in current scene
+  RTmaterial material_special[ORTMTABSZ];  ///< 2^8 specialized materials
+  int material_special_counts[ORTMTABSZ];  ///< usage count in current scene
 
 
   // cylinder array primitive
@@ -231,8 +315,8 @@ private:
   RTacceleration  acceleration;           ///< AS for scene geomgroup
   RTgroup         root_group;             ///< root node for entire scene
   RTacceleration  root_acceleration;      ///< AS for root node 
-  RTvariable      root_object_v;
-  RTvariable      root_shadower_v;
+  RTvariable      root_object_v;          ///< top level of scene graph 
+  RTvariable      root_shadower_v;        ///< top level of scene graph
 
   //
   // OptiX shader state variables and the like
@@ -300,6 +384,11 @@ private:
   RTvariable scene_gradient_invrange_v; ///< background gradient rcp range
   float scene_gradient_invrange;        ///< background gradient rcp range
 
+  // clipping plane/sphere parameters
+  int clip_mode;                        ///< clip mode
+  float clip_start;                     ///< clip start (Z or radial dist)
+  float clip_end;                       ///< clip end (Z or radial dist)
+
   // fog / depth cueing parameters
   RTvariable fog_mode_v;                ///< fog mode
   int fog_mode;                         ///< fog mode
@@ -310,16 +399,15 @@ private:
   RTvariable fog_density_v;             ///< fog density
   float fog_density;                    ///< fog density
 
-  // cache VMD material values
-  ResizeArray<ort_material> materialcache;
+  ResizeArray<ort_material> materialcache; ///< cache of VMD material values
 
-  // list of directional lights
-  ResizeArray<ort_directional_light> directional_lights;
+  ResizeArray<ort_directional_light> directional_lights; ///< list of directional lights
+  ResizeArray<ort_positional_light> positional_lights;   ///< list of positional lights
 
   // keep track of all of the OptiX objects we create on-the-fly...
-  ResizeArray<RTgeometry> geomlist;
-  ResizeArray<RTgeometryinstance> geominstancelist;
-  ResizeArray<RTbuffer> bufferlist;
+  ResizeArray<RTgeometry> geomlist;                  ///< list of all geom bufs
+  ResizeArray<RTgeometryinstance> geominstancelist;  ///< list of all instances
+  ResizeArray<RTbuffer> bufferlist;                  ///< list of all buffers
 
   void append_objects(RTbuffer buf, RTgeometry geom, 
                       RTgeometryinstance instance) {
@@ -344,6 +432,8 @@ public:
   static unsigned int device_list(int **, char ***);
   static unsigned int device_count(void);
   static unsigned int optix_version(void);
+
+  static int material_shader_table_size(void);
 
   /// check environment variables that modify verbose output
   void check_verbose_env();
@@ -401,6 +491,14 @@ public:
   void set_bg_gradient_topval(float v) { scene_gradient_topval = v; }
   void set_bg_gradient_botval(float v) { scene_gradient_botval = v; }
 
+  /// set camera clipping plane/sphere mode and parameters
+  void set_clip_sphere(ClipMode mode, float start, float end) {
+    clip_mode = mode;
+    clip_start = start;
+    clip_end = end;
+  }
+
+  /// set depth cueing mode and parameters
   void set_cue_mode(FogMode mode, float start, float end, float density) {
     fog_mode = mode;
     fog_start = start;
@@ -415,8 +513,18 @@ public:
                     int transmode);
   void set_material(RTgeometryinstance instance, int matindex, float *uniform_color);
 
-  void clear_all_lights() { directional_lights.clear(); }
+  void clear_all_lights() { 
+    directional_lights.clear(); 
+    positional_lights.clear(); 
+  }
+  void set_clipview_mode(int mode) { 
+    clipview_mode = mode;
+  };
+  void set_headlight_onoff(int onoff) { 
+    headlight_mode = (onoff==1) ? RT_HEADLIGHT_ON : RT_HEADLIGHT_OFF; 
+  };
   void add_directional_light(const float *dir, const float *color);
+  void add_positional_light(const float *pos, const float *color);
 
   void update_rendering_state(int interactive);
 

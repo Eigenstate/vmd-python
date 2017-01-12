@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: MoleculeGraphics.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.47 $	$Date: 2011/02/01 16:46:35 $
+ *	$Revision: 1.48 $	$Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:

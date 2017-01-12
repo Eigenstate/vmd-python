@@ -1,7 +1,7 @@
 
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -12,7 +12,7 @@
  *
  *	$RCSfile: Inform.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.41 $	$Date: 2013/05/10 14:19:58 $
+ *	$Revision: 1.42 $	$Date: 2016/11/28 03:05:00 $
  *
  ***************************************************************************
  * DESCRIPTION:

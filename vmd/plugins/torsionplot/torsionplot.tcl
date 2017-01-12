@@ -4,9 +4,11 @@
 # Tristan Croll, 2014-2015
 # 
 # Version history:
+#  1.1: Significant updates by Joao Ribeiro to facilitate text mode usage
+#       for QwikMD and to add checks for Ramachandran outliers
 #
 
-package provide torsionplot 1.0
+package provide torsionplot 1.1
 
 namespace eval ::TorPlot:: {
   #namespace export torsionplot
@@ -79,12 +81,40 @@ namespace eval ::TorPlot:: {
   variable imd_sidechains 1
   variable imd_backbone 0
   variable imd_cutoff
+  # gui == 1 called from the GUI
+  variable gui 1
   set imd_cutoff 5
   
 }
+# General command for torsiplot to evaluate if it is called from GUI or command line
+proc torsionplot { args } {
+  set gui 1
+  set seltext ""
+  set molid ""
 
-proc torsionplot {} {
-  ::TorPlot::torsionplot
+  foreach arg $args {
+    if {$arg == "-cmd"} {
+      set gui 0
+      set index [lsearch $args $arg]
+      set args [lreplace $args $index $index]
+    } 
+  }
+
+  foreach {arg value} $args {
+    if {$arg == "-seltext"} {
+      set seltext ${value}
+    } elseif {$arg == "-molid"} {
+      set molid $value
+    } 
+  }
+  if $gui {
+      # Run Torsion Plot GUI Mode
+      ::TorPlot::torsionplot
+    } else {
+      # Run Torsion Plot in command line mode
+      ::TorPlot::torplotInitialize -cmd -molid $molid -seltext $seltext
+    }
+  
 }
 
 proc ::TorPlot::torsionplot {} {
@@ -94,7 +124,8 @@ proc ::TorPlot::torsionplot {} {
   
   variable torsel
   variable w
-    
+  variable gui 
+
   global vmd_frame
   global vmd_initialize_structure
 
@@ -202,10 +233,12 @@ proc ::TorPlot::torsionplot {} {
   listbox $f.list -activestyle dotbox -yscroll "$f.scroll set" \
     -font {tkFixed 9} -width 55 -height 16 -setgrid 1 -selectmode extended \
     -listvariable [namespace current]::outlierList
-  button $f.selectbutton -text "Select this residue for IMD(FF)" -command "[namespace current]::run_mdff_on_sel $f.list 1"
+  button $f.selectbutton -text "Select this residue for IMDFF" -command "[namespace current]::run_mdff_on_sel $f.list 1 mdff"
+  button $f.selectbuttonimd -text "Select this residue for IMD" -command "[namespace current]::run_mdff_on_sel $f.list 1 imd"
   button $f.showbutton -text "Show this residue" -command "[namespace current]::show_sel $f.list 1"
   pack $f.label -side top -anchor w
   pack $f.selectbutton -side bottom -fill x -expand 1
+  pack $f.selectbuttonimd -side bottom -fill x -expand 1
   pack $f.showbutton -side bottom -fill x -expand 1
   pack $f.list $f.scroll -side left -fill y -expand 1
   pack $f -side top -padx 0 -pady 0 -expand 1 -fill x
@@ -220,10 +253,12 @@ proc ::TorPlot::torsionplot {} {
   listbox $f.list -activestyle dotbox -yscroll "$f.scroll set" \
     -font {tkFixed 9} -width 55 -height 16 -setgrid 1 -selectmode extended \
     -listvariable [namespace current]::marginalList
-  button $f.selectbutton -text "Select this residue for IMD(FF)" -command "[namespace current]::run_mdff_on_sel $f.list 0"
+  button $f.selectbutton -text "Select this residue for IMDFF" -command "[namespace current]::run_mdff_on_sel $f.list 0 mdff"
+  button $f.selectbuttonimd -text "Select this residue for IMD" -command "[namespace current]::run_mdff_on_sel $f.list 0 imd"
   button $f.showbutton2 -text "Show this residue" -command "[namespace current]::show_sel $f.list 0"
   pack $f.label -side top -anchor w
   pack $f.selectbutton -side bottom -fill x -expand 1
+  pack $f.selectbuttonimd -side bottom -fill x -expand 1
   pack $f.showbutton2 -side bottom -fill x -expand 1
   pack $f.list $f.scroll -side left -fill y -expand 1
   pack $f -side top -padx 0 -pady 0 -expand 1 -fill x
@@ -256,6 +291,8 @@ proc ::TorPlot::torsionplot {} {
   pack $w.pickedres -side top -padx 5 -pady 5 -expand 1 -fill x
   pack $w.mdffsettings -side top -padx 5 -pady 5 -expand 1 -fill x
 
+
+  set gui 1
 
   ## 
   # # Create fields for displaying info about last clicked residue
@@ -395,7 +432,7 @@ proc ::TorPlot::show_sel { selectlist listtype } {
 
 }
 
-proc ::TorPlot::run_mdff_on_sel { selectlist listtype } {
+proc ::TorPlot::run_mdff_on_sel { selectlist listtype mode } {
   variable imd_backbone
   variable imd_sidechains
   variable imd_cutoff
@@ -431,17 +468,21 @@ proc ::TorPlot::run_mdff_on_sel { selectlist listtype } {
     puts $imd_cutoff
     append seltext $seltext2
   }
-  ::MDFFGUI::gui::mdffgui
-  set ::MDFFGUI::settings::GridPDBSelText $seltext
-  #unused currently
-  #set ::MDFFGUI::settings::IMDSelText $seltext
-  set ::MDFFGUI::settings::FixedPDBSelText "not ($seltext)"
-  set ::MDFFGUI::settings::MolID $molid
-  set ::MDFFGUI::settings::IMD 1
-  set ::MDFFGUI::settings::IMDWait 1
- # automdff set moltenseltext $seltext
- # automdff showwindow
-  mol top $molid
+  if {$mode == "mdff"} {
+    ::MDFFGUI::gui::mdffgui
+    set ::MDFFGUI::settings::GridPDBSelText $seltext
+    #unused currently
+    #set ::MDFFGUI::settings::IMDSelText $seltext
+    set ::MDFFGUI::settings::FixedPDBSelText "not ($seltext)"
+    set ::MDFFGUI::settings::MolID $molid
+    set ::MDFFGUI::settings::IMD 1
+    set ::MDFFGUI::settings::IMDWait 1
+    mol top $molid
+  } elseif {$mode == "imd"} {
+    autoimd set moltenseltext $seltext
+    autoimd showwindow
+    mol top $molid
+  }
   
 }
 
@@ -513,8 +554,92 @@ proc ::TorPlot::torplotUpdateVisList { args } {
 	$f configure -state normal
     }
 }
+# Print Ramachandran outlier based on visualisation index
+proc ::TorPlot::listOutlier { visualisation } {
+  variable torrepids
+  variable torplotmol
+  variable tortypes
+  variable torsellist
+  variable outlierList
+  variable gui 
 
+    set outlierList {}
+    if !$gui {
+      lappend outlierList "[lindex [lindex $tortypes $visualisation] 0]"
+    }
+    #list outliers (best put in its own proc later)
+    set cutoffs [lrange [lindex [lindex $tortypes $visualisation] 4] 0 1]
+   set atomcheck [[lindex $torsellist $visualisation] get index]
+   if {[llength $atomcheck] > 0} {
+    catch {
+      set outliers [atomselect $torplotmol \
+  "index [[lindex $torsellist $visualisation] get index] \
+  and interpvol$visualisation <= [lindex $cutoffs 0]"]
+    if $gui {
+      puts "Outliers at [lindex $cutoffs 0] cutoff: [$outliers get "segname resid interpvol$visualisation"]"
+    }
+     
+      set unformattedList [$outliers get "chain segname resid interpvol$visualisation"]
+      set unformattedList [lsort -index 3 -real $unformattedList] 
+      foreach entry $unformattedList {
+        set chain [lindex $entry 0]
+        set segname [lindex $entry 1]
+        set resid [lindex $entry 2]
+        set score [expr [lindex $entry 3] * 10000]
+        #Format list for GUI table
+      if $gui {
+        lappend outlierList [format "%3s     %4s       %4i      %.3f" $chain $segname $resid $score]
+      } else {
+        lappend outlierList "$chain $segname $resid $score"
+      }
+  
+      }
+    $outliers delete
+    }
+  }
+    return $outlierList
+}
+# Print Ramachandran marginal based on visualisation index
+proc ::TorPlot::listMarginal { visualisation } {
+  variable torrepids
+  variable torplotmol
+  variable tortypes
+  variable torsellist
+  variable marginalList
+  variable gui 
 
+  
+    #list outliers (best put in its own proc later)
+    set marginalList {}
+    if !$gui {
+      lappend marginalList "[lindex [lindex $tortypes $visualisation] 0]"
+    }
+    set cutoffs [lrange [lindex [lindex $tortypes $visualisation] 4] 0 1]
+    set atomcheck [[lindex $torsellist $visualisation] get index]
+   if {[llength $atomcheck] > 0} {
+    catch {
+      set marginal [atomselect $torplotmol \
+	"index [[lindex $torsellist $visualisation] get index] \
+	and interpvol$visualisation > [lindex $cutoffs 0] and interpvol$visualisation <= [lindex $cutoffs 1]"]
+      set unformattedList [$marginal get "chain segname resid interpvol$visualisation"]
+      set unformattedList [lsort -index 3 -real $unformattedList] 
+      foreach entry $unformattedList {
+  set chain [lindex $entry 0]
+  set segname [lindex $entry 1]
+  set resid [lindex $entry 2]
+  set score [expr [lindex $entry 3] * 100]
+  if $gui {
+     lappend marginalList [format "%3s     %4s       %4i      %.3f" $chain $segname $resid $score]
+     } else {
+      lappend marginalList "$chain $segname $resid $score"
+     }
+ 
+      }
+      $marginal delete
+    }
+  }
+    return $marginalList
+}  
 
 proc ::TorPlot::torplotChangeVis { args } {
   variable w
@@ -528,69 +653,76 @@ proc ::TorPlot::torplotChangeVis { args } {
   variable torsellist
   variable outlierList
   variable marginalList
-    
+  variable gui  
     # hide all visualisations
     
-  if {[llength $torrepids] > 0} {
-    foreach repset $torrepids {
-      foreach rep $repset {
-	mol showrep $torplotmol $rep off
+  if {[llength $torrepids] > 0 || !$gui} {
+    if {$gui} {
+        foreach repset $torrepids {
+        foreach rep $repset {
+    mol showrep $torplotmol $rep off
+        }
+      }
+      mol off $2Daxis
+      mol off $3Daxis
+      
+      
+
+      # turn on visualisations for selected rep
+
+      foreach rep [lindex $torrepids $visualisation] {
+        mol showrep $torplotmol $rep on
+      }
+      set is3D [lindex $2D3D $visualisation]
+      if {$is3D} {
+        mol on $3Daxis
+      } else {
+        mol on $2Daxis
       }
     }
-    mol off $2Daxis
-    mol off $3Daxis
-
-    # turn on visualisations for selected rep
-
-    foreach rep [lindex $torrepids $visualisation] {
-      mol showrep $torplotmol $rep on
-    }
-    set is3D [lindex $2D3D $visualisation]
-    if {$is3D} {
-      mol on $3Daxis
-    } else {
-      mol on $2Daxis
-    }
-
     # catch statements are currently required because interpvoln doesn't go past n=6. Enough for the protein
     # torsions, but not enough for glycans
     
-    set outlierList {}
-    set marginalList {}
-    #list outliers (best put in its own proc later)
-    set cutoffs [lrange [lindex [lindex $tortypes $visualisation] 4] 0 1]
-    catch {
-      set outliers [atomselect $torplotmol \
-	"index [[lindex $torsellist $visualisation] get index] \
-	and interpvol$visualisation <= [lindex $cutoffs 0]"]
-      puts "Outliers at [lindex $cutoffs 0] cutoff: [$outliers get "segname resid interpvol$visualisation"]"
-      set unformattedList [$outliers get "chain segname resid interpvol$visualisation"]
-      set unformattedList [lsort -index 3 -real $unformattedList] 
-      foreach entry $unformattedList {
-	set chain [lindex $entry 0]
-	set segname [lindex $entry 1]
-	set resid [lindex $entry 2]
-	set score [expr [lindex $entry 3] * 10000]
-	lappend outlierList [format "%3s     %4s       %4i      %.3f" $chain $segname $resid $score]
-      }
-    $outliers delete
-    }
-    
-    catch {
-      set marginal [atomselect $torplotmol \
-	"index [[lindex $torsellist $visualisation] get index] \
-	and interpvol$visualisation > [lindex $cutoffs 0] and interpvol$visualisation <= [lindex $cutoffs 1]"]
-      set unformattedList [$marginal get "chain segname resid interpvol$visualisation"]
-      set unformattedList [lsort -index 3 -real $unformattedList] 
-      foreach entry $unformattedList {
-	set chain [lindex $entry 0]
-	set segname [lindex $entry 1]
-	set resid [lindex $entry 2]
-	set score [expr [lindex $entry 3] * 100]
-	lappend marginalList [format "%3s     %4s       %4i      %.3f" $chain $segname $resid $score]
-      }
-      $outliers delete
-    }
+    ##Now both outliers and marginal values can be called either from the GUI or from command line
+    listOutlier $visualisation
+    listMarginal $visualisation
+    #set outlierList {}
+    #set marginalList {}
+ #    #list outliers (best put in its own proc later)
+ #    set cutoffs [lrange [lindex [lindex $tortypes $visualisation] 4] 0 1]
+ #    catch {
+ #      set outliers [atomselect $torplotmol \
+	# "index [[lindex $torsellist $visualisation] get index] \
+	# and interpvol$visualisation <= [lindex $cutoffs 0]"]
+ #      puts "Outliers at [lindex $cutoffs 0] cutoff: [$outliers get "segname resid interpvol$visualisation"]"
+ #      set unformattedList [$outliers get "chain segname resid interpvol$visualisation"]
+ #      set unformattedList [lsort -index 3 -real $unformattedList] 
+ #      foreach entry $unformattedList {
+	# set chain [lindex $entry 0]
+	# set segname [lindex $entry 1]
+	# set resid [lindex $entry 2]
+	# set score [expr [lindex $entry 3] * 10000]
+	# lappend outlierList [format "%3s     %4s       %4i      %.3f" $chain $segname $resid $score]
+  
+ #      }
+ #    $outliers delete
+ #    }
+ #    set cutoffs [lrange [lindex [lindex $tortypes $visualisation] 4] 0 1]
+ #    catch {
+ #      set marginal [atomselect $torplotmol \
+	# "index [[lindex $torsellist $visualisation] get index] \
+	# and interpvol$visualisation > [lindex $cutoffs 0] and interpvol$visualisation <= [lindex $cutoffs 1]"]
+ #      set unformattedList [$marginal get "chain segname resid interpvol$visualisation"]
+ #      set unformattedList [lsort -index 3 -real $unformattedList] 
+ #      foreach entry $unformattedList {
+	# set chain [lindex $entry 0]
+	# set segname [lindex $entry 1]
+	# set resid [lindex $entry 2]
+	# set score [expr [lindex $entry 3] * 100]
+	# lappend marginalList [format "%3s     %4s       %4i      %.3f" $chain $segname $resid $score]
+ #      }
+ #      $marginal delete
+ #    }
     
   }
 }
@@ -609,11 +741,14 @@ proc ::TorPlot::torplotReset { args } {
     variable 2D3D
     variable outlierList
     variable marginalList
-  
+    variable gui
 
     mol delete $torplotmol
-    mol delete $2Daxis
-    mol delete $3Daxis
+    if !$gui {
+      mol delete $2Daxis
+      mol delete $3Daxis
+    }
+   
     set torplotmol ""
     foreach sel $molsellist {
       catch {$sel delete}
@@ -650,17 +785,34 @@ proc ::TorPlot::torplotInitialize { args } {
   variable 2Daxis
   variable 3Daxis
   variable 2D3D
+  variable gui
+
+  foreach arg $args {
+    if {$arg == "-cmd"} {
+      set gui 0
+      set index [lsearch $args $arg]
+      set args [lreplace $args $index $index]
+    } 
+  }
 
 
+  foreach {arg value} $args {
+    if {$arg == "-seltext"} {
+      set seltext ${value}
+    } elseif {$arg == "-molid"} {
+      set molid $value
+    } 
+  }
   if { $molid == "" || [lsearch [molinfo list] $molid] < 0} {
     return
   }
   
 #  wm title $w "Ramachandran plot for molecule $molid [molinfo $molid get name]"
+
   if { $seltext == "" } {
     set seltext all
   }
-  if {![catch {set sel [atomselect $molid "((protein and name CA and not (same residue as name HT1 HN1)) or (glycan and name C1)) and $seltext"]}]} {
+  if {![catch {set sel [atomselect $molid "((protein and name CA C1 and not (same residue as name HT1 HN1)) or (glycan and name C1)) and ($seltext)"]}]} {
     catch {$torsel delete}
     set torsel $sel
     $torsel global
@@ -681,11 +833,16 @@ proc ::TorPlot::torplotInitialize { args } {
 
 
   # set up new molecules for visualisations. The probability distribution for each case is saved in a 3D or pseudo-2D .dx volumetric map
-  display update off
+  if $gui {
+    display update off
+  }
+  
   
   # load the PDB file we just saved. This will be used to write the Phi/Psi coordinates 
   mol new $torfilename
+
   set torplotmol [molinfo top]
+  
   mol delrep 0 $torplotmol
   set allreps ""
   set repcount 0
@@ -700,13 +857,23 @@ proc ::TorPlot::torplotInitialize { args } {
       # set up atomic representations
       set torseltext "\{name CA C1 and (none"
       set thisseltext [lindex [lindex $tortypes $i] 1]
-      set sel [atomselect $molid "name CA C1 and not (protein and same residue as name HT1 HN1) and ($thisseltext) and ($seltext)"]
-      foreach seg [lsort -unique [$sel get segname]] {
-		set sel2 [atomselect $molid "segname $seg and index [$sel get index]"]
+      set sel [atomselect $molid "((protein and name CA C1 and not (same residue as name HT1 HN1)) or (glycan and name C1)) and ($thisseltext) and ($seltext)"]
+      set segchainlist [list]
+      # Check if segname field exists. If not, use chain IDs. This allows to check pdbs form PDBdatabank and not only psf+pdb pairs
+      set segment "segname"
+      set segmentList [$sel get segname]
+      if {[llength $segmentList] > 0} {
+        if {[lindex $segmentList 0] == ""} {
+          set segment "chain"
+        }
+      }
+      set segmentList [list] 
+      foreach seg [lsort -unique [$sel get $segment]] {
+       set sel2 [atomselect $molid "$segment $seg and index [$sel get index]"]
 		if {[$sel2 num] > 0} {
 			set reslist [$sel2 get resid]
 			if {[lindex $reslist 0] < 0} {
-				append torseltext " or (segname $seg and resid "
+				append torseltext " or ($segment $seg and resid "
 				set j 0
 				while {[lindex $reslist $j] < 0} {
 					append torseltext "\"[lindex $reslist $j]\" "
@@ -714,13 +881,13 @@ proc ::TorPlot::torplotInitialize { args } {
 				}
 				append torseltext "[lrange $reslist $j [llength $reslist]] )"
 			} else {	
-				append torseltext " or (segname $seg and resid [$sel2 get resid])"
+				append torseltext " or ($segment $seg and resid [$sel2 get resid])"
 			}
 		}
 		$sel2 delete
       }
       append torseltext ")\}"
-      puts $torseltext
+     # puts $torseltext
       # create atomselections for this case in both the molecule being analysed and the torsion plot atoms
       lappend molsellist $sel
       $sel global
@@ -817,17 +984,19 @@ proc ::TorPlot::torplotInitialize { args } {
   molinfo $torplotmol set scale_matrix {{{0.008 0 0 0} {0 0.008 0 0} {0 0 0.008 0} {0 0 0 1}}}
   molinfo $torplotmol set rotate_matrix {{{1 0 0 0} {0 1 0 0} {0 0 1 0} {0 0 0 1}}}
   molinfo $torplotmol set global_matrix {{{1 0 0 0} {0 1 0 0} {0 0 1 0} {0 0 0 1}}}
-  
-  set 2Daxis [mol new]
-  mol rename $2Daxis "2D axes"
-  
-  set 3Daxis [mol new]
-  mol rename $3Daxis "3D axes"
-  
-  ::TorPlot::draw_axes
-  
+  # Make representation only when called from GUI
+  if $gui {
+    set 2Daxis [mol new]
+    mol rename $2Daxis "2D axes"
+    
+    set 3Daxis [mol new]
+    mol rename $3Daxis "3D axes"
+    
+    ::TorPlot::draw_axes
+  } 
 
   TorPlot::torplotUpdate
+  
   
 }
 
@@ -898,8 +1067,12 @@ proc ::TorPlot::torplotUpdate { args } {
   variable torrepids
   variable molsellist
   variable torsellist
+  variable gui
+
+  if $gui {
+    display update off
+  }
   
-  display update off
   
   label_cis_peptides $molid
   
@@ -909,6 +1082,7 @@ proc ::TorPlot::torplotUpdate { args } {
 
   for {set i 0} {$i < [llength $tortypes]} {incr i} {
       set isProtein [lindex [lindex $tortypes $i] 5]
+      
       set is3D [lindex [lindex $tortypes $i] 3]
       set thismolsellist [lindex $molsellist $i]
       if {$thismolsellist == ""} {
@@ -961,8 +1135,9 @@ proc ::TorPlot::torplotUpdate { args } {
   
 	      
       
-
-  display update on
+  if $gui {
+    display update on
+  }
 }
 
 

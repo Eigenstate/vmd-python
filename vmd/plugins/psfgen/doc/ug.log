@@ -1,16 +1,13 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013) (format=pdflatex 2015.2.10)  1 JUN 2015 15:20
-entering extended mode
- restricted \write18 enabled.
- %&-line parsing enabled.
+This is pdfTeX, Version 3.14159-1.10b (Web2C 7.4.5) (format=pdflatex 2007.11.30)  2 FEB 2016 15:54
 **ug
-(./ug.tex
-LaTeX2e <2011/06/27>
-Babel <v3.8m> and hyphenation patterns for english, dumylang, nohyphenation, lo
-aded.
-(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
-Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
-(/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo
-File: size10.clo 2007/10/19 v1.4h Standard LaTeX file (size option)
+(./ug.tex{/usr/local/share/texmf/pdftex/config/pdftex.cfg}
+LaTeX2e <2001/06/01>
+Babel <v3.7h> and hyphenation patterns for american, french, german, ngerman, n
+ohyphenation, loaded.
+(/usr/local/share/texmf/tex/latex/base/article.cls
+Document Class: article 2001/04/21 v1.4e Standard LaTeX document class
+(/usr/local/share/texmf/tex/latex/base/size10.clo
+File: size10.clo 2001/04/21 v1.4e Standard LaTeX file (size option)
 )
 \c@part=\count79
 \c@section=\count80
@@ -49,19 +46,18 @@ LaTeX Font Info:    ... okay on input line 16.
 
 
 
-{/usr/share/texlive/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+{/usr/local/share/texmf/dvips/config/pdftex.map}]
 \openout2 = `ug_psfgen.aux'.
 
-
-(./ug_psfgen.tex
+ (./ug_psfgen.tex
 LaTeX Font Info:    Try loading font information for OMS+cmr on input line 8.
- (/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
+
+(/usr/local/share/texmf/tex/latex/base/omscmr.fd
 File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 8.
-
-[2
+ [2
 
 
 ] [3] [4] [5] [6] [7]
@@ -69,34 +65,34 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <7> on input line 407.
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <5> on input line 407.
- [8] [9] [10] [11]
+
+[8] [9] [10] [11]
 LaTeX Font Info:    Font shape `OMS/cmr/m/it' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 639.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 652.
  [12]) [13] (./ug.aux (./ug_title.aux) (./ug_psfgen.aux)) ) 
 Here is how much of TeX's memory you used:
- 294 strings out of 495063
- 3149 string characters out of 3182201
- 53153 words of memory out of 3000000
- 3535 multiletter control sequences out of 15000+200000
- 6477 words of font info for 25 fonts, out of 3000000 for 9000
- 14 hyphenation exceptions out of 8191
- 25i,4n,22p,406b,243s stack positions out of 5000i,500n,10000p,200000b,50000s
-</usr/share/texlive/
-texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texlive/texmf-
-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/share/texlive/texmf-dist/f
-onts/type1/public/amsfonts/cm/cmitt10.pfb></usr/share/texlive/texmf-dist/fonts/
-type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/
-public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/
-amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfont
-s/cm/cmr17.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cm
-sy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pf
-b></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></us
-r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/shar
-e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb>
-Output written on ug.pdf (13 pages, 174905 bytes).
-PDF statistics:
- 95 PDF objects out of 1000 (max. 8388607)
- 67 compressed objects within 1 object stream
- 0 named destinations out of 1000 (max. 500000)
- 1 words of extra memory for PDF output out of 10000 (max. 10000000)
-
+ 295 strings out of 95437
+ 3070 string characters out of 1189860
+ 49602 words of memory out of 1000001
+ 3350 multiletter control sequences out of 10000+50000
+ 6477 words of font info for 25 fonts, out of 500000 for 1000
+ 14 hyphenation exceptions out of 1000
+ 25i,4n,22p,406b,301s stack positions out of 1500i,500n,5000p,200000b,5000s
+ 78 PDF objects out of 300000
+ 0 named destinations out of 131072
+ 0 words of extra memory for PDF output out of 65536
+{/usr/local/share/te
+xmf/dvips/tetex/bbad153f.enc}</usr/local/share/texmf/fonts/type1/bluesky/cm/cms
+y7.pfb>{/usr/local/share/texmf/dvips/tetex/b6a4d7c7.enc}</usr/local/share/texmf
+/fonts/type1/bluesky/cm/cmitt10.pfb>{/usr/local/share/texmf/dvips/tetex/aae443f
+0.enc}</usr/local/share/texmf/fonts/type1/bluesky/cm/cmmi10.pfb>{/usr/local/sha
+re/texmf/dvips/tetex/f7b6d320.enc}</usr/local/share/texmf/fonts/type1/bluesky/c
+m/cmbx10.pfb>{/usr/local/share/texmf/dvips/tetex/74afc74c.enc}</usr/local/share
+/texmf/fonts/type1/bluesky/cm/cmti10.pfb></usr/local/share/texmf/fonts/type1/bl
+uesky/cm/cmsy10.pfb>{/usr/local/share/texmf/dvips/tetex/09fbbfac.enc}</usr/loca
+l/share/texmf/fonts/type1/bluesky/cm/cmtt10.pfb></usr/local/share/texmf/fonts/t
+ype1/bluesky/cm/cmbx12.pfb></usr/local/share/texmf/fonts/type1/bluesky/cm/cmr10
+.pfb></usr/local/share/texmf/fonts/type1/bluesky/cm/cmr12.pfb></usr/local/share
+/texmf/fonts/type1/bluesky/cm/cmr17.pfb></usr/local/share/texmf/fonts/type1/blu
+esky/cm/cmtt12.pfb>
+Output written on ug.pdf (13 pages, 131018 bytes).

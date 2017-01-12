@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: Measure.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.66 $       $Date: 2013/07/10 03:27:22 $
+ *      $Revision: 1.69 $       $Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -125,6 +125,16 @@ extern int measure_rgyr(const AtomSel *sel, MoleculeList *mlist,
 extern int measure_rmsd(const AtomSel *sel1, const AtomSel *sel2,
                         int num, const float *f1, const float *f2,
                         float *weight, float *rmsd);
+
+extern int measure_rmsd_qcp(const AtomSel *sel1, const AtomSel *sel2,
+                            int num, const float *f1, const float *f2,
+                            float *weight, float *rmsd);
+
+extern int measure_rmsdmat_qcp(const AtomSel *sel, MoleculeList *mlist,
+                               int num, float *weight,
+                               int start, int end, int step,
+                               float *rmsd);
+
 
 // Calculate RMS fluctuation of selected atoms over selected frames
 extern int measure_rmsf(const AtomSel *sel, MoleculeList *mlist, 

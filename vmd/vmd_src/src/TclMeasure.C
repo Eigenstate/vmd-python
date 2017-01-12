@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: TclMeasure.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.147 $	$Date: 2013/07/10 18:35:55 $
+ *	$Revision: 1.156 $	$Date: 2016/11/28 03:05:05 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -321,7 +321,7 @@ static int vmd_measure_avpos(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_
     }
   }
 
-  float *avpos = new float[3*sel->selected];
+  float *avpos = new float[3L*sel->selected];
   int ret_val = measure_avpos(sel, app->moleculeList, first, last, step, avpos);
   if (ret_val < 0) {
     Tcl_AppendResult(interp, "measure avpos: ", measure_error(ret_val), NULL);
@@ -332,9 +332,9 @@ static int vmd_measure_avpos(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_
   Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
   for (i=0; i<sel->selected; i++) {
     Tcl_Obj *atom = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(interp, atom, Tcl_NewDoubleObj(avpos[i*3    ]));
-    Tcl_ListObjAppendElement(interp, atom, Tcl_NewDoubleObj(avpos[i*3 + 1]));
-    Tcl_ListObjAppendElement(interp, atom, Tcl_NewDoubleObj(avpos[i*3 + 2]));
+    Tcl_ListObjAppendElement(interp, atom, Tcl_NewDoubleObj(avpos[i*3L    ]));
+    Tcl_ListObjAppendElement(interp, atom, Tcl_NewDoubleObj(avpos[i*3L + 1]));
+    Tcl_ListObjAppendElement(interp, atom, Tcl_NewDoubleObj(avpos[i*3L + 2]));
     Tcl_ListObjAppendElement(interp, tcl_result, atom);
   }
 
@@ -1026,6 +1026,164 @@ static int vmd_measure_rmsd(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_I
   return TCL_OK;
 }
 
+
+//////////////////////////////////////////////
+// measure rmsd_qcp $sel1 $sel2 [weight <weights>]
+static int vmd_measure_rmsd_qcp(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
+  if (argc !=3 && argc != 5) {
+    Tcl_WrongNumArgs(interp, 2, objv-1, 
+      (char *)"<sel1> <sel2> [weight <weights>]");
+    return TCL_ERROR;
+  }
+  // get the selections
+  AtomSel *sel1 = tcl_commands_get_sel(interp, Tcl_GetStringFromObj(objv[1],NULL));
+  AtomSel *sel2 = tcl_commands_get_sel(interp, Tcl_GetStringFromObj(objv[2],NULL));
+  if (!sel1 || !sel2) {
+    Tcl_AppendResult(interp, "measure rmsd: no atom selection", NULL);
+    return TCL_ERROR;
+  }
+
+  if (sel1->selected != sel2->selected) {
+    Tcl_AppendResult(interp, "measure rmsd: selections must have the same number of atoms", NULL);
+    return TCL_ERROR;
+  }
+  if (!sel1->selected) {
+    Tcl_AppendResult(interp, "measure rmsd: no atoms selected", NULL);
+    return TCL_ERROR;
+  }
+  float *weight = new float[sel1->selected];
+  {
+    int ret_val;
+    if (argc == 3) {
+      ret_val = tcl_get_weights(interp, app, sel1, NULL, weight);
+    } else {
+      ret_val = tcl_get_weights(interp, app, sel1, objv[4], weight);
+    }
+    if (ret_val < 0) {
+      Tcl_AppendResult(interp, "measure rmsd: ", measure_error(ret_val),
+		       NULL);
+      delete [] weight;
+      return TCL_ERROR;
+    }
+  }
+
+  // compute the rmsd
+  {
+    float rmsd = 0;
+    const float *x = sel1->coordinates(app->moleculeList);
+    const float *y = sel2->coordinates(app->moleculeList);
+    if (!x || !y) {
+      delete [] weight;
+      return TCL_ERROR;
+    }
+    int ret_val = measure_rmsd_qcp(sel1, sel2, sel1->selected, x, y, weight, &rmsd);
+    delete [] weight;
+    if (ret_val < 0) {
+      Tcl_AppendResult(interp, "measure rmsd: ", measure_error(ret_val),
+		       NULL);
+      return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewDoubleObj(rmsd));
+  }
+  return TCL_OK;
+}
+
+
+//////////////////////////////////////////////
+// measure rmsdmat_qcp $sel1 [weight <weights>] start s  end e  step s
+static int vmd_measure_rmsdmat_qcp(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
+  int first = 0;  // start with first frame by default
+  int last = -1;  // finish with last frame by default
+  int step = 1;   // use all frames by default
+
+  if (argc < 2 || argc > 9) {
+    Tcl_WrongNumArgs(interp, 2, objv-1, (char *) "<sel> [weight <weights>]  [first <first>] [last <last>] [step <step>]");
+    return TCL_ERROR;
+  }
+  AtomSel *sel = tcl_commands_get_sel(interp, Tcl_GetStringFromObj(objv[1],NULL)
+);
+  if (!sel) {
+    Tcl_AppendResult(interp, "measure rmsdmat_qcp: no atom selection", NULL);
+    return TCL_ERROR;
+  }
+
+  int i;
+  for (i=2; i<argc; i+=2) {
+    char *argvcur = Tcl_GetStringFromObj(objv[i],NULL);
+    if (!strupncmp(argvcur, "first", CMDLEN)) {
+      if (Tcl_GetIntFromObj(interp, objv[i+1], &first) != TCL_OK) {
+        Tcl_AppendResult(interp, "measure rmsdmat_qcp: bad first frame value", NULL);
+        return TCL_ERROR;
+      }
+    } else if (!strupncmp(argvcur, "last", CMDLEN)) {
+      if (Tcl_GetIntFromObj(interp, objv[i+1], &last) != TCL_OK) {
+        Tcl_AppendResult(interp, "measure rmsdmat_qcp: bad last frame value", NULL);
+        return TCL_ERROR;
+      }
+    } else if (!strupncmp(argvcur, "step", CMDLEN)) {
+      if (Tcl_GetIntFromObj(interp, objv[i+1], &step) != TCL_OK) {
+        Tcl_AppendResult(interp, "measure rmsdmat_qcp: bad frame step value", NULL);
+        return TCL_ERROR;
+      }
+    } else {
+      Tcl_AppendResult(interp, "measure avpos: invalid syntax, no such keyword: ", argvcur, NULL);
+      return TCL_ERROR;
+    }
+  }
+
+  float *weight = NULL;
+  if (0)  {
+    weight = new float[sel->selected];
+    int ret_val;
+    if (argc == 2) {
+      ret_val = tcl_get_weights(interp, app, sel, NULL, weight);
+    } else {
+      ret_val = tcl_get_weights(interp, app, sel, objv[3], weight);
+    }
+
+    if (ret_val < 0) {
+      Tcl_AppendResult(interp, "measure rmsdmat_qcp: ", measure_error(ret_val),
+		       NULL);
+      delete [] weight;
+      return TCL_ERROR;
+    }
+  }
+
+
+  int framecount = (last - first + 1) / step;
+  float *rmsdmat = (float *) calloc(1, framecount * framecount * sizeof(float));
+
+  // compute the rmsd matrix
+  int ret_val = measure_rmsdmat_qcp(sel, app->moleculeList, 
+                                    sel->selected, weight, 
+                                    first, last, step, rmsdmat);
+  delete [] weight;
+
+  if (ret_val < 0) {
+    Tcl_AppendResult(interp, "measure rmsdmat_qcp: ", measure_error(ret_val), NULL);
+    return TCL_ERROR;
+  }
+
+  Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
+  long j;
+  for (j=0; j<framecount; j++) {
+    Tcl_Obj *rmsdlist = Tcl_NewListObj(0, NULL);
+    for (i=0; i<framecount; i++) {
+      Tcl_ListObjAppendElement(interp, rmsdlist, 
+                               Tcl_NewDoubleObj(rmsdmat[j*framecount + i]));
+    }
+    Tcl_ListObjAppendElement(interp, tcl_result, rmsdlist);
+  }
+  Tcl_SetObjResult(interp, tcl_result);
+
+  free(rmsdmat);
+
+  return TCL_OK;
+}
+
+
+
+
 //////////////////////////////////////////////
 // measure fit $sel1 $sel2 [weight <weights>][
 static int vmd_measure_fit(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp)
@@ -1188,7 +1346,7 @@ static int vmd_measure_contacts(VMDApp *app, int argc, Tcl_Obj * const objv[], T
   Molecule *mol1 = app->moleculeList->mol_from_id(sel1->molid());
   Molecule *mol2 = app->moleculeList->mol_from_id(sel2->molid());
 
-  GridSearchPair *pairlist = vmd_gridsearch3(pos1, sel1->num_atoms, sel1->on, pos2, sel2->num_atoms, sel2->on, (float) cutoff, -1, (sel1->num_atoms + sel2->num_atoms) * 27);
+  GridSearchPair *pairlist = vmd_gridsearch3(pos1, sel1->num_atoms, sel1->on, pos2, sel2->num_atoms, sel2->on, (float) cutoff, -1, (sel1->num_atoms + sel2->num_atoms) * 27L);
   GridSearchPair *p, *tmp;
   Tcl_Obj *list1 = Tcl_NewListObj(0, NULL);
   Tcl_Obj *list2 = Tcl_NewListObj(0, NULL);
@@ -1919,7 +2077,7 @@ static int vmd_measure_hbonds(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl
   const int *A = sel1->on;
   const int *B = sel2 ? sel2->on : sel1->on;
  
-  GridSearchPair *pairlist = vmd_gridsearch2(pos, sel1->num_atoms, A, B, (float) cutoff, sel1->num_atoms * 27);
+  GridSearchPair *pairlist = vmd_gridsearch2(pos, sel1->num_atoms, A, B, (float) cutoff, sel1->num_atoms * 27L);
   GridSearchPair *p, *tmp;
   float donortoH[3], Htoacceptor[3];
   Tcl_Obj *donlist = Tcl_NewListObj(0, NULL);
@@ -1939,14 +2097,14 @@ static int vmd_measure_hbonds(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl
     if (!a1->bonded(p->ind2)) {
       int b1 = a1->bonds;
       int b2 = a2->bonds;
-      const float *coor1 = pos + 3*p->ind1;
-      const float *coor2 = pos + 3*p->ind2;
+      const float *coor1 = pos + 3L*p->ind1;
+      const float *coor2 = pos + 3L*p->ind2;
       int k;
       // first treat sel1 as donor
       for (k=0; k<b1; k++) {
         const int hindex = a1->bondTo[k];
         if (mol->atom(hindex)->atomType == ATOMHYDROGEN) {         
-          const float *hydrogen = pos + 3*hindex;
+          const float *hydrogen = pos + 3L*hindex;
           vec_sub(donortoH,hydrogen,coor1);
           vec_sub(Htoacceptor,coor2,hydrogen);
           if (angle(donortoH, Htoacceptor)  < maxangle ) {
@@ -1961,7 +2119,7 @@ static int vmd_measure_hbonds(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl
         for (k=0; k<b2; k++) {
           const int hindex = a2->bondTo[k];
           if (mol->atom(hindex)->atomType == ATOMHYDROGEN) {
-            const float *hydrogen = pos + 3*hindex;
+            const float *hydrogen = pos + 3L*hindex;
             vec_sub(donortoH,hydrogen,coor2);
             vec_sub(Htoacceptor,coor1,hydrogen);
             if (angle(donortoH, Htoacceptor)  < maxangle ) {
@@ -2190,7 +2348,7 @@ static int vmd_measure_energy(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl
     
   int first=-1, last=-1, frame=-1;
   double params[6];
-  memset(params, 0, 6*sizeof(double));
+  memset(params, 0, 6L*sizeof(double));
 
   if (argc>4) {
     int i;
@@ -2653,7 +2811,7 @@ static int vmd_measure_pbc_neighbors(VMDApp *app, int argc, Tcl_Obj * const objv
                 Tcl_AppendResult(interp, " measure pbcneighbors: non-numeric in boundingbox", NULL);
                 return TCL_ERROR;
               }
-              boxminmax[3*j+k] = (float)tmp;
+              boxminmax[3L*j+k] = (float)tmp;
             }
           }
         }
@@ -2682,16 +2840,17 @@ static int vmd_measure_pbc_neighbors(VMDApp *app, int argc, Tcl_Obj * const objv
     Tcl_AppendResult(interp, "measure pbcneighbors: ", measure_error(ret_val), NULL);
     return TCL_ERROR;
   }
-  printf("measure pbcneighbors: %i neighbor atoms found\n", indexmap_array.num());
+  printf("measure pbcneighbors: %ld neighbor atoms found\n", 
+         long(indexmap_array.num()));
 
   Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
   Tcl_Obj *coorListObj = Tcl_NewListObj(0, NULL);
   Tcl_Obj *indexListObj = Tcl_NewListObj(0, NULL);
   for (i=0; i<indexmap_array.num(); i++) {
     Tcl_Obj *rowListObj = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(interp, rowListObj, Tcl_NewDoubleObj(extcoord_array[3*i]));
-    Tcl_ListObjAppendElement(interp, rowListObj, Tcl_NewDoubleObj(extcoord_array[3*i+1]));
-    Tcl_ListObjAppendElement(interp, rowListObj, Tcl_NewDoubleObj(extcoord_array[3*i+2]));
+    Tcl_ListObjAppendElement(interp, rowListObj, Tcl_NewDoubleObj(extcoord_array[3L*i]));
+    Tcl_ListObjAppendElement(interp, rowListObj, Tcl_NewDoubleObj(extcoord_array[3L*i+1]));
+    Tcl_ListObjAppendElement(interp, rowListObj, Tcl_NewDoubleObj(extcoord_array[3L*i+2]));
     Tcl_ListObjAppendElement(interp, coorListObj, rowListObj);
     Tcl_ListObjAppendElement(interp, indexListObj, Tcl_NewIntObj(indexmap_array[i]));
   }
@@ -3016,7 +3175,7 @@ static int vmd_measure_symmetry(VMDApp *app, int argc, Tcl_Obj * const objv[], T
           Tcl_AppendResult(interp, " measure symmetry: bad syntax for imposeplanes option", NULL);
           bailout = 1; continue;
         }
-        float *elem = new float[3*nelem];
+        float *elem = new float[3L*nelem];
         int k;
         for (k=0; k<nelem; k++) {
           int nobj;
@@ -3039,7 +3198,7 @@ static int vmd_measure_symmetry(VMDApp *app, int argc, Tcl_Obj * const objv[], T
               delete [] elem;
               bailout = 1; continue;
             }
-            elem[3*k+m] = (float)d;
+            elem[3L*k+m] = (float)d;
           }
         }
         if (imposeplan) delete [] imposeplan;
@@ -3065,19 +3224,19 @@ static int vmd_measure_symmetry(VMDApp *app, int argc, Tcl_Obj * const objv[], T
           i++;
           continue;
         }
-        float *elem = new float[3*nelem];
+        float *elem = new float[3L*nelem];
         int *axorder = new int[nelem];
         int k;
         for (k=0; k<nelem; k++) {
           int nobj;
           Tcl_Obj **vecObj;
-          if (Tcl_ListObjGetElements(interp, elemListObj[2*k], &nobj, &vecObj) != TCL_OK) {
+          if (Tcl_ListObjGetElements(interp, elemListObj[2L*k], &nobj, &vecObj) != TCL_OK) {
             delete [] elem;
             delete [] axorder;
             Tcl_AppendResult(interp, " measure symmetry impose: bad syntax for axis vector", NULL);
             bailout = 1; continue;
           }
-          if (Tcl_GetIntFromObj(interp, elemListObj[2*k+1], &axorder[k]) != TCL_OK) {
+          if (Tcl_GetIntFromObj(interp, elemListObj[2L*k+1], &axorder[k]) != TCL_OK) {
             delete [] elem;
             delete [] axorder;
             bailout = 1; continue;
@@ -3097,7 +3256,7 @@ static int vmd_measure_symmetry(VMDApp *app, int argc, Tcl_Obj * const objv[], T
               delete [] axorder;
               bailout = 1; continue;
             }
-            elem[3*k+m] = (float)d;
+            elem[3L*k+m] = (float)d;
           }
         }
         if (!strupncmp(argvcur, "imposeaxes", CMDLEN)) {
@@ -3192,21 +3351,21 @@ static int vmd_measure_symmetry(VMDApp *app, int argc, Tcl_Obj * const objv[], T
     isym->set_overlaptol(float(sigma));
     isym->set_checkbonds(checkbonds);
     int j;
-    float *plane = new float[3*sym.numplanes()];
+    float *plane = new float[3L*sym.numplanes()];
     for (j=0; j<sym.numplanes(); j++) {
-      vec_copy(&plane[3*j], sym.plane(j));
+      vec_copy(&plane[3L*j], sym.plane(j));
     }
     int *axisorder = new int[sym.numaxes()];
-    float *axis = new float[3*sym.numaxes()];
+    float *axis = new float[3L*sym.numaxes()];
     for (j=0; j<sym.numaxes(); j++) {
       axisorder[j] = sym.get_axisorder(j);
-      vec_copy(&axis[3*j], sym.axis(j));
+      vec_copy(&axis[3L*j], sym.axis(j));
     }
     int *rrorder = new int[sym.numrotreflect()];
-    float *rraxis = new float[3*sym.numrotreflect()];
+    float *rraxis = new float[3L*sym.numrotreflect()];
     for (j=0; j<sym.numrotreflect(); j++) {
       rrorder[j] = sym.get_rotreflectorder(j);
-      vec_copy(&rraxis[3*j], sym.rotreflect(j));
+      vec_copy(&rraxis[3L*j], sym.rotreflect(j));
     }
     // XXX must check if sel is subset of idealsel
     int k=0, m=0;
@@ -3268,9 +3427,9 @@ static int vmd_measure_symmetry(VMDApp *app, int argc, Tcl_Obj * const objv[], T
   int   *unique   = s->get_inertia_unique();
   for (i=0; i<3; i++) {
     Tcl_Obj *inertObj  = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(interp, inertObj, Tcl_NewDoubleObj(inertia[3*i]));
-    Tcl_ListObjAppendElement(interp, inertObj, Tcl_NewDoubleObj(inertia[3*i+1]));
-    Tcl_ListObjAppendElement(interp, inertObj, Tcl_NewDoubleObj(inertia[3*i+2]));
+    Tcl_ListObjAppendElement(interp, inertObj, Tcl_NewDoubleObj(inertia[3L*i]));
+    Tcl_ListObjAppendElement(interp, inertObj, Tcl_NewDoubleObj(inertia[3L*i+1]));
+    Tcl_ListObjAppendElement(interp, inertObj, Tcl_NewDoubleObj(inertia[3L*i+2]));
     Tcl_Obj *inertListObj  = Tcl_NewListObj(0, NULL);
     Tcl_ListObjAppendElement(interp, inertListObj, inertObj);
     Tcl_ListObjAppendElement(interp, inertListObj, Tcl_NewDoubleObj(eigenval[i]));
@@ -3553,6 +3712,12 @@ int obj_measure(ClientData cd, Tcl_Interp *interp, int argc,
     return vmd_measure_rgyr(app, argc-1, objv+1, interp);
   else if (!strupncmp(argv1, "rmsd", CMDLEN))
     return vmd_measure_rmsd(app, argc-1, objv+1, interp);
+#if 1
+  else if (!strupncmp(argv1, "rmsd_qcp", CMDLEN))
+    return vmd_measure_rmsd_qcp(app, argc-1, objv+1, interp);
+  else if (!strupncmp(argv1, "rmsdmat_qcp", CMDLEN))
+    return vmd_measure_rmsdmat_qcp(app, argc-1, objv+1, interp);
+#endif
   else if (!strupncmp(argv1, "rmsf", CMDLEN))
     return vmd_measure_rmsf(app, argc-1, objv+1, interp);
   else if (!strupncmp(argv1, "sasa", CMDLEN))

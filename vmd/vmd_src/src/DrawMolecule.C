@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolecule.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.140 $	$Date: 2013/01/29 19:11:57 $
+ *	$Revision: 1.144 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -102,6 +102,10 @@ DrawMolItem *DrawMolecule::component_from_pickable(const Pickable *p) {
   return NULL; // no matching component
 }
 
+// return the available CPU thread pool to the caller
+wkf_threadpool_t * DrawMolecule::cpu_threadpool(void) {
+  return (wkf_threadpool_t *) app->thrpool;
+}
 
 // return the available CUDA device pool to the caller
 wkf_threadpool_t * DrawMolecule::cuda_devpool(void) {
@@ -217,7 +221,7 @@ void DrawMolecule::change_ts() {
   notify();
 
   // now that internal state has been updated, notify scripts
-  app->commandQueue->runcommand( new FrameEvent(id(), curframe) );
+  app->commandQueue->runcommand(new FrameEvent(id(), curframe));
 }
 
 
@@ -513,7 +517,7 @@ void DrawMolecule::update_cov_scale() {
   }
 
   // initialize min/max positions with values from the first on atom
-  const float *mpos = ts->pos + 3*istart;
+  const float *mpos = ts->pos + 3L*istart;
   minposx = maxposx = mpos[0];
   minposy = maxposy = mpos[1];
   minposz = maxposz = mpos[2];

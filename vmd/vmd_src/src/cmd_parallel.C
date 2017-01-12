@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: cmd_parallel.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.30 $       $Date: 2014/08/21 22:10:02 $
+ *      $Revision: 1.33 $       $Date: 2016/11/30 17:10:05 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -29,6 +29,15 @@
                     // but rather calling via VMDApp, so that we can
                     // implement the needed MPI functionality in a dynamically
                     // loaded plugin, rather than being hard-compiled in...
+
+// Check to see if we have to pass the MPI_IN_PLACE flag
+// for in-place allgather reductions (same approach as Tachyon)
+#if !defined(USE_MPI_IN_PLACE)
+#if (MPI_VERSION >= 2) || defined(MPI_IN_PLACE)
+#define USE_MPI_IN_PLACE 1
+#endif
+#endif
+
 #endif
 
 #include <stdio.h>
@@ -186,11 +195,12 @@ int text_cmd_parallel(ClientData cd, Tcl_Interp *interp, int argc, const char *a
     return TCL_OK;
   }
 
+
   // Execute a parallel for loop across all nodes
   //
   //  parallel for <startcount> <endcount> <callback proc> <user data>",
   //
-  if(!strupncmp(argv[1], "for", CMDLEN)) {
+  if (!strupncmp(argv[1], "for", CMDLEN)) {
     int isok = (argc == 6);
     int N = app->par_size();
     int start, end;
@@ -302,85 +312,95 @@ int text_cmd_parallel(ClientData cd, Tcl_Interp *interp, int argc, const char *a
     return TCL_OK;
   }
 
+
   // Execute an allgather producing a Tcl list of the per-node contributions
   //
   // parallel allgather <object>
   //
-  if(!strupncmp(argv[1], "allgather", CMDLEN)) {
+  if (!strupncmp(argv[1], "allgather", CMDLEN)) {
     int isok = (argc == 3);
+    int N = app->par_size();
 
+    // when running on a single-node or MPI is disabled at runtime, 
+    // bypass all MPI calls with the single-node fast path, which makes 
+    // the code both faster and implicitly handles the case where 
+    // MPI support is compiled and linked in, but disabled at runtime,
+    // e.g., when running a VMD binary on a Cray login node.
+    if (N == 1) {
+      if (!isok) {
+        Tcl_SetResult(interp, (char *) "invalid parallel gather, missing parameter on one or more nodes", TCL_STATIC);
+        return TCL_ERROR;
+      }
+
+      Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
+      Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewStringObj(argv[2], strlen(argv[2])));
+      Tcl_SetObjResult(interp, tcl_result);
+      return TCL_OK;
+    } 
 #if defined(VMDMPI)
-    int allok = 0;
-    int i;
+    else {
+      int allok = 0;
+      int i;
 
-    // Check all node result codes before we continue with the gather
-    MPI_Allreduce(&isok, &allok, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+      // Check all node result codes before we continue with the gather
+      MPI_Allreduce(&isok, &allok, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
 
-    if (!allok) {
-      Tcl_SetResult(interp, (char *) "invalid parallel gather, missing parameter on one or more nodes", TCL_STATIC);
-      return TCL_ERROR;
-    }
+      if (!allok) {
+        Tcl_SetResult(interp, (char *) "invalid parallel gather, missing parameter on one or more nodes", TCL_STATIC);
+        return TCL_ERROR;
+      }
 
-    // Collect parameter size data so we can allocate result buffers
-    // before executing the gather
-    int *szlist = new int[app->par_size()];
-    szlist[app->par_rank()] = strlen(argv[2])+1;
+      // Collect parameter size data so we can allocate result buffers
+      // before executing the gather
+      int *szlist = new int[N];
+      szlist[app->par_rank()] = strlen(argv[2])+1;
 
 #if defined(USE_MPI_IN_PLACE)
-    // MPI >= 2.x implementations (e.g. NCSA/Cray Blue Waters)
-    MPI_Allgather(MPI_IN_PLACE, 1, MPI_INT,
-                  &szlist[0], 1, MPI_INT, MPI_COMM_WORLD);
+      // MPI >= 2.x implementations (e.g. NCSA/Cray Blue Waters)
+      MPI_Allgather(MPI_IN_PLACE, 1, MPI_INT,
+                    &szlist[0], 1, MPI_INT, MPI_COMM_WORLD);
 #else
-    // MPI 1.x
-    MPI_Allgather(&szlist[app->par_rank()], 1, MPI_INT,
-                  &szlist[0], 1, MPI_INT, MPI_COMM_WORLD);
+      // MPI 1.x
+      MPI_Allgather(&szlist[app->par_rank()], 1, MPI_INT,
+                    &szlist[0], 1, MPI_INT, MPI_COMM_WORLD);
 #endif
 
-    int totalsz = 0;
-    int *displist = new int[app->par_size()];
-    for (i=0; i<app->par_size(); i++) {
-      displist[i]=totalsz;
-      totalsz+=szlist[i];
-    }
+      int totalsz = 0;
+      int *displist = new int[N];
+      for (i=0; i<N; i++) {
+        displist[i]=totalsz;
+        totalsz+=szlist[i];
+      }
 
-    char *recvbuf = new char[totalsz];
-    memset(recvbuf, 0, totalsz);
+      char *recvbuf = new char[totalsz];
+      memset(recvbuf, 0, totalsz);
 
-    // Copy this node's data into the correct array position
-    strcpy(&recvbuf[displist[app->par_rank()]], argv[2]);
+      // Copy this node's data into the correct array position
+      strcpy(&recvbuf[displist[app->par_rank()]], argv[2]);
 
-    // Perform the parallel gather 
+      // Perform the parallel gather 
 #if defined(USE_MPI_IN_PLACE)
-    // MPI >= 2.x implementations (e.g. NCSA/Cray Blue Waters)
-    MPI_Allgatherv(MPI_IN_PLACE, szlist[app->par_rank()], MPI_BYTE,
-                   &recvbuf[0], szlist, displist, MPI_BYTE, MPI_COMM_WORLD);
+      // MPI >= 2.x implementations (e.g. NCSA/Cray Blue Waters)
+      MPI_Allgatherv(MPI_IN_PLACE, szlist[app->par_rank()], MPI_BYTE,
+                     &recvbuf[0], szlist, displist, MPI_BYTE, MPI_COMM_WORLD);
 #else
-    // MPI 1.x
-    MPI_Allgatherv(&recvbuf[displist[app->par_rank()]], szlist[app->par_rank()], MPI_BYTE,
-                   &recvbuf[0], szlist, displist, MPI_BYTE, MPI_COMM_WORLD);
+      // MPI 1.x
+      MPI_Allgatherv(&recvbuf[displist[app->par_rank()]], szlist[app->par_rank()], MPI_BYTE,
+                     &recvbuf[0], szlist, displist, MPI_BYTE, MPI_COMM_WORLD);
 #endif
 
-    // Build Tcl result from the array of results
-    Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
-    for (i=0; i<app->par_size(); i++) {
-      Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewStringObj(&recvbuf[displist[i]], szlist[i]-1));
-    }
-    Tcl_SetObjResult(interp, tcl_result);
+      // Build Tcl result from the array of results
+      Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
+      for (i=0; i<N; i++) {
+        Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewStringObj(&recvbuf[displist[i]], szlist[i]-1));
+      }
+      Tcl_SetObjResult(interp, tcl_result);
 
-    delete [] recvbuf;
-    delete [] displist;
-    delete [] szlist;
-    return TCL_OK;
-#else
-    if (!isok) {
-      Tcl_SetResult(interp, (char *) "invalid parallel gather, missing parameter on one or more nodes", TCL_STATIC);
-      return TCL_ERROR;
+      delete [] recvbuf;
+      delete [] displist;
+      delete [] szlist;
+      return TCL_OK;
     }
-
-    Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewStringObj(argv[2], strlen(argv[2])));
-    Tcl_SetObjResult(interp, tcl_result);
-    return TCL_OK;
 #endif
   }
 
@@ -401,7 +421,7 @@ int text_cmd_parallel(ClientData cd, Tcl_Interp *interp, int argc, const char *a
   //
   // parallel allreduce <tcl reduction proc> <object>
   //
-  if(!strupncmp(argv[1], "allreduce", CMDLEN)) {
+  if (!strupncmp(argv[1], "allreduce", CMDLEN)) {
     int isok = (argc == 4);
     int N = app->par_size();
 

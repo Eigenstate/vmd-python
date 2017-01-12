@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: jsplugin.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.71 $       $Date: 2013/06/20 20:07:11 $
+ *      $Revision: 1.77 $       $Date: 2016/11/30 23:28:53 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -64,9 +64,7 @@
  *
  ***************************************************************************/
 
-#if 1
 #define INFOMSGS  1
-#endif
 
 #if 1
 #define ENABLEJSSHORTREADS 1
@@ -120,7 +118,7 @@ static void *alloc_aligned_ptr(size_t sz, size_t blocksz, void **unalignedptr) {
 #define JSENDIANISM      0x12345678
 
 #define JSMAJORVERSION   2
-#define JSMINORVERSION   12
+#define JSMINORVERSION   15
 
 #define JSNFRAMESOFFSET  (strlen(JSHEADERSTRING) + 20)
 
@@ -129,6 +127,13 @@ static void *alloc_aligned_ptr(size_t sz, size_t blocksz, void **unalignedptr) {
 #define JSBADFORMAT         2
 
 
+/* Threshold atom count beyond which block-based I/O is used by default */
+/* The overhead from block-alignment padding bytes becomes essentially  */
+/* inconsequential (< 1%) for structures with more than 50,000 atoms.   */
+#define JSBLOCKIO_THRESH    50000
+
+
+/* Option flag macros and their meanings */
 #define JSOPT_NOOPTIONS     0x00000000  /* no structure, only coords    */
 
 /* Timesteps are block-size padded and page- or sector-aligned for      */
@@ -204,6 +209,18 @@ typedef struct {
   int with_unitcell;
 
 } jshandle;
+
+
+/* Use block-based I/O by default when writing structures larger */
+/* than JSBLOCKIO_THRESH atoms, or when directed by the user and */
+/* not otherwise prohibited...                                   */
+static int js_blockio_check_and_set(jshandle *js) {
+  if ((getenv("VMDJSNOBLOCKIO") == NULL) && 
+      ((js->natoms > JSBLOCKIO_THRESH) || getenv("VMDJSBLOCKIO"))) {
+    js->optflags |= JSOPT_TS_BLOCKIO;
+    js->directio_block_size = MOLFILE_DIRECTIO_MIN_BLOCK_SIZE; 
+  }
+}
 
 
 static void *open_js_read(const char *path, const char *filetype, int *natoms) {
@@ -497,11 +514,11 @@ static int read_js_structure(void *mydata, int *optflags,
     /* skip forward to first TS if the caller gives us NULL ptrs */
     if (optflags == NULL && atoms == NULL) {
       size_t offset=0;
-      offset += numatomnames * (16 * sizeof(char));
-      offset += numatomtypes * (16 * sizeof(char));
-      offset += numresnames  * (8 * sizeof(char));
-      offset += numsegids    * (8 * sizeof(char));
-      offset += numchains    * (2 * sizeof(char));
+      offset += numatomnames * (16L * sizeof(char));
+      offset += numatomtypes * (16L * sizeof(char));
+      offset += numresnames  * (8L * sizeof(char));
+      offset += numsegids    * (8L * sizeof(char));
+      offset += numchains    * (2L * sizeof(char));
       offset += js->natoms * sizeof(short); /* atom name indices    */
       offset += js->natoms * sizeof(short); /* atom type indices    */
       offset += js->natoms * sizeof(short); /* residue name indices */
@@ -537,7 +554,7 @@ static int read_js_structure(void *mydata, int *optflags,
         }
 #endif
 
-        offset += 2 * js->nbonds * sizeof(int);
+        offset += 2L * js->nbonds * sizeof(int);
         if (js->optflags & JSOPT_BONDORDERS)
           offset += js->nbonds * sizeof(float);
 
@@ -608,8 +625,8 @@ static int read_js_structure(void *mydata, int *optflags,
 
     /* read in the string tables */
     for (i=0; i<numatomnames; i++) {
-      atomnames[i] = (char *) malloc(16 * sizeof(char));
-      fio_fread(atomnames[i], 16 * sizeof(char), 1, js->fd);
+      atomnames[i] = (char *) malloc(16L * sizeof(char));
+      fio_fread(atomnames[i], 16L * sizeof(char), 1, js->fd);
     }
 
 #if defined(INFOMSGS)
@@ -617,8 +634,8 @@ static int read_js_structure(void *mydata, int *optflags,
       printf("jsplugin)   atom types...\n");
 #endif
     for (i=0; i<numatomtypes; i++) {
-      atomtypes[i] = (char *) malloc(16 * sizeof(char));
-      fio_fread(atomtypes[i], 16 * sizeof(char), 1, js->fd);
+      atomtypes[i] = (char *) malloc(16L * sizeof(char));
+      fio_fread(atomtypes[i], 16L * sizeof(char), 1, js->fd);
     }
 
 #if defined(INFOMSGS)
@@ -626,8 +643,8 @@ static int read_js_structure(void *mydata, int *optflags,
       printf("jsplugin)   residue names...\n");
 #endif
     for (i=0; i<numresnames; i++) {
-      resnames[i] = (char *) malloc(8 * sizeof(char));
-      fio_fread(resnames[i], 8 * sizeof(char), 1, js->fd);
+      resnames[i] = (char *) malloc(8L * sizeof(char));
+      fio_fread(resnames[i], 8L * sizeof(char), 1, js->fd);
     }
 
 #if defined(INFOMSGS)
@@ -635,8 +652,8 @@ static int read_js_structure(void *mydata, int *optflags,
       printf("jsplugin)   segment names...\n");
 #endif
     for (i=0; i<numsegids; i++) {
-      segids[i] = (char *) malloc(8 * sizeof(char));
-      fio_fread(segids[i], 8 * sizeof(char), 1, js->fd);
+      segids[i] = (char *) malloc(8L * sizeof(char));
+      fio_fread(segids[i], 8L * sizeof(char), 1, js->fd);
     }
 
 #if defined(INFOMSGS)
@@ -644,8 +661,8 @@ static int read_js_structure(void *mydata, int *optflags,
       printf("jsplugin)   chain names...\n");
 #endif
     for (i=0; i<numchains; i++) {
-      chains[i] = (char *) malloc(2 * sizeof(char));
-      fio_fread(chains[i], 2 * sizeof(char), 1, js->fd);
+      chains[i] = (char *) malloc(2L * sizeof(char));
+      fio_fread(chains[i], 2L * sizeof(char), 1, js->fd);
     }
 
 #if defined(INFOMSGS)
@@ -1284,7 +1301,7 @@ static void close_js_read(void *v) {
 static void *open_js_write(const char *path, const char *filetype, int natoms) {
   jshandle *js;
 
-  js = (jshandle *)malloc(sizeof(jshandle));
+  js = (jshandle *) malloc(sizeof(jshandle));
   memset(js, 0, sizeof(jshandle));
 #if JSMAJORVERSION > 1
   js->parsed_structure=0;
@@ -1334,12 +1351,9 @@ static int write_js_structure(void *mydata, int optflags,
   jshandle *js = (jshandle *) mydata;
   long i;
 
-#if 1
-  if (getenv("VMDJSBLOCKIO")) {
-    js->optflags |= JSOPT_TS_BLOCKIO;
-    js->directio_block_size = MOLFILE_DIRECTIO_MIN_BLOCK_SIZE; 
-  }
-#endif
+  /* use block-based I/O by default when writing structures larger */
+  /* than JSBLOCKIO_THRESH atoms, or when directed by the user     */
+  js_blockio_check_and_set(js);
 
   js->optflags |= JSOPT_STRUCTURE;
 
@@ -1455,13 +1469,13 @@ printf("jsplugin)   atom names...\n");
     for (hashcnt=0,i=0; i<js->natoms; i++) {
       /* add a new string table entry for hash inserts that don't yet exist */
       if (hash_insert(&atomnamehash, atoms[i].name, hashcnt) == HASH_FAIL) {
-        atomnames[hashcnt] = (char *) calloc(1, 16 * sizeof(char));
+        atomnames[hashcnt] = (char *) calloc(1, 16L * sizeof(char));
         strcpy(atomnames[hashcnt], atoms[i].name);
         hashcnt++;
       }
     }
     for (i=0; i<numatomnames; i++) {
-      fio_fwrite(atomnames[i], 16 * sizeof(char), 1, js->fd);
+      fio_fwrite(atomnames[i], 16L * sizeof(char), 1, js->fd);
     }
 
 
@@ -1470,13 +1484,13 @@ printf("jsplugin)   atom types...\n");
     for (hashcnt=0,i=0; i<js->natoms; i++) {
       /* add a new string table entry for hash inserts that don't yet exist */
       if (hash_insert(&atomtypehash, atoms[i].type, hashcnt) == HASH_FAIL) {
-        atomtypes[hashcnt] = (char *) calloc(1, 16 * sizeof(char));
+        atomtypes[hashcnt] = (char *) calloc(1, 16L * sizeof(char));
         strcpy(atomtypes[hashcnt], atoms[i].type);
         hashcnt++;
       }
     }
     for (i=0; i<numatomtypes; i++) {
-      fio_fwrite(atomtypes[i], 16 * sizeof(char), 1, js->fd);
+      fio_fwrite(atomtypes[i], 16L * sizeof(char), 1, js->fd);
     }
 
 
@@ -1485,13 +1499,13 @@ printf("jsplugin)   residue names...\n");
     for (hashcnt=0,i=0; i<js->natoms; i++) {
       /* add a new string table entry for hash inserts that don't yet exist */
       if (hash_insert(&resnamehash, atoms[i].resname, hashcnt) == HASH_FAIL) {
-        resnames[hashcnt] = (char *) calloc(1, 8 * sizeof(char));
+        resnames[hashcnt] = (char *) calloc(1, 8L * sizeof(char));
         strcpy(resnames[hashcnt], atoms[i].resname);
         hashcnt++;
       }
     }
     for (i=0; i<numresnames; i++) {
-      fio_fwrite(resnames[i], 8 * sizeof(char), 1, js->fd);
+      fio_fwrite(resnames[i], 8L * sizeof(char), 1, js->fd);
     }
 
 
@@ -1500,13 +1514,13 @@ printf("jsplugin)   segment names...\n");
     for (hashcnt=0,i=0; i<js->natoms; i++) {
       /* add a new string table entry for hash inserts that don't yet exist */
       if (hash_insert(&segidhash, atoms[i].segid, hashcnt) == HASH_FAIL) {
-        segids[hashcnt] = (char *) calloc(1, 8 * sizeof(char));
+        segids[hashcnt] = (char *) calloc(1, 8L * sizeof(char));
         strcpy(segids[hashcnt], atoms[i].segid);
         hashcnt++;
       }
     }
     for (i=0; i<numsegids; i++) {
-      fio_fwrite(segids[i], 8 * sizeof(char), 1, js->fd);
+      fio_fwrite(segids[i], 8L * sizeof(char), 1, js->fd);
     }
 
 
@@ -1515,13 +1529,13 @@ printf("jsplugin)   chain names...\n");
     for (hashcnt=0,i=0; i<js->natoms; i++) {
       /* add a new string table entry for hash inserts that don't yet exist */
       if (hash_insert(&chainhash, atoms[i].chain, hashcnt) == HASH_FAIL) {
-        chains[hashcnt] = (char *) calloc(1, 2 * sizeof(char));
+        chains[hashcnt] = (char *) calloc(1, 2L * sizeof(char));
         strcpy(chains[hashcnt], atoms[i].chain);
         hashcnt++;
       }
     }
     for (i=0; i<numchains; i++) {
-      fio_fwrite(chains[i], 2 * sizeof(char), 1, js->fd);
+      fio_fwrite(chains[i], 2L * sizeof(char), 1, js->fd);
     }
 
 
@@ -1719,6 +1733,14 @@ static int write_js_bonds(void *mydata, int nbonds, int *fromptr, int *toptr,
                           int nbondtypes, char **bondtypename) {
   jshandle *js = (jshandle *) mydata;
 
+#if defined(INFOMSGS)
+    if (js->verbose) {
+      printf("jsplugin) write_js_bonds():\n");
+      printf("jsplugin) storing bond info for writing...\n");
+      printf("jsplugin) %d %d\n", nbonds, nbondtypes);
+    }
+#endif
+
   if (nbonds > 0 && fromptr != NULL && toptr != NULL) {
     js->optflags |= JSOPT_BONDS; 
 
@@ -1756,6 +1778,15 @@ static int write_js_angles(void * v, int numangles, const int *angles,
   js->numdihedrals = numdihedrals;
   js->numimpropers = numimpropers;
   js->numcterms = numcterms;
+
+#if defined(INFOMSGS)
+  if (js->verbose) {
+    printf("jsplugin) write_js_angles():\n");
+    printf("jsplugin) storing angles/dihedrals/impropers for writing...\n");
+    printf("jsplugin) %d %d %d %d\n",
+           numangles, numdihedrals, numimpropers, numcterms);
+  }
+#endif
 
   if (js->numangles > 0 || js->numdihedrals > 0 || js->numimpropers > 0) {
     js->optflags |= JSOPT_ANGLES;
@@ -1824,10 +1855,10 @@ static int write_js_timestep(void *v, const molfile_timestep_t *ts) {
   /* using direct I/O APIs...                                        */
   if (js->directio_ucell_blkbuf == NULL) {
     printf("jsplugin) no structure data, writing timesteps only...\n");
-    if (getenv("VMDJSBLOCKIO")) {
-      js->optflags |= JSOPT_TS_BLOCKIO;
-      js->directio_block_size = MOLFILE_DIRECTIO_MIN_BLOCK_SIZE; 
-    }
+
+    /* use block-based I/O by default when writing structures larger */
+    /* than JSBLOCKIO_THRESH atoms, or when directed by the user     */
+    js_blockio_check_and_set(js);
 
     /* write flags data to the file */
     fio_write_int32(js->fd, js->optflags); 

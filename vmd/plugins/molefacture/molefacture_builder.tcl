@@ -1,5 +1,5 @@
 ##
-## $Id: molefacture_builder.tcl,v 1.38 2011/04/04 04:06:41 johns Exp $
+## $Id: molefacture_builder.tcl,v 1.39 2016/02/04 19:43:05 johns Exp $
 ##
 
 # This file contains all procs relating to molecule building, fragments, and the like
@@ -155,6 +155,7 @@ proc ::Molefacture::read_fragmentlist {file} {
       set fragmentlist($fragname) $myfrag 
     }
   }
+  close $infile
 }
 
 proc ::Molefacture::replace_hydrogen_with_fragment {fragpath hydindex {retval 0}} {
@@ -216,6 +217,7 @@ proc ::Molefacture::replace_hydrogen_with_fragment {fragpath hydindex {retval 0}
     lappend bondpart2 [lindex $linearray 1]
     lappend bondorders [lindex $linearray 2]
   }
+  close $fragfile
 
    #Check to make sure we don't need more dummy hydrogens
    if {$availablehyd <= [llength $names]} {
@@ -342,6 +344,7 @@ proc ::Molefacture::new_mol_from_fragment {fragpath} {
     lappend bondpart2 [lindex $linearray 1]
     lappend bondorders [lindex $linearray 2]
   }
+  close $fragfile
 
   set addedatoms [list]
 
@@ -382,6 +385,7 @@ proc ::Molefacture::read_fragment_file {dbfile} {
     set myarr [lreplace $myarr 1 1 [file join $::env(MOLEFACTUREDIR) lib fragments $fname]]
     array set addfrags $myarr
   }
+  close $fragfile
     
 }
     
@@ -402,6 +406,7 @@ proc ::Molefacture::read_basefrag_file {dbfile} {
     set myarr [lreplace $myarr 1 1 [file join $::env(MOLEFACTUREDIR) lib basemol $fname]]
     array set basefrags $myarr
   }
+  close $fragfile
     
 }
 
@@ -425,6 +430,7 @@ proc ::Molefacture::add_basefrag_file {dbfile} {
     }
     array set basefrags $myarr
   }
+  close $fragfile
 
 }
 
@@ -447,6 +453,7 @@ proc ::Molefacture::add_frag_file {dbfile} {
     }
     array set addfrags $myarr
   }
+  close $fragfile
 }
 
 proc ::Molefacture::set_prot_parent {} {
@@ -629,6 +636,7 @@ proc ::Molefacture::add_amino_acid_base {fragpath oldhydindex fragname {diheds 1
     lappend bondpart2 [lindex $linearray 1]
     lappend bondorders [lindex $linearray 2]
   }
+  close $fragfile
 
   # Get residue/segment/etc information
   set myres $fragname

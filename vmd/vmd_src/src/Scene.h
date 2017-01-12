@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Scene.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.61 $	$Date: 2013/01/24 16:48:35 $
+ *	$Revision: 1.63 $	$Date: 2016/11/28 03:05:04 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -116,8 +116,8 @@ private:
   AdvancedLightState advLightState[DISP_LIGHTS]; ///< state of advanced lights
 
   /// color state data
-  static const float defaultColor[3*REGCLRS];
-  float colorData[3*MAXCOLORS];
+  static const float defaultColor[3L*REGCLRS];
+  float colorData[3L*MAXCOLORS];
   NameList<NameList<int> *> categories;
   
   NameList<int> colorNames;
@@ -221,7 +221,7 @@ public:
     root.color_changed(cat_id);
   }
   void set_color_value(int n, const float *rgb) {
-    memcpy(colorData+3*n, rgb, 3*sizeof(float));
+    memcpy(colorData+3L*n, rgb, 3L*sizeof(float));
     root.color_rgb_changed(n);
   }
   void set_colorscale_value(float min, float mid, float max) {
@@ -261,8 +261,8 @@ public:
 
   /// return index of color; returns -1 if name is not a valid color name
   int color_index(const char *name) const { return colorNames.typecode(name); }
-  const float *color_value(int n) const { return colorData+3*n; }
-  const float *color_default_value(int n) const { return defaultColor+3*n; }
+  const float *color_value(int n) const { return colorData+3L*n; }
+  const float *color_default_value(int n) const { return defaultColor+3L*n; }
   int num_category_items(int cat) const { 
     return categories.data(cat)->num(); 
   }

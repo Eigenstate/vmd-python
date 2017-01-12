@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: gamessplugin.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.209 $       $Date: 2013/04/13 03:32:12 $
+ *      $Revision: 1.211 $       $Date: 2016/11/28 05:01:54 $
  *
  ***************************************************************************/
 
@@ -376,7 +376,7 @@ static void *open_gamess_read(const char *filename,
                   const char *filetype, int *natoms) {
 
   FILE *fd;
-  qmdata_t *data;
+  qmdata_t *data = NULL;
   gmsdata *gms;
 
   /* open the input file */
@@ -4856,7 +4856,7 @@ VMDPLUGIN_API int VMDPLUGIN_init(void) {
   plugin.prettyname = "GAMESS";
   plugin.author = "Jan Saam, Markus Dittrich, Johan Strumpfer";
   plugin.majorv = 1;
-  plugin.minorv = 1;
+  plugin.minorv = 2;
   plugin.is_reentrant = VMDPLUGIN_THREADUNSAFE;
   plugin.filename_extension = "log";
   plugin.open_file_read = open_gamess_read;

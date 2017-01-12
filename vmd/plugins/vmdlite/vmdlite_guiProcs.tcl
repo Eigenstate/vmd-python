@@ -180,7 +180,7 @@ proc ::VMDlite::main::lesson { } {
 
 proc ::VMDlite::main::getLessons { } {
 # Ask user to select directory in which lessons are stored.
-
+	
     set ::VMDlite::main::lessonsDirectory [tk_chooseDirectory \
         -title "Please choose the folder where your lessons are stored." \
         -mustexist true]
@@ -240,31 +240,462 @@ proc ::VMDlite::main::setLessonInfo { Lesson } {
 }
 
 proc ::VMDlite::main::loadLesson { Lesson } {
-
-    namespace eval ::VMDlite::Lesson {
+	
+    namespace eval ::VMDlite::lesson {
     }
+	set ::VMDlite::lesson:LessonName ${Lesson}
     set lesson [string tolower ${Lesson}]
     set lesson [string trim ${lesson}]
     set Lesson [string trim ${Lesson}]
-    puts ${::VMDlite::main::lessonsFolders}
-    source [file join "${::VMDlite::main::lessonsDirectory}/vmdlite_lesson_${lesson}/vmdlite_lesson_${lesson}.tcl"]
-    return [eval ::VMDlite::Lesson::${Lesson}::module1]
-    
-    # switch ${lesson} {
-        # phospholipid    {
-            # source [file join ${::VMDlite::main::VMDLITEDIR}/vmdlite_lesson_phospholipids \
-                        # vmdlite_lesson_phospholipids.tcl]
-            # return [eval ::VMDlite::Lesson::Phospholipids::module1]
-        # }
-        # "VMD Tutorial" {
-            # source [file join ${::VMDlite::main::VMDLITEDIR}/vmdlite_tutorial_vmd \
-                        # vmdlite_tutorial_vmd.tcl]
-            # return [eval ::VMDlite::Tutorial::VMD::contents]
-        # }
-        # default             {
-            # tk_messageBox \
-                # -message "This lesson is not yet available."
-        # }
-    # }
+    #puts ${::VMDlite::main::lessonsFolders}
+	set ::VMDlite::lesson::directory ${::VMDlite::main::lessonsDirectory}/vmdlite_lesson_${lesson}
+	#puts "${::VMDlite::main::lessonsDirectory}/vmdlite_lesson_${lesson}/vmdlite_lesson_${lesson}.tcl"
+    source [file join ${::VMDlite::main::lessonsDirectory}/vmdlite_lesson_${lesson} vmdlite_lesson_${lesson}.tcl]
+	#puts "vmdlite_lesson_${lesson}.tcl"
+	source ${::VMDlite::main::lessonsDirectory}/vmdlite_lesson_${lesson}/vmdlite_lesson_${lesson}.tcl
+	
+    return [eval ::VMDlite::lesson::module1]
 
+}
+
+
+# ################################ #
+# ################################ #
+# ################################ #
+# ################################ #
+# ################################ #
+# ################################ #
+# ################################ #
+# ################################ #
+# ################################ #
+
+proc ::VMDlite::lesson::init { } {
+# Initializes module
+
+    # kill original window if this is the initial module loading
+    destroy .vmdlite
+    if { [winfo exists .vmdlite] } {
+        wm deiconify ::VMDlite::lesson::w
+        return
+    }
+    # set titles
+    set ::VMDlite::lesson::w [toplevel ".vmdlite"]
+    wm title ${::VMDlite::lesson::w} "VMDlite"
+    
+    # Hotel California proc (user may never exit from VMDlite. You are
+    # here forever).
+    wm protocol ${::VMDlite::lesson::w} WM_DELETE_WINDOW {
+    if {[tk_messageBox \
+            -message "Quit?" \
+            -type yesno] eq "yes"} {
+        destroy .vmdlite
+        source [file join ${::VMDlite::main::VMDLITEDIR} vmdlite.tcl]
+        vmdlite
+    }
+}
+	# initialize current frame variable (you'll see the sneakiness)
+	set ::VMDlite::lesson::currentFrame 1
+	mol delete all
+}
+
+proc ::VMDlite::lesson::refresh { } {
+# kill existing text / buttons then create new text box.
+# This proc is used at the start of each frame to refresh the
+# window so we may lay new widgets.
+
+    # destroy all widgets
+    foreach i [winfo children ${::VMDlite::lesson::w}] {
+	if {${i}!=${::VMDlite::lesson::w}} {
+	    destroy ${i}
+	}
+    }
+
+    # frame for text box (holds text and scrollbar)
+    ttk::frame ${::VMDlite::lesson::w}.textFrame \
+	-relief sunken
+    # text box
+    text ${::VMDlite::lesson::w}.textFrame.textBox \
+	-wrap word \
+	-font "Helvetica 20" \
+	-width 50 \
+	-height 10 \
+        -yscrollcommand "${::VMDlite::lesson::w}.textFrame.yscroll set"
+    # scrollbar
+    ttk::scrollbar ${::VMDlite::lesson::w}.textFrame.yscroll \
+	-command "${::VMDlite::lesson::w}.textFrame.textBox yview"
+
+    # horizontal line for separation of text box from buttons
+    ttk::separator ${::VMDlite::lesson::w}.separator \
+     	-orient horizontal
+
+    # pack everything in
+    pack ${::VMDlite::lesson::w}.textFrame \
+	-expand true \
+	-padx 2 -pady 2 \
+	-ipadx 2 -ipady 2 \
+    -fill both
+    pack ${::VMDlite::lesson::w}.textFrame.textBox \
+ 	 ${::VMDlite::lesson::w}.textFrame.yscroll \
+	    -side left \
+	    -expand true \
+	    -fill both
+    pack ${::VMDlite::lesson::w}.separator \
+	-fill x \
+	-pady 10
+    
+    # split frame refresh into two procs for better understanding / versatility
+    eval ::VMDlite::lesson::progress
+}
+
+proc ::VMDlite::lesson::progress { } {
+# create progress buttons (previous, exit, next)
+# If we are on the first frame, no "previous" button is made.
+# Likewise if we are on the final frame, no "next" button is made.
+
+    set previousFrame [expr ${::VMDlite::lesson::currentFrame} - 1]
+    set nextFrame [expr ${::VMDlite::lesson::currentFrame} + 1]
+
+    # frame for buttons
+    ttk::frame ${::VMDlite::lesson::w}.buttons \
+	-relief sunken
+    pack ${::VMDlite::lesson::w}.buttons \
+	-side bottom \
+	-fill x
+    # only make "previous" button if this isn't the first frame
+    if {${previousFrame}} {
+	ttk::button ${::VMDlite::lesson::w}.buttons.previous \
+	    -text "Previous" \
+	    -command ::VMDlite::lesson::module${previousFrame}
+	pack  ${::VMDlite::lesson::w}.buttons.previous \
+	    -side left
+    }
+    # only make "next" button if this isn't the final frame
+    if {${nextFrame} <= ${::VMDlite::lesson::totalFrames}} {
+	ttk::button ${::VMDlite::lesson::w}.buttons.next \
+	    -text "Next" \
+	    -command ::VMDlite::lesson::module${nextFrame}
+	pack  ${::VMDlite::lesson::w}.buttons.next \
+	    -side right
+    }
+    # always place exit button
+    ttk::button ${::VMDlite::lesson::w}.buttons.exit \
+	-text "Exit" \
+	-command ::VMDlite::lesson::exit
+    pack ${::VMDlite::lesson::w}.buttons.exit \
+	-side bottom \
+	-padx 2 -pady 2 \
+	-ipadx 2 -ipady 2
+    if {0} {
+        ttk::button ${::VMDlite::lesson::w}.buttons.existentialCrisis \
+            -text "Existential crisis" ;# the button has no command evaluation upon execution.
+        pack ${::VMDlite::lesson::w}.buttons.existentialCrisis
+    }
+}
+
+proc ::VMDlite::lesson::showPBC { } {
+# This proc will show/hide periodic boundary conditions
+
+    switch ${::VMDlite::lesson::pbc} {
+	1    {mol showperiodic [molinfo top] 0 yY;\
+	       mol showperiodic [molinfo top] 1 yY;\
+	       mol showperiodic [molinfo top] 2 yY}
+	0   {mol showperiodic [molinfo top] 0 0;\
+	       mol showperiodic [molinfo top] 1 0;\
+	       mol showperiodic [molinfo top] 2 0}
+    }
+    # display doesn't update for some reason. This forces it to.
+    scale by 1.0001
+}
+
+proc ::VMDlite::lesson::updateScale { newValue args } {
+	# If this proc isn't here, the code will break. Move along.
+}
+
+proc ::VMDlite::lesson::showRep { { repnum -1} {rep $::VMDlite::lesson::representation } } {
+# 
+# swaps between representations based on radiobuttons
+
+  if { $repnum >= 0 } {
+    mol showrep [molinfo top] $repnum on
+    switch $rep {
+        Lines        {mol modstyle $repnum [molinfo top] Lines 7.0}
+        Licorice    {mol modstyle $repnum [molinfo top] Licorice 0.3 30 30}
+        VDW          {mol modstyle $repnum [molinfo top] VDW 0.8 30}
+        NewCartoon   {mol modstyle $repnum [molinfo top] NewCartoon }
+        off          {mol showrep [molinfo top] $repnum off}
+    }
+  } else {
+    switch ${::VMDlite::lesson::representation} {
+      Lines        { mol showrep [molinfo top] 0 on;\
+                     mol showrep [molinfo top] 1 off;\
+                     mol showrep [molinfo top] 2 off}
+      Licorice    { mol showrep [molinfo top] 1 on;\
+                    mol showrep [molinfo top] 0 off;\
+                    mol showrep [molinfo top] 2 off}
+      VDW          { mol showrep [molinfo top] 2 on;\
+                     mol showrep [molinfo top] 0 off;\
+                     mol showrep [molinfo top] 1 off}
+    }
+  }  
+
+}
+
+proc ::VMDlite::lesson::setTime { time } {
+# sets frame to user's choice on slide. When user drags time slider, the simulation
+# will move to that point.
+
+    animate goto ${time}
+}
+
+proc ::VMDlite::lesson::DCD { input } {
+# Allows TclTk to understand the concept of the DCD and have it shake hands
+# with the GUI.
+	
+    if ${input} {
+        # convenience
+        set top [molinfo top]
+
+        # sets starting state for loop
+        set thisFrame [molinfo ${top} get frame]
+
+        # sets upper bound for while loop
+        set numFrames [expr [molinfo ${top} get numframes] - 1]
+
+        # breaks the loop when pause button is pressed
+        set ::VMDlite::lesson::keepTruckin 1
+
+        # start at beginning if we're at the end
+        if {${thisFrame} == ${numFrames}} {
+            animate goto 0
+            set thisFrame 0
+        }
+        
+        # Ghetto loop to play through DCD. Can't just "animate forward" since
+        # the GUI wouldn't update. Instead we'll go frame by frame until the
+        # end. I am not a computer scientist. Deal with it.
+        while {${thisFrame} < ${numFrames}} {
+            
+            # move forward
+            animate next
+            incr thisFrame
+            # set time step variable depending on simulation
+            set ::VMDlite::lesson::sliderPos ${thisFrame} 
+
+            # update OpenGL
+            display update ui
+            
+            # if the pause button is pressed, break out of this loop
+            if {!${::VMDlite::lesson::keepTruckin}} { break }
+            
+            # stupid Tcl doesn't evaluate tasks before continuing loop otherwise
+            update idletasks
+            after 50
+        }
+    } else {
+        set ::VMDlite::lesson::keepTruckin 0
+        update idletasks
+    }
+        
+}
+
+proc ::VMDlite::lesson::step { choice } {
+    # Steps forward/backward in DCD
+
+    animate ${choice}
+
+    update idletasks
+    display update ui
+    after 50 
+    
+    
+    set thisFrame [molinfo [molinfo top] get frame]
+    # Update frame for scale
+    set ::VMDlite::lesson::sliderPos ${thisFrame} 
+    
+}
+
+proc ::VMDlite::lesson::representationsButtons { { repnum -1}  } {
+
+    # radio with buttons for representations
+    ttk::frame ${::VMDlite::lesson::w}.radio \
+	-relief sunken
+    ttk::label ${::VMDlite::lesson::w}.radio.label \
+	-text "Representations" 
+    ttk::radiobutton ${::VMDlite::lesson::w}.radio.lines \
+	-text "Lines" \
+        -value "Lines" \
+	-variable ::VMDlite::lesson::representation \
+	-command "::VMDlite::lesson::showRep $repnum Lines" 
+    ttk::radiobutton ${::VMDlite::lesson::w}.radio.licorice \
+	-text "Licorice" \
+        -value "Licorice" \
+	-variable ::VMDlite::lesson::representation \
+	-command "::VMDlite::lesson::showRep $repnum Licorice"
+    ttk::radiobutton ${::VMDlite::lesson::w}.radio.vdw \
+	-text "VDW" \
+        -value "VDW" \
+	-variable ::VMDlite::lesson::representation \
+	-command "::VMDlite::lesson::showRep $repnum VDW"
+
+    # periodic boundary conditions checkbutton
+    ttk::label ${::VMDlite::lesson::w}.pbcLabel \
+	-text "Periodic boundary conditions"
+    ttk::checkbutton ${::VMDlite::lesson::w}.pbc \
+	-variable ::VMDlite::lesson::pbc \
+	-command ::VMDlite::lesson::showPBC
+
+    # horizontal line for separation of scrollbar from buttons
+    ttk::separator ${::VMDlite::lesson::w}.separator2 \
+     	-orient horizontal
+
+    pack ${::VMDlite::lesson::w}.radio \
+	-side top \
+	-fill x \
+	-expand true \
+	-padx 2 -pady 2 \
+	-ipadx 2 -ipady 2
+
+    pack ${::VMDlite::lesson::w}.radio.label \
+	${::VMDlite::lesson::w}.radio.lines \
+	${::VMDlite::lesson::w}.radio.licorice \
+	${::VMDlite::lesson::w}.radio.vdw \
+	    -side left
+
+    pack ${::VMDlite::lesson::w}.pbcLabel \
+	${::VMDlite::lesson::w}.pbc \
+	    -padx 2 -pady 2 \
+	    -ipadx 2 -ipady 2
+    pack ${::VMDlite::lesson::w}.separator2 \
+	-fill x \
+	-pady 10 \
+	-side bottom \
+	-after ${::VMDlite::lesson::w}.radio
+    
+    # initialize selection buttons
+    ${::VMDlite::lesson::w}.pbc invoke
+    ${::VMDlite::lesson::w}.radio.lines invoke
+
+}
+
+proc ::VMDlite::lesson::repButtonsAndDCD { DCD { repnum -1} } {
+	
+    # radio with buttons for representations
+    ttk::frame ${::VMDlite::lesson::w}.radio \
+        -relief sunken
+    ttk::label ${::VMDlite::lesson::w}.radio.label \
+        -text "Representations"
+    ttk::radiobutton ${::VMDlite::lesson::w}.radio.lines \
+        -text "Lines" \
+        -value "Lines" \
+        -variable ::VMDlite::lesson::representation \
+        -command "::VMDlite::lesson::showRep $repnum Lines"
+    ttk::radiobutton ${::VMDlite::lesson::w}.radio.licorice \
+        -text "Licorice" \
+        -value "Licorice" \
+        -variable ::VMDlite::lesson::representation \
+        -command "::VMDlite::lesson::showRep $repnum Licorice"
+    ttk::radiobutton ${::VMDlite::lesson::w}.radio.vdw \
+        -text "VDW" \
+        -value "VDW" \
+        -variable ::VMDlite::lesson::representation \
+        -command "::VMDlite::lesson::showRep $repnum VDW"
+
+    
+    # frame for time scale in DCD
+    ttk::frame ${::VMDlite::lesson::w}.scale \
+        -relief sunken
+    # actual scale
+    ttk::scale ${::VMDlite::lesson::w}.scale.bar \
+        -variable ::VMDlite::lesson::${DCD} \
+        -from 0 -to 499 \
+        -command ::VMDlite::lesson::setTime
+    # buttons for manually moving through DCD
+    ttk::button ${::VMDlite::lesson::w}.scale.play \
+        -text "Play" \
+        -command [list ::VMDlite::lesson::DCD 1]
+    ttk::button ${::VMDlite::lesson::w}.scale.stop \
+        -text "Stop" \
+        -command [list ::VMDlite::lesson::DCD 0]
+    ttk::button ${::VMDlite::lesson::w}.scale.stepBack \
+        -text "Previous frame" \
+        -command [list ::VMDlite::lesson::step prev]
+    ttk::button ${::VMDlite::lesson::w}.scale.stepForward \
+        -text "Next frame" \
+        -command [list ::VMDlite::lesson::step next]
+
+
+    # horizontal line for separation of scrollbar from buttons
+    ttk::separator ${::VMDlite::lesson::w}.separator2 \
+     	-orient horizontal
+
+    pack ${::VMDlite::lesson::w}.radio \
+        -side top \
+        -fill x \
+        -expand true \
+        -padx 2 -pady 2 \
+        -ipadx 2 -ipady 2
+    
+    pack ${::VMDlite::lesson::w}.scale \
+        -before ${::VMDlite::lesson::w}.buttons \
+        -fill x \
+        -padx 2 -pady 2 \
+        -ipadx 2 -ipady 2
+    pack ${::VMDlite::lesson::w}.scale.bar \
+        -padx 2 -pady 2 \
+        -ipadx 2 -ipady 2 \
+        -fill x
+    pack ${::VMDlite::lesson::w}.scale.stepBack \
+        -padx 2 -pady 2 \
+        -ipadx 2 -ipady 2 \
+        -side left
+    pack ${::VMDlite::lesson::w}.scale.play \
+        -padx 2 -pady 2 \
+        -ipadx 2 -ipady 2 \
+        -side left
+    pack ${::VMDlite::lesson::w}.scale.stop \
+        -padx 2 -pady 2 \
+        -ipadx 2 -ipady 2 \
+        -side left
+    pack ${::VMDlite::lesson::w}.scale.stepForward \
+        -padx 2 -pady 2 \
+        -ipadx 2 -ipady 2 \
+        -side left
+
+    pack ${::VMDlite::lesson::w}.radio.label \
+	${::VMDlite::lesson::w}.radio.lines \
+	${::VMDlite::lesson::w}.radio.licorice \
+	${::VMDlite::lesson::w}.radio.vdw \
+	    -side left
+
+    pack ${::VMDlite::lesson::w}.separator2 \
+        -fill x \
+        -pady 10 \
+        -side bottom \
+        -after ${::VMDlite::lesson::w}.radio
+    
+    # initialize selection buttons
+    ${::VMDlite::lesson::w}.radio.licorice invoke
+    trace variable ::VMDlite::lesson::${DCD} w "::VMDlite::lesson::updateScale"
+
+}
+
+proc ::VMDlite::lesson::textBox { text } {
+	
+    ${::VMDlite::lesson::w}.textFrame.textBox insert end \
+"Slide ${::VMDlite::lesson::currentFrame}. "
+    ${::VMDlite::lesson::w}.textFrame.textBox insert end \
+	${text}
+
+}
+
+proc ::VMDlite::lesson::exit { } {
+# returns user to initial screen
+    set jumpShip [tk_messageBox \
+        -message "Are you sure you want to exit?" \
+        -type yesno]
+    switch ${jumpShip} {
+        yes { destroy .vmdlite; mol delete all; \
+            eval vmdlite}
+        no  { }
+    }
 }

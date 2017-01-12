@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,8 +10,8 @@
  * RCS INFORMATION:
  *
  *      $RCSfile: vmddir.h,v $
- *      $Author: akohlmey $       $Locker:  $             $State: Exp $
- *      $Revision: 1.9 $       $Date: 2013/07/20 14:37:14 $
+ *      $Author: johns $       $Locker:  $             $State: Exp $
+ *      $Revision: 1.12 $       $Date: 2016/11/28 05:01:54 $
  *
  ***************************************************************************/
 
@@ -56,7 +56,13 @@ static VMDDIR * vmd_opendir(const char * filename) {
   strcat(dirname, "\\*");
   d = (VMDDIR *) malloc(sizeof(VMDDIR));
   if (d != NULL) {
+#if _MSC_VER < 1400 || !(defined(UNICODE) || defined(_UNICODE))
     d->h = FindFirstFile(dirname, &(d->fd));
+#else
+    wchar_t szBuff[VMD_FILENAME_MAX];
+    swprintf(szBuff, L"%p", dirname);
+    d->h = FindFirstFile(szBuff, &(d->fd));
+#endif
     if (d->h == ((HANDLE)(-1))) {
       free(d);
       return NULL;
@@ -67,7 +73,14 @@ static VMDDIR * vmd_opendir(const char * filename) {
 
 static char * vmd_readdir(VMDDIR * d) {
   if (FindNextFile(d->h, &(d->fd))) {
-    return d->fd.cFileName; 
+#if _MSC_VER < 1400 || !(defined(UNICODE) || defined(_UNICODE))
+    return d->fd.cFileName;
+#else
+    int len = wcslen(d->fd.cFileName);
+    char* ascii = new char[len + 1];
+    wcstombs(ascii, d->fd.cFileName, len);
+    return ascii;
+#endif
   }
   return NULL;     
 }

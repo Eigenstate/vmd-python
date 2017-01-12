@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -10,8 +10,8 @@
  * RCS INFORMATION:
  *
  *	$RCSfile: MobileInterface.h,v $
- *	$Author: kvandivo $	$Locker:  $		$State: Exp $
- *	$Revision: 1.13 $	$Date: 2013/03/14 20:34:41 $
+ *	$Author: johns $	$Locker:  $		$State: Exp $
+ *	$Revision: 1.14 $	$Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:

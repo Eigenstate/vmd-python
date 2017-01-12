@@ -1,7 +1,7 @@
 #
 # QM tool plugin for setting up QM jobs
 #
-# $Id: qmtool.tcl,v 1.48 2012/07/17 18:35:26 gumbart Exp $
+# $Id: qmtool.tcl,v 1.49 2015/10/01 21:28:40 gumbart Exp $
 #
 # QMtool is a graphical user interface for quantum chemical simulations.
 # Currently only Gaussian is supported but future versions will also support
@@ -163,7 +163,7 @@ proc ::QMtool::init_variables { ns } {
       variable normalmodescaling 0.5; # Normal mode visualization scaling factor
       variable normalmodesteps   80;  #
       variable normalmodearrows  1;   # Draw arrows indicating the normal mode vibration
-      variable availmethods {RHF UHF ROHF B3LYP UB3LYP MP2 UMP2 AM1 PM3 MNDO INDO CNDO CBS-4M CBS-QB3};
+      variable availmethods {RHF UHF ROHF B3LYP UB3LYP MP2 UMP2 AM1 PM3 MNDO INDO CNDO CBS-4M CBS-QB3 BP86};
       variable calcesp      0;      # calculate the ESP charges
       variable calcnbo      0;      # Perform NBO population analysis
       variable calcnboread  0;      # Perform NBO population analysis and specify Lewis structure
@@ -195,9 +195,10 @@ proc ::QMtool::init_variables { ns } {
       variable inthessian      {};               # Hessian matrix in internal coordinates
       variable inthessian_kcal {};               # Hessian matrix in internal coordinates and kcal
       variable carthessian  {};                  # Hessian matrix in cartesian coordinates
-      variable HFscalefac    0.89;  # Scaling factor that cures systematic overestimation of frequencies
-      variable B3LYPscalefac 0.963; # Scaling factor that cures systematic overestimation of frequencies
-      variable MP2scalefac 0.943;   # Scaling factor that cures systematic overestimation of frequencies
+      variable HFscalefac    0.8953;  # Scaling factor that cures systematic overestimation of frequencies  
+      variable B3LYPscalefac 0.9614; # all factors assume 6-31G* basis set
+      variable MP2scalefac 0.943;   # they are taken from the following paper:
+      variable BP86scalefac 0.9914; # Scott and Radom. J. Phys. Chem. 100:16502-16513. (1996).   
 
       # Atom based properties
       variable atomproptags   {Index Elem Name Flags}; # Tags for the atomproperties that are displayed

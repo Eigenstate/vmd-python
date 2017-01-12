@@ -17,7 +17,7 @@
 #
 #       $RCSfile: vmd.csh,v $
 #       $Author: johns $        $Locker:  $                $State: Exp $
-#       $Revision: 1.102 $      $Date: 2015/05/21 05:16:05 $
+#       $Revision: 1.106 $      $Date: 2016/10/21 23:21:59 $
 #
 ############################################################################
 # DESCRIPTION:
@@ -233,7 +233,11 @@ case *Linux*:
   # The standard options
   if (`uname --machine` == "alpha") then
     set ARCH=LINUXALPHA
+  else if (`uname --machine` == "aarch64") then
+    # AppliedMicro X-Gene, NVIDIA Jetson TX1
+    set ARCH=LINUXCARMA
   else if (`uname --machine` == "armv7l") then
+    # NVIDIA CARMA, KAYLA, and Jetson TK1
     set ARCH=LINUXCARMA
   else if (`uname --machine` == "x86_64") then
     # Test to see if a 64-bit version of VMD exists
@@ -259,6 +263,14 @@ case *Linux*:
       set ARCH=LINUXPPC64
     else
       set ARCH=LINUXPPC
+    endif
+  else if (`uname --machine` == "ppc64le") then
+    if ( -e "${VMDDIR}/${vmdbasename}_LINUXPPC64LE" ) then
+      set ARCH=LINUXPPC64LE
+    else if ( -e "${VMDDIR}/${vmdbasename}_OPENPOWER" ) then
+      set ARCH=OPENPOWER
+    else
+      set ARCH=SUMMIT
     endif
   else
     set ARCH=LINUX

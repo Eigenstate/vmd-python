@@ -8,5 +8,5 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded cispeptide 1.2 [list source [file join $dir cispeptide.tcl]]
-package ifneeded cispeptide_gui 1.2 [list source [file join $dir cispeptide_gui.tcl]]
+package ifneeded cispeptide 1.3 [list source [file join $dir cispeptide.tcl]]
+package ifneeded cispeptide_gui 1.3 [list source [file join $dir cispeptide_gui.tcl]]

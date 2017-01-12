@@ -7,20 +7,23 @@
 #                   we may need some optimized variants and/or special
 #                   implementation in VMD for that.
 #
-# Copyright (c) 2009,2010,2011,2012,2013 by Axel Kohlmeyer <akohlmey@gmail.com>
+# Copyright (c) 2009,2010,2011,2012,2013,2014,2015,2016
+#               by Axel Kohlmeyer <akohlmey@gmail.com>
 # support for crossterms contributed by Josh Vermass <vermass2@illinois.edu>
 #
-# $Id: topotools.tcl,v 1.29 2015/02/13 21:32:42 johns Exp $
+# $Id: topotools.tcl,v 1.31 2016/11/04 05:57:55 johns Exp $
 
 namespace eval ::TopoTools:: {
     # for allowing compatibility checks in scripts
     # depending on this package. we'll have to expect
-    variable version 1.6
+    variable version 1.7
     # location of additional data files containing
     # force field parameters or topology data.
     variable datadir $env(TOPOTOOLSDIR)
-    # print a citation reminder in case the CG-CMM is used, but only once.
-    variable cgcmmciteme 1
+    # print a citation reminder, but only once.
+    variable topociteme 1
+    # same for topogromacs
+    variable gmxciteme 1
     # if nonzero, add a new representation with default settings,
     # when creating a new molecule. similar to what "mol new" does.
     variable newaddsrep 1
@@ -75,8 +78,6 @@ namespace eval ::TopoTools:: {
     # best used through the "topo" frontend command.
     # part 1: operations on whole systems/selections
     namespace export mergemols selections2mol replicatemol
-    # part 2: CGCMM forcefield tools
-    namespace export parse_cgcmm_parms parse_cgcmm_topo canonical_cgcmm_ljtype
 }
 
 # help/usage/error message and online documentation.
@@ -168,14 +169,14 @@ proc ::TopoTools::usage {} {
     vmdcon -info "  readlammpsdata <filename> \[<atomstyle>\]"
     vmdcon -info "      read atom coordinates, properties, bond, angle, dihedral and other related data"
     vmdcon -info "      from a LAMMPS data file. 'atomstyle' is the value given to the 'atom_style'"
-    vmdcon -info "      parameter. default value is 'full'."
+    vmdcon -info "      parameter. Default is to autodetect from embedded hints with fallback to 'full'."
     vmdcon -info "      this subcommand creates a new molecule and returns the molecule id or -1 on failure."
     vmdcon -info "      the -sel parameter is currently ignored."
     vmdcon -info ""
     vmdcon -info "  writelammpsdata <filename> \[<atomstyle>\]"
     vmdcon -info "      write atom properties, bond, angle, dihedral and other related data"
     vmdcon -info "      to a LAMMPS data file. 'atomstyle' is the value given to the 'atom_style'"
-    vmdcon -info "      parameter. default value is 'full'."
+    vmdcon -info "      parameter. Default value is 'full'."
     vmdcon -info "      Only data that is present is written. "
     vmdcon -info ""
     vmdcon -info "  readvarxyz <filename>"
@@ -197,8 +198,8 @@ proc ::TopoTools::usage {} {
     vmdcon -info "      write a fake gromacs topology format file that can be used in combination"
     vmdcon -info "      with a .gro/.pdb coordinate file for generating .tpr files needed to use"
     vmdcon -info "      Some of the more advanced gromacs analysis tools for simulation data that"
-    vmdcon -info "      was not generated with gromacs."
-    vmdcon -info ""
+    vmdcon -info "      was not generated with gromacs.\n"
+    citation_reminder
     return
 }
 
@@ -207,6 +208,7 @@ proc ::TopoTools::usage {} {
 # then dispatches the subcommands to the corresponding
 # subroutines.
 proc ::TopoTools::topo { args } {
+    variable version
 
     set molid -1
     set seltxt all
@@ -232,6 +234,7 @@ proc ::TopoTools::topo { args } {
                 -molid {
                     if {[catch {molinfo $val get name} res]} {
                         vmdcon -err "Invalid -molid argument '$val': $res"
+                        citation_reminder
                         return
                     }
                     set molid $val
@@ -257,6 +260,7 @@ proc ::TopoTools::topo { args } {
                 -bondtype {
                     if {[string length $val] < 1} {
                         vmdcon -err "Invalid -bondtype argument '$val'"
+                        citation_reminder
                         return
                     }
                     set bondtype $val
@@ -266,6 +270,7 @@ proc ::TopoTools::topo { args } {
                 -bondorder {
                     if {[string length $val] < 1} {
                         vmdcon -err "Invalid -bondorder argument '$val'"
+                        citation_reminder
                         return
                     }
                     set bondorder $val
@@ -320,7 +325,7 @@ proc ::TopoTools::topo { args } {
 
     # we need a few special cases for reading coordinate/topology files.
     if {[string equal $cmd readlammpsdata]} {
-        set style full
+        set style auto
         if {[llength $newargs] < 1} {
             vmdcon -err "Not enough arguments for 'topo readlammpsdata'"
             usage
@@ -331,30 +336,39 @@ proc ::TopoTools::topo { args } {
             set style [lindex $newargs 1]
         }
         if {[checklammpsstyle $style]} {
-            vmdcon -err "Atom style '$style' not supported."
-            usage
+            vmdcon -err "Atom style '$style' is not supported by TopoTools $version"
+            citation_reminder
             return
         }
         set retval [readlammpsdata $fname $style]
+        citation_reminder
         return $retval
     }
 
     if {[string equal $cmd readvarxyz]} {
         set fname [lindex $newargs 0]
         set retval [readvarxyz $fname]
+        citation_reminder
         return $retval
     }
 
     if { ![string equal $cmd help] } {
         if {($selmol >= 0) && ($selmol != $molid)} {
             vmdcon -err "Molid from selection '$selmol' does not match -molid argument '$molid'"
+            citation_reminder
+            return
+        }
+        if {$molid < 0} {
+            vmdcon -err "Cannot use 'topo $cmd' without a molecule"
+            citation_reminder
             return
         }
 
-	if {$localsel} {
+        if {$localsel} {
             # need to create a selection
             if {[catch {atomselect $molid $seltxt} sel]} {
                 vmdcon -err "Problem with atom selection using '$seltxt': $sel"
+                citation_reminder
                 return
             }
         }
@@ -372,6 +386,7 @@ proc ::TopoTools::topo { args } {
         guessatom {
             if {[llength $newargs] < 2} {
                 vmdcon -err "'topo guessatom' requires two arguments: <what> <from>"
+                usage
                 return
             }
             set retval [guessatomdata $sel [lindex $newargs 0] [lindex $newargs 1]]
@@ -703,10 +718,27 @@ proc ::TopoTools::topo { args } {
             usage
         }
     }
-    if {$localsel} {
+    if {$localsel && ($sel != "")} {
         $sel delete
     }
+    citation_reminder
     return $retval
+}
+
+# gently remind people that the should cite the cg papers.
+proc ::TopoTools::citation_reminder {args} {
+    variable topociteme
+    variable version
+
+    if {$topociteme} {
+        vmdcon -info "======================"
+        vmdcon -info "Please cite TopoTools as:"
+        vmdcon -info "Axel Kohlmeyer, (2016). TopoTools: Release $version"
+        vmdcon -info "http://doi.org/10.5281/zenodo.50249"
+        vmdcon -info "======================\n"
+        set topociteme 0
+    }
+    return
 }
 
 # load middleware API
@@ -721,7 +753,6 @@ source [file join $env(TOPOTOOLSDIR) topocrossterms.tcl]
 source [file join $env(TOPOTOOLSDIR) topolammps.tcl]
 source [file join $env(TOPOTOOLSDIR) topogromacs.tcl]
 source [file join $env(TOPOTOOLSDIR) topovarxyz.tcl]
-source [file join $env(TOPOTOOLSDIR) topocgcmm.tcl]
 
 # load high-level utility functions
 source [file join $env(TOPOTOOLSDIR) topoutils.tcl]

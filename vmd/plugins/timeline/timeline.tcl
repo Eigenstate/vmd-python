@@ -7,7 +7,7 @@
 # vmd@ks.uiuc.edu
 #
 #
-# $Id: timeline.tcl,v 1.98 2015/01/16 00:42:29 ryanmcgreevy Exp $
+# $Id: timeline.tcl,v 1.100 2015/10/12 19:50:16 ryanmcgreevy Exp $
 
 package provide timeline 2.3
 
@@ -263,8 +263,209 @@ proc ::timeline::chooseColor {intensity} {
   return $hexcols
 }
 
-
 proc ::timeline::redraw {name func op} {
+  
+  variable x1 
+  variable y1 
+  variable so
+  variable w 
+  variable monoFont
+  variable xcanwindowmax 
+  variable ycanwindowmax 
+  variable xcanmax 
+  variable ycanmax
+  variable ybox 
+  variable xsize 
+  variable ysize 
+  variable resnamelist 
+  variable structlist 
+  variable betalist 
+  variable sel 
+  variable canvasnew 
+  variable scalex 
+  variable scaley 
+  variable dataVal 
+  variable dataValNum 
+  variable dataOrigin 
+  variable dataName 
+  variable ytopmargin 
+  variable ybottommargin 
+  variable vertTextSkip   
+  variable xcolbond_rad 
+  variable bond_res 
+  variable rep 
+  variable xcol 
+  variable vertTextRight
+  variable vertHighLeft
+  variable vertHighRight
+  variable resCodeShowOneLetter 
+  variable dataWidth 
+  variable dataMargin 
+  variable dataMin
+  variable dataMax 
+  variable trajMin
+  variable trajMax
+  variable xPosScaleVal
+  variable everRedrawn
+  variable usableMolLoaded
+  variable rectCreated
+  variable prevScalex
+  variable prevScaley
+  variable numDataFrames
+  variable progressDrawFraction
+  variable progressBoxExists
+  variable progressCancelPressed
+
+  set dateStartRedraw [clock seconds]
+
+  if { ($usableMolLoaded) && ($dataValNum == -1 ) } {
+  drawColScale
+  $w.selInfo configure -text " $dataName(vals) \n\n\[NO RESULTS\]\n"
+  }   
+  
+  if { ($usableMolLoaded) && ($dataValNum >=0 ) } {
+    set ysize [expr $ytopmargin+ $ybottommargin + ($scaley *  $ybox * ($dataValNum + 1) )]  
+
+    set xsize [expr  $xcol($dataOrigin) +  ($scalex *  $dataWidth *  $numDataFrames)  ] 
+
+    set ycanmax(data) $ysize
+    set ycanmax(vert) $ycanmax(data)
+    set xcanmax(data) $xsize
+    set xcanmax(horz) $xcanmax(data)
+    if {$ycanmax(data) < $ycanwindowmax} {
+      set ycanmax(data) $ycanwindowmax
+    }
+
+
+    if {$xcanmax(data) < $xcanwindowmax} {
+      set xcanmax(data) $xcanwindowmax
+    }
+
+    $w.can configure -scrollregion "0 0 $xcanmax(data) $ycanmax(data)"
+    $w.vertScale configure -scrollregion "0 0 $xcanmax(vert) $ycanmax(data)"
+    $w.horzScale configure -scrollregion "0 0 $xcanmax(data) $ycanmax(horz)"
+    $w.threshGraph configure -scrollregion "0 0 $xcanmax(data) $ycanmax(horz)"
+    drawVertScale
+    drawHorzScale
+    
+    
+    #for example, if we have 2 frames of data, frame 0 and frame 1,
+    #then numDataFrames = 2.  Since dataOrigin =3, fieldLast is 4, since data
+    # is in field 3 (frame 0), field 4 (frame 1). Formula is...
+    set fieldLast [expr $dataOrigin + $numDataFrames -1 ]
+
+    #draw data on can
+    #loop over all data fields
+
+    if {! $rectCreated} {
+      #this until separate data and scale highlighting
+      $w.threshGraph delete xScalable
+      $w.horzScale delete xScalable
+      $w.vertScale delete yScalable
+      $w.can delete dataScalable
+      #puts "drawing rects, scalex is $scalex"
+      #hack here -- for now skip B-field stuff, so minimal stuff drawn
+      tlPutsDebug ": setting min/max, dataOrigin= $dataOrigin" 
+      tlPutsDebug "starting redraw, date= [clock format [clock seconds] -format {%+} ]"
+      set progressCalcFraction [expr 1.0 - $progressDrawFraction]
+      for {set field [expr $dataOrigin ]} {$field <= $fieldLast} {incr field} {
+        #tlPutsDebug "redrawing. field is $field of $fieldLast [format %.2f [expr 100.0* $field/$fieldLast]]% complete" 
+        
+        #find fraction completed, calcs are already done. update progressBox
+        if {$progressBoxExists} {
+          set completeFrac [expr $progressCalcFraction + $progressDrawFraction* double($field)/$fieldLast]
+          progressBoxConfigure [expr $completeFrac] 
+        }
+        #set xPosFieldLeft [expr int  ( $xcol($dataOrigin) + ($scalex * $dataWidth * ($field - $dataOrigin)  ) ) ]
+        #set xPosFieldRight [expr int ( $xcol($dataOrigin) + ($scalex * $dataWidth * ($field - $dataOrigin + 1 - $dataMargin)  ) ) ]
+        set xPosFieldLeft [expr  ( $xcol($dataOrigin) + ($scalex * $dataWidth * ($field - $dataOrigin)  ) ) ]
+        set xPosFieldRight [expr ( $xcol($dataOrigin) + ($scalex * $dataWidth * ($field - $dataOrigin + 1 - $dataMargin)  ) ) ]
+        
+        #now draw data rectangles
+        #puts "drawing field $field at xPosField $xPosField" 
+        #yipes, does this redraw all rects (even non visible) every timeXXX
+        set y 0.0
+        
+        set intensity 0
+        
+        for {set i 0} {$i<=$dataValNum} {incr i} { 
+          set val $dataVal($field,$i)
+          if {$val != "null"} {
+            #calculate color and create rectange
+            
+            set ypos [expr $ytopmargin + ($scaley * $y)]
+            
+            #should Prescan  to find range of values!   
+            #this should be some per-request-method range / also allow this to be adjusted
+            
+            #set intensity except if field 4 (indexed struct)
+            #puts "field = $field, dataName($field) = $dataName($field),i= $i" 
+            if {$dataName(vals) != "struct"} {
+              ##if { ( ($field != 4)  ) } open brace here 
+              #set range [expr $dataMax($field) - $dataMin($field)]
+              set range [expr $trajMax - $trajMin ]
+              if { ($range > 0)  && ([string is double $val] )} {
+                set intensity  [expr int (255. * ( (0.0 + $val - $trajMin ) / $range)) ]
+                #tlPutsDebug ": $val $dataMin($field) $range $field $intensity"
+              }
+              
+              
+              
+              set hexcols [chooseColor $intensity]
+            } else {
+              #horrifyingly, sends string for data, tcl is typeless
+              set hexcols [chooseColor $val ]
+            }
+            foreach {hexred hexgreen hexblue} $hexcols {} 
+
+            
+            #draw data rectangle
+            $w.can create rectangle  [expr $xPosFieldLeft] [expr $ypos ] [expr $xPosFieldRight]  [expr $ypos + ($scaley * $ybox)]  -fill "\#${hexred}${hexgreen}${hexblue}" -outline "" -tags dataScalable
+          }
+          
+          set y [expr $y + $ybox]
+          if {$progressCancelPressed} {break}
+        }
+        if {$progressCancelPressed} {
+          tlPutsDebug "progressCancelPressed" 
+          #XXX clear records to function entry state
+          set progressCancelPressed 0
+          clearData
+        } 
+      }
+
+      drawVertHighlight 
+      drawColScale
+    }  else {
+
+      #$w.can scale dataRect $xcol($firstdata) $ytopmargin 1 $scaley
+      #$w.can scale dataScalable $xcol($dataOrigin) [expr $ytopmargin] 1 [expr $scaley / $prevScaley ]
+
+      $w.can scale dataScalable $xcol($dataOrigin) [expr $ytopmargin] [expr $scalex / $prevScalex]  [expr $scaley / $prevScaley ]
+      #now for datarect
+      $w.vertScale scale yScalable 0 [expr $ytopmargin] 1  [expr $scaley / $prevScaley ]
+      $w.horzScale scale xScalable $xcol($dataOrigin) 0 [expr $scalex / $prevScalex ] 1
+      $w.threshGraph scale xScalable $xcol($dataOrigin) 0 [expr $scalex / $prevScalex ] 1
+
+    } 
+    
+     set rectCreated 1
+    set prevScaley $scaley
+    set prevScalex $scalex
+    set everRedrawn 1
+  
+  }
+  set dateEndRedraw [clock seconds]
+  tlPutsDebug "done with redraw, everRedrawn= $everRedrawn"
+  tlPutsDebug " start redraw= [clock format $dateEndRedraw -format {%+} ]"
+  tlPutsDebug " end redraw= [clock format $dateStartRedraw -format {%+} ]"
+  set secsRedraw [expr $dateEndRedraw - $dateStartRedraw]
+  tlPutsDebug "$secsRedraw seconds to redraw."
+  progressBoxDestroy
+ 
+  return
+}
+proc ::timeline::redrawResize {name func op} {
   
   variable x1 
   variable y1 
@@ -491,8 +692,10 @@ proc ::timeline::makecanvas {} {
 
 
 
-  canvas $w.spacer1 -width [expr $vertScaleWidth+20] -height [expr $threshGraphHeight + $horzScaleHeight + 25] -bg #A0A0A0
-  canvas $w.spacer2 -width [expr $vertScaleWidth+20] -height [expr $threshGraphHeight + $horzScaleHeight + 25] -bg #C0C0E0
+  #canvas $w.spacer1 -width [expr $vertScaleWidth+20] -height [expr $threshGraphHeight + $horzScaleHeight + 25] -bg #A00A0
+  canvas $w.spacer1 -width [expr $vertScaleWidth+20] -height [expr $threshGraphHeight + $horzScaleHeight + 25] -bg #A0FFA0
+  #canvas $w.spacer2 -width [expr $vertScaleWidth+20] -height [expr $threshGraphHeight + $horzScaleHeight + 25] -bg #C0C0E0
+  canvas $w.spacer2 -width [expr $vertScaleWidth+20] -height [expr $threshGraphHeight + $horzScaleHeight + 25] -bg #FFC0FF
   canvas $w.can -width [expr $xcanwindowmax] -height $ycanwindowmax -bg #E9E9D9 -xscrollcommand "$w.xs set" -yscrollcommand "$w.ys set" -scrollregion  "0 0 $xcanmax(data) $ycanmax(data)" 
   canvas $w.vertScale -width $vertScaleWidth -height $ycanwindowmax -bg #C0D0C0 -yscrollcommand "$w.ys set" -scrollregion "0 0 $vertScaleWidth $ycanmax(data)" 
 
@@ -502,7 +705,7 @@ proc ::timeline::makecanvas {} {
   #pack the horizontal (x) scrollbar
   pack $w.spacer1 -in $w.cfr -side left  -anchor e  
   pack $w.spacer2 -in $w.cfr -side bottom -anchor s  
-  pack $w.can  -in $w.cfr -side left -anchor sw 
+  pack $w.can  -in $w.cfr -side left -anchor sw -padx 2 -expand yes -fill both
   #vertical scale/labels
   place $w.vertScale -in $w.can -relheight 1.0 -relx 0.0 -rely 0.5 -bordermode outside -anchor e
   #now place the vertical (y) scrollbar
@@ -1200,6 +1403,7 @@ proc ::timeline::timeLineMain {} {
 }
 
 proc ::timeline::calcFitScaleXY {} {
+  variable w
   variable numDataFrames
   variable xcanwindowmax
   variable ycanwindowmax
@@ -1212,7 +1416,34 @@ proc ::timeline::calcFitScaleXY {} {
   variable dataWidth
   variable fit_scalex
   variable fit_scaley 
-  set fit_scaley [expr (0.0 + $ycanwindowmax - $ytopmargin - $ybottommargin) / ($ybox * ($dataValNum + 1) ) ]
+  variable canvasWinOffsetX 
+  variable canvasWinOffsetY 
+  variable xcanwindowStarting 
+  variable ycanwindowStarting 
+  
+  set canPixShownX [expr [winfo width $w] - $canvasWinOffsetX]
+  if {$canPixShownX < 2} {set canPixShownX $xcanwindowStarting}
+  set canPixShownY [expr [winfo height $w] -$canvasWinOffsetY]
+  if {$canPixShownY < 2} {set canPixShownY $ycanwindowStarting}
+
+  set scalingWidth $canPixShownX
+  set scalingHeight $canPixShownY
+ 
+  #if {$canPixShownX > ($xcanwindowmax - $xcol($dataOrigin))} {
+  #  set scalingWidth $canPixShownX 
+  #} else {
+  #  set scalingWidth $xcanwindowmax
+  #}
+  
+  #if {$canPixShownY > ($ycanwindowmax - $ytopmargin - $ybottommargin)} {
+  #  set scalingHeight $canPixShownY
+  #} else {
+  #  set scalingHeight $ycanwindowmax
+  #}
+  tlPutsDebug "scalingHeight= >$scalingHeight<  scalingWidth= >$scalingWidth<  canPixShownY=>$canPixShownY< ycanwindowmax=>$ycanwindowmax<"
+  
+  set fit_scaley [expr (0.0 + $scalingHeight - $ytopmargin - $ybottommargin) / ($ybox * ($dataValNum + 1) ) ]
+
     #since we zero-count dataValNum.
 
   if {$numDataFrames >= 1} then {
@@ -1220,7 +1451,7 @@ proc ::timeline::calcFitScaleXY {} {
   } else {
          set fitNF 1
   }
-  set fit_scalex [expr (0.0 + $xcanwindowmax - $xcol($dataOrigin) ) / ($dataWidth * $fitNF ) ]
+  set fit_scalex [expr (0.0 + $scalingWidth - $xcol($dataOrigin) ) / ($dataWidth * $fitNF ) ]
 }
 
 
@@ -1711,6 +1942,7 @@ proc ::timeline::setParamsGlobalCcss {args} {
   variable ccssSpacing
   variable ccssThreshold
   variable ccssUseThreshold
+  variable ccssUseSpacing
   variable ccssSelMethod 
   variable ccssSelList
   variable oldCcssMapFile 
@@ -1720,6 +1952,7 @@ proc ::timeline::setParamsGlobalCcss {args} {
   variable oldCcssSelMethod 
   variable oldCcssSelList
   variable oldCcssUseThreshold
+  variable oldCcssUseSpacing
 
  # save old values 
   set oldCcssMapFile $ccssMapFile
@@ -1727,6 +1960,7 @@ proc ::timeline::setParamsGlobalCcss {args} {
   set oldCcssSpacing $ccssSpacing
   set oldCcssThreshold $ccssThreshold
   set oldCcssUseThreshold $ccssUseThreshold
+  set oldCcssUseSpacing $ccssUseSpacing
   set oldCcssSelMethod $ccssSelMethod
   set oldCcssSelList $ccssSelList
 
@@ -1750,22 +1984,23 @@ proc ::timeline::setParamsGlobalCcss {args} {
   pack $d.top -side top -fill both -expand 1
 
   # dialog contents:
-    radiobutton $d.cbh -text "Generate selection list from contigous sec. structure " -value 0 -variable [namespace current]::ccssSelMethod  
-    radiobutton $d.cbi -text "Custom selection list" -value 1 -variable [namespace current]::ccssSelMethod  
+    radiobutton $d.cbi -text "Generate selection list from contigous sec. structure " -value 0 -variable [namespace current]::ccssSelMethod  
+    radiobutton $d.cbj -text "Custom selection list" -value 1 -variable [namespace current]::ccssSelMethod  
     #checkbutton $d.cbf -text "Use a map threshold:" -variable [namespace current]::ccssUseThreshold -onvalue 1 -offvalue 0 
-    checkbutton $d.cbf -text "Use a map threshold:" -variable ::timeline::ccssUseThreshold -onvalue 1 -offvalue 0 
+    checkbutton $d.cbg -text "Use a map threshold:" -variable ::timeline::ccssUseThreshold -onvalue 1 -offvalue 0 
+    checkbutton $d.cbe -text "User Defined Grid Spacing:" -variable ::timeline::ccssUseSpacing -onvalue 1 -offvalue 0 
     #-command "puts \"ccssUseThreshold= $::timeline::ccssUseThreshold\""
     label $d.head -justify center -relief raised -text {Global cross corr. sec. struct parameters:}
     pack $d.head -in $d.top -side top -fill both -padx 6m -pady 6m
     grid $d.head -in $d.top -column 0 -row 0 -columnspan 3 -sticky snew 
     label $d.lc  -justify left -text {Density Map file:}
     label $d.ld  -justify left -text {Map resolution (A):}
-    label $d.le  -justify left -text {Map spacing (A):}
-    label $d.lg  -justify left -text {Map threshold:}
-    label $d.lj  -justify left -text {Selection list:}
+    label $d.lf  -justify left -text {Map spacing (A):}
+    label $d.lh  -justify left -text {Map threshold:}
+    label $d.lk  -justify left -text {Selection list:}
     set i 1
     grid columnconfigure $d.top 0 -weight 2
-    foreach l "$d.lc $d.ld $d.le $d.cbf $d.lg $d.cbh $d.cbi $d.lj" {
+    foreach l "$d.lc $d.ld $d.cbe $d.lf $d.cbg $d.lh $d.cbi $d.cbj $d.lk" {
         pack $l -in $d.top -side left -expand 1 -padx 3m -pady 3m
         grid $l -in $d.top -column 0 -row $i -sticky w 
         incr i
@@ -1775,13 +2010,15 @@ proc ::timeline::setParamsGlobalCcss {args} {
     entry $d.ec  -justify left -textvariable ::timeline::ccssMapFile
 
     entry $d.ed  -justify left -textvariable ::timeline::ccssMapres
-    entry $d.ee  -justify left -textvariable ::timeline::ccssSpacing
-    entry $d.eg  -justify left -textvariable ::timeline::ccssThreshold
-    entry $d.ej  -justify left -textvariable ::timeline::ccssSelList
+    entry $d.ef  -justify left -textvariable ::timeline::ccssSpacing
+    entry $d.eh  -justify left -textvariable ::timeline::ccssThreshold
+    entry $d.ek  -justify left -textvariable ::timeline::ccssSelList
     #placeholder (blank spaces)
-    label $d.phf  -justify left -text {}
-    label $d.phh  -justify left -text {}
+    label $d.phe  -justify left -text {}
+    label $d.phg  -justify left -text {}
     label $d.phi  -justify left -text {}
+    label $d.phj  -justify left -text {}
+    
     set i 1
     grid columnconfigure $d.top 1 -weight 2
 
@@ -1803,7 +2040,7 @@ proc ::timeline::setParamsGlobalCcss {args} {
     }
         
     #without file buttons:
-    foreach l "$d.ed $d.ee $d.phf $d.eg $d.phh $d.phi $d.ej" {
+    foreach l "$d.ed $d.phe $d.ef $d.phg $d.eh $d.phi $d.phj $d.ek" {
         pack $l -in $d.top -side left -expand 1 -padx 3m -pady 3m
 
         grid $l -in $d.top -column 1 -row $i -sticky w 
@@ -1811,9 +2048,9 @@ proc ::timeline::setParamsGlobalCcss {args} {
     }
 
     #add element activate/inactivate commands for radiobuttons
-    $d.cbh configure -command  "$d.lj config -state disabled; $d.ej config -state disabled"; 
+    $d.cbi configure -command  "$d.lk config -state disabled; $d.ek config -state disabled"; 
 #puts "ccssSelMethod= $::timeline::ccssSelMethod" 
-    $d.cbi configure -command  "$d.lj config -state active; $d.ej config -state normal"; 
+    $d.cbj configure -command  "$d.lk config -state active; $d.ek config -state normal"; 
 #puts "ccssSelMethod= $::timeline::ccssSelMethod"
 
     #add elelent activate/inactivate command for threshold
@@ -1837,7 +2074,7 @@ proc ::timeline::setParamsGlobalCcss {args} {
 
     grid $d.ok -in $d.bot -column 0 -row 0 -sticky ew -padx 10 -pady 4
     grid columnconfigure $d.bot 0
-    button $d.cancel -text {Cancel} -command {set ::timeline::ccssMapFile $::timeline::oldCcssMapFile;  set ::timeline::ccssSpacing $::timeline::oldCcssSpacing; set ::timeline::ccssThreshold $::timeline::oldCcssThreshold; set ::timeline::ccssUseThreshold $::timeline::oldCcssUseThreshold; set ::timeline::clicked 1}
+    button $d.cancel -text {Cancel} -command {set ::timeline::ccssMapFile $::timeline::oldCcssMapFile;  set ::timeline::ccssSpacing $::timeline::oldCcssSpacing; set ::timeline::ccssThreshold $::timeline::oldCcssThreshold; set ::timeline::ccssUseThreshold $::timeline::oldCcssUseThreshold; set ::timeline::ccssUseSpacing $::timeline::oldCcssUseSpacing; set ::timeline::clicked 1}
     grid $d.cancel -in $d.bot -column 1 -row 0 -sticky ew -padx 10 -pady 4
     grid columnconfigure $d.bot 1
 
@@ -3278,6 +3515,10 @@ proc ::timeline::initVars {} {
   variable xcanmax
   set xcanmax(data) 610
   set xcanmax(vert) 95
+  # help get exposed canvas size from window manager
+  variable canvasWinOffsetX 255
+  variable canvasWinOffsetY 138
+
   set xcanmax(horz) $xcanmax(data)
   #make this sensible!
   variable ycanmax
@@ -3323,6 +3564,7 @@ proc ::timeline::initVars {} {
   variable ccssSpacing 1.0
   variable ccssThreshold 0.0
   variable ccssUseThreshold 0
+  variable ccssUseSpacing 0
   variable ccssSelMethod 0
   variable ccssSelList "{resid 1 to 10} {resid 11 to 20}"
   #end variables for GlobalCcss
@@ -4106,6 +4348,7 @@ proc ::timeline::draw_interface {} {
   label $w.txtlab -text "Zoom "
    tlPutsDebug " before selinfo label make"
   frame $w.panl -width 170 -height [expr $ycanwindowmax + 80] -bg #C0C0D0 -relief raised -bd 1 
+  #frame $w.cfr -width 350 -height [expr $ycanwindowmax + 85] -borderwidth 1  -bg #606060 -relief raised -bd 3
   frame $w.cfr -width 350 -height [expr $ycanwindowmax + 85] -borderwidth 1  -bg #606060 -relief raised -bd 3
   tlPutsDebug " after frames"
   pack $w.panl -in $w -side left -padx 2  -fill y
@@ -5149,7 +5392,7 @@ proc ::timeline::writeDataFile {filename} {
     variable keyAtomSelString
     #clearData
 
-    #anyResFuncName is namespace-path name of a use -defined function (procedure that returns one value )(so is a function), to be is applied to all residues
+    #anyResFuncName is namespace-path name of a user-defined function (procedure that returns one value )(so is a function), to be is applied to all residues
     set firstFrame 0
     set lastFrame [expr $numTrajFrames -1]
     #this will be externally settable later
@@ -6164,13 +6407,14 @@ proc ::timeline::readDataFile {filename} {
           tlPutsDebug "framenum= >$frameNum< itemNum= $itemNum  theVal= $theVal curField= $curField   dataVal($curField,$itemNum)= >$dataVal($curField,$itemNum)< dataMin= $dataMin(all)  dataMax=$dataMax(all)"
         }
       } else {
+        tlPutsDebug "starting ver 1.4 curLine analysis"
         if { [regexp "^freeSelLabel" $curLine] } { 
            incr itemNum
            #For now, we force user to put label, then sel string.  Later cleverness may relax this requirement.
            #if {!($seenDataForItem)} {
            # set seenDataForItem 0
            #}
-           #tlPutsDebug "found freeSelLabel..."
+           tlPutsDebug "found freeSelLabel..., itemNum= $itemNum"
            regexp "^freeSelLabel (.*)$" $curLine matchall  theLabel
            set  dataVal(freeSelLabel,$itemNum) $theLabel
             tlPutsDebug "dataVal(freeSelLabel,$itemNum)= >$dataVal(freeSelLabel,$itemNum)<  theLabel= >$theLabel<"
@@ -6197,6 +6441,7 @@ proc ::timeline::readDataFile {filename} {
 
       }
     }
+    set dataValNum $itemNum   
   } else {
       set dataValNum $dataValNumResSel
       set frameList ""
@@ -8323,6 +8568,7 @@ proc ::timeline::calcGlobalCcss  {lastCalcVal}  {
   variable ccssSpacing
   variable ccssThreshold
   variable ccssUseThreshold
+  variable ccssUseSpacing
   variable ccssSelMethod
   variable ccssSelList 
   
@@ -8455,10 +8701,18 @@ proc ::timeline::calcGlobalCcss  {lastCalcVal}  {
           #set CCSS [mdff ccc $userSel -i $ccssMapFile -res $ccssMapres -spacing $ccssSpacing -threshold $ccssThreshold]
           if {$ccssUseThreshold} {
            # tlPutsDebug "yes threshold use, threshold= $ccssThreshold"
-            set CCSS [mdffi cc $userSel -res $ccssMapres -thresholddensity $ccssThreshold -mol $currentMol -vol $ccssMapVolId ]
+            if {$ccssUseSpacing} {
+              set CCSS [mdffi cc $userSel -res $ccssMapres -thresholddensity $ccssThreshold -mol $currentMol -vol $ccssMapVolId -spacing $ccssSpacing ]
+            } else {
+              set CCSS [mdffi cc $userSel -res $ccssMapres -thresholddensity $ccssThreshold -mol $currentMol -vol $ccssMapVolId ]
+            }
           } else {
             #tlPutsDebug "no threshold use, threshold= $ccssThreshold"
-            set CCSS [mdffi cc $userSel -res $ccssMapres -mol $currentMol -vol $ccssMapVolId ]
+            if {$ccssUseSpacing} {
+              set CCSS [mdffi cc $userSel -res $ccssMapres -mol $currentMol -vol $ccssMapVolId -spacing $ccssSpacing ]
+            } else {
+              set CCSS [mdffi cc $userSel -res $ccssMapres -mol $currentMol -vol $ccssMapVolId ]
+            }
           } 
           #tlPutsDebug "CCSS is $CCSS"
           #detect if nan
@@ -8539,10 +8793,18 @@ proc ::timeline::calcGlobalCcss  {lastCalcVal}  {
               #set CCSS [mdff ccc $ssSel -i $ccssMapFile -res $ccssMapres -spacing $ccssSpacing -threshold $ccssThreshold]
               if {$ccssUseThreshold} {
                 #tlPutsDebug "yes threshold use, threshold= $ccssThreshold"
-                set CCSS [mdffi cc $ssSel -res $ccssMapres -thresholddensity $ccssThreshold -mol $currentMol -vol $ccssMapVolId ]
+                if {$ccssUseSpacing} {
+                  set CCSS [mdffi cc $ssSel -res $ccssMapres -thresholddensity $ccssThreshold -mol $currentMol -vol $ccssMapVolId -spacing $ccssSpacing ]
+                } else {
+                  set CCSS [mdffi cc $ssSel -res $ccssMapres -thresholddensity $ccssThreshold -mol $currentMol -vol $ccssMapVolId ]
+                }
                } else {
                 #tlPutsDebug "no threshold use, threshold= $ccssThreshold"
-                set CCSS [mdffi cc $ssSel -res $ccssMapres -mol $currentMol -vol $ccssMapVolId ]
+                if {$ccssUseSpacing} {
+                  set CCSS [mdffi cc $ssSel -res $ccssMapres -mol $currentMol -vol $ccssMapVolId -spacing $ccssSpacing]
+                } else {
+                  set CCSS [mdffi cc $ssSel -res $ccssMapres -mol $currentMol -vol $ccssMapVolId ]
+                }
               }
               
               #tlPutsDebug "CCSS = $CCSS"

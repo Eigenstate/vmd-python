@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: MobileInterface.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.44 $	$Date: 2014/08/20 16:23:01 $
+ *	$Revision: 1.46 $	$Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -315,7 +315,7 @@ static int mobile_listener_poll(void *voidhandle,
         tmpmsg[msgSize] = 0;           // can't assume it was null terminated
 
         commandToSend = tmpmsg; 
-        delete tmpmsg;
+        delete [] tmpmsg;
      } else {
         commandToSend = ""; 
      }

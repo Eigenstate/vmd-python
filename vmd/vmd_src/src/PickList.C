@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: PickList.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.44 $	$Date: 2010/12/16 04:08:34 $
+ *	$Revision: 1.46 $	$Date: 2016/11/28 03:05:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -277,8 +277,8 @@ static void print_atom_info(VMDApp *app, PickEvent *event) {
           << "\nresid: " << a->resid
           << "\nchain: " << mol->chainNames.name(a->chainindex)
           << "\nsegname: " << mol->segNames.name(a->segnameindex)
-          << "\nx: " << mol->current()->pos[3*atomindex]
-          << "\ny: " << mol->current()->pos[3*atomindex+1]
-          << "\nz: " << mol->current()->pos[3*atomindex+2] << "\n"
+          << "\nx: " << mol->current()->pos[3L*atomindex]
+          << "\ny: " << mol->current()->pos[3L*atomindex+1]
+          << "\nz: " << mol->current()->pos[3L*atomindex+2] << "\n"
           << sendmsg;
 }

@@ -10,8 +10,8 @@
  * RCS INFORMATION:
  *
  *      $RCSfile: TclMDFF.C,v $
- *      $Author: ryanmcgreevy $        $Locker:  $             $State: Exp $
- *      $Revision: 1.17 $      $Date: 2015/04/30 19:15:33 $
+ *      $Author: johns $        $Locker:  $             $State: Exp $
+ *      $Revision: 1.18 $      $Date: 2016/04/25 06:20:45 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -395,7 +395,7 @@ int mdff_cc(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
 
   // use quicksurf density map algorithm
   for (int frame = start; frame <= end; frame++) {
-    const float *framepos = new float [sel->num_atoms*3];
+    const float *framepos = new float [sel->num_atoms*3L];
  
     // frame is -2 or -1, meaning last or current but 
     // either way not allframes, so current sel frame is fine

@@ -1,6 +1,6 @@
 //
 // Version info for VMD plugin tree:
-//   $Id: maeffplugin.cxx,v 1.26 2015/04/07 02:36:28 johns Exp $
+//   $Id: maeffplugin.cxx,v 1.28 2016/11/06 17:49:24 johns Exp $
 //
 // Version info for last sync with D. E. Shaw Research:
 //  //depot/desrad/main/sw/libs/molfile/plugins/maeffplugin.cxx#3
@@ -1982,7 +1982,7 @@ namespace {
       }
     }
     catch (std::exception &e) {
-      fprintf(stderr, e.what());
+      fprintf(stderr, "%s", e.what());
       return MOLFILE_ERROR;
     }
     return MOLFILE_SUCCESS;
@@ -2012,7 +2012,7 @@ VMDPLUGIN_API int VMDPLUGIN_init (void) {
   maeff.prettyname = "Maestro File";
   maeff.author = "D. E. Shaw Research";
   maeff.majorv = 3;
-  maeff.minorv = 7;
+  maeff.minorv = 8;
   maeff.is_reentrant = VMDPLUGIN_THREADUNSAFE;
 
   maeff.filename_extension = "mae,maeff,cms";

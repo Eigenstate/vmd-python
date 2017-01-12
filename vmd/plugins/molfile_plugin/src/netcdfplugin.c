@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: netcdfplugin.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.25 $       $Date: 2009/08/27 19:44:57 $
+ *      $Revision: 1.29 $       $Date: 2016/11/28 05:01:54 $
  *
  ***************************************************************************/
 
@@ -58,6 +58,8 @@ typedef struct {
 } mmtkdata;
 
 typedef struct {
+  int is_restart;
+  int is_trajectory;
   int has_box;
   int atomdimid;
   size_t atomdim;
@@ -149,18 +151,27 @@ static int open_amber_cdf_read(cdfdata *cdf) {
   size_t len; 
   amberdata *amber = &cdf->amber;
 
+  /* check if this is a restart file or not */
+  if (!strcmp(cdf->conventions, "AMBERRESTART")) {
+    amber->is_restart = 1;
+  } else {
+    amber->is_trajectory = 1;
+  }
+
   /* global attrib: "ConventionVersion" -- required */
   rc = nc_inq_attlen(cdf->ncid, NC_GLOBAL, "ConventionVersion", &len);
   if (rc == NC_NOERR && len > 0) {
     amber->conventionversion = (char *) malloc((len+1) * sizeof(char));
     nc_get_att_text(cdf->ncid, NC_GLOBAL, "ConventionVersion", amber->conventionversion);
     amber->conventionversion[len] = '\0';
-    printf("netcdfplugin) trajectory follows AMBER conventions version '%s'\n", amber->conventionversion);
+    printf("netcdfplugin) %s follows AMBER conventions version '%s'\n", 
+           (amber->is_restart) ? "restart file" : "trajectory",
+           amber->conventionversion);
   } else {
     return CDF_ERR;
   }
 
-  /* at this point we know that this is an AMBER trajectory */
+  /* at this point we know that this is an AMBER trajectory or restart file */
   cdf->type = CDF_TYPE_AMBER;
 
   /* initialize default scaling factors so they are always set to a sane */
@@ -168,7 +179,6 @@ static int open_amber_cdf_read(cdfdata *cdf) {
   amber->coordinates_scalefactor = 1.0;
   amber->cell_lengths_scalefactor = 1.0;
   amber->cell_angles_scalefactor = 1.0;
-
 
   /* global attrib: "program" -- required */
   rc = nc_inq_attlen(cdf->ncid, NC_GLOBAL, "program", &len);
@@ -249,21 +259,23 @@ static int open_amber_cdf_read(cdfdata *cdf) {
     return CDF_ERR;
   }
  
-
-  /* read in frame dimension */
-  rc = nc_inq_dimid(cdf->ncid, "frame", &amber->framedimid);
-  if (rc == NC_NOERR) {    
-    rc = nc_inq_dimlen(cdf->ncid, amber->framedimid, &amber->framedim);
-    if (rc == NC_NOERR) {
-      printf("netcdfplugin) AMBER: frame dimension: %ld\n", (long)amber->framedim);
+  /* if this is a trajectory, read in frame dimension */
+  if (amber->is_trajectory) {
+    rc = nc_inq_dimid(cdf->ncid, "frame", &amber->framedimid);
+    if (rc == NC_NOERR) {    
+      rc = nc_inq_dimlen(cdf->ncid, amber->framedimid, &amber->framedim);
+      if (rc == NC_NOERR) {
+        printf("netcdfplugin) AMBER: frame dimension: %ld\n", (long)amber->framedim);
+      } else {
+        printf("netcdfplugin) AMBER: missing frame dimension, aborting\n");
+        return CDF_ERR;
+      }
     } else {
       printf("netcdfplugin) AMBER: missing frame dimension, aborting\n");
       return CDF_ERR;
     }
-  } else {
-    printf("netcdfplugin) AMBER: missing frame dimension, aborting\n");
-    return CDF_ERR;
   }
+
 
   /* 
    * get ID values for all of the variables we're interested in 
@@ -302,12 +314,10 @@ static int open_amber_cdf_read(cdfdata *cdf) {
   }
 
   /* Coordinate scaling factor to get to Angstroms */
-  rc = nc_get_att_float(cdf->ncid, amber->coordinates_id, "scale_factor", &amber->coordinates_scalefactor);
-  if (rc == NC_NOERR) {
-    printf("netcdfplugin) AMBER: coordinates scalefactor: %f\n", amber->coordinates_scalefactor);
-  } else {
-    amber->coordinates_scalefactor = 1.0;
+  if (nc_get_att_float(cdf->ncid, amber->coordinates_id, "scale_factor", &amber->coordinates_scalefactor) != NC_NOERR) {
+    printf("netcdfplugin) AMBER: no coordinates scalefactor attribute, 1.0 assumed\n");
   }
+  printf("netcdfplugin) AMBER: coordinates scalefactor: %f\n", amber->coordinates_scalefactor);
 
 #if 0
   /* we don't need velocities at this time */
@@ -338,12 +348,10 @@ static int open_amber_cdf_read(cdfdata *cdf) {
       }
 
       /* Cell lengths scaling factor to get to Angstroms */
-      rc = nc_get_att_float(cdf->ncid, amber->cell_lengths_id, "scale_factor", &amber->cell_lengths_scalefactor);
-      if (rc == NC_NOERR) {
-        printf("netcdfplugin) AMBER: cell lengths scalefactor: %f\n", amber->cell_lengths_scalefactor);
-      } else {
-        amber->cell_lengths_scalefactor = 1.0;
+      if (nc_get_att_float(cdf->ncid, amber->cell_lengths_id, "scale_factor", &amber->cell_lengths_scalefactor) != NC_NOERR) {
+        printf("netcdfplugin) AMBER: no cell lengths scalefactor attribute, 1.0 assumed\n");
       }
+      printf("netcdfplugin) AMBER: cell lengths scalefactor: %f\n", amber->cell_lengths_scalefactor);
 
       /* Cell angles units */
       rc = nc_inq_attlen(cdf->ncid, amber->cell_angles_id, "units", &len);
@@ -357,12 +365,10 @@ static int open_amber_cdf_read(cdfdata *cdf) {
       }
 
       /* Cell angles scaling factor to get to degrees */
-      rc = nc_get_att_float(cdf->ncid, amber->cell_angles_id, "scale_factor", &amber->cell_angles_scalefactor);
-      if (rc == NC_NOERR) {
-        printf("netcdfplugin) AMBER: cell angles scalefactor: %f\n", amber->cell_angles_scalefactor);
-      } else {
-        amber->cell_angles_scalefactor = 1.0;
+      if (nc_get_att_float(cdf->ncid, amber->cell_angles_id, "scale_factor", &amber->cell_angles_scalefactor) != NC_NOERR) {
+        printf("netcdfplugin) AMBER: no cell angles scalefactor attribute, 1.0 assumed\n");
       }
+      printf("netcdfplugin) AMBER: cell angles scalefactor: %f\n", amber->cell_angles_scalefactor);
     }
   }
 
@@ -906,6 +912,7 @@ static int read_cdf_structure(void *mydata, int *optflags,
 
 
 static int read_amber_cdf_timestep(void *mydata, int natoms, molfile_timestep_t *ts) {
+  size_t start[3], count[3];
   cdfdata *cdf = (cdfdata *)mydata;
   amberdata *amber = &cdf->amber;
   int rc;
@@ -914,18 +921,38 @@ static int read_amber_cdf_timestep(void *mydata, int natoms, molfile_timestep_t 
   /* only save coords if we're given a valid ts pointer     */ 
   /* otherwise VMD wants us to skip it.                     */
   if (ts != NULL) {
-    size_t start[3], count[3];
+    if (amber->is_restart) {
+      // restart files only contain one frame, so return if we get called again
+      if (cdf->curframe > 0)
+        return MOLFILE_ERROR;
 
-    start[0] = cdf->curframe; /* frame */
-    start[1] = 0;             /* atom */
-    start[2] = 0;             /* spatial */
+      start[0] = 0;             /* atom */
+      start[1] = 0;             /* spatial */
+      start[2] = 0;
 
-    count[0] = 1;
-    count[1] = amber->atomdim;
-    count[2] = amber->spatialdim;
+      count[0] = amber->atomdim;
+      count[1] = amber->spatialdim;
+      count[2] = 0;
 
-    rc = nc_get_vara_float(cdf->ncid, amber->coordinates_id, 
-                           start, count, ts->coords);
+      rc = nc_get_vara_float(cdf->ncid, amber->coordinates_id, 
+                             start, count, ts->coords);
+      if (rc != NC_NOERR) { 
+        printf("netcdfplugin) AMBER: failed to parse restart file coordinates!\n");
+      }
+    } else {
+      start[0] = cdf->curframe; /* frame */
+      start[1] = 0;             /* atom */
+      start[2] = 0;             /* spatial */
+
+      count[0] = 1;
+      count[1] = amber->atomdim;
+      count[2] = amber->spatialdim;
+
+      /* parse trajectory timestep */
+      rc = nc_get_vara_float(cdf->ncid, amber->coordinates_id, 
+                             start, count, ts->coords);
+    }
+
     if (rc != NC_NOERR) 
       return MOLFILE_ERROR;
 
@@ -940,14 +967,25 @@ static int read_amber_cdf_timestep(void *mydata, int natoms, molfile_timestep_t 
 
     /* Read the PBC box info. */
     if (amber->has_box) {
+      size_t start[3], count[3];
       double lengths[3];
       double angles[3];
 
-      start[0] = cdf->curframe; /* frame */
-      start[1] = 0;             /* spatial */
-
-      count[0] = 1;
-      count[1] = amber->spatialdim;
+      if (amber->is_restart) {
+        start[0] = 0;             /* spatial */
+        start[1] = 0;
+        start[2] = 0;
+        count[0] = amber->spatialdim;
+        count[1] = 0;
+        count[2] = 0;
+      } else {
+        start[0] = cdf->curframe; /* frame */
+        start[1] = 0;             /* spatial */
+        start[2] = 0;
+        count[0] = 1;
+        count[1] = amber->spatialdim;
+        count[2] = 0;
+      }
 
       rc = nc_get_vara_double(cdf->ncid, amber->cell_lengths_id, 
                               start, count, lengths);
@@ -1082,10 +1120,10 @@ VMDPLUGIN_API int VMDPLUGIN_init(void) {
   plugin.name = "netcdf";
   plugin.prettyname = "NetCDF (AMBER, MMTK)";
   plugin.author = "Konrad Hinsen, John Stone";
-  plugin.majorv = 0;
-  plugin.minorv = 10;
+  plugin.majorv = 1;
+  plugin.minorv = 1;
   plugin.is_reentrant = VMDPLUGIN_THREADSAFE;
-  plugin.filename_extension = "nc";
+  plugin.filename_extension = "nc,ncrst";
   plugin.open_file_read = open_cdf_read;
   plugin.read_structure = read_cdf_structure;
   plugin.read_next_timestep = read_cdf_timestep;

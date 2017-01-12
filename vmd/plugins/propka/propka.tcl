@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012  Michal Rostkowski and Jan H. Jensen  
 #
-# $Id: propka.tcl,v 1.5 2013/04/15 16:57:01 johns Exp $
+# $Id: propka.tcl,v 1.7 2016/10/21 15:02:18 johns Exp $
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -295,8 +295,11 @@ proc ::PropKa::propka_gui {}  {
     menubutton $w.menubar.help -text "Help" -menu $w.menubar.help.menu
     $w.menubar.help config -width 5
     menu $w.menubar.help.menu -tearoff no
-    $w.menubar.help.menu add command -label "PROPKA Web Interface..." -command "vmd_open_url http://propka.ki.ku.dk"
-    $w.menubar.help.menu add command -label "GUI Homepage..." -command "vmd_open_url http://propka.ki.ku.dk/~luca/wiki/index.php/GUI_Web"
+#    $w.menubar.help.menu add command -label "PROPKA Web Interface..." -command "vmd_open_url http://propka.ki.ku.dk"
+#    $w.menubar.help.menu add command -label "GUI Homepage..." -command "vmd_open_url http://propka.ki.ku.dk/~luca/wiki/index.php/GUI_Web"
+    $w.menubar.help.menu add command -label "PROPKA Home page..." -command "vmd_open_url http://propka.org"
+    $w.menubar.help.menu add command -label "PROPKA GUI video tutorial..." -command "vmd_open_url https://www.youtube.com/watch?v=bonpPmJdsNM"
+    $w.menubar.help.menu add command -label "PROPKA GUI Documentation..." -command "vmd_open_url http://www.ks.uiuc.edu/Research/vmd/plugins/propka/"
 
 
     pack $w.menubar.file -side left

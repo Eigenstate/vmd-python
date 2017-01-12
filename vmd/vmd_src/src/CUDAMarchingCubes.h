@@ -178,14 +178,14 @@ public:
      * @return The memory size in bytes
      */
     static size_t MemUsageMC(unsigned int gx, unsigned int gy, unsigned int gz) {
-        unsigned int padgx = gx + (32 - (gx % 32));
-        unsigned int padgy = gy + (32 - (gy % 32));
+      unsigned int padgx = gx + (32 - (gx % 32));
+      unsigned int padgy = gy + (32 - (gy % 32));
 
-        return (256 + gx * gy * gz) * sizeof(unsigned int) + 
-               256 * 16 * sizeof(int) + 
-               gx * gy * gz * sizeof(uint2) +       // vertex count scan buffer
-               padgx * padgy * gz * sizeof(float) + // 3-D texture map size
-               1024 * sizeof(uint2);                // tmp thrust buffers?
+      return (256L + gx * gy * gz) * sizeof(unsigned int) + 
+              256L * 16L * sizeof(int) + 
+              gx * gy * gz * sizeof(uint2) +       // vertex count scan buffer
+              padgx * padgy * gz * sizeof(float) + // 3-D texture map size
+              1024L * sizeof(uint2);               // tmp thrust buffers?
     };
 
     /**

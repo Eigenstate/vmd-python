@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -9,7 +9,7 @@
  * RCS INFORMATION:
  *      $RCSfile: Gromacs.h,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.33 $       $Date: 2014/05/19 19:34:26 $
+ *      $Revision: 1.34 $       $Date: 2016/11/28 05:01:53 $
  ***************************************************************************/
 
 /*

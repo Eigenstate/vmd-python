@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: VolumetricData.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.32 $	$Date: 2014/12/22 23:10:48 $
+ *	$Revision: 1.34 $	$Date: 2016/11/28 03:05:06 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -87,6 +87,9 @@ public:
 
   /// (re)compute the volume gradient
   void compute_volume_gradient(void);
+
+  /// provide the volume gradient
+  void set_volume_gradient(float *gradient);
 
   /// return gradient at requested index, no safety checks
   void voxel_gradient_fast(int x, int y, int z, float *grad) const {

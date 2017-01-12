@@ -139,9 +139,27 @@ static PyMethodDef Methods[] = {
   {(char *)"bond", (PyCFunction)measure_bond, METH_VARARGS | METH_KEYWORDS, bond_doc},
   {(char *)"angle", (PyCFunction)measure_angle, METH_VARARGS | METH_KEYWORDS, angle_doc},
   {(char *)"dihedral", (PyCFunction)measure_dihed, METH_VARARGS | METH_KEYWORDS, dihed_doc},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
+
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef measuredef = {
+    PyModuleDef_HEAD_INIT,
+    "measure",
+    NULL,
+    -1,
+    Methods,
+    NULL, NULL, NULL, NULL
+};
+
+PyMODINIT_FUNC PyInit_measure(void) {
+    PyObject *m = PyModule_Create(&measuredef);
+    return m;
+}
+#else
 void initmeasure() {
   (void)Py_InitModule((char *)"measure", Methods);
 }
+#endif
+

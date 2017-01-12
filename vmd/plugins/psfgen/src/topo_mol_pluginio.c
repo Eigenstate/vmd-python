@@ -501,8 +501,8 @@ int topo_mol_read_plugin(topo_mol *mol, const char *pluginname,
       return -1; 
     }
 
-    atomcoords = (float *) malloc(3*natoms*sizeof(float));
-    memset(atomcoords, 0, 3*natoms*sizeof(float));
+    atomcoords = (float *) malloc(natoms*(3*sizeof(float)));
+    memset(atomcoords, 0, natoms*(3*sizeof(float)));
     ts.coords = atomcoords;
   
     if (coorplg->read_next_timestep(coorrv, natoms, &ts)) {
@@ -516,8 +516,8 @@ int topo_mol_read_plugin(topo_mol *mol, const char *pluginname,
     coorplg->close_file_read(coorrv);
 
   } else if ( plg->read_next_timestep ) {
-    atomcoords = (float *) malloc(3*natoms*sizeof(float));
-    memset(atomcoords, 0, 3*natoms*sizeof(float));
+    atomcoords = (float *) malloc(natoms*(3*sizeof(float)));
+    memset(atomcoords, 0, natoms*(3*sizeof(float)));
     ts.coords = atomcoords;
   
     if (plg->read_next_timestep(rv, natoms, &ts)) {
@@ -602,6 +602,7 @@ int topo_mol_read_plugin(topo_mol *mol, const char *pluginname,
         atomtmp->dihedrals = 0;
         atomtmp->impropers = 0;
         atomtmp->cmaps = 0;
+        atomtmp->exclusions = 0;
         atomtmp->conformations = 0;
         strcpy(atomtmp->name, atomarray[i].name);
         strcpy(atomtmp->type, atomarray[i].type);
@@ -619,6 +620,9 @@ int topo_mol_read_plugin(topo_mol *mol, const char *pluginname,
           atomtmp->z = 0;
           atomtmp->xyz_state = TOPO_MOL_XYZ_VOID;
         }
+        atomtmp->vx = 0;
+        atomtmp->vy = 0;
+        atomtmp->vz = 0;
         atomtmp->partition = 0;
         atomtmp->copy = 0;
         atomtmp->atomid = 0;
@@ -771,7 +775,10 @@ int topo_mol_read_plugin(topo_mol *mol, const char *pluginname,
   return 0;
 }
 
-
+    /*
+     * Since support for explicit exlusions is lacking in any plugins, we dont read it
+     * XXX Implement exclusion reading interface for plugins
+     */
 
 /*
  * Write psfgen structure to output file using selected plugin
@@ -797,6 +804,8 @@ int topo_mol_write_plugin(topo_mol *mol, const char *pluginname,
   int nimprs;
   topo_mol_cmap_t *cmap=NULL;
   int ncmaps;
+  topo_mol_exclusion_t *excl=NULL;
+  int nexcls;
 
   molfile_plugin_t *plg; /* plugin handle */
   void *wv;              /* opaque plugin write handle */
@@ -835,6 +844,7 @@ int topo_mol_write_plugin(topo_mol *mol, const char *pluginname,
   ndihes = 0;
   nimprs = 0;
   ncmaps = 0;
+  nexcls = 0;
   nseg = hasharray_count(mol->segment_hash);
   for ( iseg=0; iseg<nseg; ++iseg ) {
     seg = mol->segment_array[iseg];
@@ -874,6 +884,13 @@ int topo_mol_write_plugin(topo_mol *mol, const char *pluginname,
             ++ncmaps;
           }
         }
+        for ( excl = atom->exclusions; excl;
+                excl = topo_mol_exclusion_next(excl,atom) ) {
+          if ( excl->atom[0] == atom && ! excl->del ) {
+            ++nexcls;
+          }  
+        } 
+
       }
     }
   }
@@ -884,6 +901,7 @@ int topo_mol_write_plugin(topo_mol *mol, const char *pluginname,
   ndihes *= nimages;
   nimprs *= nimages;
   ncmaps *= nimages;
+  nexcls *= nimages;
   if ( nimages != 1 ) {
     sprintf(buf,"generating %d images of %d atoms",nimages,nmolatoms);
     print_msg(v,buf);
@@ -898,10 +916,16 @@ int topo_mol_write_plugin(topo_mol *mol, const char *pluginname,
   print_msg(v,buf);
   sprintf(buf,"total of %d impropers",nimprs);
   print_msg(v,buf);
+  sprintf(buf,"total of %d explicit exclusions",nexcls);
+  print_msg(v,buf);
+  if (nexcls) {
+    print_msg(v, "ERROR: non-zero number of explicit exclusions, which are not supported by plugin interface");
+    return -1;
+  }
 
   /* allocate atom arrays */
   atomarray = (molfile_atom_t *) malloc(natoms*sizeof(molfile_atom_t));
-  atomcoords = (float *) malloc(natoms * 3 * sizeof(float));
+  atomcoords = (float *) malloc(natoms * (3 * sizeof(float)));
   if (atomarray == NULL) {
     print_msg(v, "ERROR: failed to allocate plugin atom attribute array");
     return -1;
@@ -912,7 +936,7 @@ int topo_mol_write_plugin(topo_mol *mol, const char *pluginname,
   }
 
   memset(atomarray, 0, natoms*sizeof(molfile_atom_t));
-  memset(atomcoords, 0, natoms*3*sizeof(float));
+  memset(atomcoords, 0, natoms*(3*sizeof(float)));
 
   /* open plugin for output */
   if ((wv = plg->open_file_write(filename, pluginname, natoms)) == NULL) {
@@ -1144,10 +1168,10 @@ int topo_mol_write_plugin(topo_mol *mol, const char *pluginname,
     int imprcnt=0;
     int cmapcnt=0;
 
-    int *angles = (int *) malloc(3 * nangls * sizeof(int));
-    int *dihedrals = (int *) malloc(4 * ndihes * sizeof(int));
-    int *impropers = (int *) malloc(4 * nimprs * sizeof(int));
-    int *cmaps = (int *) malloc(8 * ncmaps * sizeof(int));
+    int *angles = (int *) malloc(nangls * (3*sizeof(int)));
+    int *dihedrals = (int *) malloc(ndihes * (4*sizeof(int)));
+    int *impropers = (int *) malloc(nimprs * (4*sizeof(int)));
+    int *cmaps = (int *) malloc(ncmaps * (8*sizeof(int)));
 
     /*
      * angles

@@ -1,7 +1,7 @@
 .SILENT:
 
 VMFILES = cispeptide.tcl cispeptide_gui.tcl pkgIndex.tcl
-VMVERSION = 1.1
+VMVERSION = 1.3
 DIR = $(PLUGINDIR)/noarch/tcl/cispeptide$(VMVERSION)
 
 bins:

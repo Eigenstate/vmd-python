@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -24,11 +24,26 @@ static PyObject *mousemode(PyObject *self, PyObject *args) {
 static PyMethodDef methods[] = {
   {(char *)"mode", (vmdPyMethod)mousemode, METH_VARARGS,
     (char *)"mode(mode, submode) -- set mouse behavior in graphics window"},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef mousedef = {
+    PyModuleDef_HEAD_INIT,
+    "mouse",
+    NULL,
+    -1,
+    methods,
+    NULL, NULL, NULL, NULL
+};
+
+PyMODINIT_FUNC PyInit_mouse(void) {
+  PyObject *m = PyModule_Create(&mousedef);
+    
+#else
 void initmouse() {
   PyObject *m = Py_InitModule((char *)"mouse", methods);
+#endif
   PyModule_AddIntConstant(m, "ROTATE", Mouse::ROTATION);
   PyModule_AddIntConstant(m, "TRANSLATE", Mouse::TRANSLATION);
   PyModule_AddIntConstant(m, "SCALE", Mouse::SCALING);
@@ -52,5 +67,8 @@ void initmouse() {
   PyModule_AddIntConstant(m, "FORCEFRAG", Mouse::FORCEFRAG);
   PyModule_AddIntConstant(m, "ADDBOND", Mouse::ADDBOND);
 
+#if PY_MAJOR_VERSION >= 3
+  return m;
+#endif
 }
 

@@ -3,7 +3,7 @@
  *
  *      $RCSfile: WKFThreads.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.10 $       $Date: 2013/04/23 03:00:09 $
+ *      $Revision: 1.11 $       $Date: 2016/10/26 05:03:26 $
  *
  ***************************************************************************
  * WKFThreads.h - code for spawning threads on various platforms.
@@ -21,7 +21,7 @@
  ***************************************************************************/
 /* Tachyon copyright reproduced below */
 /*
- * Copyright (c) 1994-2013 John E. Stone
+ * Copyright (c) 1994-2016 John E. Stone
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -73,6 +73,28 @@ extern "C" {
 #define USEUITHREADS
 #endif
 #endif
+
+
+/*
+ * CPU capability flags
+ */
+#define CPU_UNKNOWN     0x0001
+
+/* Intel x86 CPU features we may need at runtime */
+#define CPU_SSE2        0x0100
+#define CPU_AVX         0x0200
+#define CPU_AVX2        0x0400
+#define CPU_FMA         0x0800
+#define CPU_AVX512F     0x1000
+#define CPU_AVX512CD    0x1000
+#define CPU_AVX512ER    0x2000
+#define CPU_AVX512PF    0x4000
+#define CPU_KNL         (CPU_AVX512F | CPU_AVX512CD | \
+                         CPU_AVX512ER | CPU_AVX512PF)
+
+typedef struct {
+  unsigned int flags;
+} wkf_cpu_caps_t;
 
 
 #ifdef WKFTHREADS
@@ -208,6 +230,9 @@ int wkf_thread_numphysprocessors(void);
 
 /** number of processors available, subject to user override */
 int wkf_thread_numprocessors(void);
+
+/** CPU optional instruction set capability flags */
+int wkf_cpu_capability_flags(wkf_cpu_caps_t *cpucaps);
 
 /** query CPU affinity of the calling process (if allowed by host system) */
 int * wkf_cpu_affinitylist(int *cpuaffinitycount);

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: OpenGLRenderer.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.458 $	$Date: 2015/05/20 05:47:10 $
+ *	$Revision: 1.463 $	$Date: 2016/11/28 03:05:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -342,8 +342,8 @@ static void vmd_DrawSphere(float rad, int res, int solid) {
     cosLong[i] = cosf(angle);
   }
   // ensure that longitude end point exactly matches start
-  sinLong[res] = sinLong[0];
-  cosLong[res] = cosLong[0];
+  sinLong[res] = 0.0f; // sinLong[0]
+  cosLong[res] = 1.0f; // cosLong[0]
 
   // latitude "stacks"
   float ang_pi_res = VMD_PI / res;
@@ -615,32 +615,27 @@ static GLint vmd_Project(GLdouble objX,
                          GLdouble *winX,
                          GLdouble *winY,
                          GLdouble *winZ) {
-#if 1
-  // based on opengl.org wiki sample
-  GLdouble d[8];
-  d[0]=model[0]*objX + model[4]*objY + model[ 8]*objZ + model[12]; // W==1.0
-  d[1]=model[1]*objX + model[5]*objY + model[ 9]*objZ + model[13];
-  d[2]=model[2]*objX + model[6]*objY + model[10]*objZ + model[14];
-  d[3]=model[3]*objX + model[7]*objY + model[11]*objZ + model[15];
+#if !defined(VMDUSELIBGLU) 
+  // replaced previous implementation with one that also works correctly
+  // for orthographic projections
+  double in[4], tmp[4], out[4];
 
-  if (d[2] == 0.0) // test W much earlier than the opengl.org sample
+  in[0]=objX;
+  in[1]=objY;
+  in[2]=objZ;
+  in[3]=1.0;
+
+  vmd_matmultvec_4x4d(tmp,  in, model);
+  vmd_matmultvec_4x4d(out, tmp, proj);
+
+  if (out[3] == 0.0) 
     return 0;
- 
-  d[4]=proj[0]*d[0] + proj[4]*d[1] + proj[ 8]*d[2] + proj[12]*d[3];
-  d[5]=proj[1]*d[0] + proj[5]*d[1] + proj[ 9]*d[2] + proj[13]*d[3];
-  d[6]=proj[2]*d[0] + proj[6]*d[1] + proj[10]*d[2] + proj[14]*d[3];
-  d[7]=-d[2];
 
-  // perspective division, normalizes to range -1:1
-  d[7]=1.0/d[7];
-  d[4]*=d[7];
-  d[5]*=d[7];
-  d[6]*=d[7];
-
-  // map window coords to range 0:1
-  *winX=(d[4]*0.5 + 0.5)*view[2]+view[0];
-  *winY=(d[5]*0.5 + 0.5)*view[3]+view[1];
-  *winZ=(1.0 + d[6])*0.5; // only correct when dlDepthRange(0.0, 1.0)
+  // efficiently map coordinates to range 0-1, and then to the viewport
+  double tinv = 0.5 / out[3];
+  *winX = (out[0] * tinv + 0.5) * view[2] + view[0];
+  *winY = (out[1] * tinv + 0.5) * view[3] + view[1]; 
+  *winZ = out[2] * tinv + 0.5;
 
   return 1;
 #else
@@ -658,7 +653,7 @@ static GLint vmd_UnProject(GLdouble winX,
                            GLdouble *objX,
                            GLdouble *objY,
                            GLdouble *objZ) {
-#if 1
+#if !defined(VMDUSELIBGLU) 
   // based on opengl.org wiki sample
   GLdouble m[16], A[16], in[4], out[4];
   memset(m, 0, sizeof(m));
@@ -668,9 +663,9 @@ static GLint vmd_UnProject(GLdouble winX,
   if (vmd_invert_mat_4x4d(A, m) == 0)
     return 0;
 
-  in[0]=(winX-(double)view[0])/(double)view[2]*2.0-1.0;
-  in[1]=(winY-(double)view[1])/(double)view[3]*2.0-1.0;
-  in[2]=2.0*winZ-1.0;
+  in[0]=((winX-(double)view[0])/(double)view[2])*2.0 - 1.0;
+  in[1]=((winY-(double)view[1])/(double)view[3])*2.0 - 1.0;
+  in[2]=winZ*2.0 - 1.0;
   in[3]=1.0;
 
   vmd_matmultvec_4x4d(out, in, m);
@@ -1171,7 +1166,8 @@ void OpenGLRenderer::setup_initial_opengl_state(void) {
       ext->hasglshadinglangarb &&
       ext->hasglfragmentshaderarb && 
       ext->hasglvertexshaderarb   &&
-      ext->hasglshaderobjectsarb) {
+      ext->hasglshaderobjectsarb &&
+      (getenv("VMDNOGLSL") == NULL)) {
     glslextensionsavailable=1; // GLSL is available
   }
 

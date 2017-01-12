@@ -17,7 +17,7 @@
 #
 #       $RCSfile: vmd.sh,v $
 #       $Author: johns $        $Locker:  $                $State: Exp $
-#       $Revision: 1.13 $      $Date: 2015/05/21 04:25:42 $
+#       $Revision: 1.18 $      $Date: 2016/11/15 14:49:55 $
 #
 ############################################################################
 # DESCRIPTION:
@@ -273,8 +273,13 @@ case $MACHARCH in
     if [ `uname --machine` = "alpha" ]
     then
       ARCH=LINUXALPHA
+    elif [ `uname --machine` = "aarch64" ]
+    then
+      # AppliedMicro X-Gene, NVIDIA Jetson TX1
+      ARCH=LINUXCARMA
     elif [ `uname --machine` = "armv7l" ]
     then
+      # NVIDIA CARMA, KAYLA, and Jetson TK1
       ARCH=LINUXCARMA
     elif [ `uname --machine` = "x86_64" ]
     then
@@ -309,6 +314,20 @@ case $MACHARCH in
         ARCH=LINUXPPC64
       else
         ARCH=LINUXPPC
+      fi
+    elif [ `uname --machine` = "ppc64le" ]
+    then
+      # Test to see if a 64-bit version of VMD exists
+      # in the installation directory, and use the 64-bit
+      # version if it is there.
+      if [ -x "${VMDDIR}/${vmdbasename}_LINUXPPC64LE" ]
+      then
+        ARCH=LINUXPPC64LE
+      elif [ -x "${VMDDIR}/${vmdbasename}_OPENPOWER" ]
+      then
+        ARCH=OPENPOWER
+      else
+        ARCH=SUMMIT
       fi
     elif [ `uname --machine` = "ppc" ]
     then

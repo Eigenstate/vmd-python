@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: GeometryMol.C,v $
  *      $Author: johns $        $Locker:  $                $State: Exp $
- *      $Revision: 1.53 $      $Date: 2011/03/16 15:52:36 $
+ *      $Revision: 1.55 $      $Date: 2016/11/28 03:05:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -55,11 +55,11 @@ GeometryMol::GeometryMol(int n, int *mols, int *atms, const int *cells,
 
   objIndex = new int[n];
   comIndex = new int[n];
-  cellIndex = new int[3*n];
+  cellIndex = new int[3L*n];
   if (cells) {
-    memcpy(cellIndex, cells, 3*n*sizeof(int));
+    memcpy(cellIndex, cells, 3L*n*sizeof(int));
   } else {
-    memset(cellIndex, 0, 3*n*sizeof(int));
+    memset(cellIndex, 0, 3L*n*sizeof(int));
   }
   geomValue = 0.0;
   numItems = n;
@@ -82,7 +82,7 @@ GeometryMol::GeometryMol(int n, int *mols, int *atms, const int *cells,
     
     // make sure an atom is not repeated in this list
     if(i > 0 && objIndex[i-1]==objIndex[i] && comIndex[i-1]==comIndex[i] &&
-        !memcmp(cellIndex+3*i, cellIndex+3*(i-1), 3*sizeof(int))) {
+        !memcmp(cellIndex+3L*i, cellIndex+3L*(i-1), 3L*sizeof(int))) {
       // set a bogus value for the first atom index, to make the
       // check_mol routine fail
       comIndex[0] = (-1);
@@ -273,8 +273,8 @@ void GeometryMol::geom_set_name(void) {
       atom_full_name(namebuf+strlen(namebuf), mol, comIndex[i]);
       strcat(namebuf2, "/");
       atom_short_name(namebuf2+strlen(namebuf2), mol, comIndex[i]);
-      sprintf(cellbuf, "-%d-%d-%d", cellIndex[3*i+0], cellIndex[3*i+1],
-          cellIndex[3*i+2]);
+      sprintf(cellbuf, "-%d-%d-%d", cellIndex[3L*i+0], cellIndex[3L*i+1],
+          cellIndex[3L*i+2]);
       strcat(namebuf, cellbuf);
     } else {
       return;
@@ -309,9 +309,9 @@ void GeometryMol::sort_items(void) {
       objIndex[i] = objIndex[j];
       objIndex[j] = tmpindex;
       int celltmp[3];
-      memcpy(celltmp, cellIndex+3*i, 3*sizeof(int));
-      memcpy(cellIndex+3*i, cellIndex+3*j, 3*sizeof(int));
-      memcpy(cellIndex+3*j, celltmp, 3*sizeof(int));
+      memcpy(celltmp, cellIndex+3L*i, 3L*sizeof(int));
+      memcpy(cellIndex+3L*i, cellIndex+3L*j, 3L*sizeof(int));
+      memcpy(cellIndex+3L*j, celltmp, 3L*sizeof(int));
     }
   }
 }
@@ -359,11 +359,11 @@ Molecule *GeometryMol::normal_atom_coord(int ind, float *pos) {
 
   int m=objIndex[ind];
   int a=comIndex[ind];
-  const int *cell = cellIndex+3*ind;
+  const int *cell = cellIndex+3L*ind;
 
   // get the molecule pointer, and get the coords for the current timestep
   if((mol = check_mol(m, a)) && (now = mol->current())) {
-    memcpy((void *)pos, (void *)(now->pos + 3*a), 3*sizeof(float));
+    memcpy((void *)pos, (void *)(now->pos + 3L*a), 3L*sizeof(float));
     
     // Apply periodic image transformation before returning
     Matrix4 mat;

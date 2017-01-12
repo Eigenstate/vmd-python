@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_molrep.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.23 $       $Date: 2010/12/16 04:08:57 $
+ *      $Revision: 1.24 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -32,7 +32,11 @@ static PyObject *molrep_num(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
   } 
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->num_molreps(molid));
+#else
   return PyInt_FromLong(app->num_molreps(molid));
+#endif
 }
 
 // addrep(molid, style=None, color=None, selection=None, material=None)
@@ -111,7 +115,11 @@ static PyObject *get_style(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid rep number");
     return NULL;
   } 
+#if PY_MAJOR_VERSION >= 3
+  return PyUnicode_FromString((char *)app->molrep_get_style(molid, rep));
+#else
   return PyString_FromString((char *)app->molrep_get_style(molid, rep));
+#endif
 }
 
 // get_selection(molid, rep)
@@ -129,7 +137,11 @@ static PyObject *get_selection(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid rep number");
     return NULL;
   } 
+#if PY_MAJOR_VERSION >= 3
+  return PyUnicode_FromString((char *)app->molrep_get_selection(molid, rep));
+#else
   return PyString_FromString((char *)app->molrep_get_selection(molid, rep));
+#endif
 }
 
 // get_color(molid, rep)
@@ -147,7 +159,11 @@ static PyObject *get_color(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid rep number");
     return NULL;
   } 
+#if PY_MAJOR_VERSION >= 3
+  return PyUnicode_FromString((char *)app->molrep_get_color(molid, rep));
+#else
   return PyString_FromString((char *)app->molrep_get_color(molid, rep));
+#endif
 }
 
 // get_material(molid, rep)
@@ -165,7 +181,11 @@ static PyObject *get_material(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid rep number");
     return NULL;
   } 
+#if PY_MAJOR_VERSION >= 3
+  return PyUnicode_FromString((char *)app->molrep_get_material(molid, rep));
+#else
   return PyString_FromString((char *)app->molrep_get_material(molid, rep));
+#endif
 }
 
 // get_scaleminmax(molid, rep)
@@ -286,7 +306,11 @@ static PyObject *modrep(PyObject *self, PyObject *args, PyObject *keywds) {
       return NULL;
     }
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(rc);
+#else
   return PyInt_FromLong(rc);
+#endif
 }
 
 // get_repname(molid, repid)
@@ -300,7 +324,11 @@ static PyObject *get_repname(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molid or repid");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyUnicode_FromString((char *)name);
+#else
   return PyString_FromString((char *)name);
+#endif
 }
   
 // repindex(molid, name)
@@ -311,7 +339,11 @@ static PyObject *repindex(PyObject *self, PyObject *args) {
     return NULL;
   VMDApp *app = get_vmdapp();
   int repid = app->molrep_get_by_name(molid, name);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(repid);
+#else
   return PyInt_FromLong(repid);
+#endif
 }
 
 // get_autoupdate(molid, repid)
@@ -325,7 +357,11 @@ static PyObject *get_autoupdate(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molid or repid");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->molrep_get_selupdate(molid, repid));
+#else
   return PyInt_FromLong(app->molrep_get_selupdate(molid, repid));
+#endif
 }
 
 // set_autoupdate(molid, repid, int onoff)
@@ -353,7 +389,11 @@ static PyObject *get_colorupdate(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molid or repid");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->molrep_get_colorupdate(molid, repid));
+#else
   return PyInt_FromLong(app->molrep_get_colorupdate(molid, repid));
+#endif
 }
 
 // set_colorupdate(molid, repid, int onoff)
@@ -381,7 +421,11 @@ static PyObject *get_smoothing(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molid or repid");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->molrep_get_smoothing(molid, repid));
+#else
   return PyInt_FromLong(app->molrep_get_smoothing(molid, repid));
+#endif
 }
 
 // set_smoothing(molid, repid, int n)
@@ -413,7 +457,11 @@ static PyObject *get_visible(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molid or repid");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->molrep_is_shown(molid, repid));
+#else
   return PyInt_FromLong(app->molrep_is_shown(molid, repid));
+#endif
 }
 
 // set_visible(molid, repid, int n)
@@ -456,10 +504,26 @@ static PyMethodDef methods[] = {
   {(char *)"set_smoothing", (vmdPyMethod)set_smoothing, METH_VARARGS},
   {(char *)"get_visible", (vmdPyMethod)get_visible, METH_VARARGS},
   {(char *)"set_visible", (vmdPyMethod)set_visible, METH_VARARGS},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef molrepdef = {
+    PyModuleDef_HEAD_INIT,
+    "molrep",
+    NULL,
+    -1,
+    methods,
+    NULL, NULL, NULL, NULL
+};
+
+PyMODINIT_FUNC PyInit_molrep(void) {
+    PyObject *module = PyModule_Create(&molrepdef);
+    return module;
+}
+#else
 void initmolrep() {
   (void) Py_InitModule((char *)"molrep", methods);
 }
+#endif
 

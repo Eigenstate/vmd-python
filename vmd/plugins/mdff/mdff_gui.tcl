@@ -341,7 +341,7 @@ proc MDFFGUI::gui::mdffgui {} {
   set CurrentMol [ttk::label $w.hlf.n.f1.main.fileframe.mollabel -text "Mol ID (PDB and PSF):"]
   #set CurrentMolEntry [ttk::entry $w.hlf.n.f1.main.fileframe.molentry -textvariable MDFFGUI::settings::MolID -width 10]
 
-  set CurrentMolMenuButton [menubutton $w.hlf.n.f1.main.fileframe.molmenubutton -textvar MDFFGUI::gui::MolMenuText -menu $w.hlf.n.f1.main.fileframe.molmenubutton.molmenu  -relief raised]
+  set CurrentMolMenuButton [ttk::menubutton $w.hlf.n.f1.main.fileframe.molmenubutton -textvar MDFFGUI::gui::MolMenuText -menu $w.hlf.n.f1.main.fileframe.molmenubutton.molmenu]
   set CurrentMolMenu [menu $w.hlf.n.f1.main.fileframe.molmenubutton.molmenu -tearoff no]
   
   #set_mol_text 
@@ -887,10 +887,10 @@ proc MDFFGUI::gui::mask_toggle {args} {
   variable MaskResInput
   variable MaskCutoffInput
 
-  if {$MDFFGUI::settings::Mask && $MaskResInput != "" && $MaskCutoffInput != ""} {
+  if {$MDFFGUI::settings::Mask && $MaskResInput != "" && $MaskCutoffInput != "" && [winfo exists ".add_density_xmdff"] } {
     $MaskResInput configure -state normal  
     $MaskCutoffInput configure -state normal  
-  } elseif {$MaskResInput != "" && $MaskCutoffInput != "" } {
+  } elseif {$MaskResInput != "" && $MaskCutoffInput != "" && [winfo exists ".add_density_xmdff"]} {
     $MaskResInput configure -state disabled 
     $MaskCutoffInput configure -state disabled  
   }
@@ -1473,8 +1473,6 @@ proc MDFFGUI::gui::mdff_setup {} {
       set gridoff "--gridoff"
     }
     
-    file copy -force $MDFFGUI::settings::CurrentPSFPath $MDFFGUI::settings::CurrentDir 
-    file copy -force $MDFFGUI::settings::CurrentPDBPath $MDFFGUI::settings::CurrentDir 
 
     
     MDFFGUI::gui::make_fixedpdb

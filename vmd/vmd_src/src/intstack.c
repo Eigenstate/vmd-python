@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: intstack.c,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.7 $      $Date: 2010/12/16 04:08:55 $
+ *      $Revision: 1.9 $      $Date: 2016/11/28 03:05:07 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -25,13 +25,13 @@
 #include "intstack.h"
 
 typedef struct {
-  int growthrate;
-  int size;
-  int top;
+  long growthrate;
+  long size;
+  long top;
   int *s;
 } intstack;
 
-IntStackHandle intstack_create(int size) {
+IntStackHandle intstack_create(long size) {
   intstack *s;
 
   s = (intstack *) malloc(sizeof(intstack));
@@ -65,7 +65,7 @@ int intstack_compact(IntStackHandle voidhandle) {
   intstack *s = (intstack *) voidhandle;
 
   if (s->size > (s->top + 1)) {
-    int newsize = s->top + 1;
+    long newsize = s->top + 1L;
     int *tmp = (int *) realloc(s->s, newsize * sizeof(int));
     if (tmp == NULL)
       return -1;
@@ -81,7 +81,7 @@ int intstack_push(IntStackHandle voidhandle, int i) {
 
   s->top++;
   if (s->top >= s->size) {
-    int newsize = s->size + s->growthrate; 
+    long newsize = s->size + s->growthrate; 
     int *tmp = (int *) realloc(s->s, newsize * sizeof(int));
     if (tmp == NULL) {
       s->top--;

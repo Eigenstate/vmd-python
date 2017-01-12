@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: cmd_mol.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.120 $       $Date: 2015/05/19 18:39:07 $
+ *      $Revision: 1.123 $       $Date: 2016/11/28 03:05:07 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -67,7 +67,7 @@ private:
       "Illegal molecule specification '%s': Could not\nfind molecule '%s'. ",
       fullname, errpart);
     Tcl_SetResult(interp, errmsg, TCL_VOLATILE);
-    delete errmsg;
+    delete [] errmsg;
   }
 
 public:
@@ -572,7 +572,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
         Tcl_GetInt(interp, argv[10], &zsize) != TCL_OK) {
       return TCL_ERROR;
     }
-    int size = xsize*ysize*zsize;
+    long size = xsize*ysize*zsize;
     data = new float[size];
    
     int ndata;

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: win32vmdstart.c,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.43 $      $Date: 2012/03/20 14:31:15 $
+ *      $Revision: 1.44 $      $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:

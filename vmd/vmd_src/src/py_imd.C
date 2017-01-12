@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_imd.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.17 $       $Date: 2011/02/04 17:49:39 $
+ *      $Revision: 1.18 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -109,7 +109,11 @@ static PyObject *transfer(PyObject *self, PyObject *args, PyObject *keywds) {
     app->commandQueue->runcommand(
       new CmdIMDRate(CmdIMDRate::TRANSFER, rate));
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->imdMgr->get_trans_rate());
+#else
   return PyInt_FromLong(app->imdMgr->get_trans_rate());
+#endif
 }
 
 // keep(rate): rate is optional, return current (new) value
@@ -128,7 +132,11 @@ static PyObject *keep(PyObject *self, PyObject *args, PyObject *keywds) {
     app->commandQueue->runcommand(
       new CmdIMDRate(CmdIMDRate::KEEP, rate));
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->imdMgr->get_keep_rate());
+#else
   return PyInt_FromLong(app->imdMgr->get_keep_rate());
+#endif
 }
 
 
@@ -174,7 +182,7 @@ static PyMethodDef methods[] = {
     (char *)"keep(rate = -1) -- set/get how often timesteps are saved "},
   {(char *)"copyunitcell", (PyCFunction)copyunitcell, METH_VARARGS,
     (char *)"copyunitcell(True/False) -- copy unitcell information from previous frame"},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
 #else
@@ -185,7 +193,23 @@ static PyMethodDef methods[] = {
 };
 #endif
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef imddef = {
+    PyModuleDef_HEAD_INIT,
+    "imd",
+    NULL,
+    -1,
+    methods,
+    NULL, NULL, NULL, NULL
+};
+
+PyMODINIT_FUNC PyInit_imd(void) {
+    PyObject *module = PyModule_Create(&imddef);
+    return module;
+}
+#else
 void initimd() {
   (void) Py_InitModule((char *)"imd", methods);
 }
+#endif
 

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -13,7 +13,7 @@
  *
  *	$RCSfile: MSMSInterface.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.52 $	$Date: 2010/12/16 04:08:21 $
+ *	$Revision: 1.54 $	$Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -255,7 +255,7 @@ int MSMSInterface::call_msms(float probe_radius, float density,
   vmdsock_write(msms_server,(char *)&mask2, sizeof(int));
   vmdsock_write(msms_server,(char *)&n, sizeof(int));
   for (int i=0; i<n; i++) {
-    vmdsock_write(msms_server,(char *)(xyzr+4*i) , 4*sizeof(float));
+    vmdsock_write(msms_server,(char *)(xyzr+4L*i) , 4L*sizeof(float));
 
     // If no flags passed, set a default
     if (flgs) {
@@ -361,8 +361,8 @@ void MSMSInterface::get_triangulated_ses(int component) {
   i1=get_blocking((char *)&ns, sizeof(int));
   if (i1 < 0) { close_server(MSMS_DIED); return; }
 
-  s1 = nf*5*sizeof(int);
-  s2 = ns*(6*sizeof(float) + sizeof(int));
+  s1 = nf*5L*sizeof(int);
+  s2 = ns*(6L*sizeof(float) + sizeof(int));
   
   max = (s2>s1) ? s2:s1;
   buffer = (char *)malloc(max*sizeof(char) + 1);
@@ -476,8 +476,8 @@ int MSMSInterface::compute_from_file(float probe_radius, float density,
   // write atom coordinates and radii to the file we send to MSMS 
   //
   for (int i=0; i<n; i++) {
-    fprintf(ofile, "%f %f %f %f\n", xyzr[4*i], xyzr[4*i+1], xyzr[4*i+2],
-        xyzr[4*i+3]);
+    fprintf(ofile, "%f %f %f %f\n", 
+            xyzr[4L*i], xyzr[4L*i+1], xyzr[4L*i+2], xyzr[4L*i+3]);
   }
   fclose(ofile);
 

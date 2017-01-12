@@ -1,5 +1,5 @@
 #
-# $Id: fftk_DihOpt.tcl,v 1.15 2015/05/04 14:23:37 mayne Exp $
+# $Id: fftk_DihOpt.tcl,v 1.17 2016/05/31 21:21:24 mayne Exp $
 #
 
 #======================================================
@@ -22,10 +22,10 @@ namespace eval ::ForceFieldToolKit::DihOpt {
     variable dihAllData
     variable dihAll
     variable weights
-    
+
     variable dihToFit
     variable currParData
-        
+
     variable outFreq
     variable globalCount
     variable kmax
@@ -37,11 +37,12 @@ namespace eval ::ForceFieldToolKit::DihOpt {
     variable saIter
     variable saTSteps
     variable saTExp
-    
+
     variable debug
     variable debugLog
     variable guiMode
-    
+    variable keepMMTraj
+
     variable refineParDataInput
     variable refineCutoff
     variable refineMode
@@ -51,7 +52,7 @@ namespace eval ::ForceFieldToolKit::DihOpt {
     variable refinesaTSteps
     variable refinesaIter
     variable refinesaTExp
-    
+
     variable fixScanned
 
 }
@@ -77,7 +78,7 @@ proc ::ForceFieldToolKit::DihOpt::init {} {
 
     variable dihToFit
     variable currParData
-    
+
     variable outFreq
     variable globalCount
     variable kmax
@@ -89,9 +90,10 @@ proc ::ForceFieldToolKit::DihOpt::init {} {
     variable saIter
     variable saTSteps
     variable saTExp
-    
+
     variable debug
     variable guiMode
+    variable keepMMTraj
 
     variable refineParDataInput
     variable refineCutoff
@@ -102,9 +104,9 @@ proc ::ForceFieldToolKit::DihOpt::init {} {
     variable refinesaTSteps
     variable refinesaIter
     variable refinesaTExp
-    
+
     variable fixScanned
-    
+
     # Initialize the variables
     set GlogFiles {}
     set psf {}
@@ -135,7 +137,8 @@ proc ::ForceFieldToolKit::DihOpt::init {} {
     set saTExp 3
     set debug 0
     set guiMode 1
-    
+    set keepMMTraj 0
+
     set refineParDataInput {}
     set refineKmax 3.0
     set refineCutoff 10.0
@@ -147,19 +150,19 @@ proc ::ForceFieldToolKit::DihOpt::init {} {
     set refinesaTExp 3
 
     set fixScanned 1
-    
+
 }
 #======================================================
 proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
     # runs a check on input data
-    
+
     # returns 1 if all input is sane
     # returns 0 if there are errors
-    
+
     # localize relevant variables
     variable psf
     variable pdb
-    variable parlist    
+    variable parlist
     variable namdbin
     variable outFileName
     variable GlogFiles
@@ -189,7 +192,7 @@ proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
     variable refinesaTExp
 
     variable debug
-    
+
     # local variables
     set errorList {}
     set errorText ""
@@ -203,11 +206,11 @@ proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
             # check psf
             if { $psf eq "" } { lappend errorList "No PSF file specified." } \
             else { if { ![file exists $psf] } { lappend errorList "Cannot find PSF file." } }
-            
+
             # check pdb
             if { $pdb eq "" } { lappend errorList "No PDB file specified." } \
             else { if { ![file exists $pdb] } { lappend errorList "Cannot find PDB file." } }
-            
+
             # make sure there is a parameter file
             # and that they exist
             if { [llength $parlist] == 0 } { lappend errorList "No parameter files were specified." } \
@@ -215,13 +218,13 @@ proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
                 foreach parFile $parlist {
                     if { ![file exists $parFile] } { lappend errorList "Cannot find prm file: $parFile." }
                 }
-            }     
-            
+            }
+
             # make sure namd2 command and/or file exists
             if { $namdbin eq "" } {
                 lappend errorList "NAMD binary file (or command if in PATH) was not specified."
             } else { if { [::ExecTool::find $namdbin] eq "" } { lappend errorList "Cannot find NAMD binary file." } }
-            
+
             # make sure that outFileName is set and user can write to output dir
             if { $outFileName eq "" } { lappend errorList "Output LOG file was not specified." } \
             else { if { ![file writable [file dirname $outFileName]] } { lappend errorList "Cannot write to output LOG directory." } }
@@ -236,7 +239,7 @@ proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
                     if { ![file exists $log] } { lappend errorList "Cannot find log file: $log." }
                 }
             }
-            
+
             # ----------------
             #  INPUT PAR DATA
             # ----------------
@@ -269,7 +272,7 @@ proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
                     if { [lindex $dih 1 3] != 0 && [lindex $dih 1 3] != 1 } { lappend errorList "Found inappropriate phase lock." }
                 }
             }
-            
+
             # -------------------
             #  ADVANCED SETTINGS
             # -------------------
@@ -290,15 +293,15 @@ proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
                     if { $saTExp eq "" || $saTExp < 0 || ![string is integer $saTExp] } { lappend errorList "Found inappropriate saTExp setting." }
                 }
             }
-            
+
             # output freq
             if { $outFreq eq "" || $outFreq < 0 || ![string is integer $outFreq] } { lappend errorList "Found inappropriate output frequency." }
-            
+
             # LOG FILE
             # make sure that the user can write to CWD
             if { ![file writable .] } { lappend errorList "Cannot write log file to CWD." }
         }
-        
+
         refine {
             # -------------------------------------
             #  VARIABLES THAT SHOULD BE PRE-LOADED
@@ -306,19 +309,19 @@ proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
             # check psf
             if { $psf eq "" } { lappend errorList "No PSF file specified." } \
             else { if { ![file exists $psf] } { lappend errorList "Cannot find PSF file." } }
-            
+
             # check pdb
             if { $pdb eq "" } { lappend errorList "No PDB file specified." } \
             else { if { ![file exists $pdb] } { lappend errorList "Cannot find PDB file." } }
-            
+
             # check EnQM and EnMM
             if { [llength $EnQM] == 0 } { lappend errorList "QME has not been loaded." }
             if { [llength $EnMM] == 0 } { lappend errorList "MMEi has not been loaded." }
             if { [llength $EnQM] != [llength $EnMM] } { lappend errorList "Mismatched QME and MMEi lists." }
-            
+
             # check dihAllData
             if { [llength $dihAllData] == 0 } { lappend errorList "Dihedral measurements have not been loaded." }
-            
+
             # ---------------------------
             #  REFINEMENT INPUT PAR DATA
             # ---------------------------
@@ -347,7 +350,7 @@ proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
                     # check lock
                 }
             }
-            
+
             # -------------------
             #  ADVANCED SETTINGS
             # -------------------
@@ -368,18 +371,18 @@ proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
                     if { $refinesaTExp eq "" || $refinesaTExp < 0 || ![string is integer $refinesaTExp] } { lappend errorList "Found inappropriate saTExp setting." }
                 }
             }
-            
+
             # output freq
             if { $outFreq eq "" || $outFreq < 0 || ![string is integer $outFreq] } { lappend errorList "Found inappropriate output frequency." }
-            
+
             # since we're not writing a standard log file, but may be writing a debug log
             # we will need to check that we have write permission to CWD
             if { $debug } {
-                if { ![file writable .] } { lappend errorList "Cannot write log file to CWD (debug log file)." }            
-            }        
+                if { ![file writable .] } { lappend errorList "Cannot write log file to CWD (debug log file)." }
+            }
         }
     }; # end switch
-    
+
 
 
     # if there is an error, tell the user about it
@@ -393,7 +396,7 @@ proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
             -icon warning \
             -message "Application halting due to the following errors:" \
             -detail $errorText
-        
+
         # there are errors, return the error response
         return 0
     }
@@ -404,7 +407,7 @@ proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
 #======================================================
 proc ::ForceFieldToolKit::DihOpt::optimize {} {
     # launches and controls the dihedral optimization
-    
+
     # variables
     variable outFile
     variable outFileName
@@ -417,10 +420,10 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
     variable pdb
     variable parDataInput
 ##    variable boundsInfo
-    
+
     variable namdbin
     variable parlist
-    
+
     variable QMdata
     variable MMdata
     variable EnQM
@@ -430,7 +433,7 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
     variable weights
     variable cutoff
     variable kmax
-    
+
     variable dihToFit
     variable currParData
 
@@ -443,11 +446,11 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
     variable saIter
     variable saTSteps
     variable saTExp
-    
-    
+
+
     variable fixScanned
-    
-    
+
+
 
     # -----
     # SETUP
@@ -456,25 +459,25 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
         # run a sanity check
         if { ![::ForceFieldToolKit::DihOpt::sanityCheck opt] } { return -1 }
     }
-    
+
     set outFile [open $outFileName w]
     if { $debug } {
         set debugLog [open "[file rootname $outFileName].debug.log" w]
         ::ForceFieldToolKit::DihOpt::printSettings $debugLog
     }
-    
+
     # -------
     # QM DATA
     # -------
     # parse Gaussian log files (QMdata)
     set QMdata [::ForceFieldToolKit::DihOpt::parseGlog $GlogFiles]
-    # in the form: {  {dih indicies (0-based)} currDihVal QME {xyz coords} ...  }    
+    # in the form: {  {dih indicies (0-based)} currDihVal QME {xyz coords} ...  }
     puts $outFile "QM data read from:"
     foreach log $GlogFiles {
         puts $outFile "\t$log"
     }
     flush $outFile
-    
+
     # Write the QMdata to the log file
     # this is important, as it may be read in for refinement routine
     puts $outFile "\nQMDATA"
@@ -483,22 +486,22 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
     }
     puts $outFile "END\n"
     flush $outFile
-    
+
     # load QM conformations into VMD
     ::ForceFieldToolKit::DihOpt::vmdLoadQMData $psf $pdb $QMdata
-    
-    
+
+
     # Identify dih indices in molecule for dihedral type definitions
     # that will be optimized (and require constraints during MM relaxation)
     set dihToFit [::ForceFieldToolKit::DihOpt::getMolecDihPar $psf $pdb $parDataInput]
     # in the form: {  {index def} {type def} { {k1 mult1 delta1 lock?} {k2 mult2 delta2 lock?} ...}  }
-    
+
     puts $outFile "\nDihedrals to be fit:"
     foreach dih $dihToFit {
         puts $outFile "$dih"
     }
     flush $outFile
-    
+
     # -------
     # MM DATA
     # -------
@@ -507,11 +510,11 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
     puts $outFile "\nPSF\n$psf\nEND"
     puts $outFile "\nPDB\n$pdb\nEND"
     flush $outFile
-    
+
     set MMdata [calcMM $psf $pdb $dihToFit $namdbin $parlist]
     # in the form:
     # { {MME1 MME2 ... MMEN } {dihAll array} }
-    
+
     # Write the MMdata to the log file
     # this is important, as it may be read in for refinement routine
     puts $outFile "\nMMDATA"
@@ -525,16 +528,16 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
         puts $outFile $ele
     }
     puts $outFile "END\n"
-    flush $outFile    
-    
+    flush $outFile
+
     # delete the loaded QM molecule set to reclaim memory
     mol delete top
-    
-    
+
+
     # ------------
     # OPTIMIZATION
     # ------------
-    
+
     # some setup
     # parse out QM energy (EnQM), MM energy (EnMM), and measured dihedral angles (dihAll)
     set EnQM {}; set EnMM {}; #set dihAll {}
@@ -545,21 +548,21 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
         #lappend dihAll [lindex $MMdata $i 1]
     }
     set dihAllData [lindex $MMdata 1]
-    
+
     # normalize the energies to the global minimum in each set
     set EnQM [::ForceFieldToolKit::DihOpt::renorm $EnQM]
     set EnMM [::ForceFieldToolKit::DihOpt::renorm $EnMM]
-    
+
     # set the weighting factors to ignore high energy (QME) conformations
     set weights {}
     for {set i 0} {$i < [llength $EnQM]} {incr i} {
         if {[lindex $EnQM $i] < $cutoff} {
-            lappend weights 1 
+            lappend weights 1
         } else {
             lappend weights 0
         }
     }
-    
+
     if { $debug } {
         puts $debugLog "\n==========================================="
         puts $debugLog " Optimization Setup"
@@ -571,8 +574,8 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
         }
         flush $debugLog
     }
-    
-    
+
+
     # setup bounds
     set bounds {}
     set init {}
@@ -674,7 +677,7 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
 #            }
 #        }
 #    }
-    
+
     if { $debug } {
         puts $debugLog "Initial State and Bounds:"
         puts $debugLog "\nInit\tLBound\tUBound:"
@@ -683,26 +686,26 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
         }
         flush $debugLog
     }
-    
-    
+
+
     # opt setup
     # reset the optimization step counter
     set globalCount 0
     if { $mode eq "downhill" } {
         set opt [optimization -downhill -tol $tol -function ::ForceFieldToolKit::DihOpt::optDih]
     } elseif { $mode eq "simulated annealing" } {
-        set opt [optimization -annealing -tol $tol -T $saT -iter $saIter -Tsteps $saTSteps -Texp $saTExp -function ::ForceFieldToolKit::DihOpt::optDih]        
+        set opt [optimization -annealing -tol $tol -T $saT -iter $saIter -Tsteps $saTSteps -Texp $saTExp -function ::ForceFieldToolKit::DihOpt::optDih]
     } else {
         if { $debug } {puts $debugLog "ERROR: Unsupported optimziation mode.  Currently \"downhill\" and \"simulated annealing\" are supported"; flush $debugLog }
         error "ERROR: Unsupported optimziation mode.  Currently \"downhill\" and \"simulated annealing\" are supported"
     }
-    
+
     $opt configure -bounds $bounds
     $opt initsimplex $init 1.0
-    
+
     # Run the optimization
     set result [$opt start]
-    
+
     if { $debug } {
         puts $debugLog "\n==========================="
         puts $debugLog " Optimization Results"
@@ -712,25 +715,25 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
         puts $debugLog "==========================="
         flush $debugLog
     }
-    
+
     # ---------
     # FINISH UP
     # ---------
-    
+
     # Since not every optimization iteration is written to the log file
     # we need to recalc the energy from the final (optimized) klist
-    
+
     # update the gui status
     if { $guiMode } {
         set ::ForceFieldToolKit::gui::doptStatus "Writing Final Energies"; update idletasks
     }
-    
+
     puts $outFile "\n================================================="
     puts $outFile "FINAL RMSE"
     puts $outFile "[lindex $result 1]"
     puts $outFile "END"
     flush $outFile
-    
+
     # write a header to the log file denoting that we're revisiting the optimized klist
     puts $outFile "\n================================================="
     puts $outFile "FINAL STEP ENERGIES"
@@ -750,26 +753,26 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
     }
     set EnMMf [::ForceFieldToolKit::DihOpt::renorm $EnMMf]
 
-    
+
     for {set i 0} {$i < [llength $EnQM]} {incr i} {
         set QMt [lindex $EnQM $i]
         set MMt [lindex $EnMM $i]
         set MMft [lindex $EnMMf $i]
         puts $outFile [format "%1.3f  %1.3f  %1.3f  %1.3f" $QMt $MMt $MMft [expr $QMt - $MMft] ]; flush $outFile
     }
-    
+
     puts $outFile "END"; flush $outFile
-    
+
     if { $debug } { puts $debugLog "\nQME, MMEi, MMEf written to log file"; flush $debugLog }
-   
+
     # write out final parameters in clearly formatted output to the log file
     # important for import into BuildPar
-    
+
     # update the gui status
     if { $guiMode } {
         set ::ForceFieldToolKit::gui::doptStatus "Writing Final Parameters"; update idletasks
     }
-    
+
     puts $outFile "\n\n================================================="
     puts $outFile "FINAL PARAMETERS"
     # prepare a formatted list of parameters
@@ -780,19 +783,19 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
     }
     puts $outFile "END\n"
     flush $outFile
-    
+
     # clean up
     close $outFile
-    
+
     if { $debug } {
         puts $debugLog "\n\nDONE"
         close $debugLog
     }
 
-    if { $guiMode } {  
+    if { $guiMode } {
         return [list [lindex $result 1] $EnMMf $finalParList]
     }
-    
+
 #    if { $guiMode } {
 #        # rebuild the finalParList with the phase lock settings
 #        set returnParList {}
@@ -806,20 +809,88 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
 
 }
 #======================================================
+proc ::ForceFieldToolKit::DihOpt::manualRefinementCalculation {inputPars} {
+    # Computes the MM PES and RMSE for the input parameter data
+    # Use for manual refinement of dihedral parameters
+
+    # localize relvant variables
+    # the following variables should have been set from the initial run
+    variable dihAllData
+    variable EnQM
+    variable EnMM
+    variable psf
+    variable pdb
+
+    # Take the cutoff from the refine section,
+    # which may or may not be what the user wants
+    variable refineCutoff
+
+    # cover the input parameters to parData format
+    set parData [::ForceFieldToolKit::DihOpt::getMolecDihPar $psf $pdb $inputPars]
+
+    # compute the dihedral energy based on input
+    set dihEnList [::ForceFieldToolKit::DihOpt::calcDihEnergy $dihAllData $parData]
+    # add the energy to the MMEi
+    set EnMMf {}
+    for {set i 0} {$i < [llength $dihEnList]} {incr i} {
+        lappend EnMMf [expr [lindex $dihEnList $i] + [lindex $EnMM $i]]
+    }
+    # normalize
+    set EnMMf [::ForceFieldToolKit::DihOpt::renorm $EnMMf]
+
+
+    # Compute RMSE (taken directly from optDih routine)
+    # build a weights list (used to ignore high energy QME conformations)
+    set weights {}
+    for {set i 0} {$i < [llength $EnQM]} {incr i} {
+        if {[lindex $EnQM $i] < $refineCutoff} {
+            lappend weights 1
+        } else {
+            lappend weights 0
+        }
+    }
+
+    # calculate c (constant that normalizes QM values to MM values)
+    # derived from dRMSE/dc = 0, it works out to weighted MM(AVG) - QM(AVG)
+    set EmAvg 0
+    set EqAvg 0
+    set sumWeights 0
+    for {set i 0} {$i < [llength $weights]} {incr i} {
+        set EmAvg [expr $EmAvg + [lindex $weights $i]*( [lindex $EnMM $i] + [lindex $dihEnList $i] )]
+        set EqAvg [expr $EqAvg + [lindex $weights $i]*[lindex $EnQM $i]]
+        set sumWeights [expr $sumWeights + [lindex $weights $i]]
+    }
+    set c [expr ($EmAvg - $EqAvg)/$sumWeights]
+
+    # RMSE = sqrt  ( wt sum (QME-MME+c)^2 / wt sum (1) )
+    set Obj 0
+    for {set i 0} {$i < [llength $weights]} {incr i} {
+        set QMt [lindex $EnQM $i]
+        set MMt [lindex $EnMM $i]
+        set MMft [lindex $EnMMf $i]
+        set Obj [expr $Obj + [lindex $weights $i]*pow($QMt - $MMt - [lindex $dihEnList $i] + $c,2)]
+    }
+
+    set Obj [expr sqrt($Obj/$sumWeights)]
+
+    # return the RMSE value and MM PES data
+    return [list $Obj $EnMMf]
+}
+#======================================================
 proc ::ForceFieldToolKit::DihOpt::refine {} {
     # refits dihedral parameters to QME and MMEi data that
     # was loaded during the initial fitting
     # hijacks DihOpt variables used in fitting
-    
+
     # localize necessary variables
-    
+
     # shared/preserved variables
     variable psf
     variable pdb
     variable EnQM
     variable EnMM
     variable dihAllData
-    
+
     # shared/hijacked variables
     variable weights
     variable dihToFit
@@ -829,7 +900,7 @@ proc ::ForceFieldToolKit::DihOpt::refine {} {
     variable globalCount
     variable guiMode
 ##    variable boundsInfo
-    
+
     # refinement variables
     variable refineParDataInput
     variable refineCutoff
@@ -843,12 +914,12 @@ proc ::ForceFieldToolKit::DihOpt::refine {} {
 #    variable kmax
 
     # SETUP
-    
+
     if { $guiMode } {
         # run a sanity check
         if { ![::ForceFieldToolKit::DihOpt::sanityCheck refine] } { return -1 }
     }
-    
+
     # we won't write logs for refinement
     switch [vmdinfo arch] {
       WIN64 -
@@ -864,17 +935,17 @@ proc ::ForceFieldToolKit::DihOpt::refine {} {
         set debugLog [open refineDih.debug.log w]
         ::ForceFieldToolKit::DihOpt::printSettings $debugLog
     }
-    
-    
+
+
     # build the parData template
     set dihToFit [::ForceFieldToolKit::DihOpt::getMolecDihPar $psf $pdb $refineParDataInput]
-    
+
     # setup the weights
     # set the weighting factors to ignore high energy (QME) conformations
     set weights {}
     for {set i 0} {$i < [llength $EnQM]} {incr i} {
         if {[lindex $EnQM $i] < $refineCutoff} {
-            lappend weights 1 
+            lappend weights 1
         } else {
             lappend weights 0
         }
@@ -898,7 +969,7 @@ proc ::ForceFieldToolKit::DihOpt::refine {} {
     # setup init
     # note: these are only used locally to setup the opt
     set init {}
-    
+
     # convert the parameter data to a linear list of force constants (klist)
     set output [::ForceFieldToolKit::DihOpt::pardata2klist $dihToFit]
     set klist [lindex $output 0]
@@ -949,27 +1020,27 @@ proc ::ForceFieldToolKit::DihOpt::refine {} {
         }
         flush $debugLog
     }
-    
-    
+
+
     # opt setup
     # reset the optimization step counter
     set globalCount 0
     if { $refineMode eq "downhill" } {
         set opt [optimization -downhill -tol $refineTol -function ::ForceFieldToolKit::DihOpt::optDih]
     } elseif { $refineMode eq "simulated annealing" } {
-        set opt [optimization -annealing -tol $refineTol -T $refinesaT -iter $refinesaIter -Tsteps $refinesaTSteps -Texp $refinesaTExp -function ::ForceFieldToolKit::DihOpt::optDih]        
+        set opt [optimization -annealing -tol $refineTol -T $refinesaT -iter $refinesaIter -Tsteps $refinesaTSteps -Texp $refinesaTExp -function ::ForceFieldToolKit::DihOpt::optDih]
     } else {
         if { $debug } {puts $debugLog "ERROR: Unsupported optimziation mode.  Currently \"downhill\" and \"simulated annealing\" are supported"; flush $debugLog }
         error "ERROR: Unsupported optimziation mode.  Currently \"downhill\" and \"simulated annealing\" are supported"
     }
-    
+
     $opt configure -bounds $bounds
     $opt initsimplex $init 1.0
-    
-    
+
+
     # RUN
     set result [$opt start]
-    
+
     if { $debug } {
         puts $debugLog "\n==========================="
         puts $debugLog " Optimization Results"
@@ -982,7 +1053,7 @@ proc ::ForceFieldToolKit::DihOpt::refine {} {
 
 
     # FINISH
-    
+
     # parse out the final klist
     set finalKlist [lindex $result 0]
     # convert the optimized klist to pardata
@@ -995,26 +1066,26 @@ proc ::ForceFieldToolKit::DihOpt::refine {} {
         lappend EnMMf [expr {[lindex $EnMM $i] + [lindex $finalDihEnList $i]}]
     }
     set EnMMf [::ForceFieldToolKit::DihOpt::renorm $EnMMf]
-    
+
     # build the final parameter list
     set finalParList [::ForceFieldToolKit::DihOpt::prepDihPar $dihToFit $finalKlist]
-        
+
     # clean up
     close $outFile
     if { $debug } {
         puts $debugLog "\n\nDONE"
         close $debugLog
     }
-     
+
     return [list [lindex $result 1] $EnMMf $finalParList]
-    
+
 }
 #======================================================
 proc ::ForceFieldToolKit::DihOpt::optDih { kDihs } {
     # the target function of the optimization routine
     # pass in a list of dihedral force constants (klist)
     # returns an objective value
-    
+
     # localize required variables
     variable EnQM; # normalized QM energies
     variable EnMM; # normalized relaxed MM energies
@@ -1025,10 +1096,10 @@ proc ::ForceFieldToolKit::DihOpt::optDih { kDihs } {
     variable debug; # switch for debug logging
     variable debugLog; # file handle for debug log
     variable guiMode; # determines if running from gui
-    
+
     variable globalCount; # counts optimizer steps
     variable outFreq; # determines how often data is written to the log file
-        
+
     # reset the parData with the new k values
     set currParData [::ForceFieldToolKit::DihOpt::klist2pardata $dihToFit $kDihs]
 
@@ -1036,7 +1107,7 @@ proc ::ForceFieldToolKit::DihOpt::optDih { kDihs } {
          set ::ForceFieldToolKit::gui::doptStatus "Running Optimization (iter: $globalCount)"
          update idletasks
     }
-    
+
     if { $debug && $globalCount % $outFreq == 0 } {
         puts $debugLog "\nCurrent Optimizer Iteration: $globalCount"
         puts $debugLog "Current parameter data:"
@@ -1045,7 +1116,7 @@ proc ::ForceFieldToolKit::DihOpt::optDih { kDihs } {
         }
         flush $debugLog
     }
-    
+
     # write the current parameters to the logfile
     if { $globalCount % $outFreq == 0} {
         puts $outFile "step $globalCount  Current params (type kdih mult delta): "; flush $outFile
@@ -1058,11 +1129,11 @@ proc ::ForceFieldToolKit::DihOpt::optDih { kDihs } {
             }
         }
     }
-    
+
     # calculate the isolated dihedral energies
     set EnMMf {}
     set dihEnList [::ForceFieldToolKit::DihOpt::calcDihEnergy $dihAllData $currParData]
-    
+
     # add to the relaxed total MM energy
     for {set i 0} {$i < [llength $dihEnList]} {incr i} {
         lappend EnMMf [expr [lindex $dihEnList $i] + [lindex $EnMM $i]]
@@ -1087,7 +1158,7 @@ proc ::ForceFieldToolKit::DihOpt::optDih { kDihs } {
         puts $outFile "c: $c"
         puts $outFile "QME   MME(i)   MME(f)   QME-MME(f)"; flush $outFile
     }
-    
+
     # calculate RMSE
     # RMSE = sqrt  ( wt sum (QME-MME+c)^2 / wt sum (1) )
     set Obj 0
@@ -1102,19 +1173,19 @@ proc ::ForceFieldToolKit::DihOpt::optDih { kDihs } {
             puts $outFile [format "%1.3f  %1.3f  %1.3f  %1.3f" $QMt $MMt $MMft [expr $QMt - $MMft] ]; flush $outFile
         }
     }
-    
+
     set Obj [expr sqrt($Obj/$sumWeights)]
 
     # write obj to log file
     if { $globalCount % $outFreq == 0} {
         puts $outFile "Current RMSE: $Obj\n\n"; flush $outFile
     }
-    
+
     if { $debug && $globalCount % $outFreq == 0 } {
         puts $debugLog "Current Value for RMSE/Obj: $Obj"
         flush $debugLog
     }
-    
+
     # advance the optimizer count
     incr globalCount
 
@@ -1128,7 +1199,7 @@ proc ::ForceFieldToolKit::DihOpt::parseGlog { inputFiles } {
     #   0. indices for scanned dih (converted to 0-based indices)
     #   1. energy at current conformation (converted to kcal/mol)
     #   2. xyz coordinates of current conformation
-    
+
     # returns a list with the above items for each step of all passed log files
     # {
     #   { {indicies} {QM energy} {coordinates} }
@@ -1136,16 +1207,16 @@ proc ::ForceFieldToolKit::DihOpt::parseGlog { inputFiles } {
     # }
 
     # inputFiles = Gaussian log files
-    
+
     # localize forcefieldtoolkit debugging variables
     variable debug
     variable debugLog
     variable guiMode
-    
+
     # init proc-wide variables
     set GlogData {}
     set currLogNum 1; set logCount [llength $inputFiles]
-    
+
     if { $debug } {
         puts $debugLog "\n==========================================="
         puts $debugLog "       Parsing Gaussian Log Data"
@@ -1155,7 +1226,7 @@ proc ::ForceFieldToolKit::DihOpt::parseGlog { inputFiles } {
     }
 
     foreach GlogFile $inputFiles {
-        
+
         # if running from the GUI, update the status
         if { $guiMode } {
             set ::ForceFieldToolKit::gui::doptStatus "Parsing QM Log ${currLogNum} of ${logCount}"
@@ -1238,7 +1309,7 @@ proc ::ForceFieldToolKit::DihOpt::parseGlog { inputFiles } {
                     # add the collected information to the master list
                     # lappend GlogData [list $scanDihInds $currDihVal $currEnergy $currCoords]
                     lappend tempGlogData [list $scanDihInds $currDihVal $currEnergy $currCoords]
-                    
+
                     if { $debug } {
                         puts $debugLog "$scanDihInds\t$currDihVal\t$currEnergy"
                         flush $debugLog
@@ -1246,14 +1317,14 @@ proc ::ForceFieldToolKit::DihOpt::parseGlog { inputFiles } {
                 }
             }; # end of line parse (switch)
         }; # end of cycling through Glog lines (while)
-        
+
         # if the Gaussian log file runs the scan in negative direction, reverse the order of entries
         # if not explicitely in the negative direction, preserve the order of entries
         if { [lsearch -exact [split $GlogFile \.] "neg"] != -1 } {
             foreach ele [lreverse $tempGlogData] { lappend GlogData $ele }
         } else {
             foreach ele $tempGlogData { lappend GlogData $ele }
-        }        
+        }
 
         # clean up
         close $infile
@@ -1272,16 +1343,16 @@ proc ::ForceFieldToolKit::DihOpt::getMolecDihPar { psfFile pdbFile parinput } {
     # {
     #   {indices} {type def} { {k1 mult1 delta1 lock?} {k2 mult2 delta2 lock?} ...}
     # }
-    
+
     # note: parinput is of form:
     # {
     #   {type def} {k mult delta lock?}
     # }
-    
+
     # localize debugging variables
     variable debug
     variable debugLog
-    
+
     if { $debug } {
         puts $debugLog "\n==========================================="
         puts $debugLog "        Dihedral definitions to be"
@@ -1289,23 +1360,23 @@ proc ::ForceFieldToolKit::DihOpt::getMolecDihPar { psfFile pdbFile parinput } {
         puts $debugLog "==========================================="
         flush $debugLog
     }
-    
+
     # initialize our return list
     set returnList {}
-    
+
     # build an array that matches typedef to parameter set (e.g., {k mult delta lock?})
     foreach entry $parinput {
         lappend dihArray([lindex $entry 0]) [lindex $entry 1]
     }
 
     # load the molecule of interest
-    mol new $psfFile  
+    mol new $psfFile
     mol addfile $pdbFile
 
     # retype (required until VMD/PSFGen is fixed to support CGenFF type names)
     # reTypeFromPSF/reChargeFromPSF has been depreciated
     #::ForceFieldToolKit::SharedFcns::reTypeFromPSF $psfFile "top"
-    
+
     # find all dihedral index definitions and cycle through them
     set indDefList [topo getdihedrallist]
 
@@ -1317,7 +1388,7 @@ proc ::ForceFieldToolKit::DihOpt::getMolecDihPar { psfFile pdbFile parinput } {
             lappend typeDef [$temp get type]
             $temp delete
         }
-               
+
         # test forward and reverse type definitions for a match in the typedef array
         # this matches index def and type def to dih parameter data
         # if present, then we will add to the list of dihedrals required
@@ -1353,7 +1424,7 @@ proc ::ForceFieldToolKit::DihOpt::vmdLoadQMData { psfFile pdbFile GlogData } {
     # cycle through each optimized structure, add a file
     foreach optStruct $GlogData {
 
-        # load a new frame 
+        # load a new frame
         mol addfile $pdbFile
 
         # make sure that the number of atoms in the pdb file matches the number
@@ -1385,16 +1456,17 @@ proc ::ForceFieldToolKit::DihOpt::calcMM { psfFile pdbFile toFit namdbin parlist
     # the remainder of the molecule is minimized to prevent unrelated differences in
     # QM minimized and MM minimized conformations from poluting the dihedral terms
     # of interest
-    
+
     # NOTE: assumes that all QM frames have been loaded into top
 
     # returns a list of MMenergy and measured dihedral values to be fit
-    
+
     # localize variables
     variable debug
     variable debugLog
     variable guiMode
-    
+    variable keepMMTraj
+
     # special case
     variable fixScanned
     variable QMdata
@@ -1404,7 +1476,7 @@ proc ::ForceFieldToolKit::DihOpt::calcMM { psfFile pdbFile toFit namdbin parlist
     foreach ele $toFit {
         lappend toFitInds [lindex $ele 0]
     }
-    
+
     # write a temporary parameter file to zero out parameters for each dih (all common mults)
     # this is to protect against dih par definitions that we wish to optimize, but might
     # be present in other parameter files in the parlist
@@ -1441,7 +1513,7 @@ proc ::ForceFieldToolKit::DihOpt::calcMM { psfFile pdbFile toFit namdbin parlist
     # add a new psf file, to which minimized coordinates will be
     # added for each namdEnergy calculation
     mol new $psfFile
-    
+
     # cycle through each of the QMdata conformations
     if { $debug } {
         puts $debugLog "\n==========================================="
@@ -1453,7 +1525,7 @@ proc ::ForceFieldToolKit::DihOpt::calcMM { psfFile pdbFile toFit namdbin parlist
     set MMdata {}
     array set MMdihs {}
     for {set i 0} {$i < [molinfo [$all molid] get numframes]} {incr i} {
-    
+
         # update the gui status label
         if { $guiMode } {
             set ::ForceFieldToolKit::gui::doptStatus "Calculating relaxed MME ([expr {$i+1}]/[molinfo [$all molid] get numframes])"
@@ -1462,14 +1534,14 @@ proc ::ForceFieldToolKit::DihOpt::calcMM { psfFile pdbFile toFit namdbin parlist
 
         $all frame $i
         $all writepdb temp.pdb
- 
+
         # write and extrabonds file to fix the dihedrals that are to be fit
         set ebfile [open "extrabonds.txt" w]
-        foreach dihed $toFitInds {  
+        foreach dihed $toFitInds {
             set dih [measure dihed $dihed molid [$all molid] frame $i]
             puts $ebfile "dihedral $dihed 10000. $dih"
         }
-        
+
         # add scanned dihedral to extrabonds file if flagged to do so (default)
         # this is only relevant when scanned dihedral is NOT being fitted
         if { $fixScanned } {
@@ -1478,9 +1550,9 @@ proc ::ForceFieldToolKit::DihOpt::calcMM { psfFile pdbFile toFit namdbin parlist
             puts $ebfile "dihedral $scanDihed 10000. $scanDih"
         }
         close $ebfile
-        
+
         # run the namd minimization
-        ::ExecTool::exec $namdbin $name.conf 
+        ::ExecTool::exec $namdbin $name.conf
         # load the minimized coordinates (psf was loaded above)
         mol addfile $name.coor
 
@@ -1491,7 +1563,7 @@ proc ::ForceFieldToolKit::DihOpt::calcMM { psfFile pdbFile toFit namdbin parlist
 
         # measure dihedral angles of dihedrals being fit
         set toFitDihValues {}
-        foreach dihed $toFitInds {  
+        foreach dihed $toFitInds {
             set dih [measure dihed $dihed molid [$sel molid]]
             lappend toFitDihValues $dih
             lappend MMdihs($dihed) $dih
@@ -1500,13 +1572,16 @@ proc ::ForceFieldToolKit::DihOpt::calcMM { psfFile pdbFile toFit namdbin parlist
         # add the data for this conformation to the MMdata list
         #lappend MMdata [list $MME $toFitDihValues ]
         lappend MMdata $MME
-        
+
         if { $debug } { puts $debugLog "$MME\t$toFitDihValues"; flush $debugLog }
 
         # clean up before next minimization
-        animate delete beg [expr [molinfo top get numframes] -1]
+        $sel delete
+        if { !$keepMMTraj } {
+            animate delete beg [expr [molinfo top get numframes] -1]
+        }
     }
-    
+
     if { $debug } {
         puts $debugLog "\n==========================================="
         puts $debugLog "           (new) dihAll array:"
@@ -1517,6 +1592,13 @@ proc ::ForceFieldToolKit::DihOpt::calcMM { psfFile pdbFile toFit namdbin parlist
     }
 
     # cleanup
+    if { $keepMMTraj } {
+        variable outFileName
+        set outDir [file dirname [file normalize $outFileName]]
+        if { [file exists $outDir] && [file isdirectory $outDir] && [file writable $outDir] } {
+            animate write dcd MM_scan_conformations.dcd top
+        }
+    }
     mol delete top
     file delete $name.conf
     file delete $name.log
@@ -1543,14 +1625,14 @@ proc ::ForceFieldToolKit::DihOpt::renorm { dataset } {
     foreach ele $dataset {
         if { $ele < $min } {
             set min $ele
-        } 
+        }
     }
-    
+
     # shift all data
     foreach ele $dataset {
         lappend renormData [expr $ele - $min]
     }
-    
+
     # return
     return $renormData
 }
@@ -1577,7 +1659,7 @@ proc ::ForceFieldToolKit::DihOpt::pardata2klist { parData } {
             lappend boundsList [list [lindex $paramSet 2] [lindex $paramSet 3]]
         }
     }
-    
+
     return [list $kList $boundsList]
 }
 #======================================================
@@ -1594,7 +1676,7 @@ proc ::ForceFieldToolKit::DihOpt::klist2pardata { parData kList } {
     #   ...
     #         0         1             2,0                 2,1        2,X
     # }
- 
+
     set uniqueTypes [lsort -unique -index 1 $parData]
     # count keeps track of position in klist to match the linear
     # klist to the nexted parameter sets in parData
@@ -1603,7 +1685,7 @@ proc ::ForceFieldToolKit::DihOpt::klist2pardata { parData kList } {
     # match the k values to dihedrals with unique typedefs
     foreach ele $uniqueTypes {
         foreach paramSet [lindex $ele 2] {
-            set delta 0.0   
+            set delta 0.0
             set curK [lindex $kList $count]
             if {$curK < 0} {
                 set curK [expr abs($curK)]
@@ -1624,13 +1706,13 @@ proc ::ForceFieldToolKit::DihOpt::klist2pardata { parData kList } {
         lappend parDataNew [list [lindex $ele 0] [lindex $ele 1] [lindex $uniqueTypesNew $ind 2]]
     }
 
-    # return    
-    return $parDataNew    
+    # return
+    return $parDataNew
 }
 #======================================================
 proc ::ForceFieldToolKit::DihOpt::prepDihPar { parData {kDihs {}} } {
     # build a list of dih parameter entries
-    # convert the klist back to parData format    
+    # convert the klist back to parData format
 
     if { [llength $kDihs] > 0} {
         set parData [::ForceFieldToolKit::DihOpt::klist2pardata $parData $kDihs]
@@ -1660,20 +1742,20 @@ proc ::ForceFieldToolKit::DihOpt::prepDihPar { parData {kDihs {}} } {
     }
 
     # return
-    return $parList    
+    return $parList
 }
 #======================================================
 proc ::ForceFieldToolKit::DihOpt::calcDihEnergyORIG { dihAll parData } {
     # calculates MM energy for dihedral angles that are being optimized
-    
+
     # dihAll has the form:
     # { {dih1 dih2 dih3 ... dihN} {dih1 dih2 dih3 ... dihN} ... }
     # each element contains measured dihedral angle for each dih being optimized
     # each element represents a conformation scanned by QM
-    
+
     # parData has the form:
     # { {indices} {type def} { {params1} {params2} ...} }
-    
+
     set PI 3.14159265359
 
     # loop over conformations
@@ -1701,19 +1783,19 @@ proc ::ForceFieldToolKit::DihOpt::calcDihEnergyORIG { dihAll parData } {
 #======================================================
 proc ::ForceFieldToolKit::DihOpt::calcDihEnergy { dihAll parData } {
     # calculates MM energy for dihedral angles that are being optimized
-    
+
     # dihAll is the array of the form:
     # {
     #   { {index def} {frame1 frame2 ...} }
     # }
     # each key represents a dihedral index definition
     # each value represents dihedral value for the key for a conformation scanned by QM
-        
+
     # parData has the form:
     # { {indices} {type def} { {params1} {params2} ...} }
-    
+
     set PI 3.14159265359
-    
+
     # rebuild the dihedrals array
     array set dihVals {}
     array set dihVals $dihAll
@@ -1746,7 +1828,7 @@ proc ::ForceFieldToolKit::DihOpt::calcDihEnergy { dihAll parData } {
 #======================================================
 proc ::ForceFieldToolKit::DihOpt::printSettings { printFile } {
     # prints the Dihedral Optimization Settings to file
-    
+
     # Input
     puts $printFile "Settings for Dihedral Optimization"
     puts $printFile "PSF: $::ForceFieldToolKit::DihOpt::psf"
@@ -1757,25 +1839,25 @@ proc ::ForceFieldToolKit::DihOpt::printSettings { printFile } {
     }
     puts $printFile "namdbin: $::ForceFieldToolKit::DihOpt::namdbin"
     puts $printFile "output LOG: $::ForceFieldToolKit::DihOpt::outFileName"
-    
+
     # QM Target Data
     puts $printFile "Gaussian Log Files:"
     foreach lfile $::ForceFieldToolKit::DihOpt::GlogFiles {
         puts $printFile "\t$lfile"
     }
-    
+
     # Dihedral Parameter Settings
     puts $printFile "parDataInput:"
     foreach entry $::ForceFieldToolKit::DihOpt::parDataInput {
         puts $printFile "\t$entry"
     }
-    
+
 ##    # Bounds info
 ##    puts $printFile "BoundsInfo:"
 ##    foreach ele [array names ::ForceFieldToolKit::DihOpt::boundsInfo] {
 ##        puts $printFile "\t$ele -- $::ForceFieldToolKit::DihOpt::boundsInfo($ele)"
 ##    }
-    
+
     # Advanced Settings
     puts $printFile "Kmax: $::ForceFieldToolKit::DihOpt::kmax"
     puts $printFile "Energy Cutoff: $::ForceFieldToolKit::DihOpt::cutoff"
@@ -1787,16 +1869,16 @@ proc ::ForceFieldToolKit::DihOpt::printSettings { printFile } {
     puts $printFile "SA T Exp: $::ForceFieldToolKit::DihOpt::saTExp"
     puts $printFile "debug: $::ForceFieldToolKit::DihOpt::debug"
     puts $printFile "outFreq: $::ForceFieldToolKit::DihOpt::outFreq"
-    
+
     puts $printFile ""
-    
+
     flush $printFile
-    
+
 }
 #======================================================
 proc ::ForceFieldToolKit::DihOpt::buildScript { scriptFileName } {
     # builds a script that can be run from text mode
-    
+
     # need to localize variables
     # input
     variable psf
@@ -1804,12 +1886,12 @@ proc ::ForceFieldToolKit::DihOpt::buildScript { scriptFileName } {
     variable parlist
     variable namdbin
     variable outFileName
-    
+
     # qm target data
     variable GlogFiles
-    
+
     # dihedral parameter settings
-    variable parDataInput    
+    variable parDataInput
 
     # advanced settings
     variable kmax
@@ -1823,10 +1905,10 @@ proc ::ForceFieldToolKit::DihOpt::buildScript { scriptFileName } {
     variable debug
     variable outFreq
     variable fixScanned
-    
+
     # build the script
     set scriptFile [open $scriptFileName w]
-    
+
     # load required packages
     puts $scriptFile "\# Load the ffTK package"
     puts $scriptFile "package require forcefieldtoolkit"
@@ -1834,10 +1916,10 @@ proc ::ForceFieldToolKit::DihOpt::buildScript { scriptFileName } {
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::psf $psf"
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::pdb $pdb"
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::parlist [list $parlist]"
-    puts $scriptFile "set ::ForceFieldToolKit::DihOpt::namdbin $namdbin"    
-    puts $scriptFile "set ::ForceFieldToolKit::DihOpt::outFileName $outFileName"    
-    puts $scriptFile "set ::ForceFieldToolKit::DihOpt::GlogFiles [list $GlogFiles]"    
-    puts $scriptFile "set ::ForceFieldToolKit::DihOpt::parDataInput [list $parDataInput]"    
+    puts $scriptFile "set ::ForceFieldToolKit::DihOpt::namdbin $namdbin"
+    puts $scriptFile "set ::ForceFieldToolKit::DihOpt::outFileName $outFileName"
+    puts $scriptFile "set ::ForceFieldToolKit::DihOpt::GlogFiles [list $GlogFiles]"
+    puts $scriptFile "set ::ForceFieldToolKit::DihOpt::parDataInput [list $parDataInput]"
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::kmax $kmax"
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::cutoff $cutoff"
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::mode [list $mode]"
@@ -1847,17 +1929,17 @@ proc ::ForceFieldToolKit::DihOpt::buildScript { scriptFileName } {
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::saTSteps $saTSteps"
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::saTExp $saTExp"
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::debug $debug"
-    puts $scriptFile "set ::ForceFieldToolKit::DihOpt::outFreq $outFreq"    
-    
+    puts $scriptFile "set ::ForceFieldToolKit::DihOpt::outFreq $outFreq"
+
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::guiMode 0"
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::fixScanned $fixScanned"
-    
+
     # launch the optimization
     puts $scriptFile "\n\# Run the optimization"
     puts $scriptFile "::ForceFieldToolKit::DihOpt::optimize"
     puts $scriptFile "\n\# Return gracefully"
     puts $scriptFile "return 1"
-    
+
     # wrap up
     close $scriptFile
     return

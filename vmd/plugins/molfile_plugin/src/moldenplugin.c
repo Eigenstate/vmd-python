@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: moldenplugin.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.37 $       $Date: 2013/04/13 03:43:33 $
+ *      $Revision: 1.40 $       $Date: 2016/11/28 05:01:54 $
  *
  ***************************************************************************/
 
@@ -105,7 +105,7 @@ static void *open_molden_read(const char *filename,
                               const char *filetype,
                               int *natoms) {
   FILE *fd;
-  qmdata_t *data;
+  qmdata_t *data = NULL;
   moldendata_t *moldendata;
   char buffer[1024];
   char keystring[20];
@@ -1304,7 +1304,7 @@ VMDPLUGIN_API int VMDPLUGIN_init() {
   plugin.prettyname = "Molden";
   plugin.author = "Markus Dittrich, Jan Saam, Alexey Titov";
   plugin.majorv = 0;
-  plugin.minorv = 9;
+  plugin.minorv = 10;
   plugin.is_reentrant = VMDPLUGIN_THREADSAFE;
   plugin.filename_extension = "molden";
   plugin.open_file_read = open_molden_read;

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_material.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.25 $       $Date: 2015/05/20 20:23:48 $
+ *      $Revision: 1.26 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -35,7 +35,11 @@ static PyObject *listall(PyObject *self, PyObject *args) {
   MaterialList *mlist = get_vmdapp()->materialList;
   PyObject *newlist = PyList_New(0);
   for (int i=0; i<mlist->num(); i++) 
+#if PY_MAJOR_VERSION >= 3
+    PyList_Append(newlist, PyUnicode_FromString(mlist->material_name(i)));
+#else
     PyList_Append(newlist, PyString_FromString(mlist->material_name(i)));
+#endif
 
   return newlist;
 }
@@ -118,7 +122,11 @@ static PyObject *add(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Unable to add material.");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyBytes_FromString((char *)result);
+#else
   return PyString_FromString((char *)result);
+#endif
 }
 
 // delete('name').
@@ -227,12 +235,28 @@ static PyMethodDef methods[] = {
   {(char *)"rename", (vmdPyMethod)rename, METH_VARARGS },
   {(char *)"change", (PyCFunction)change, METH_VARARGS | METH_KEYWORDS },
   {(char *)"default", (vmdPyMethod)set_default, METH_VARARGS },
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef materialdef = {
+    PyModuleDef_HEAD_INIT,
+    "material",
+    NULL,
+    -1,
+    methods,
+    NULL, NULL, NULL, NULL
+};
+
+PyMODINIT_FUNC PyInit_material(void) {
+    PyObject *m = PyModule_Create(&materialdef);
+    return m;
+}
+#else
 void initmaterial() {
   (void) Py_InitModule((char *)"material", methods);
 }
+#endif
 
  
 

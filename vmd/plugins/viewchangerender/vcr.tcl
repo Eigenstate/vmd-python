@@ -1,6 +1,6 @@
 # view_change_render.tcl
 #
-# $Id: vcr.tcl,v 1.22 2014/03/20 16:31:39 johns Exp $
+# $Id: vcr.tcl,v 1.24 2016/02/18 22:38:36 johns Exp $
 #
 # Johan Strumpfer, Barry Isralewitz, Jordi Cohen
 # Oct 2003; updated Feb 2007; updated Mar 2012
@@ -69,7 +69,7 @@
 package require vmdmovie
 # need util package for quaternions
 package require utilities
-package provide viewchangerender 1.7
+package provide viewchangerender 1.8
 
 namespace eval ::VCR:: {
     proc checkRepChangesTrace { } {
@@ -306,7 +306,14 @@ proc ::VCR::save_vp {view_num {mol top}} {
   set viewpoints($view_num,1) [molinfo $mol get center_matrix]
   set viewpoints($view_num,2) [molinfo $mol get scale_matrix]
   set viewpoints($view_num,3) [molinfo $mol get global_matrix]
-  set viewpoints($view_num,4) [molinfo $mol get frame]
+
+  # range test frame, since we can get a -1 from molecules that
+  # have no trajectory data (e.g. volumetric only)
+  set curframenum [molinfo $mol get frame]
+  if { $curframenum < 0 } {
+    set curframenum 0
+  }
+  set viewpoints($view_num,4) $curframenum
 
   ::VCR::save_molrepstate $view_num
 
@@ -534,13 +541,19 @@ proc ::VCR::retrieve_vp {view_num} {
       molinfo $mol set scale_matrix    $viewpoints($view_num,2)
       molinfo $mol set global_matrix   $viewpoints($view_num,3)
 
-      # XXX only do a 'goto' if we absolutely have to
       set newtrjframe [expr int($viewpoints($view_num,4))]
+
+      # range test frame, since we can get a -1 from molecules that
+      # have no trajectory data (e.g. volumetric only)
+      if { $newtrjframe < 0 } {
+        set newtrjframe 0 
+      }
+
+      # only do a 'goto' if we absolutely have to
       if { $forcetrjgoto || ($curtrjframe != $newtrjframe) } {
         animate goto $newtrjframe
         set curtrjframe $newtrjframe
       }  
-#      animate goto [expr int($viewpoints($view_num,4))]
     } else {
       puts "VCR) View $view_num was not saved"
     }
@@ -740,6 +753,14 @@ proc ::VCR::move_vp_increment {} {
       lappend ::VCR::current [molinfo $mol get scale_matrix ]
       lappend ::VCR::current [molinfo $mol get global_matrix]
       lappend ::VCR::current [molinfo $mol get frame]
+      # range test frame, since we can get a -1 from molecules that
+      # have no trajectory data (e.g. volumetric only)
+      set curframenum [molinfo $mol get frame]
+      if { $curframenum < 0 } {
+        set curframenum 0
+      }
+      lappend ::VCR::current $curframenum
+
       #changed to use quaternions
       #set euler [matrix_to_euler [lindex $::VCR::current 0]]
       for {set i 0} {$i < 4} {incr i} {
@@ -760,20 +781,20 @@ proc ::VCR::move_vp_increment {} {
       if {$::VCR::framestep == 1 && $mol == $topmol} {
         set f [expr $::VCR::finalframe - ([lindex $::VCR::move 4] * $::VCR::tracking) ]
 
-        # XXX only do a 'goto' if we absolutely have to
         set newtrjframe [expr $f]
+
+        # range test frame, since we can get a -1 from molecules that
+        # have no trajectory data (e.g. volumetric only)
         if { $newtrjframe < 0 } {
           set newtrjframe 0
         }
+
+        # only do a 'goto' if we absolutely have to
         if { $forcetrjgoto || ($curtrjframe != $newtrjframe) } {
           animate goto $newtrjframe
           set curtrjframe $newtrjframe
         }  
-#        if { $f > 0 } {
-#            animate goto [expr $f]           
-#        } else {
-#            animate goto 0
-#        }
+
         if { $::VCR::repchanges == 1 && [llength $::VCR::move] > 5 } {
             set repmove [lindex $::VCR::move 5]
             foreach r $repmove {

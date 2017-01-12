@@ -336,10 +336,14 @@ static int topo_mol_add_atom(topo_mol *mol, topo_mol_atom_t **atoms,
     atomtmp->dihedrals = 0;
     atomtmp->impropers = 0;
     atomtmp->cmaps = 0;
+    atomtmp->exclusions = 0;
     atomtmp->conformations = 0;
     atomtmp->x = 0;
     atomtmp->y = 0;
     atomtmp->z = 0;
+    atomtmp->vx = 0;
+    atomtmp->vy = 0;
+    atomtmp->vz = 0;
     atomtmp->xyz_state = TOPO_MOL_XYZ_VOID;
     atomtmp->partition = 0;
     atomtmp->atomid = 0;
@@ -401,6 +405,14 @@ topo_mol_cmap_t * topo_mol_cmap_next(
   return 0;
 }
 
+topo_mol_exclusion_t * topo_mol_exclusion_next(
+		topo_mol_exclusion_t *tuple, topo_mol_atom_t *atom) {
+  if ( tuple->atom[0] == atom ) return tuple->next[0];
+  if ( tuple->atom[1] == atom ) return tuple->next[1];
+  return 0;
+}
+
+
 static topo_mol_conformation_t * topo_mol_conformation_next(
 		topo_mol_conformation_t *tuple, topo_mol_atom_t *atom) {
   if ( tuple->atom[0] == atom ) return tuple->next[0];
@@ -416,6 +428,7 @@ static void topo_mol_destroy_atom(topo_mol_atom_t *atom) {
   topo_mol_dihedral_t *dihetmp;
   topo_mol_improper_t *imprtmp;
   topo_mol_cmap_t *cmaptmp;
+  topo_mol_exclusion_t *excltmp;
   topo_mol_conformation_t *conftmp;
   if ( ! atom ) return;
   for ( bondtmp = atom->bonds; bondtmp;
@@ -437,6 +450,10 @@ static void topo_mol_destroy_atom(topo_mol_atom_t *atom) {
   for ( cmaptmp = atom->cmaps; cmaptmp;
 		cmaptmp = topo_mol_cmap_next(cmaptmp,atom) ) {
     cmaptmp->del = 1;
+  }
+  for ( excltmp = atom->exclusions; excltmp;
+		excltmp = topo_mol_exclusion_next(excltmp,atom) ) {
+    excltmp->del = 1;
   }
   for ( conftmp = atom->conformations; conftmp;
 		conftmp = topo_mol_conformation_next(conftmp,atom) ) {
@@ -843,20 +860,92 @@ static void topo_mol_del_cmap(topo_mol *mol, const topo_mol_ident_t *targets,
     al[i] = topo_mol_get_atom(mol,&tl[i],def->rell[i]);
     if ( ! al[i] ) return;
   }
-  for ( tuple = al[i]->cmaps; tuple;
-		tuple = topo_mol_cmap_next(tuple,al[i]) ) {
+  for ( tuple = al[0]->cmaps; tuple;
+		tuple = topo_mol_cmap_next(tuple,al[0]) ) {
     int match1, match2;
     match1 = 0;
     for ( i=0; i<4 && (tuple->atom[i] == al[i]); ++i );
     if ( i == 4 ) match1 = 1;
-    for ( i=0; i<4 && (tuple->atom[i] == al[4-i]); ++i );
+    for ( i=0; i<4 && (tuple->atom[i] == al[3-i]); ++i );
     if ( i == 4 ) match1 = 1;
     match2 = 0;
     for ( i=0; i<4 && (tuple->atom[4+i] == al[4+i]); ++i );
     if ( i == 4 ) match2 = 1;
-    for ( i=0; i<4 && (tuple->atom[4+i] == al[8-i]); ++i );
+    for ( i=0; i<4 && (tuple->atom[4+i] == al[7-i]); ++i );
     if ( i == 4 ) match2 = 1;
     if ( match1 && match2 ) tuple->del = 1;
+  }
+}
+
+
+static int add_exclusion_to_residues(topo_mol *mol, 
+    const topo_mol_residue_t *res1, const char *aname1,
+    const topo_mol_residue_t *res2, const char *aname2) {
+  topo_mol_exclusion_t *tuple;
+  topo_mol_atom_t *a1, *a2;
+
+  a1 = topo_mol_get_atom_from_res(res1, aname1);
+  a2 = topo_mol_get_atom_from_res(res2, aname2);
+  if (!a1 || !a2) return -1;
+  tuple = memarena_alloc(mol->arena,sizeof(topo_mol_exclusion_t));
+  if ( ! tuple ) return -10;
+  tuple->next[0] = a1->exclusions;
+  tuple->atom[0] = a1;
+  tuple->next[1] = a2->exclusions;
+  tuple->atom[1] = a2;
+  tuple->del = 0;
+  a1->exclusions = tuple;
+  a2->exclusions = tuple;
+  return 0;
+}
+
+static int topo_mol_add_exclusion(topo_mol *mol, const topo_mol_ident_t *targets,
+				int ntargets, topo_defs_exclusion_t *def) {
+  topo_mol_exclusion_t *tuple;
+  topo_mol_atom_t *a1, *a2;
+  topo_mol_ident_t t1, t2;
+  if (! mol) return -1;
+  if ( def->res1 < 0 || def->res1 >= ntargets ) return -2;
+  t1 = targets[def->res1];
+  t1.aname = def->atom1;
+  a1 = topo_mol_get_atom(mol,&t1,def->rel1);
+  if ( ! a1 ) return -3;
+  if ( def->res2 < 0 || def->res2 >= ntargets ) return -4;
+  t2 = targets[def->res2];
+  t2.aname = def->atom2;
+  a2 = topo_mol_get_atom(mol,&t2,def->rel2);
+  if ( ! a2 ) return -5;
+  tuple = memarena_alloc(mol->arena,sizeof(topo_mol_exclusion_t));
+  if ( ! tuple ) return -10;
+  tuple->next[0] = a1->exclusions;
+  tuple->atom[0] = a1;
+  tuple->next[1] = a2->exclusions;
+  tuple->atom[1] = a2;
+  tuple->del = 0;
+  a1->exclusions = tuple;
+  a2->exclusions = tuple;
+  return 0;
+}
+
+static void topo_mol_del_exclusion(topo_mol *mol, const topo_mol_ident_t *targets,
+				int ntargets, topo_defs_exclusion_t *def) {
+  topo_mol_exclusion_t *tuple;
+  topo_mol_atom_t *a1, *a2;
+  topo_mol_ident_t t1, t2;
+  if (! mol) return;
+  if ( def->res1 < 0 || def->res1 >= ntargets ) return;
+  t1 = targets[def->res1];
+  t1.aname = def->atom1;
+  a1 = topo_mol_get_atom(mol,&t1,def->rel1);
+  if ( ! a1 ) return;
+  if ( def->res2 < 0 || def->res2 >= ntargets ) return;
+  t2 = targets[def->res2];
+  t2.aname = def->atom2;
+  a2 = topo_mol_get_atom(mol,&t2,def->rel2);
+  for ( tuple = a1->exclusions; tuple;
+		tuple = topo_mol_exclusion_next(tuple,a1) ) {
+    if ( tuple->atom[0] == a1 && tuple->atom[1] == a2 ) tuple->del = 1;
+    if ( tuple->atom[0] == a2 && tuple->atom[1] == a1 ) tuple->del = 1;
   }
 }
 
@@ -999,6 +1088,7 @@ int topo_mol_end(topo_mol *mol) {
   topo_defs_dihedral_t *dihedef;
   topo_defs_improper_t *imprdef;
   topo_defs_cmap_t *cmapdef;
+  topo_defs_exclusion_t *excldef;
   topo_defs_conformation_t *confdef;
   topo_mol_ident_t target;
   char errmsg[128];
@@ -1190,6 +1280,33 @@ int topo_mol_end(topo_mol *mol) {
         topo_mol_log_error(mol, errmsg);
       }
     }
+    for ( excldef = resdef->exclusions; excldef; excldef = excldef->next ) {
+      int ires1, ires2;
+      if (excldef->res1 != 0 || excldef->res2 != 0) {
+        sprintf(errmsg, "ERROR: Bad exclusion definition %s %s-%s; skipping.",
+            res->name, excldef->atom1, excldef->atom2);
+        topo_mol_log_error(mol, errmsg);
+        continue;
+      }
+      ires1=excldef->rel1+i;
+      ires2=excldef->rel2+i;
+      if (ires1 < 0 || ires2 < 0 || ires1 >= n || ires2 >= n) {
+        sprintf(errmsg, "Info: skipping exclusion %s-%s at %s of segment.", 
+            excldef->atom1, excldef->atom2, i==0 ? "beginning" : "end");
+        topo_mol_log_error(mol, errmsg);
+        continue;
+      }
+      if (add_exclusion_to_residues(mol, 
+            &(seg->residue_array[ires1]), excldef->atom1,
+            &(seg->residue_array[ires2]), excldef->atom2)) {
+        sprintf(errmsg, 
+            "ERROR: Missing atoms for exclusion %s(%d) %s(%d) in residue %s:%s",
+            excldef->atom1,excldef->rel1,excldef->atom2,excldef->rel2,
+            res->name,res->resid);
+        topo_mol_log_error(mol, errmsg);
+      }
+    }
+
     for ( confdef = resdef->conformations; confdef; confdef = confdef->next ) {
       int ires1, ires2, ires3, ires4;
       if (confdef->res1 != 0 || confdef->res2 != 0 || confdef->res3 != 0 ||
@@ -1269,7 +1386,7 @@ int topo_mol_regenerate_resids(topo_mol *mol) {
     for ( patchres = (*patchptr)->patchresids; patchres; patchres = patchres->next ) {
       ++npres;
       /* Test the existence of segid:resid for the patch */
-      if (!topo_mol_validate_patchres(mol,patch->pname,patchres->segid, patchres->resid)) {
+      if (!topo_mol_validate_patchres(mol,(*patchptr)->pname,patchres->segid, patchres->resid)) {
         break;
       }
     }
@@ -1762,6 +1879,7 @@ int topo_mol_multiply_atoms(topo_mol *mol, const topo_mol_ident_t *targets,
     newatom->dihedrals = 0;
     newatom->impropers = 0;
     newatom->cmaps = 0;
+    newatom->exclusions = 0;
     newatom->conformations = 0;
   }
 
@@ -1773,6 +1891,7 @@ int topo_mol_multiply_atoms(topo_mol *mol, const topo_mol_ident_t *targets,
     topo_mol_dihedral_t *dihetmp;
     topo_mol_improper_t *imprtmp;
     topo_mol_cmap_t *cmaptmp;
+    topo_mol_exclusion_t *excltmp;
     topo_mol_conformation_t *conftmp;
     atom = atoms[iatom];
     for ( bondtmp = atom->bonds; bondtmp;
@@ -1899,6 +2018,24 @@ int topo_mol_multiply_atoms(topo_mol *mol, const topo_mol_ident_t *targets,
         al[ia]->cmaps = tuple;
       }
       tuple->del = 0;
+    }
+    for ( excltmp = atom->exclusions; excltmp;
+		excltmp = topo_mol_exclusion_next(excltmp,atom) ) {
+      topo_mol_exclusion_t *tuple;
+      if ( excltmp->del ) continue;
+      if ( excltmp->atom[0] == atom || ( ! excltmp->atom[0]->copy ) ) ;
+      else continue;
+      tuple = memarena_alloc(mol->arena,sizeof(topo_mol_exclusion_t));
+      if ( ! tuple ) return -6;
+      a1 = excltmp->atom[0]->copy; if ( ! a1 ) a1 = excltmp->atom[0];
+      a2 = excltmp->atom[1]->copy; if ( ! a2 ) a2 = excltmp->atom[1];
+      tuple->next[0] = a1->exclusions;
+      tuple->atom[0] = a1;
+      tuple->next[1] = a2->exclusions;
+      tuple->atom[1] = a2;
+      tuple->del = 0;
+      a1->exclusions = tuple;
+      a2->exclusions = tuple;
     }
     for ( conftmp = atom->conformations; conftmp;
 		conftmp = topo_mol_conformation_next(conftmp,atom) ) {

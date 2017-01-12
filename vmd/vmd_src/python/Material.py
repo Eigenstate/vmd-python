@@ -61,4 +61,4 @@ if __name__=="__main__":
 	dull=Material("dull", specular=0)
 	dull.ambient = 0.1
 	for mat in materialList():
-		print mat
+		print(mat)

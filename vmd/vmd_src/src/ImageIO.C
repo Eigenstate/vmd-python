@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: ImageIO.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.14 $	$Date: 2013/11/26 03:29:20 $
+ *	$Revision: 1.17 $	$Date: 2016/11/28 03:05:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -29,8 +29,9 @@
 #include <string.h>
 #include "ImageIO.h"
 #include "Inform.h"
+#include "utilities.h"
 
-#if defined(VMDPNG)
+#if defined(VMDLIBPNG)
 #include "png.h" // libpng header file
 #endif
 
@@ -56,7 +57,139 @@ static void putint(FILE * outf, unsigned int val) {
   fwrite(buf, 4, 1, outf);
 }
 
-void vmd_writergb(FILE *dfile, unsigned char * img, int xs, int ys) {
+
+unsigned char * cvt_rgb4u_rgb3u(const unsigned char * rgb4u, int xs, int ys) {
+  int rowlen3u = xs*3;
+  int sz = xs * ys * 3;
+  unsigned char * rgb3u = (unsigned char *) calloc(1, sz);
+
+  int x3u, x4f, y;
+  for (y=0; y<ys; y++) {
+    int addr3u = y * xs * 3;
+    int addr4f = y * xs * 4;
+    for (x3u=0,x4f=0; x3u<rowlen3u; x3u+=3,x4f+=4) {
+      rgb3u[addr3u + x3u    ] = rgb4u[addr4f + x4f    ];
+      rgb3u[addr3u + x3u + 1] = rgb4u[addr4f + x4f + 1];
+      rgb3u[addr3u + x3u + 2] = rgb4u[addr4f + x4f + 2];
+    }
+  }
+
+  return rgb3u;
+}
+
+
+unsigned char * cvt_rgb4f_rgb3u(const float * rgb4f, int xs, int ys) {
+  int rowlen3u = xs*3;
+  int sz = xs * ys * 3;
+  unsigned char * rgb3u = (unsigned char *) calloc(1, sz);
+
+  int x3u, x4f, y;
+  for (y=0; y<ys; y++) {
+    int addr3u = y * xs * 3;
+    int addr4f = y * xs * 4;
+    for (x3u=0,x4f=0; x3u<rowlen3u; x3u+=3,x4f+=4) {
+      int tmp;
+
+      tmp = rgb4f[addr4f + x4f    ] * 255.0f;
+      rgb3u[addr3u + x3u    ] = (tmp < 0) ? 0 : ((tmp > 255) ? 255 : tmp);
+
+      tmp = rgb4f[addr4f + x4f + 1] * 255.0f;
+      rgb3u[addr3u + x3u + 1] = (tmp < 0) ? 0 : ((tmp > 255) ? 255 : tmp);
+
+      tmp = rgb4f[addr4f + x4f + 2] * 255.0f;
+      rgb3u[addr3u + x3u + 2] = (tmp < 0) ? 0 : ((tmp > 255) ? 255 : tmp);
+    }
+  }
+
+  return rgb3u;
+}
+
+
+static int checkfileextension(const char *s, const char *extension) {
+  int sz, extsz;
+  sz = strlen(s);
+  extsz = strlen(extension);
+
+  if (extsz > sz) return 0;
+
+  if (!strupncmp(s + (sz - extsz), extension, extsz)) return 1;
+
+  return 0;
+}
+
+
+int write_image_file_rgb3u(const char *filename,
+                           const unsigned char *rgb3u, int xs, int ys) {
+  FILE *outfile=NULL;
+  if ((outfile = fopen(filename, "wb")) == NULL) {
+    msgErr << "Could not open file " << filename
+           << " in current directory for writing!" << sendmsg;
+    return -1;
+  }
+
+  // write the image to a file on disk
+  if (checkfileextension(filename, ".bmp")) {
+    vmd_writebmp(outfile, rgb3u, xs, ys);
+#if defined(VMDLIBPNG)
+  } else if (checkfileextension(filename, ".png")) {
+    vmd_writepng(outfile, rgb3u, xs, ys);
+#endif
+  } else if (checkfileextension(filename, ".ppm")) {
+    vmd_writeppm(outfile, rgb3u, xs, ys);
+  } else if (checkfileextension(filename, ".rgb")) {
+    vmd_writergb(outfile, rgb3u, xs, ys);
+  } else if (checkfileextension(filename, ".tga")) {
+    vmd_writetga(outfile, rgb3u, xs, ys);
+  } else {
+#if defined(_MSC_VER) || defined(WIN32)
+    msgErr << "Unrecognized image file extension, writing Windows Bitmap file."
+           << sendmsg;
+    vmd_writebmp(outfile, rgb3u, xs, ys);
+#else
+    msgErr << "Unrecognized image file extension, writing Targa file."
+           << sendmsg;
+    vmd_writetga(outfile, rgb3u, xs, ys);
+#endif
+  }
+
+  fclose(outfile);
+  return 0;
+}
+
+
+int write_image_file_rgb4u(const char *filename,
+                           const unsigned char *rgb4u, int xs, int ys) {
+  unsigned char *rgb3u = cvt_rgb4u_rgb3u(rgb4u, xs, ys);
+  if (rgb3u == NULL)
+    return -1;
+
+  if (write_image_file_rgb3u(filename, rgb3u, xs, ys)) {
+    free(rgb3u);
+    return -1;
+  }
+
+  free(rgb3u);
+  return 0;
+}
+
+
+int write_image_file_rgb4f(const char *filename,
+                           const float *rgb4f, int xs, int ys) {
+  unsigned char *rgb3u = cvt_rgb4f_rgb3u(rgb4f, xs, ys);
+  if (rgb3u == NULL)
+    return -1;
+
+  if (write_image_file_rgb3u(filename, rgb3u, xs, ys)) {
+    free(rgb3u);
+    return -1;
+  }
+
+  free(rgb3u);
+  return 0;
+}
+
+
+void vmd_writergb(FILE *dfile, const unsigned char * img, int xs, int ys) {
   char iname[80];               /* Image name */
   int x, y, i;
 
@@ -102,7 +235,7 @@ static void write_le_int16(FILE * dfile, int num) {
 }
 
 
-void vmd_writebmp(FILE *dfile, unsigned char * img, int xs, int ys) {
+void vmd_writebmp(FILE *dfile, const unsigned char * img, int xs, int ys) {
   if (img != NULL) {
       int imgdataoffset = 14 + 40;     // file header size + bitmap header size
       int rowlen = xs * 3;             // non-padded length of row of pixels
@@ -164,7 +297,7 @@ void vmd_writebmp(FILE *dfile, unsigned char * img, int xs, int ys) {
 }
 
 
-void vmd_writeppm(FILE *dfile, unsigned char * img, int xs, int ys) {
+void vmd_writeppm(FILE *dfile, const unsigned char * img, int xs, int ys) {
   if (img != NULL) {
     int y;
 
@@ -180,10 +313,10 @@ void vmd_writeppm(FILE *dfile, unsigned char * img, int xs, int ys) {
 }
 
 
-void vmd_writetga(FILE *dfile, unsigned char * img, int xs, int ys) {
+void vmd_writetga(FILE *dfile, const unsigned char * img, int xs, int ys) {
   int x, y;
 
-  unsigned char * bufpos;
+  const unsigned char * bufpos;
   int filepos, numbytes;
   unsigned char * fixbuf;
 
@@ -241,8 +374,8 @@ void vmd_writetga(FILE *dfile, unsigned char * img, int xs, int ys) {
   free(fixbuf);
 }
 
-#if defined(VMDPNG)
-void vmd_writepng(FILE *dfile, unsigned char * img, int xs, int ys) {
+#if defined(VMDLIBPNG)
+void vmd_writepng(FILE *dfile, const unsigned char * img, int xs, int ys) {
   png_structp png_ptr;
   png_infop info_ptr;
   png_bytep *row_pointers;
@@ -301,7 +434,7 @@ void vmd_writepng(FILE *dfile, unsigned char * img, int xs, int ys) {
 
   row_pointers = (png_bytep *) png_malloc(png_ptr, ys*sizeof(png_bytep));
   for (y=0; y<ys; y++) {
-    row_pointers[ys - y - 1] = &img[y * xs * 3];
+    row_pointers[ys - y - 1] = (png_bytep) &img[y * xs * 3];
   }
 
   png_set_rows(png_ptr, info_ptr, row_pointers);

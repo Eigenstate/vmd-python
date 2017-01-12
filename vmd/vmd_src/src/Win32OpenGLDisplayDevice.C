@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Win32OpenGLDisplayDevice.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.121 $	$Date: 2014/12/29 02:33:17 $
+ *	$Revision: 1.123 $	$Date: 2016/11/28 03:05:06 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -38,6 +38,21 @@
 #include <GL/gl.h>
 
 #include "../msvc/winvmd/res/resource.h" // VMD icon resource
+
+#if 1
+// 
+// Compile-time constant to provide hybrid graphics drivers with a hint to 
+// favor the use of the high performance GPU when one exists.
+// 
+extern "C" {
+// trigger AMD PowerXpress drivers to use the high performance GPU
+__declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 1;
+
+// trigger NVIDIA Optimus drivers to use the high performance GPU
+__declspec(dllexport) DWORD NvOptimusEnablement = 1;
+}
+#endif
+
 
 // NOTE: you may have to get copies of the latest OpenGL extension headers
 // from the OpenGL web site if your Linux or Win32 machine lacks them:

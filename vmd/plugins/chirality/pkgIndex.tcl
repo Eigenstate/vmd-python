@@ -8,5 +8,5 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded chirality 1.2 [list source [file join $dir chirality.tcl]]
-package ifneeded chirality_gui 1.2 [list source [file join $dir chirality_gui.tcl]]
+package ifneeded chirality 1.3 [list source [file join $dir chirality.tcl]]
+package ifneeded chirality_gui 1.3 [list source [file join $dir chirality_gui.tcl]]

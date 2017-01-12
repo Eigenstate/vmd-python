@@ -3,7 +3,7 @@
 
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -14,7 +14,7 @@
  *
  *	$RCSfile: MSMSInterface.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.25 $	$Date: 2010/12/16 04:08:21 $
+ *	$Revision: 1.27 $	$Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -42,7 +42,9 @@
 /// structure containing MSMS vertex coordinates
 struct MSMSCoord {
   float x[3];       ///< floating point xyz coordinates 
-  int operator==(const MSMSCoord& c) {return !memcmp(x,c.x,3*sizeof(float));}
+  int operator==(const MSMSCoord& c) {
+    return !memcmp(x, c.x, 3L*sizeof(float));
+  }
 };
 
 /// structure containing MSMS facet information
@@ -59,9 +61,10 @@ struct MSMSFace {
   int component;    ///< which surface is it in?
 
   int operator==(const MSMSFace &f) {
-    return (!memcmp(vertex,f.vertex,3*sizeof(float)) &&
-                  surface_type==f.surface_type && anaface==f.anaface &&
-                  component==f.component);}
+    return (!memcmp(vertex, f.vertex, 3L*sizeof(float)) &&
+                    surface_type==f.surface_type && anaface==f.anaface &&
+                    component==f.component);
+  }
 };
 
 /// Manages communication with the MSMS surface generation program

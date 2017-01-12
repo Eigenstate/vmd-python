@@ -576,9 +576,25 @@ static PyMethodDef Methods[] = {
   {(char *)"delallangles", (PyCFunction)topo_del_all_angles, METH_VARARGS | METH_KEYWORDS, del_all_angle_doc},
   {(char *)"delalldihedrals", (PyCFunction)topo_del_all_dihed, METH_VARARGS | METH_KEYWORDS, del_all_dihed_doc},
   {(char *)"delallimpropers", (PyCFunction)topo_del_all_impropers, METH_VARARGS | METH_KEYWORDS, del_all_improper_doc},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef topologydef = {
+    PyModuleDef_HEAD_INIT,
+    "topology",
+    NULL,
+    -1,
+    Methods,
+    NULL, NULL, NULL, NULL
+};
+
+PyMODINIT_FUNC PyInit_topology(void) {
+    PyObject *module = PyModule_Create(&topologydef);
+    return module;
+}
+#else
 void inittopology() {
   (void)Py_InitModule((char *)"topology", Methods);
 }
+#endif

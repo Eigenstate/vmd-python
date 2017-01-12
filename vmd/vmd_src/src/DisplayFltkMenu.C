@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: DisplayFltkMenu.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.24 $       $Date: 2014/10/22 22:26:27 $
+ *      $Revision: 1.25 $       $Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:

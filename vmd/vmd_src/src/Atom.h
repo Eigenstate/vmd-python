@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *        $RCSfile: Atom.h,v $
  *        $Author: johns $        $Locker:  $                $State: Exp $
- *        $Revision: 1.67 $        $Date: 2015/05/21 03:35:35 $
+ *        $Revision: 1.69 $        $Date: 2016/11/28 03:04:57 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -28,9 +28,9 @@
 
 // maximum number of bonds allowed to other atoms
 #if defined(ARCH_BLUEWATERS) || defined(ARCH_CRAY_XC) || defined(ARCH_CRAY_XK)
-#define MAXATOMBONDS      8
+#define MAXATOMBONDS      8L
 #else
-#define MAXATOMBONDS      12
+#define MAXATOMBONDS      12L
 #endif
 
 // Atom type flags

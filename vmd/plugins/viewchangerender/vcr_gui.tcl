@@ -1,6 +1,6 @@
 # view_change_render.tcl
 #
-# $Id: vcr_gui.tcl,v 1.15 2014/03/20 15:23:44 johns Exp $
+# $Id: vcr_gui.tcl,v 1.16 2016/02/18 22:38:36 johns Exp $
 #
 # Johan Strumpfer, Barry Isralewitz, Jordi Cohen
 # Oct 2003; updated Feb 2007; updated Mar 2012
@@ -15,7 +15,7 @@
 
 package require vmdmovie
 package require viewchangerender
-package provide viewchangerender_gui 1.7
+package provide viewchangerender_gui 1.8
 
 namespace eval ::vcr_gui:: {
     package require viewchangerender

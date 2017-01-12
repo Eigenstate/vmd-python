@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_color.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.19 $       $Date: 2014/08/23 03:20:00 $
+ *      $Revision: 1.20 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -33,7 +33,11 @@ static PyObject *categories(PyObject *self, PyObject *args) {
   PyObject *newlist = PyList_New(num);
   for (int i=0; i<num; i++) {
     PyList_SET_ITEM(newlist, i, 
+#if PY_MAJOR_VERSION >= 3
+      PyUnicode_FromString(app->color_category(i))
+#else
       PyString_FromString(app->color_category(i))
+#endif
     );
   }
   return newlist;
@@ -53,7 +57,11 @@ static PyObject *get_colormap(PyObject *self, PyObject *args) {
   for (int i=0; i<num_names; i++) {
     const char *key = app->color_category_item(name, i);
     const char *value = app->color_mapping(name, key);
+#if PY_MAJOR_VERSION >= 3
+    PyDict_SetItemString(newdict, (char *)key, PyBytes_FromString(value));
+#else
     PyDict_SetItemString(newdict, (char *)key, PyString_FromString(value));
+#endif
   }
   return newdict;
 }
@@ -73,12 +81,20 @@ static PyObject *set_colormap(PyObject *self, PyObject *args) {
   PyObject *vals = PyDict_Values(newdict);
   int error = 0;
   for (int i=0; i<PyList_Size(keys); i++) {
+#if PY_MAJOR_VERSION >= 3
+    char *keyname = PyBytes_AsString(PyList_GET_ITEM(keys, i));
+#else
     char *keyname = PyString_AsString(PyList_GET_ITEM(keys, i));
+#endif
     if (PyErr_Occurred()) {
       error = 1;
       break;
     }
+#if PY_MAJOR_VERSION >= 3
+    char *valname = PyBytes_AsString(PyList_GET_ITEM(vals, i));
+#else
     char *valname = PyString_AsString(PyList_GET_ITEM(vals, i));
+#endif
     if (PyErr_Occurred()) {
       error = 1;
       break;
@@ -162,7 +178,11 @@ static PyObject *set_colors(PyObject *self, PyObject *args) {
   PyObject *vals = PyDict_Values(newdict);
   int error = 0;
   for (int i=0; i<PyList_Size(keys); i++) {
+#if PY_MAJOR_VERSION >= 3
+    char *keyname = PyBytes_AsString(PyList_GET_ITEM(keys, i));
+#else
     char *keyname = PyString_AsString(PyList_GET_ITEM(keys, i));
+#endif
     if (PyErr_Occurred()) {
       error = 1;
       break;
@@ -225,7 +245,11 @@ static PyObject *scale_method(PyObject *self, PyObject *args) {
   VMDApp *app = get_vmdapp();
   const char *method = 
     app->colorscale_method_name(app->colorscale_method_current());
+#if PY_MAJOR_VERSION >= 3
+  return PyUnicode_FromString(method);
+#else
   return PyString_FromString(method);
+#endif
 }
 
 static char scale_methods_doc[] = 
@@ -240,7 +264,11 @@ static PyObject *scale_methods(PyObject *self, PyObject *args) {
   PyObject *newlist = PyList_New(num);
   for (int i=0; i<num; i++) {
     PyList_SET_ITEM(newlist, i, 
+#if PY_MAJOR_VERSION >= 3
+      PyUnicode_FromString(app->colorscale_method_name(i))
+#else
       PyString_FromString(app->colorscale_method_name(i))
+#endif
     );
   }
   return newlist;
@@ -326,11 +354,30 @@ static PyMethodDef ColorMethods[] = {
   {(char *)"scale_min", (vmdPyMethod)scale_min, METH_VARARGS, scale_min_doc},
   {(char *)"scale_max", (vmdPyMethod)scale_max, METH_VARARGS, scale_max_doc},
   {(char *)"set_scale", (PyCFunction)set_scale, METH_VARARGS | METH_KEYWORDS, set_scale_doc},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
+
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef colordef = {
+    PyModuleDef_HEAD_INIT,
+    "color",
+    NULL,
+    -1,
+    ColorMethods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+PyMODINIT_FUNC PyInit_color(void) {
+    PyObject *module = PyModule_Create(&colordef);
+    return module;
+}
+#else
 void initcolor() {
   (void) Py_InitModule((char *)"color", ColorMethods);
 }
+#endif
  
 

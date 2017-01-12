@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,7 +10,7 @@
  *
  *      $RCSfile: VMDApp.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.511 $      $Date: 2014/12/05 21:53:43 $
+ *      $Revision: 1.520 $      $Date: 2016/11/28 03:05:05 $
  *
  ***************************************************************************/
  
@@ -75,6 +75,10 @@
 #include "OpenCLUtils.h"
 #endif
 
+#if defined(VMDNVENC)
+#include "NVENCMgr.h"  // GPU-accelerated H.26[45] video encode/decode
+#endif
+
 #if defined(VMDLIBOPTIX)
 #include "OptiXRenderer.h"
 #endif
@@ -104,7 +108,8 @@
 #endif // VMDCAVE
 #endif // VMDOPENGL
 
-#ifdef VMDOPENGLPBUFFER  // OpenGL Pbuffer off-screen rendering
+// OpenGL Pbuffer off-screen rendering
+#if defined(VMDOPENGLPBUFFER) || defined(VMDEGLPBUFFER)
 #include "OpenGLPbufferDisplayDevice.h"
 #endif
 
@@ -204,7 +209,9 @@ VMDApp::VMDApp(int argc, char **argv, int mpion) {
   atomSelParser = NULL;
   anim = NULL;
   vmdcollab = NULL;
+  thrpool = NULL;
   cuda = NULL;
+  nvenc = NULL;
   strcpy(nodename, "");
   noderank  = 0; // init with MPI values later
   nodecount = 1; // init with MPI values later
@@ -221,6 +228,10 @@ VMDApp::VMDApp(int argc, char **argv, int mpion) {
 // initialization routine for the library globals
 int VMDApp::VMDinit(int argc, char **argv, const char *displaytype, 
                     int *displayLoc, int *displaySize) {
+#if defined(VMDTHREADS)
+  thrpool=wkf_threadpool_create(wkf_thread_numprocessors(), WKF_THREADPOOL_DEVLIST_CPUSONLY);
+#endif
+
 #if defined(VMDCUDA)
   // register all usable CUDA GPU accelerator devices
   cuda = new CUDAAccel();
@@ -244,18 +255,31 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
 #if defined(VMDOPENCL)
     vmd_cl_print_platform_info();
 #endif
+  }
 
-    // OptiX GPU ray tracing
-#if defined(VMDLIBOPTIX)
-    int optixdevcount=OptiXRenderer::device_count();
-    if (optixdevcount > 0) {
-      msgInfo << "Detected " << optixdevcount << " available TachyonL/OptiX ray tracing "
-              << ((optixdevcount > 1) ? "accelerators" : "accelerator") 
-              << sendmsg;
-    }
+#if defined(VMDNVENC)
+  // It may eventually be desirable to relocate NVENC initialization after
+  // OpenGL or Vulkan initialization has completed so that we have access 
+  // to window handles and OpenGL or Vulkan context info at the point 
+  // where video streaming is setup.  There don't presently appear to be
+  // any APIs for graphics interop w/ NVENC.  We may need to instead use 
+  // the GRID IFR library to achieve zero-copy streaming for OpenGL / Vulkan.
+  // Direct use of NVENC seems most appropriate for ray tracing however, since
+  // it allows CUDA interop.
+  nvenc = new NVENCMgr;
+  int nvencrc;
+  if ((nvencrc = nvenc->init()) == NVENCMGR_SUCCESS) {
+    nvencrc = nvenc->open_session();
+  }
+  if (nvencrc == NVENCMGR_SUCCESS) {
+    msgInfo << "NVENC GPU-accelerated video streaming available."
+            << sendmsg;
+  } else {
+    msgInfo << "NVENC GPU-accelerated video streaming is not available." 
+            << sendmsg;
+  }
 #endif
 
-  }
 
   //
   // create commandQueue before all UIObjects!
@@ -306,7 +330,7 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
 #endif
   }
 
-#if defined(VMDOPENGLPBUFFER)
+#if defined(VMDOPENGLPBUFFER) || defined(VMDEGLPBUFFER)
   // check for OpenGL Pbuffer off-screen rendering context
   if (!strcmp(displaytype, "OPENGLPBUFFER")) {
     display = new OpenGLPbufferDisplayDevice;
@@ -807,6 +831,13 @@ VMDApp::~VMDApp() {
  
   delete display;
   delete scene;
+
+#if defined(VMDTHREADS)
+  if (thrpool) {
+    wkf_threadpool_destroy((wkf_threadpool_t *) thrpool);
+    thrpool=NULL;
+  }
+#endif
 }
 
 unsigned long VMDApp::get_repserialnum(void) {
@@ -1485,14 +1516,13 @@ int VMDApp::molecule_new(const char *name, int natoms, int docallbacks) {
     for (i=0; i<natoms; i++)
       occupancy[i] = defoccupancy;
 
-    for (i=0; i<natoms; i++) {
-      if (0 > newmol->add_atom("X", "X", 0, "UNK", 0, "", "", " ", "")) {
-        // if an error occured while adding an atom, we should delete
-        // the offending molecule since the data is presumably inconsistent,
-        // or at least not representative of what we tried to load
-        msgErr << "VMDApp::molecule_new: molecule creation aborted" << sendmsg;
-        return -1; // signal failure
-      }
+    // add all of the atoms in a single call, looping internally in add_atoms()
+    if (0 > newmol->add_atoms(natoms, "X", "X", 0, "UNK", 0, "", "", " ", "")) {
+      // if an error occured while adding an atom, we should delete
+      // the offending molecule since the data is presumably inconsistent,
+      // or at least not representative of what we tried to load
+      msgErr << "VMDApp::molecule_new: molecule creation aborted" << sendmsg;
+      return -1; // signal failure
     }
   }
 
@@ -1640,7 +1670,7 @@ int VMDApp::molecule_load(int molid, const char *filename,
   char specstr[8192];
   sprintf(specstr, "first %d last %d step %d filebonds %d autobonds %d",
           spec->first, spec->last, spec->stride, 
-          spec->autobonds, spec->filebonds);
+          spec->filebonds, spec->autobonds);
   newmol->record_file(filename, filetype, specstr);
 
   //
@@ -2554,9 +2584,9 @@ int VMDApp::molrep_get_clipplane(int molid, int repid, int clipid,
   if (!d) return 0;
   const VMDClipPlane *c = d->clipplane(clipid);
   if (!c) return 0;
-  memcpy(center, c->center, 3*sizeof(float));
-  memcpy(normal, c->normal, 3*sizeof(float));
-  memcpy(color, c->color, 3*sizeof(float));
+  memcpy(center, c->center, 3L*sizeof(float));
+  memcpy(normal, c->normal, 3L*sizeof(float));
+  memcpy(color, c->color, 3L*sizeof(float));
   *mode = c->mode;
   return 1;
 }

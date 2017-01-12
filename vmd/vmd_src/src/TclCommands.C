@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: TclCommands.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.163 $	$Date: 2011/06/15 05:17:39 $
+ *	$Revision: 1.166 $	$Date: 2016/11/28 03:05:05 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -388,7 +388,7 @@ static int atomselect_moveby(Tcl_Interp *interp, AtomSel *sel, const char *vectx
   // and apply it to the coordinates
   for (i=sel->firstsel; i<=sel->lastsel; i++) {
     if (sel->on[i]) {
-      vec_add(framepos + 3*i, framepos + 3*i, vect);
+      vec_add(framepos + 3L*i, framepos + 3L*i, vect);
     }
   }
 
@@ -1161,7 +1161,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
           "atomsel: setbonds: too many bonds in bondlist: ", bondlists[ii],
           "\n", NULL);
         char buf[8];
-        sprintf(buf, "%d", MAXATOMBONDS);
+        sprintf(buf, "%ld", MAXATOMBONDS);
         Tcl_AppendResult(interp, "Maximum of ", buf, " bonds\n", NULL);
         Tcl_Free((char *)atomids);
         Tcl_Free((char *)bondlists);
@@ -1274,7 +1274,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
           "atomsel: setbondorders: too many items in bond order list: ", bondlists[ii],
           "\n", NULL);
         char buf[8];
-        sprintf(buf, "%d", MAXATOMBONDS);
+        sprintf(buf, "%ld", MAXATOMBONDS);
         Tcl_AppendResult(interp, "Maximum of ", buf, " bonds\n", NULL);
         Tcl_Free((char *)atomids);
         Tcl_Free((char *)bondlists);
@@ -1361,7 +1361,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
           "atomsel: setbondtypes: too many items in bond type list: ", bondlists[ii],
           "\n", NULL);
         char buf[8];
-        sprintf(buf, "%d", MAXATOMBONDS);
+        sprintf(buf, "%ld", MAXATOMBONDS);
         Tcl_AppendResult(interp, "Maximum of ", buf, " bonds\n", NULL);
         Tcl_Free((char *)atomids);
         Tcl_Free((char *)bondlists);

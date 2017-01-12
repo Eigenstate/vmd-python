@@ -11,7 +11,7 @@
  *
  *      $RCSfile: CUDAQuickSurf.cu,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.79 $      $Date: 2015/05/21 03:10:34 $
+ *      $Revision: 1.81 $      $Date: 2016/04/20 04:57:46 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -554,6 +554,9 @@ typedef struct {
   int verbose;
   long int natoms;
   int colorperatom;
+  int acx;
+  int acy;
+  int acz;
   int gx;
   int gy;
   int gz;
@@ -611,6 +614,9 @@ int CUDAQuickSurf::free_bufs() {
   // zero out max buffer capacities
   gpuh->natoms = 0;
   gpuh->colorperatom = 0;
+  gpuh->acx = 0;
+  gpuh->acy = 0;
+  gpuh->acz = 0;
   gpuh->gx = 0;
   gpuh->gy = 0;
   gpuh->gz = 0;
@@ -681,6 +687,7 @@ int CUDAQuickSurf::free_bufs() {
 
 
 int CUDAQuickSurf::check_bufs(long int natoms, int colorperatom, 
+                              int acx, int acy, int acz,
                               int gx, int gy, int gz) {
   qsurf_gpuhandle *gpuh = (qsurf_gpuhandle *) voidgpu;
 
@@ -691,6 +698,7 @@ int CUDAQuickSurf::check_bufs(long int natoms, int colorperatom,
   // benefit during trajectory animation.
   if (natoms <= gpuh->natoms &&
       colorperatom <= gpuh->colorperatom &&
+      (acx*acy*acz) <= (gpuh->acx * gpuh->acy * gpuh->acz) && 
       (gx*gy*gz) <= (gpuh->gx * gpuh->gy * gpuh->gz))
     return 0;
  
@@ -700,21 +708,23 @@ int CUDAQuickSurf::check_bufs(long int natoms, int colorperatom,
 
 int CUDAQuickSurf::alloc_bufs(long int natoms, int colorperatom, 
                               VolTexFormat vtexformat, 
+                              int acx, int acy, int acz,
                               int gx, int gy, int gz) {
   qsurf_gpuhandle *gpuh = (qsurf_gpuhandle *) voidgpu;
 
   // early exit from allocation call if we've already got existing
   // buffers that are large enough to support the request
-  if (check_bufs(natoms, colorperatom, gx, gy, gz) == 0)
+  if (check_bufs(natoms, colorperatom, acx, acy, acz, gx, gy, gz) == 0)
     return 0;
 
   // If we have any existing allocations, trash them as they weren't
   // usable for this new request and we need to reallocate them from scratch
   free_bufs();
 
-  long int ncells = gx * gy * gz;
+  long int acncells = ((long) acx) * ((long) acy) * ((long) acz);
+  long int ncells = ((long) gx) * ((long) gy) * ((long) gz);
   long int volmemsz = ncells * sizeof(float);
-  int chunkmaxverts = 3 * ncells; // assume worst case 50% triangle occupancy
+  long int chunkmaxverts = 3L * ncells; // assume worst case 50% triangle occupancy
   long int MCsz = CUDAMarchingCubes::MemUsageMC(gx, gy, gz);
 
   // Allocate all of the memory buffers our algorithms will need up-front,
@@ -722,13 +732,12 @@ int CUDAQuickSurf::alloc_bufs(long int natoms, int colorperatom,
   // to attempt to fit within available GPU memory 
   long int totalmemsz = 
     volmemsz +                                       // volume
-    (2 * natoms * sizeof(unsigned int)) +            // bin sort
-    (ncells * sizeof(uint2)) +                       // bin sort
-    (3 * chunkmaxverts * sizeof(float3)) +           // MC vertex bufs 
+    (2L * natoms * sizeof(unsigned int)) +           // bin sort
+    (acncells * sizeof(uint2)) +                     // bin sort
+    (3L * chunkmaxverts * sizeof(float3)) +          // MC vertex bufs 
     natoms*sizeof(float4) +                          // thrust
-    8 * gx * gy * sizeof(float) +                    // thrust
+    8L * gx * gy * sizeof(float) +                   // thrust
     MCsz;                                            // mcubes
-
 
   cudaMalloc((void**)&gpuh->devdensity, volmemsz);
   if (colorperatom) {
@@ -751,7 +760,7 @@ int CUDAQuickSurf::alloc_bufs(long int natoms, int colorperatom,
   cudaMalloc((void**)&gpuh->sorted_xyzr_d, natoms * sizeof(float4));
   cudaMalloc((void**)&gpuh->atomIndex_d, natoms * sizeof(unsigned int));
   cudaMalloc((void**)&gpuh->atomHash_d, natoms * sizeof(unsigned int));
-  cudaMalloc((void**)&gpuh->cellStartEnd_d, ncells * sizeof(uint2));
+  cudaMalloc((void**)&gpuh->cellStartEnd_d, acncells * sizeof(uint2));
 
   // allocate marching cubes output buffers
   cudaMalloc((void**)&gpuh->v3f_d, 3 * chunkmaxverts * sizeof(float3));
@@ -780,10 +789,8 @@ int CUDAQuickSurf::alloc_bufs(long int natoms, int colorperatom,
              8 * gx * gy * sizeof(float) +                    // thrust
              MCsz);                                           // mcubes
 
-#if 1
   if (gpuh->verbose > 1)
     printf("Total QuickSurf mem size: %d MB\n", totalmemsz / (1024*1024));
-#endif
 
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
@@ -793,6 +800,11 @@ int CUDAQuickSurf::alloc_bufs(long int natoms, int colorperatom,
   // so that the next test/allocation pass knows the latest state.
   gpuh->natoms = natoms;
   gpuh->colorperatom = colorperatom;
+
+  gpuh->acx = acx;
+  gpuh->acy = acy;
+  gpuh->acz = acz;
+
   gpuh->gx = gx;
   gpuh->gy = gy;
   gpuh->gz = gz;
@@ -804,6 +816,7 @@ int CUDAQuickSurf::alloc_bufs(long int natoms, int colorperatom,
 int CUDAQuickSurf::get_chunk_bufs(int testexisting,
                                   long int natoms, int colorperatom, 
                                   VolTexFormat vtexformat,
+                                  int acx, int acy, int acz,
                                   int gx, int gy, int gz,
                                   int &cx, int &cy, int &cz,
                                   int &sx, int &sy, int &sz) {
@@ -872,10 +885,10 @@ int CUDAQuickSurf::get_chunk_bufs(int testexisting,
     }
  
     if (testexisting) {
-      if (check_bufs(natoms, colorperatom, cx, cy, cz) != 0)
+      if (check_bufs(natoms, colorperatom, acx, acy, acz, cx, cy, cz) != 0)
         continue;
     } else {
-      if (alloc_bufs(natoms, colorperatom, vtexformat, cx, cy, cz) != 0)
+      if (alloc_bufs(natoms, colorperatom, vtexformat, acx, acy, acz, cx, cy, cz) != 0)
         continue;
     }
 
@@ -983,6 +996,7 @@ int CUDAQuickSurf::calc_surf(long int natoms, const float *xyzr_f,
   // using the existing buffers
   if (gpuh->natoms == 0 ||
       get_chunk_bufs(1, natoms, colorperatom, voltexformat,
+                     accelcells.x, accelcells.y, accelcells.z,
                      volsz.x, volsz.y, volsz.z,
                      chunksz.x, chunksz.y, chunksz.z,
                      slabsz.x, slabsz.y, slabsz.z) == -1) {
@@ -994,6 +1008,7 @@ int CUDAQuickSurf::calc_surf(long int natoms, const float *xyzr_f,
     // reallocate the chunk buffers from scratch since we weren't
     // able to reuse them
     if (get_chunk_bufs(0, natoms, colorperatom, voltexformat,
+                       accelcells.x, accelcells.y, accelcells.z,
                        volsz.x, volsz.y, volsz.z,
                        chunksz.x, chunksz.y, chunksz.z,
                        slabsz.x, slabsz.y, slabsz.z) == -1) {
@@ -1009,14 +1024,11 @@ int CUDAQuickSurf::calc_surf(long int natoms, const float *xyzr_f,
     cudaFree(gpuh->safety);
   gpuh->safety = NULL;
 
-#if 1
   if (gpuh->verbose > 1) {
     printf("  Using GPU chunk size: %d\n", chunksz.z);
-
     printf("  Accel grid(%d, %d, %d) spacing %f\n",
            accelcells.x, accelcells.y, accelcells.z, acgridspacing);
   }
-#endif
 
   // pre-process the atom coordinates and radii as needed
   // short-term fix until a new CUDA kernel takes care of this
@@ -1120,7 +1132,6 @@ int CUDAQuickSurf::calc_surf(long int natoms, const float *xyzr_f,
     if (deviceProp.major < 2)
       Gszslice.z = 1;
 
-#if 1
     if (gpuh->verbose > 1) {
       printf("CUDA device %d, grid size %dx%dx%d\n", 
              0, Gsz.x, Gsz.y, Gsz.z);
@@ -1129,7 +1140,6 @@ int CUDAQuickSurf::calc_surf(long int natoms, const float *xyzr_f,
              accelcells.x, accelcells.y, accelcells.z);
       printf("Z=%d, curslab.z=%d\n", z, curslab.z);
     }
-#endif
 
     // For all but the first density slab, we copy the last four 
     // planes of the previous run into the start of the next run so
@@ -1393,15 +1403,13 @@ printf("  ... bbe: %.2f %.2f %.2f\n", gorigin.x+bbox.x, gorigin.y+bbox.y, gorigi
     return -1;
   }
 
-#if 1
   if (gpuh->verbose) {
-    printf("  GPU generated %d vertices, %d facets, in %d passes\n", numverts, numfacets, chunkcount);
-
+    printf("  GPU generated %d vertices, %d facets, in %d passes\n", 
+           numverts, numfacets, chunkcount);
     printf("  GPU time (%s): %.3f [sort: %.3f density %.3f mcubes: %.3f copy: %.3f]\n", 
            (deviceProp.major == 1 && deviceProp.minor == 3) ? "SM 1.3" : "SM 2.x",
            totalruntime, sorttime, densitytime, mctime, copytime);
   }
-#endif
 
   return 0;
 }

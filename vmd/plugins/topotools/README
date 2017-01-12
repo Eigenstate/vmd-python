@@ -1,6 +1,11 @@
-VMD topotools package. Version 1.6
-Copyright (c) 2009,2010,2011,2012,2013,2014,2015
+VMD topotools package. Version 1.7
+Copyright (c) 2009,2010,2011,2012,2013,2014,2015,2016
  by Axel Kohlmeyer <akohlmey@gmail.com>
+
+This package contains contributed features from:
+- Josh Vermaas (fully working gromacs topology files for CHARMM)
+- Konstantin W (replicatemols for non-orthogonal cells)
+
 -------------------
 
 A collection of Tcl commands to manipulate, build, read
@@ -17,10 +22,6 @@ Please report any problems, bugs, suggestions, inquiries
 or code contributions to the github hosted SCM page at:
 https://github.com/akohlmey/topotools/issues
 
-This package contains contributed features from:
-- Josh Vermaas (fully working gromacs topology files for CHARMM)
-- Konstantin W (replicatemols for non-orthogonal cells)
-
 TODO:
   - improve "topo setbonds" to be more efficient for large sets 
     of bonds to be added.
@@ -29,7 +30,7 @@ TODO:
     outside the selection)
   - support for generating and replicating bonds across
     periodic boundaries (for molecular crystal models).
-  - better documentation
+  - better documentation, more tutorials
   - more tools to read/write custom topology files 
     (e.g. gromacs top?, amber parmtop?)
   - API to read/parse/store force field database information.

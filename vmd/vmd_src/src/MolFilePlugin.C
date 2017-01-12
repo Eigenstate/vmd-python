@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: MolFilePlugin.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.177 $      $Date: 2015/05/04 03:08:16 $
+ *      $Revision: 1.188 $      $Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -152,9 +152,10 @@ int MolFilePlugin::read_structure(Molecule *m, int filebonds, int autobonds) {
       atom.insertion : " ";
     const char *altloc = (optflags & MOLFILE_ALTLOC) ?
       atom.altloc : "";
-    if (0 > m->add_atom(atom.name, atom.type, atomicnumber, 
-                        atom.resname, atom.resid, 
-                        atom.chain, atom.segid, (char *)insertion, altloc)) {
+    if (0 > m->add_atoms(1,
+                         atom.name, atom.type, atomicnumber, 
+                         atom.resname, atom.resid, 
+                         atom.chain, atom.segid, (char *)insertion, altloc)) {
       // if an error occured while adding an atom, we should delete
       // the offending molecule since the data is presumably inconsistent,
       // or at least not representative of what we tried to load
@@ -331,11 +332,11 @@ int MolFilePlugin::read_structure(Molecule *m, int filebonds, int autobonds) {
             if (angletypenames != NULL)
               type = m->angleTypeNames.typecode(angletypenames[type]);
 
-            m->add_angle(angles[3*i]-1, angles[3*i+1]-1, angles[3*i+2]-1, type);
+            m->add_angle(angles[3L*i]-1, angles[3L*i+1]-1, angles[3L*i+2]-1, type);
           }
         } else {
           for (i=0; i<numangles; i++) {
-            m->add_angle(angles[3*i]-1, angles[3*i+1]-1, angles[3*i+2]-1);
+            m->add_angle(angles[3L*i]-1, angles[3L*i+1]-1, angles[3L*i+2]-1);
           }
         }
 
@@ -348,13 +349,13 @@ int MolFilePlugin::read_structure(Molecule *m, int filebonds, int autobonds) {
             if (dihedraltypenames != NULL)
               type = m->dihedralTypeNames.typecode(dihedraltypenames[type]);
 
-            m->add_dihedral(dihedrals[4*i]-1,   dihedrals[4*i+1]-1, 
-                            dihedrals[4*i+2]-1, dihedrals[4*i+3]-1, type);
+            m->add_dihedral(dihedrals[4L*i]-1,   dihedrals[4L*i+1]-1, 
+                            dihedrals[4L*i+2]-1, dihedrals[4L*i+3]-1, type);
           }
         } else {
           for (i=0; i<numdihedrals; i++) {
-            m->add_dihedral(dihedrals[4*i]-1,   dihedrals[4*i+1]-1, 
-                            dihedrals[4*i+2]-1, dihedrals[4*i+3]-1);
+            m->add_dihedral(dihedrals[4L*i]-1,   dihedrals[4L*i+1]-1, 
+                            dihedrals[4L*i+2]-1, dihedrals[4L*i+3]-1);
           }
         }
         
@@ -367,13 +368,13 @@ int MolFilePlugin::read_structure(Molecule *m, int filebonds, int autobonds) {
             if (impropertypenames != NULL)
               type = m->improperTypeNames.typecode(impropertypenames[type]);
 
-            m->add_improper(impropers[4*i]-1,   impropers[4*i+1]-1, 
-                            impropers[4*i+2]-1, impropers[4*i+3]-1, type);
+            m->add_improper(impropers[4L*i]-1,   impropers[4L*i+1]-1, 
+                            impropers[4L*i+2]-1, impropers[4L*i+3]-1, type);
           }
         } else {
           for (i=0; i<numimpropers; i++) {
-            m->add_improper(impropers[4*i]-1,   impropers[4*i+1]-1, 
-                            impropers[4*i+2]-1, impropers[4*i+3]-1);
+            m->add_improper(impropers[4L*i]-1,   impropers[4L*i+1]-1, 
+                            impropers[4L*i+2]-1, impropers[4L*i+3]-1);
           }
         }
       }
@@ -382,9 +383,9 @@ int MolFilePlugin::read_structure(Molecule *m, int filebonds, int autobonds) {
       if (numcterms > 0) {
         m->set_dataset_flag(BaseMolecule::CTERMS);
         for (i=0; i<numcterms; i++)
-          m->add_cterm(cterms[8*i]-1,   cterms[8*i+1]-1, cterms[8*i+2]-1,
-                       cterms[8*i+3]-1, cterms[8*i+4]-1, cterms[8*i+5]-1,
-                       cterms[8*i+6]-1, cterms[8*i+7]-1);
+          m->add_cterm(cterms[8L*i]-1,   cterms[8L*i+1]-1, cterms[8L*i+2]-1,
+                       cterms[8L*i+3]-1, cterms[8L*i+4]-1, cterms[8L*i+5]-1,
+                       cterms[8L*i+6]-1, cterms[8L*i+7]-1);
       }
     }
   }
@@ -608,11 +609,11 @@ int MolFilePlugin::read_optional_structure(Molecule *m, int filebonds) {
             if (angletypenames != NULL)
               type = m->angleTypeNames.typecode(angletypenames[type]);
 
-            m->add_angle(angles[3*i]-1, angles[3*i+1]-1, angles[3*i+2]-1, type);
+            m->add_angle(angles[3L*i]-1, angles[3L*i+1]-1, angles[3L*i+2]-1, type);
           }
         } else {
           for (i=0; i<numangles; i++) {
-            m->add_angle(angles[3*i]-1, angles[3*i+1]-1, angles[3*i+2]-1);
+            m->add_angle(angles[3L*i]-1, angles[3L*i+1]-1, angles[3L*i+2]-1);
           }
         }
 
@@ -625,13 +626,13 @@ int MolFilePlugin::read_optional_structure(Molecule *m, int filebonds) {
             if (dihedraltypenames != NULL)
               type = m->dihedralTypeNames.typecode(dihedraltypenames[type]);
 
-            m->add_dihedral(dihedrals[4*i]-1,   dihedrals[4*i+1]-1, 
-                            dihedrals[4*i+2]-1, dihedrals[4*i+3]-1, type);
+            m->add_dihedral(dihedrals[4L*i]-1,   dihedrals[4L*i+1]-1, 
+                            dihedrals[4L*i+2]-1, dihedrals[4L*i+3]-1, type);
           }
         } else {
           for (i=0; i<numdihedrals; i++) {
-            m->add_dihedral(dihedrals[4*i]-1,   dihedrals[4*i+1]-1, 
-                            dihedrals[4*i+2]-1, dihedrals[4*i+3]-1);
+            m->add_dihedral(dihedrals[4L*i]-1,   dihedrals[4L*i+1]-1, 
+                            dihedrals[4L*i+2]-1, dihedrals[4L*i+3]-1);
           }
         }
         
@@ -644,13 +645,13 @@ int MolFilePlugin::read_optional_structure(Molecule *m, int filebonds) {
             if (impropertypenames != NULL)
               type = m->improperTypeNames.typecode(impropertypenames[type]);
 
-            m->add_improper(impropers[4*i]-1,   impropers[4*i+1]-1, 
-                            impropers[4*i+2]-1, impropers[4*i+3]-1, type);
+            m->add_improper(impropers[4L*i]-1,   impropers[4L*i+1]-1, 
+                            impropers[4L*i+2]-1, impropers[4L*i+3]-1, type);
           }
         } else {
           for (i=0; i<numimpropers; i++) {
-            m->add_improper(impropers[4*i]-1,   impropers[4*i+1]-1, 
-                            impropers[4*i+2]-1, impropers[4*i+3]-1);
+            m->add_improper(impropers[4L*i]-1,   impropers[4L*i+1]-1, 
+                            impropers[4L*i+2]-1, impropers[4L*i+3]-1);
           }
         }
       }
@@ -659,9 +660,9 @@ int MolFilePlugin::read_optional_structure(Molecule *m, int filebonds) {
       if (numcterms > 0) {
         m->set_dataset_flag(BaseMolecule::CTERMS);
         for (i=0; i<numcterms; i++)
-          m->add_cterm(cterms[8*i]-1,   cterms[8*i+1]-1, cterms[8*i+2]-1,
-                       cterms[8*i+3]-1, cterms[8*i+4]-1, cterms[8*i+5]-1,
-                       cterms[8*i+6]-1, cterms[8*i+7]-1);
+          m->add_cterm(cterms[8L*i]-1,   cterms[8L*i+1]-1, cterms[8L*i+2]-1,
+                       cterms[8L*i+3]-1, cterms[8L*i+4]-1, cterms[8L*i+5]-1,
+                       cterms[8L*i+6]-1, cterms[8L*i+7]-1);
       }
     }
   }
@@ -716,7 +717,7 @@ Timestep *MolFilePlugin::next(Molecule *m) {
     memset(&meta, 0, sizeof(molfile_timestep_metadata));
     plugin->read_timestep_metadata(rv, &meta);
     if (meta.has_velocities) {
-      velocities = new float[3*numatoms];
+      velocities = new float[3L*numatoms];
     }
   }
 #endif
@@ -779,7 +780,7 @@ Timestep *MolFilePlugin::next(Molecule *m) {
       }
     }
     if (qmmeta.has_gradient) {
-      qm_timestep.gradient = new float[3*numatoms];
+      qm_timestep.gradient = new float[3L*numatoms];
     }
     if (qmmeta.num_charge_sets) {
       qm_timestep.charges = new double[numatoms*qmmeta.num_charge_sets];
@@ -996,7 +997,7 @@ int MolFilePlugin::write_structure(Molecule *m, const int *on) {
     return MOLFILE_ERROR;
   }
   
-  int i, j, k;
+  long i, j, k;
   molfile_atom_t *atoms = (molfile_atom_t *) calloc(1, numatoms*sizeof(molfile_atom_t));
   int *atomindexmap = (int *) calloc(1, m->nAtoms*sizeof(int));
 
@@ -1138,7 +1139,7 @@ int MolFilePlugin::write_structure(Molecule *m, const int *on) {
     
     for (i=0; i<m->nAtoms; i++) {
       const MolAtom *atom = m->atom(i);
-      int bfmap = atomindexmap[i] + 1; // 1-based mapped atom index
+      long bfmap = atomindexmap[i] + 1; // 1-based mapped atom index
 
       for (k=0; k<atom->bonds; k++) {
         int bto = atom->bondTo[k];
@@ -1214,9 +1215,9 @@ int MolFilePlugin::write_structure(Molecule *m, const int *on) {
 
     // generate packed arrays with 1-based indexing
     for (i=0; i<numangles; i++) {
-      int idx0 = atomindexmap[m->angles[i*3    ]];
-      int idx1 = atomindexmap[m->angles[i*3 + 1]];
-      int idx2 = atomindexmap[m->angles[i*3 + 2]];
+      int idx0 = atomindexmap[m->angles[i*3L    ]];
+      int idx1 = atomindexmap[m->angles[i*3L + 1]];
+      int idx2 = atomindexmap[m->angles[i*3L + 2]];
       if ((idx0 >= 0) && (idx1 >= 0) && (idx2 >= 0)) {
         angles.append3(idx0+1, idx1+1, idx2+1); // 1-based indices
 #if vmdplugin_ABIVERSION >= 16
@@ -1227,10 +1228,10 @@ int MolFilePlugin::write_structure(Molecule *m, const int *on) {
       } 
     } 
     for (i=0; i<numdihedrals; i++) {
-      int idx0 = atomindexmap[m->dihedrals[i*4    ]];
-      int idx1 = atomindexmap[m->dihedrals[i*4 + 1]];
-      int idx2 = atomindexmap[m->dihedrals[i*4 + 2]];
-      int idx3 = atomindexmap[m->dihedrals[i*4 + 3]];
+      int idx0 = atomindexmap[m->dihedrals[i*4L    ]];
+      int idx1 = atomindexmap[m->dihedrals[i*4L + 1]];
+      int idx2 = atomindexmap[m->dihedrals[i*4L + 2]];
+      int idx3 = atomindexmap[m->dihedrals[i*4L + 3]];
       if ((idx0 >= 0) && (idx1 >= 0) && (idx2 >= 0) && (idx3 >= 0)) {
         dihedrals.append4(idx0+1, idx1+1, idx2+1, idx3+1); // 1-based indices
 #if vmdplugin_ABIVERSION >= 16
@@ -1241,10 +1242,10 @@ int MolFilePlugin::write_structure(Molecule *m, const int *on) {
       } 
     } 
     for (i=0; i<numimpropers; i++) {
-      int idx0 = atomindexmap[m->impropers[i*4    ]];
-      int idx1 = atomindexmap[m->impropers[i*4 + 1]];
-      int idx2 = atomindexmap[m->impropers[i*4 + 2]];
-      int idx3 = atomindexmap[m->impropers[i*4 + 3]];
+      int idx0 = atomindexmap[m->impropers[i*4L    ]];
+      int idx1 = atomindexmap[m->impropers[i*4L + 1]];
+      int idx2 = atomindexmap[m->impropers[i*4L + 2]];
+      int idx3 = atomindexmap[m->impropers[i*4L + 3]];
       if ((idx0 >= 0) && (idx1 >= 0) && (idx2 >= 0) && (idx3 >= 0)) {
         impropers.append4(idx0+1, idx1+1, idx2+1, idx3+1); // 1-based indices
 #if vmdplugin_ABIVERSION >= 16
@@ -1262,14 +1263,14 @@ int MolFilePlugin::write_structure(Molecule *m, const int *on) {
       for (i=0; i<numcterms; i++) {
         int goodcount=0;
         for (j=0; j<8; j++) {
-          if (atomindexmap[m->cterms[i*8 + j]] >= 0)
+          if (atomindexmap[m->cterms[i*8L + j]] >= 0)
             goodcount++; 
         }
         if (goodcount == 8) {
           ctermcnt++;
           for (j=0; j<8; j++) {
             // 1-based atom index map
-            cterms.append(atomindexmap[m->cterms[i*8 + j]]+1);
+            cterms.append(atomindexmap[m->cterms[i*8L + j]]+1);
           }
         }
       }
@@ -1367,15 +1368,15 @@ int MolFilePlugin::write_timestep(const Timestep *ts, const int *on) {
     mol_ts.velocities = ts->vel;
     return plugin->write_timestep(wv, &mol_ts);
   }
-  float *coords = new float[3*numatoms];
+  float *coords = new float[3L*numatoms];
   float *vel = NULL;
-  if (ts->vel) vel = new float[3*numatoms];
-  int j=0;
+  if (ts->vel) vel = new float[3L*numatoms];
+  long j=0;
   for (int i=0; i<ts->num; i++) {
     if (on[i]) {
       if (on && !on[i]) continue;
       // check that the selection doesn't contain too many atoms
-      if (j >= 3*numatoms) {
+      if (j >= 3L*numatoms) {
         msgErr << "MolFilePlugin::write_timestep: Internal error" << sendmsg;
         msgErr << "Selection size exceeds numatoms (" << numatoms << ")" 
                << sendmsg;
@@ -1383,19 +1384,19 @@ int MolFilePlugin::write_timestep(const Timestep *ts, const int *on) {
         delete vel;
         return MOLFILE_ERROR;
       }
-      coords[j  ] = ts->pos[3*i];
-      coords[j+1] = ts->pos[3*i+1];
-      coords[j+2] = ts->pos[3*i+2];
+      coords[j  ] = ts->pos[3L*i];
+      coords[j+1] = ts->pos[3L*i+1];
+      coords[j+2] = ts->pos[3L*i+2];
       if (ts->vel) {
-        vel[j  ] = ts->vel[3*i  ];
-        vel[j+1] = ts->vel[3*i+1];
-        vel[j+2] = ts->vel[3*i+2];
+        vel[j  ] = ts->vel[3L*i  ];
+        vel[j+1] = ts->vel[3L*i+1];
+        vel[j+2] = ts->vel[3L*i+2];
       }
       j += 3;
     }
   }
   // check that the selection size matches numatoms
-  if (j != 3*numatoms) {
+  if (j != 3L*numatoms) {
     msgErr << "MolFilePlugin::write_timestep: Internal error" << sendmsg;
     msgErr << "selection size (" << j << ") doesn't match numatoms (" 
            << numatoms << ")" << sendmsg;
@@ -1505,11 +1506,9 @@ int MolFilePlugin::read_rawgraphics(Molecule *m, Scene *sc) {
 }
 
 
-int MolFilePlugin::read_volumetric(Molecule *m, int nsets, 
-    const int *setids) {
+int MolFilePlugin::read_volumetric(Molecule *m, int nsets, const int *setids) {
+  molfile_volumetric_t *metadata; // fetch metadata from file
 
-  // Fetch metadata from file
-  molfile_volumetric_t *metadata;
   int setsinfile = 0;
   plugin->read_volumetric_metadata(rv, &setsinfile, &metadata);
 
@@ -1532,18 +1531,10 @@ int MolFilePlugin::read_volumetric(Molecule *m, int nsets,
              << sendmsg;
       continue;
     }  
+
     const molfile_volumetric_t *v = metadata+sets[i];
-    float *datablock = NULL, *colorblock = NULL;
     size_t size = v->xsize * v->ysize * v->zsize;
-    datablock = new float[size];
-    if (v->has_color) 
-      colorblock = new float[3*size];
-    if (plugin->read_volumetric_data(rv, sets[i], datablock, colorblock)) {
-      msgErr << "Error reading volumetric data set " << sets[i]+1 << sendmsg;
-      delete [] datablock;
-      delete [] colorblock;
-      continue;
-    }
+
     char *dataname = stringdup(v->dataname);
     if (_filename) {
       // prepend the filename to the dataname; otherwise it's hard to tell
@@ -1574,12 +1565,66 @@ int MolFilePlugin::read_volumetric(Molecule *m, int nsets,
       delete [] dataname;
       dataname = tmp;
     }
-    m->add_volume_data(dataname, v->origin,
-         v->xaxis, v->yaxis, v->zaxis, v->xsize, v->ysize, v->zsize,
-         datablock);
-    delete [] dataname;
-    delete [] colorblock;
+
+
+#if vmdplugin_ABIVERSION > 16
+    if (plugin->read_volumetric_data_ex != NULL) {
+msgInfo << "Loading voumetric data using ABI 17+ ... " << sendmsg;
+      molfile_volumetric_readwrite_t rwparms;
+      memset(&rwparms, 0, sizeof(rwparms));
+ 
+      rwparms.setidx = sets[i];
+      if (v->has_scalar) 
+        rwparms.scalar = new float[size];
+      if (v->has_gradient) 
+        rwparms.gradient = new float[3L*size];
+#if 0
+      if (v->has_variance) 
+        rwparms.variance = new float[size];
+      if (v->has_color == ...) 
+        rwparms.rgb3f = new float[3L*size];
+      if (v->has_color == ...) 
+        rwparms.rgb3u = new unsigned char[3L*size];
+#endif
+
+      if (plugin->read_volumetric_data_ex(rv, &rwparms)) {
+        msgErr << "Error reading volumetric data set " << sets[i]+1 << sendmsg;
+        delete [] dataname;
+        delete [] rwparms.scalar;
+        delete [] rwparms.gradient;
+        delete [] rwparms.variance;
+        delete [] rwparms.rgb3f;
+        delete [] rwparms.rgb3u;
+        continue;
+      }
+
+      m->add_volume_data(dataname, v->origin, v->xaxis, v->yaxis, v->zaxis, 
+                         v->xsize, v->ysize, v->zsize, 
+                         rwparms.scalar, rwparms.gradient, rwparms.variance);
+      delete [] dataname;
+    } else if (plugin->read_volumetric_data != NULL) {
+#endif 
+      float *scalar=NULL, *rgb3f=NULL;
+      scalar = new float[size];
+      if (v->has_color) 
+        rgb3f = new float[3L*size];
+      if (plugin->read_volumetric_data(rv, sets[i], scalar, rgb3f)) {
+        msgErr << "Error reading volumetric data set " << sets[i]+1 << sendmsg;
+        delete [] dataname;
+        delete [] scalar;
+        delete [] rgb3f;
+        continue;
+      }
+
+      m->add_volume_data(dataname, v->origin, v->xaxis, v->yaxis, v->zaxis, 
+                         v->xsize, v->ysize, v->zsize, scalar);
+      delete [] dataname;
+      delete [] rgb3f; // have to delete if created, since we don't use yet
+#if vmdplugin_ABIVERSION > 16
+    }
+#endif 
   }
+
   delete [] sets;
 
   return MOLFILE_SUCCESS;
@@ -1644,9 +1689,9 @@ int MolFilePlugin::read_qm_data(Molecule *mol) {
     qmdata->basis.num_shells_per_atom = new int[metadata.num_basis_atoms];
     qmdata->basis.atomic_number       = new int[metadata.num_basis_atoms];
     qmdata->basis.num_prim_per_shell  = new int[metadata.num_shells];
-    qmdata->basis.basis            = new float[2*metadata.num_basis_funcs];
+    qmdata->basis.basis            = new float[2L*metadata.num_basis_funcs];
     qmdata->basis.shell_types      = new int[metadata.num_shells];
-    qmdata->basis.angular_momentum = new int[3*metadata.wavef_size];
+    qmdata->basis.angular_momentum = new int[3L*metadata.wavef_size];
   }
 
   if (metadata.nimag)

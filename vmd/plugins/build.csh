@@ -19,6 +19,61 @@ setenv unixdir `pwd`
 ## Check for builds on remote hosted supercomputers, etc.
 ##
 switch ( `hostname` )
+ ## Amazon EC2
+ case ip-*-*-*-*:
+    echo "Using build settings for Amazon EC2"
+    setenv TCLINC -I/home/ec2-user/vmd/lib/tcl/include
+    setenv TCLLIB -L/home/ec2-user/vmd/lib/tcl
+    cd $unixdir; gmake LINUXAMD64 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_LINUXAMD64 >& log.LINUXAMD64.$DATE < /dev/null &
+    echo "Waiting for all plugin make jobs to complete..."
+    wait;
+    echo "^G^G^G^G"
+    echo "Plugin builds done..."
+    breaksw;
+
+ ## NVIDIA P8 "Minsky" test machines
+ case pwr02: 
+ case pwr03: 
+    echo "Using build settings for POWER8+P100 test box"
+    setenv TCLINC -I/home/jstone/vmd/lib/tcl/include
+    setenv TCLLIB -L/home/jstone/vmd/lib/tcl
+    cd $unixdir; make OPENPOWER TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_SUMMIT >& log.OPENPOWER.$DATE < /dev/null &
+#    setenv NETCDFINC -I/autofs/na3_home1/stonej1/vmd/lib/netcdf/include
+#    setenv NETCDFLIB -L/autofs/na3_home1/stonej1/vmd/lib/netcdf
+    echo "Waiting for all plugin make jobs to complete..."
+    wait;
+    echo "^G^G^G^G"
+    echo "Plugin builds done..."
+    breaksw;
+
+ ## psgcluster.nvidia.com
+ case psgcluster*:
+    echo "Using build settings for PSG cluster"
+    setenv TCLINC -I/home/jstone/vmd/lib/tcl/include
+    setenv TCLLIB -L/home/jstone/vmd/lib/tcl
+    cd $unixdir; make LINUXAMD64 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_LINUXAMD64 >& log.LINUXAMD64.$DATE < /dev/null &
+#    setenv NETCDFINC -I/autofs/na3_home1/stonej1/vmd/lib/netcdf/include
+#    setenv NETCDFLIB -L/autofs/na3_home1/stonej1/vmd/lib/netcdf
+    echo "Waiting for all plugin make jobs to complete..."
+    wait;
+    echo "^G^G^G^G"
+    echo "Plugin builds done..."
+    breaksw;
+
+ ## ORNL Crest, Summit precursor 
+ case crest-login1*:
+    echo "Using build settings for ORNL Crest IBM POWER8"
+    setenv TCLINC -I/autofs/nccs-svm1_home1/stonej1/vmd/lib/tcl/include
+    setenv TCLLIB -L/autofs/nccs-svm1_home1/stonej1/vmd/lib/tcl
+    cd $unixdir; make SUMMIT TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_SUMMIT >& log.SUMMIT.$DATE < /dev/null &
+#    setenv NETCDFINC -I/autofs/na3_home1/stonej1/vmd/lib/netcdf/include
+#    setenv NETCDFLIB -L/autofs/na3_home1/stonej1/vmd/lib/netcdf
+    echo "Waiting for all plugin make jobs to complete..."
+    wait;
+    echo "^G^G^G^G"
+    echo "Plugin builds done..."
+    breaksw;
+
 
  ## ORNL "Titan" Cray XK7
  case titan-ext1:
@@ -39,6 +94,7 @@ switch ( `hostname` )
     echo "^G^G^G^G"
     echo "Plugin builds done..."
     breaksw;
+
 
  ## IU Big Red II Cray XE6/XK7
  case login1:
@@ -72,9 +128,9 @@ switch ( `hostname` )
     echo "Plugin builds done..."
     breaksw;
 
- ## CSCS Piz Daint Cray XC30
+ ## CSCS Piz Daint Cray XC50
  case daint*:
-    echo "Using build settings for CSCS Cray XC30 Piz Daint"
+    echo "Using build settings for CSCS Cray XC50 Piz Daint"
     setenv TCLINC -I/users/stonej/vmd/lib/tcl/include
     setenv TCLLIB -L/users/stonej/vmd/lib/tcl
     cd $unixdir; gmake CRAY_XC TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_CRAY_XC >& log.CRAY_XC.$DATE < /dev/null &

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_display.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.32 $       $Date: 2015/05/19 20:32:53 $
+ *      $Revision: 1.33 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -124,8 +124,13 @@ static PyObject *set(PyObject *self, PyObject *args, PyObject *keywds) {
           PyErr_SetString(PyExc_ValueError, "size argument must be a two-element list");
           return NULL;
         }
+#if PY_MAJOR_VERSION >= 3
+        w = PyLong_AsLong(PyList_GET_ITEM(size, 0));
+        h = PyLong_AsLong(PyList_GET_ITEM(size, 1));
+#else
         w = PyInt_AsLong(PyList_GET_ITEM(size, 0));
         h = PyInt_AsLong(PyList_GET_ITEM(size, 1));
+#endif
         if (PyErr_Occurred()) return NULL;
         app->display_set_size(w, h);
         break;
@@ -180,6 +185,18 @@ static PyObject *get(PyObject *self, PyObject *args) {
     case 3: return PyFloat_FromDouble(disp->distance_to_screen()); 
     case 4: return PyFloat_FromDouble(disp->near_clip());
     case 5: return PyFloat_FromDouble(disp->far_clip());
+#if PY_MAJOR_VERSION >= 3
+    case 6: return PyLong_FromLong(disp->aa_enabled() ? 1 : 0); 
+    case 7: return PyLong_FromLong(disp->cueing_enabled() ? 1 : 0); 
+    case 8: return PyLong_FromLong(disp->culling_enabled() ? 1 : 0);
+    case 9: return PyUnicode_FromString( 
+              disp->stereo_name(disp->stereo_mode())); 
+    case 10: return PyUnicode_FromString(
+              disp->get_projection());
+    case 12: return PyLong_FromLong(disp->ao_enabled() ? 1 : 0); 
+    case 15: return PyLong_FromLong(disp->shadows_enabled() ? 1 : 0);
+    case 16: return PyLong_FromLong(disp->dof_enabled() ? 1 : 0);
+#else
     case 6: return PyInt_FromLong(disp->aa_enabled() ? 1 : 0); 
     case 7: return PyInt_FromLong(disp->cueing_enabled() ? 1 : 0); 
     case 8: return PyInt_FromLong(disp->culling_enabled() ? 1 : 0);
@@ -187,14 +204,15 @@ static PyObject *get(PyObject *self, PyObject *args) {
               disp->stereo_name(disp->stereo_mode())); 
     case 10: return PyString_FromString(
               disp->get_projection());
+    case 12: return PyInt_FromLong(disp->ao_enabled() ? 1 : 0); 
+    case 15: return PyInt_FromLong(disp->shadows_enabled() ? 1 : 0);
+    case 16: return PyInt_FromLong(disp->dof_enabled() ? 1 : 0);
+#endif
     case 11: 
              app->display_get_size(&w, &h);
              return Py_BuildValue((char *)"[i,i]", w, h);
-    case 12: return PyInt_FromLong(disp->ao_enabled() ? 1 : 0); 
     case 13: return PyFloat_FromDouble(disp->get_ao_ambient());
     case 14: return PyFloat_FromDouble(disp->get_ao_direct());
-    case 15: return PyInt_FromLong(disp->shadows_enabled() ? 1 : 0);
-    case 16: return PyInt_FromLong(disp->dof_enabled() ? 1 : 0);
     case 17: return PyFloat_FromDouble(disp->get_dof_fnumber());
     case 18: return PyFloat_FromDouble(disp->get_dof_focal_dist());
     default: ;
@@ -211,7 +229,11 @@ static PyObject *stereomodes(PyObject *self, PyObject *args) {
   int num = disp->num_stereo_modes();
   PyObject *newlist = PyList_New(num);
   for (int j=0; j<num; j++)
+#if PY_MAJOR_VERSION >= 3
+    PyList_SET_ITEM(newlist, j, PyBytes_FromString(disp->stereo_name(j)));
+#else
     PyList_SET_ITEM(newlist, j, PyString_FromString(disp->stereo_name(j)));
+#endif
   return newlist;
 }
  
@@ -223,13 +245,31 @@ static PyMethodDef DisplayMethods[] = {
   {(char *)"set", (PyCFunction)set, METH_VARARGS | METH_KEYWORDS},
   {(char *)"get", (vmdPyMethod)get, METH_VARARGS},
   {(char *)"stereomodes", (vmdPyMethod)stereomodes, METH_VARARGS},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
+
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef displaydef = {
+  PyModuleDef_HEAD_INIT,
+  "display",
+  NULL,
+  -1,
+  DisplayMethods,
+  NULL, NULL, NULL, NULL
+};
+
+PyMODINIT_FUNC PyInit_display(void) {
+   PyObject *m = PyModule_Create(&displaydef); 
+#else
 void initdisplay() {
   PyObject *m = Py_InitModule((char *)"display", DisplayMethods);
+#endif
   // XXX elminate these hard-coded string names
   PyModule_AddStringConstant(m, (char *)"PROJ_PERSP", (char *)"Perspective");
   PyModule_AddStringConstant(m, (char *)"PROJ_ORTHO", (char *)"Orthographic");
+#if PY_MAJOR_VERSION >= 3
+  return m;
+#endif
 }
  

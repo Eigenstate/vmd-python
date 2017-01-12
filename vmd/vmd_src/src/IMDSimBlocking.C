@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: IMDSimBlocking.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.15 $       $Date: 2010/12/16 04:08:19 $
+ *      $Revision: 1.17 $       $Date: 2016/11/28 03:05:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -53,7 +53,7 @@ void IMDSimBlocking::update() {
 void IMDSimBlocking::process_coordinates(int32 length) {
   if (numcoords < length) { // Need to resize
     delete [] curpos;
-    curpos = new float[3*length];
+    curpos = new float[3L*length];
   }
   numcoords = length;
   if (imd_recv_fcoords(sock, numcoords, curpos)) {
@@ -77,7 +77,7 @@ void IMDSimBlocking::process_energies(int32 /* length */) {
 // This should never happen, but I'll handle it in case it does
 void IMDSimBlocking::process_mdcomm(int32 length) {
   int32 *ind = new int32[length];
-  float *f = new float[3*length];
+  float *f = new float[3L*length];
   if (imd_recv_mdcomm(sock, length, ind, f)) {
     msgErr << "Error reading MDComm-style forces!" << sendmsg;
     disconnect();
@@ -88,9 +88,9 @@ void IMDSimBlocking::process_mdcomm(int32 length) {
 
 void IMDSimBlocking::get_next_ts(float *pos, IMDEnergies *buf) {
   new_coords_ready = 0;
-  memcpy(pos, curpos, 3*numcoords*sizeof(float));
+  memcpy(pos, curpos, 3L*numcoords*sizeof(float));
   memcpy(buf, &imdEnergies, sizeof(IMDEnergies));
-  if (need2flip) swap4_aligned(pos, 3*numcoords);
+  if (need2flip) swap4_aligned(pos, 3L*numcoords);
 }
 
 void IMDSimBlocking::send_forces(int num, int *ind, float *forces) {
@@ -98,7 +98,7 @@ void IMDSimBlocking::send_forces(int num, int *ind, float *forces) {
   if (!isConnected()) return;
   if (need2flip) {
     swap4_aligned(ind, num);
-    swap4_aligned(forces, 3*num);
+    swap4_aligned(forces, 3L*num);
   }
   if (imd_send_mdcomm(sock, num, ind, forces)) {
     msgErr << "Error sending MDComm indices+forces" << sendmsg;

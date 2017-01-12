@@ -76,7 +76,7 @@ int topo_mol_write_pdb(topo_mol *mol, FILE *file, void *v,
   return 0;
 }
 
-int topo_mol_write_namdbin(topo_mol *mol, FILE *file, void *v, 
+int topo_mol_write_namdbin(topo_mol *mol, FILE *file, FILE *velfile, void *v, 
                                 void (*print_msg)(void *, const char *)) {
 
   char static_assert_int_is_32_bits[sizeof(int) == 4 ? 1 : -1];
@@ -106,6 +106,12 @@ int topo_mol_write_namdbin(topo_mol *mol, FILE *file, void *v,
   if ( fwrite(&numatoms, sizeof(int), 1, file) != 1 ) {
     print_msg(v, "error writing namdbin file");
     return -2;
+  }
+  if ( velfile ) {
+    if ( fwrite(&numatoms, sizeof(int), 1, velfile) != 1 ) {
+      print_msg(v, "error writing velnamdbin file");
+      return -4;
+    }
   }
   for ( iseg=0; iseg<nseg; ++iseg ) {
     seg = mol->segment_array[iseg];
@@ -138,6 +144,15 @@ int topo_mol_write_namdbin(topo_mol *mol, FILE *file, void *v,
           print_msg(v, "error writing namdbin file");
           return -3;
         }
+        if ( velfile ) {
+          xyz[0] = atom->vx;
+          xyz[1] = atom->vy;
+          xyz[2] = atom->vz;
+          if ( fwrite(xyz, sizeof(double), 3, velfile) != 3 ) {
+            print_msg(v, "error writing velnamdbin file");
+            return -5;
+          }
+        }
       }
     }
   }
@@ -168,6 +183,8 @@ int topo_mol_write_psf(topo_mol *mol, FILE *file, int charmmfmt, int nocmap,
   int nimprs;
   topo_mol_cmap_t *cmap;
   int ncmaps;
+  topo_mol_exclusion_t *excl;
+  int nexcls;
   int numinline;
   int npres,ipres,ntopo,itopo;
   topo_defs_topofile_t *topo;
@@ -189,6 +206,7 @@ int topo_mol_write_psf(topo_mol *mol, FILE *file, int charmmfmt, int nocmap,
   ndihes = 0;
   nimprs = 0;
   ncmaps = 0;
+  nexcls = 0;
   nseg = hasharray_count(mol->segment_hash);
   for ( iseg=0; iseg<nseg; ++iseg ) {
     seg = mol->segment_array[iseg];
@@ -245,6 +263,12 @@ int topo_mol_write_psf(topo_mol *mol, FILE *file, int charmmfmt, int nocmap,
             ++ncmaps;
           }
         }
+        for ( excl = atom->exclusions; excl;
+                excl = topo_mol_exclusion_next(excl,atom) ) {
+          if ( excl->atom[0] == atom && ! excl->del ) {
+            ++nexcls;
+          }
+        }
       }
     }
   }
@@ -257,6 +281,8 @@ int topo_mol_write_psf(topo_mol *mol, FILE *file, int charmmfmt, int nocmap,
   sprintf(buf,"total of %d dihedrals",ndihes);
   print_msg(v,buf);
   sprintf(buf,"total of %d impropers",nimprs);
+  print_msg(v,buf);
+  sprintf(buf,"total of %d explicit exclusions",nexcls);
   print_msg(v,buf);
 
   if ( namdfmt ) { charmmext = 0; }
@@ -482,16 +508,50 @@ int topo_mol_write_psf(topo_mol *mol, FILE *file, int charmmfmt, int nocmap,
 
   fprintf(file,"%8d !NDON: donors\n\n\n",0);
   fprintf(file,"%8d !NACC: acceptors\n\n\n",0);
-  fprintf(file,"%8d !NNB\n\n",0);
-  /* Pad with zeros, one for every atom */
-  {
-    int i, fullrows;
-    fullrows = atomid/8;
-    for (i=0; i<fullrows; ++i) 
-      fprintf(file, (charmmext?"%10d%10d%10d%10d%10d%10d%10d%10d\n":"%8d%8d%8d%8d%8d%8d%8d%8d\n"),0,0,0,0,0,0,0,0);
-    for (i=atomid - fullrows*8; i; --i)
-      fprintf(file, (charmmext?"%10d":"%8d"),0);
-  } 
+  fprintf(file,"%8d !NNB\n",nexcls);
+  /* Print atom numbers for exclusions */
+  numinline = 0;
+  for ( iseg=0; iseg<nseg; ++iseg ) {
+    seg = mol->segment_array[iseg];
+    if (! seg) continue;
+    nres = hasharray_count(seg->residue_hash);
+    for ( ires=0; ires<nres; ++ires ) {
+      res = &(seg->residue_array[ires]);
+      for ( atom = res->atoms; atom; atom = atom->next ) {
+        for ( excl = atom->exclusions; excl;
+                excl = topo_mol_exclusion_next(excl,atom) ) {
+          if ( excl->atom[0] == atom && ! excl->del ) {
+            if ( numinline == 8 ) { fprintf(file,"\n");  numinline = 0; }
+            fprintf(file,(charmmext?" %9d":" %7d"),excl->atom[1]->atomid);
+            ++numinline;
+          }
+        }
+      }
+    }
+  }
+  fprintf(file,"\n");
+  /* Print exclusion indices for every atom */
+  nexcls = 0;
+  numinline = 0;
+  for ( iseg=0; iseg<nseg; ++iseg ) {
+    seg = mol->segment_array[iseg];
+    if (! seg) continue;
+    nres = hasharray_count(seg->residue_hash);
+    for ( ires=0; ires<nres; ++ires ) {
+      res = &(seg->residue_array[ires]);
+      for ( atom = res->atoms; atom; atom = atom->next ) {
+        for ( excl = atom->exclusions; excl;
+                excl = topo_mol_exclusion_next(excl,atom) ) {
+          if ( excl->atom[0] == atom && ! excl->del ) {
+              ++nexcls;
+          }
+        }
+        if ( numinline == 8 ) { fprintf(file,"\n");  numinline = 0; }
+        fprintf(file,(charmmext?" %9d":" %7d"),nexcls);
+        ++numinline;
+      }
+    }
+  }
   fprintf(file,"\n\n");
 
   fprintf(file,(charmmext?"%8d %7d !NGRP\n%10d%10d%10d\n\n":"%8d %7d !NGRP\n%8d%8d%8d\n\n"),1,0,0,0,0);

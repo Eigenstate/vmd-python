@@ -191,3 +191,44 @@ int psf_get_cmaps(FILE *f, int fw, int n, int *cmaps) {
   return psf_get_dihedrals(f, fw, 2*n, cmaps);
 }
 
+
+int psf_get_exclusions(FILE *f, int fw, int nexcl, int *exclusions, int natom, int *exclusion_indices) {
+  char inbuf[PSF_RECORD_LENGTH+2];
+  char *atomptr = NULL;
+  // read list of excluded atoms
+  int i=0;
+  while (i<nexcl) {
+    if((i % 8) == 0) {
+      // must read next line
+      if(!fgets(inbuf,PSF_RECORD_LENGTH+2,f)) {
+        // early EOF encountered
+        break;
+      }
+      atomptr = inbuf;
+    }
+    if((exclusions[i] = atoifw(&atomptr, fw)) < 1)
+      break;
+    i++;
+  }
+  if (i != nexcl)
+    return 1;
+
+  // read list of exclusion indices for each atom
+  i=0;
+  while (i<natom) {
+    if((i % 8) == 0) {
+      // must read next line
+      if(!fgets(inbuf,PSF_RECORD_LENGTH+2,f)) {
+        // early EOF encountered
+        break;
+      }
+      atomptr = inbuf;
+    }
+    if((exclusion_indices[i] = atoifw(&atomptr, fw)) < 0) {
+      break;
+    }
+    i++;
+  }
+  return (i != natom);
+}
+

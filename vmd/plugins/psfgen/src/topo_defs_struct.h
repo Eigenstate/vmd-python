@@ -78,6 +78,15 @@ typedef struct topo_defs_cmap_t {
   int del;
 } topo_defs_cmap_t;
 
+typedef struct topo_defs_exclusion_t {
+  struct topo_defs_exclusion_t *next;
+  char atom1[NAMEMAXLEN];
+  char atom2[NAMEMAXLEN];
+  int res1, rel1;
+  int res2, rel2;
+  int del;
+} topo_defs_exclusion_t;
+
 typedef struct topo_defs_conformation_t {
   struct topo_defs_conformation_t *next;
   char atom1[NAMEMAXLEN];
@@ -102,6 +111,7 @@ typedef struct topo_defs_residue_t {
   topo_defs_dihedral_t *dihedrals;
   topo_defs_improper_t *impropers;
   topo_defs_cmap_t *cmaps;
+  topo_defs_exclusion_t *exclusions;
   topo_defs_conformation_t *conformations;
   char pfirst[NAMEMAXLEN];
   char plast[NAMEMAXLEN];

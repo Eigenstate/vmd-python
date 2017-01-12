@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,15 +11,11 @@
  *
  *	$RCSfile: DrawMolItemNanoShaper.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.3 $	$Date: 2015/05/31 22:53:50 $
+ *	$Revision: 1.6 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
  *  Use a NanoShaperInterface object to get a surface triangulation information
- *  There are several rendering options:
- *    0) surface type
- *    1) probe radius
- *    2) grid spacing
  *
  ***************************************************************************/
 
@@ -32,7 +28,7 @@
 #include "Inform.h"
 #include "Scene.h"
 
-void DrawMolItem::draw_nanoshaper(float *framepos, int surftype, int draw_wireframe, float radius, float gspacing) {
+void DrawMolItem::draw_nanoshaper(float *framepos, int surftype, int draw_wireframe, float gspacing, float probe_radius, float skin_parm, float blob_parm) {
   int i;
   int ns_ok = 1;
 
@@ -43,8 +39,8 @@ void DrawMolItem::draw_nanoshaper(float *framepos, int surftype, int draw_wirefr
 
     nanoshaper.clear();    
     // so I need to recalculate the NanoShaper surface
-    float *xyzr = new float[4* mol -> nAtoms];
-    int   * ids = new int[mol -> nAtoms];
+    float *xyzr = new float[4L*mol->nAtoms];
+    int    *ids = new int[mol->nAtoms];
     int   *flgs = NULL; // note: this is NOT ALLOCATED
     const float *aradius = mol->radius();
 
@@ -56,15 +52,15 @@ void DrawMolItem::draw_nanoshaper(float *framepos, int surftype, int draw_wirefr
     float r;
     for (i=atomSel->firstsel; i <= atomSel->lastsel; i++) {
       if (atomSel->on[i]) {
-        xyzr[4*count+0] = framepos[3*i+0];
-        xyzr[4*count+1] = framepos[3*i+1];
-        xyzr[4*count+2] = framepos[3*i+2];
+        xyzr[4L*count+0] = framepos[3L*i+0];
+        xyzr[4L*count+1] = framepos[3L*i+1];
+        xyzr[4L*count+2] = framepos[3L*i+2];
 
         r = aradius[i];
         if (r < 0.2f)
           r = 0.2f; // work around an MSMS bug
 
-        xyzr[4*count+3] = r;
+        xyzr[4L*count+3] = r;
         ids[count] = i;
         count++;
       }
@@ -72,7 +68,7 @@ void DrawMolItem::draw_nanoshaper(float *framepos, int surftype, int draw_wirefr
 
     // compute the surface 
     ns_ok = (NanoShaperInterface::COMPUTED == 
-                nanoshaper.compute_from_file(surftype, radius, gspacing, count, ids, xyzr, flgs));
+                nanoshaper.compute_from_file(surftype, gspacing, probe_radius, skin_parm, blob_parm, count, ids, xyzr, flgs));
 
     if (!ns_ok)
       msgInfo << "Could not compute NanoShaper surface" << sendmsg;

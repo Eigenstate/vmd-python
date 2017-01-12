@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: vmd.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.95 $	$Date: 2014/12/11 03:05:56 $
+ *	$Revision: 1.98 $	$Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -308,13 +308,50 @@ int VMDinitialize(int *argc, char ***argv, int mpienabled) {
     msgInfo << "Multithreading available, " << vmdnumcpus 
             << ((vmdnumcpus > 1) ? " CPUs" : " CPU") <<  " detected." 
             << sendmsg;
+
+    wkf_cpu_caps_t cpucaps;
+    if (!wkf_cpu_capability_flags(&cpucaps)) {
+      msgInfo << "  CPU features: ";
+      if (cpucaps.flags & CPU_SSE2)
+        msgInfo << "SSE2 ";
+      if (cpucaps.flags & CPU_AVX)
+        msgInfo << "AVX ";
+      if (cpucaps.flags & CPU_AVX2)
+        msgInfo << "AVX2 ";
+      if (cpucaps.flags & CPU_FMA)
+        msgInfo << "FMA ";
+
+      if (cpucaps.flags & CPU_KNL) {
+        msgInfo << "KNL:AVX-512F+CD+ER+PF ";
+      } else {
+        if (cpucaps.flags & CPU_AVX512F)
+          msgInfo << "AVX512F ";
+        if (cpucaps.flags & CPU_AVX512CD)
+          msgInfo << "AVX512CD ";
+        if (cpucaps.flags & CPU_AVX512ER)
+          msgInfo << "AVX512ER ";
+        if (cpucaps.flags & CPU_AVX512PF)
+          msgInfo << "AVX512PF ";
+      }
+      msgInfo << sendmsg;
+    }
 #endif
 
     long vmdcorefree = vmd_get_avail_physmem_mb();
     if (vmdcorefree >= 0) {
       long vmdcorepcnt = vmd_get_avail_physmem_percent();
-      msgInfo << "Free system memory: " << vmdcorefree 
-              << "MB (" << vmdcorepcnt << "%)" << sendmsg;
+
+      // on systems with large physical memory (tens of GB) we
+      // report gigabytes of memory rather than megabytes
+      if (vmdcorefree > 8000) {
+        vmdcorefree += 512; // round up to nearest GB 
+        vmdcorefree /= 1024; 
+        msgInfo << "Free system memory: " << vmdcorefree 
+                << "GB (" << vmdcorepcnt << "%)" << sendmsg;
+      } else {
+        msgInfo << "Free system memory: " << vmdcorefree 
+                << "MB (" << vmdcorepcnt << "%)" << sendmsg;
+      }
     }
   }
 

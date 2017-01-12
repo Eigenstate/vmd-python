@@ -14,7 +14,7 @@
 # To reload:
 #  destroy .plumed; source vmdplumed.tcl; plumed_tk
 
-package provide plumed 2.4
+package provide plumed 2.5
 
 package require Tk 8.5
 package require http
@@ -25,22 +25,21 @@ namespace eval ::Plumed:: {
     namespace export plumed
     variable plugin_name "Plumed-GUI collective variable analysis tool"
 
-    variable plumed2_online_docbase "http://plumed.github.io/doc-v2.1/user-doc/html"
-    variable plumed2_online_docbase_fallback "http://plumed2.berlios.de/master/user-doc/html/"
-    variable github_repository "https://github.com/tonigi/vmd_plumed/blob/master"
-
     variable debug 0;		       	# extra log info
-    variable highlight_error_ms 12000; # error message held this long
-    variable plumed_default_version 2; # default PLUMED to use if none found
+    variable highlight_error_ms 12000;  # error message held this long
+    variable plumed_default_version 2;  # default PLUMED to use if none found
+    
+    variable plumed2_online_docbase "http://plumed.github.io/doc-v2.2/user-doc/html"
+    variable github_repository "https://github.com/tonigi/vmd_plumed/"
 
     variable plot_points 0;	       	# show data markers
-    variable w;			# handle to main window
+    variable w;				# handle to main window
 
-    variable textfile unnamed.plumed; # new file name
+    variable textfile unnamed.plumed; 	# new file name
 
     # Header of short help...
     variable text_instructions_header \
-"Enter collective variable definitions below, in PLUMED syntax.  
+"Enter collective variable definitions below, in your engine's syntax.  
 Click 'Plot' to evaluate them on the 'top' trajectory.  
 VMD atom selections in square brackets expand automatically."
 
@@ -61,11 +60,34 @@ VMD atom selections in square brackets expand automatically."
 Default UNITS are nm, ps and kJ/mol unless changed.
 Right mouse button provides help on keywords."
 
+    # ...short help VMDCV
+    variable text_instructions_example_vmdcv \
+{For example:
+
+    colvar {
+        name this_proteins_gyration_radius
+        gyration {
+            atoms {
+                [ protein and name CA ]       # Keyword 'atomNumbers' is implied
+            }
+        }
+    }
+}
+
     # Example scripts (file new)
     variable empty_meta_inp_v1 "\nDISTANCE LIST 1 200      ! Just an example\n"
     variable empty_meta_inp_v2 "
 UNITS  LENGTH=A  ENERGY=kcal/mol  TIME=ps\n
 d1:    DISTANCE ATOMS=1,200                     # Just an example\n"
+    variable empty_meta_inp_vmdcv "
+# Just an example
+colvar {
+    name d
+    distance { 
+	group1 { atomNumbers 1 }
+	group2 { \[ serial 200 \] }
+    }
+}\n"
 
     # Not found text
     variable plumed_not_found_message \
@@ -177,6 +199,7 @@ proc ::Plumed::plumed {} {
     bind $w <$modifier-s> Plumed::file_save
     bind $w <$modifier-S> Plumed::file_saveas
     bind $w <$modifier-e> Plumed::file_export
+#    bind $w <$modifier-v> "::Plumed::tk_textPaste_modern $::Plumed::w.txt.text;break"
 
     ## edit
     $w.menubar add cascade  -label Edit -underline 0 -menu $w.menubar.edit
@@ -186,7 +209,7 @@ proc ::Plumed::plumed {} {
     $w.menubar.edit add separator
     $w.menubar.edit add command -label "Cut" -command  "tk_textCut $::Plumed::w.txt.text" -acce $mod+X
     $w.menubar.edit add command -label "Copy" -command  "tk_textCopy $::Plumed::w.txt.text" -acce $mod+C
-    $w.menubar.edit add command -label "Paste" -command  "tk_textPaste $::Plumed::w.txt.text" -acce $mod+V
+    $w.menubar.edit add command -label "Paste" -command  "::Plumed::tk_textPaste_modern $::Plumed::w.txt.text" -acce $mod+V
     $w.menubar.edit add separator
     $w.menubar.edit add command -label "Select all" -command "$::Plumed::w.txt.text tag add sel 1.0 end" -acce $mod+A
     bind $w <$modifier-a> "$::Plumed::w.txt.text tag add sel 1.0 end"
@@ -209,21 +232,28 @@ proc ::Plumed::plumed {} {
     $w.menubar add cascade -label Help -underline 0 -menu $w.menubar.help
     menu $w.menubar.help -tearoff no
     $w.menubar.help add command -label "Getting started with Plumed-GUI" \
-	-command "vmd_open_url http://www.multiscalelab.org/utilities/PlumedGUI"
+	-command "vmd_open_url $Plumed::github_repository/blob/master/doc/README.md"
     $w.menubar.help add command -label "What to cite" \
         -command "vmd_open_url http://dx.doi.org/10.1016/j.cpc.2013.11.019"
     $w.menubar.help add separator
-    $w.menubar.help add command -label "What is PLUMED?" \
-        -command "vmd_open_url http://www.plumed-code.org"
-    $w.menubar.help add command -label "PLUMED 2.1 user's guide and CV syntax" \
-	-command "vmd_open_url $Plumed::plumed2_online_docbase/index.html"
-    $w.menubar.help add command -label "PLUMED 1.3 user's guide and CV syntax" \
-	-command "vmd_open_url http://www.plumed-code.org/documentation"
-    $w.menubar.help add separator
     $w.menubar.help add command -label "How to install PLUMED's binaries" \
-	-command "vmd_open_url $Plumed::github_repository/doc/INSTALL-PLUMED-FIRST.md"
+	-command "vmd_open_url $Plumed::github_repository/blob/master/doc/INSTALL-PLUMED-FIRST.md"
     $w.menubar.help add command -label "Attempt download of prebuilt Windows driver binaries" \
 	-command ::Plumed::help_win32_install -state $win32_install_state
+    $w.menubar.help add separator
+    $w.menubar.help add command -label "What is PLUMED?" \
+        -command "vmd_open_url http://www.plumed.org"
+    $w.menubar.help add command -label "PLUMED 2.2 user's guide and CV syntax" \
+	-command "vmd_open_url $Plumed::plumed2_online_docbase/index.html"
+    $w.menubar.help add command -label "PLUMED 1.3 user's guide and CV syntax" \
+	-command "vmd_open_url http://www.plumed.org/documentation"
+    if [ info exists ::env(PLUMED_GUI_EXPERIMENTAL) ] {
+	$w.menubar.help add separator
+	$w.menubar.help add command -label "VMD Colvars homepage" \
+	    -command "vmd_open_url http://colvars.github.io/" 
+	$w.menubar.help add command -label "VMD Colvars manual" \
+	    -command "vmd_open_url http://colvars.github.io/colvars-refman-vmd/colvars-refman-vmd.html"
+    }
     $w.menubar.help add separator
     $w.menubar.help add command -label "About the $plugin_name" \
 	-command [namespace current]::help_about
@@ -245,34 +275,40 @@ proc ::Plumed::plumed {} {
     pack [  ttk::labelframe $w.options -relief ridge  -text "Options"  ] \
 	-side bottom -fill x
 
-    pack [  ttk::frame $w.options.pbc   ]  -side top -fill x
-    pack [  ttk::radiobutton $w.options.pbc.pbcno -value 1 -text "No PBC  " \
+    pack [  ttk::frame $w.options.line1   ]  -side top -fill x
+    pack [  ttk::frame $w.options.line1.pbc   ]  -side left -fill x
+    pack [  ttk::label $w.options.line1.pbc.text -text "PBC: " ] -side left -expand 0
+    pack [  ttk::radiobutton $w.options.line1.pbc.pbcno -value 1 -text "None  " \
 	       -variable [namespace current]::pbc_type ] -side left
-    pack [  ttk::radiobutton $w.options.pbc.pbcdcd -value 2 -text "From trajectory  " \
+    pack [  ttk::radiobutton $w.options.line1.pbc.pbcdcd -value 2 -text "From trajectory  " \
 	       -variable [namespace current]::pbc_type ] -side left
-    pack [  ttk::radiobutton $w.options.pbc.pbcbox -value 3 -text "Box:" \
+    pack [  ttk::radiobutton $w.options.line1.pbc.pbcbox -value 3 -text "Box:" \
 	       -variable [namespace current]::pbc_type ] -side left
-    pack [  ttk::entry $w.options.pbc.boxx -width 6 -textvariable [namespace current]::pbc_boxx ] -side left
-    pack [  ttk::entry $w.options.pbc.boxy -width 6 -textvariable [namespace current]::pbc_boxy ] -side left
-    pack [  ttk::entry $w.options.pbc.boxz -width 6 -textvariable [namespace current]::pbc_boxz ] -side left
-    pack [  ttk::label $w.options.pbc.spacer2 -text " " ] -side left -expand true -fill x
-    pack [  ttk::checkbutton $w.options.pbc.inspector -text "Mark data points" \
-	       -variable  [namespace current]::plot_points ] -side left
+    pack [  ttk::entry $w.options.line1.pbc.boxx -width 6 -textvariable [namespace current]::pbc_boxx ] -side left
+    pack [  ttk::entry $w.options.line1.pbc.boxy -width 6 -textvariable [namespace current]::pbc_boxy ] -side left
+    pack [  ttk::entry $w.options.line1.pbc.boxz -width 6 -textvariable [namespace current]::pbc_boxz ] -side left
+
+    pack [  ttk::checkbutton $w.options.line1.inspector -text "Mark data points" \
+	       -variable  [namespace current]::plot_points ] -side right
 
     # ----------------------------------------
-    pack [  ttk::frame $w.options.location ]  -fill x
-    pack [  ttk::label $w.options.location.version -text "Plumed version:" ] -side left -expand 0
-    pack [  ttk::radiobutton $w.options.location.v1 -value 1 -text "1.3  "        \
-	       -variable [namespace current]::plumed_version              \
-     	       -command [namespace current]::plumed_version_changed    	  ] -side left 
-    pack [  ttk::radiobutton $w.options.location.v2 -value 2 -text "2.x"         \
-	       -variable [namespace current]::plumed_version              \
-     	       -command [namespace current]::plumed_version_changed       ] -side left 
-
-    pack [  ttk::label $w.options.location.text -text "       Path to executable: " ] -side left -expand 0
-    pack [  ttk::entry $w.options.location.path -width 5 -textvariable \
+    pack [  ttk::frame $w.options.line2 ]  -fill x
+    pack [  ttk::label $w.options.line2.version -text "Engine: " ] -side left -expand 0
+    pack [  ttk::radiobutton $w.options.line2.v1 -value 1 -text "Plumed 1.3  "        \
+		-variable [namespace current]::plumed_version              \
+		-command [namespace current]::plumed_version_changed    	  ] -side left 
+    pack [  ttk::radiobutton $w.options.line2.v2 -value 2 -text "Plumed 2.x  "         \
+		-variable [namespace current]::plumed_version              \
+		-command [namespace current]::plumed_version_changed       ] -side left
+    if [ info exists ::env(PLUMED_GUI_EXPERIMENTAL) ] {
+	pack [  ttk::radiobutton $w.options.line2.vmdcv -value vmdcv -text "VMD Colvars (alpha)"         \
+		    -variable [namespace current]::plumed_version              \
+		    -command [namespace current]::plumed_version_changed       ] -side left
+    }
+    pack [  ttk::label $w.options.line2.text -text "       Path to executable: " ] -side left -expand 0
+    pack [  ttk::entry $w.options.line2.path -width 5 -textvariable \
 	       [namespace current]::driver_path ] -side left -expand 1 -fill x
-    pack [  ttk::button $w.options.location.browse -text "Browse..." \
+    pack [  ttk::button $w.options.line2.browse -text "Browse..." \
 	   -command [namespace current]::location_browse   ] -side left -expand 0
 
 
@@ -282,6 +318,7 @@ proc ::Plumed::plumed {} {
     ttk::label $w.txt.label  -textvariable Plumed::textfile -anchor center
     text $w.txt.text -wrap none -undo 1 -autoseparators 1 -bg #ffffff -bd 2 \
 	-yscrollcommand [list $::Plumed::w.txt.vscr set] -font {Courier 12}
+	
     ttk::scrollbar $w.txt.vscr -command [list $::Plumed::w.txt.text yview]
     pack $w.txt.label -side top   -fill x 
     pack $w.txt.vscr  -side right -fill y    
@@ -308,9 +345,11 @@ proc ::Plumed::empty_meta_inp {} {
     variable plumed_version
     variable empty_meta_inp_v1
     variable empty_meta_inp_v2
+    variable empty_meta_inp_vmdcv
     switch $plumed_version {
 	1  {return $empty_meta_inp_v1}
 	2  {return $empty_meta_inp_v2}
+	vmdcv {return $empty_meta_inp_vmdcv}
     } 
 }
 
@@ -363,7 +402,7 @@ proc ::Plumed::file_save { } {
 	tk_messageBox -title "Error" -parent .plumed -message "Failed to open file $textfile" -icon error
 	return
     } else {
-	puts $fd  [$w.txt.text get 1.0 {end -1c}] 
+	puts $fd  [getText] 
 	close $fd
     }
 }
@@ -397,7 +436,7 @@ proc ::Plumed::file_export { } {
 	puts "failed to open file $textfile"
 	return
     }
-    puts $fd  [ Plumed::replace_serials [$w.txt.text get 1.0 {end -1c}] ]
+    puts $fd  [ Plumed::replace_serials [getText] ]
     if {$plumed_version==1} { puts $fd  "ENDMETA" }
     close $fd
 }
@@ -453,7 +492,7 @@ proc ::Plumed::help_about { {parent .plumed} } {
 $plugin_name
 Version loaded: [package present plumed] (available: [package versions plumed])
 
-Toni Giorgino <toni.giorgino${at}isib.cnr.it>
+Toni Giorgino <toni.giorgino${at}cnr.it>
 
 Institute of Neurosciences (IN-ISIB),
 National Research Council of Italy (CNR)
@@ -480,7 +519,7 @@ proc ::Plumed::tmpdir { } {
     global tcl_platform
     switch $tcl_platform(platform) {
 	unix {
-	    set tmpdir /tmp   ;# or even $::env(TMPDIR), at times.
+	    set tmpdir /var/tmp   ;# or even $::env(TMPDIR), at times.
 	} macintosh {
 	    set tmpdir $::env(TRASH_FOLDER)  ;# a better place?
 	} default {
@@ -531,31 +570,6 @@ proc ::Plumed::dputs { text } {
 }
 
 
-# From current PBC; a glorified [pbc get -namd -all]. May be replaced
-# by the one in pbctools.
-proc ::Plumed::writexst {fn} {
-    set ts 0
-    set ch [open $fn w]
-    puts $ch "# NAMD extended system trajectory file"
-    puts $ch "#\$LABELS step a_x a_y a_z b_x b_y b_z c_x c_y c_z o_x o_y o_z"
-    foreach box [pbc get -namd -all] {
-	set box_f  [concat {*}$box];  # flatten
-	set box_str ""
-	set column 0
-	foreach v $box_f {
-	    set box_str "$box_str [format %8.4f $v]"
-	    incr column
-	    if {$column==3 || $column==6} {
-		set box_str "$box_str    "; # Separate vectors
-	    }
-	}
-	#  %f truncates ~epsilons
-	set ts_str [format %-8d $ts]
-	puts $ch "$ts_str $box_str    0.000 0.000 0.000"
-	incr ts
-    }
-    close $ch
-}
 
 # Attempt to access URL, return numeric code.
 proc ::Plumed::get_url_ncode {url} {
@@ -606,32 +620,47 @@ proc ::Plumed::writePlumed { sel filename } {
 }
 
 
-# TONI consider braces
+# Plumed v1, vmdcv: space-separated
+# Plumed v2: comma-separated
 proc ::Plumed::replace_serials { intxt }  {
     variable plumed_version
     set re {\[(.+?)\]}
-    set lorig {}
-    set lnew {}
-    set lcount {}
+    set lorig {};		# list of all substituted blocks
+    set lnew {};		# list of replacements
+    set lcount {};		# list of replacement lengths
+    # Iterate over all square-bracket blocks
     while { [ regexp $re $intxt junk orig ] } {
 	lappend lorig $orig
 	set as [ atomselect top $orig ]
 	set new [ $as get serial ]
 	$as delete
 	lappend lcount [llength $new]
-	if {$plumed_version==2} {
-	    set new [string map { " " , } $new ]
+
+	# adjust syntax depending on engine
+	switch $plumed_version {
+	    1 {	      # no change
+	      }
+	    2 {
+		      set new [string map { " " , } $new ]
+	      }
+	    vmdcv {
+		      set new "atomNumbers $new"
+	          }
 	}
+
+	# modify intxt in-place
 	lappend lnew $new
 	regsub $re $intxt $new intxt
     }
+
+    # Build output
     set out $intxt
-    set out "$out
+    append out "
  
 # The above script includes the following replacements, based on 
 # a structure named [molinfo top get name] with [molinfo top get numatoms] atoms.\n#\n"
     foreach orig $lorig new $lnew cnt $lcount {
-	set out "${out}# \[$orig\] -> (list of $cnt atoms)\n"
+	append out "# \[$orig\] -> (list of $cnt atoms)\n"
     }
     return $out
 }
@@ -646,6 +675,21 @@ proc ::Plumed::replace_serials { intxt }  {
 
 # TONI context menus and other UI stuff
 
+# Enable/disable recursively, http://stackoverflow.com/questions/2219947/how-to-make-all-widgets-state-to-disabled-in-tk
+proc ::Plumed::set_state_recursive {state path} {
+    catch {$path configure -state $state}
+    foreach child [winfo children $path] {
+        set_state_recursive $state $child
+    }
+}
+
+
+# Get the content of the editor
+proc ::Plumed::getText {} {
+	variable w
+	return [$w.txt.text get 1.0 {end -1c}]
+}
+
 # Preferred modifier key: short and long name
 proc ::Plumed::getModifiers {} {
     if {[tk windowingsystem] eq "aqua"} {
@@ -654,6 +698,27 @@ proc ::Plumed::getModifiers {} {
 	return {Ctrl Control}
     }
 }
+
+# Paste with replacement. Copied from 8.5. I did not want to replace tk_textPaste for everyone.
+proc ::Plumed::tk_textPaste_modern w {
+    global tcl_platform
+    if {![catch {::tk::GetSelection $w CLIPBOARD} sel]} {
+	set oldSeparator [$w cget -autoseparators]
+	if {$oldSeparator} {
+	    $w configure -autoseparators 0
+	    $w edit separator
+	}
+	if {[tk windowingsystem] ne "x11-OLDWAY"} {
+	    catch { $w delete sel.first sel.last }
+	}
+	$w insert insert $sel
+	if {$oldSeparator} {
+	    $w edit separator
+	    $w configure -autoseparators 1
+	}
+    }
+}
+
 
 # http://www.megasolutions.net/tcl/right-click-menu-49868.aspx
 # http://wiki.tcl.tk/16317
@@ -1490,17 +1555,39 @@ proc ::Plumed::highlight_error_label {label etext} {
 # Handle version changes ==================================================
 
 
-proc ::Plumed::ncacocb_update {} {
-    variable w
+proc ::Plumed::structuremenu_update {} {
     variable plumed_version
     switch $plumed_version {
-	1 { set st normal }
-	2 { set st disabled }
+	1 {
+	    .plumed.menubar entryconfigure 4 -state normal
+	    .plumed.menubar.structure entryconfigure 0 -state normal
+	    .plumed.menubar.structure entryconfigure 1 -state normal
+	    .plumed.menubar.structure entryconfigure 2 -state normal
+	    .plumed.menubar.structure entryconfigure 3 -state normal
+	}
+	2 {
+	    .plumed.menubar entryconfigure 4 -state normal
+	    .plumed.menubar.structure entryconfigure 0 -state normal
+	    .plumed.menubar.structure entryconfigure 1 -state normal
+	    .plumed.menubar.structure entryconfigure 2 -state normal
+	    .plumed.menubar.structure entryconfigure 3 -state disabled
+	    destroy .plumed_ncacocb
+	}
+	vmdcv {
+	    .plumed.menubar entryconfigure 4 -state disabled
+	    .plumed.menubar.structure entryconfigure 0 -state disabled
+	    .plumed.menubar.structure entryconfigure 1 -state disabled
+	    .plumed.menubar.structure entryconfigure 2 -state disabled
+	    .plumed.menubar.structure entryconfigure 3 -state disabled
+	    destroy .plumedref
+	    destroy .plumednc
+	    destroy .plumedrama
+	    destroy .plumed_ncacocb
+	}
     }
-    .plumed.menubar.structure entryconfigure 4 -state $st
-    catch { .plumed_ncacocb.act.insert configure -state $st }
-
 }
+
+
 
 proc ::Plumed::instructions_update {} {
     variable w
@@ -1508,9 +1595,11 @@ proc ::Plumed::instructions_update {} {
     variable text_instructions_header
     variable text_instructions_example_v1
     variable text_instructions_example_v2
+    variable text_instructions_example_vmdcv
     switch $plumed_version {
 	1 { set txt "$text_instructions_header $text_instructions_example_v1" }
 	2 { set txt "$text_instructions_header $text_instructions_example_v2" }
+	vmdcv { set txt "$text_instructions_header $text_instructions_example_vmdcv" }
     }
     catch { $w.txt.text.instructions configure -text $txt } err
 }
@@ -1559,14 +1648,25 @@ proc ::Plumed::plumed_version_changed {} {
     variable driver_path_v1
     variable driver_path_v2
     variable driver_path
+    variable w
 
     switch $plumed_version {
-	1  {set driver_path $driver_path_v1}
-	2  {set driver_path $driver_path_v2}
+	1  {
+	    set driver_path $driver_path_v1
+	    set_state_recursive normal $w.options.line1.pbc
+	}
+	2  {
+	    set driver_path $driver_path_v2
+    	    set_state_recursive normal $w.options.line1.pbc
+	}
+	vmdcv {
+	    set driver_path "(Not needed)"
+	    set_state_recursive disabled $w.options.line1.pbc
+	}
     } 
 
     instructions_update
-    ncacocb_update
+    structuremenu_update
     templates_populate_menu
 }
 
@@ -1578,12 +1678,14 @@ proc ::Plumed::templates_populate_menu {} {
     variable plumed_version
     variable templates_list_v1
     variable templates_list_v2
+    variable templates_list_vmdcv
 
     lassign [getModifiers] mod modifier
 
     switch $plumed_version {
-	1  {set templates $templates_list_v1}
-	2  {set templates $templates_list_v2}
+	1      {set templates $templates_list_v1}
+	2      {set templates $templates_list_v2}
+	vmdcv  {set templates $templates_list_vmdcv}
     } 
 
     $w.menubar.insert delete 0 last
@@ -1592,7 +1694,7 @@ proc ::Plumed::templates_populate_menu {} {
 	    $w.menubar.insert add separator
 	} else {
 	    $w.menubar.insert add command -label $disp \
-		-command [list [namespace current]::templates_insert_line $insr]
+		-command [list Plumed::templates_insert_line $insr]
 	}
     }
     $w.menubar.insert add separator
@@ -1608,6 +1710,10 @@ proc ::Plumed::templates_populate_menu {} {
 	    $w.menubar.insert entryconfigure 1 -accelerator $mod+G
 	    bind $w <$modifier-m> "$::Plumed::w.menubar.insert invoke 2" 
 	    $w.menubar.insert entryconfigure 2 -accelerator $mod+M
+	}
+	vmdcv {
+	    bind $w <$modifier-g> "$::Plumed::w.menubar.insert invoke 1" 
+	    $w.menubar.insert entryconfigure 1 -accelerator $mod+G
 	}
     }
 }
@@ -1724,7 +1830,6 @@ proc ::Plumed::popup_help_url {} {
     variable popup_help_url_cached; # static
     variable driver_path
     variable plumed2_online_docbase
-    variable plumed2_online_docbase_fallback
 
     if {![info exists popup_help_url_cached]} {
 	# 1. try local
@@ -1740,7 +1845,7 @@ proc ::Plumed::popup_help_url {} {
 		set popup_help_url_cached $plumed2_online_docbase
 	    } else {
 		puts "Warning: local and remote help pages not available, using fallback"
-		set popup_help_url_cached $plumed2_online_docbase_fallback
+		set popup_help_url_cached "http://www.plumed.org"
 	    }
 	}
     }
@@ -1780,11 +1885,16 @@ proc ::Plumed::do_compute {{outfile ""}} {
 	return 
     }
 
+    # Internal VMD is handled differently enough.
+    if {$plumed_version == "vmdcv"} {
+	do_compute_vmdcv
+	return
+    }
+
     if {![file executable $driver_path]} { 
 	tk_messageBox -title "Error" -icon error -parent .plumed -message \
 	    "The plumed executable is required. See manual for installation instructions."
 	return }
-
 
     # Prepare temp. dir and files
     set tmpd [file join [tmpdir] vmdplumed.[pid]]
@@ -1810,7 +1920,7 @@ proc ::Plumed::do_compute {{outfile ""}} {
 	    write_meta_inp_v2 $meta $colvar
 	    set pbc [get_pbc_v2]
 	    set cmd [list $driver_path --standalone-executable driver {*}$pbc --mf_dcd $dcd --pdb $pdb --plumed $meta  ]
-	} 
+	}
     }
 
     # Run. V1 requires pushd
@@ -1903,7 +2013,7 @@ proc ::Plumed::do_plot { { out COLVAR } { txt ""  } } {
 	set pt none
     }
 
-    set cvplot [multiplot -title "Collective variables" -xlabel "Time" \
+    set cvplot [multiplot -title "Collective variables" -xlabel "Time (frames)" \
 		    -nostats ]
 
     for { set i 0 } { $i < $cv_n } {incr i } {
@@ -1942,8 +2052,7 @@ proc ::Plumed::cd_push {{dir {}}} {
 # V1-specific stuff
 
 proc ::Plumed::write_meta_inp_v1 { meta } { 
-    variable w
-    set text [$w.txt.text get 1.0 {end -1c}]
+    set text [getText]
     set fd [open $meta w]
     puts $fd [ Plumed::replace_serials $text ]
     puts $fd "PRINT W_STRIDE 1  ! line added by vmdplumed for visualization"
@@ -1969,8 +2078,7 @@ proc ::Plumed::get_pbc_v1 { } {
 # V2-specific stuff
 
 proc ::Plumed::write_meta_inp_v2 { meta colvar } { 
-    variable w
-    set text [$w.txt.text get 1.0 {end -1c}]
+    set text [getText]
     set fd [open $meta w]
     puts $fd [ Plumed::replace_serials $text ]
     puts $fd "# line added by vmdplumed for visualization"
@@ -1996,4 +2104,63 @@ proc ::Plumed::get_pbc_v2 { } {
 }
 
 
+# ==================================================                                                 
+# VMDCV-specific stuff
+
+proc ::Plumed::do_compute_vmdcv {} {
+	catch {cv delete} e
+	cv molid top
+	set script [replace_serials [getText] ]
+	set o [ catch {  cv config $script } e ]
+	if {$o} {
+		error "A problem occurred. Error messages\nare found in VMD's text console."
+	} 
+	# puts "o>> $o"
+	# puts "e>> $e"
+	# puts "errorInfo>> $::errorInfo"
+
+	set fname [file join [tmpdir] "vmd_plumed.[pid].dat"]
+	set fd [open $fname w]
+	puts "Generating temporary data file $fname"
+
+	# Make a pseudo-plumed-v2 header
+	set cvnames [vmdcv_expand_cvlist ]
+	puts $fd "#! FIELDS time $cvnames"
+	
+	# Print all the CV values
+	for {set f 0} {$f<[molinfo top get numframes]} { incr f } {
+		cv frame $f
+		cv update
+		puts -nonewline $fd [vmdcv_vec2list [cv printframe]]
+	}
+	close $fd
+
+	do_plot $fname
+}
+
+# Remove parenthesis and commas
+proc ::Plumed::vmdcv_vec2list v {
+	return [string map { ( {} , {} ) {} } $v ]
+}
+
+# Return [cv list] but with vectors expanded 
+proc ::Plumed::vmdcv_expand_cvlist {} {
+	set out {}
+	cv frame 0
+	cv update
+ 	foreach c [cv list] {
+		set v [cv colvar $c value]
+		set vv [vmdcv_vec2list $v]; 
+		set nc [llength $vv]
+		if {$nc==1} {
+			lappend out $c
+		} else {
+			for {set i 1} {$i<=$nc} {incr i} {
+				lappend out "${c}_$i"
+			}
+		}
+	}				
+	return $out
+}
+		
 

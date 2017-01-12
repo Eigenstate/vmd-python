@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolItem.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.177 $	$Date: 2015/05/31 22:25:05 $
+ *	$Revision: 1.180 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -112,12 +112,12 @@ private:
     }
     void append(int id) {
       if (max == 0) {
-        idlist = (int *)malloc(8*sizeof(int)); 
+        idlist = (int *)malloc(8L*sizeof(int)); 
         max = 8;
       }
       if (num == max) {
-        idlist = (int *)realloc(idlist, 2*num*sizeof(int));
-        max = 2*num;
+        idlist = (int *)realloc(idlist, 2L*num*sizeof(int));
+        max = 2L*num;
       }
       idlist[num++] = id;
     }
@@ -245,7 +245,7 @@ private:
   void draw_trace(float *pos, float brad, int bres, int linethickness); ///< C-alpha trace
   void draw_dot_surface(float *pos, float srad, int sres, int method); ///< dot surface
   void draw_msms(float *pos, int draw_wireframe, int allatoms, float radius, float density); ///< MSMS surface from Scripps
-  void draw_nanoshaper(float *pos, int surftype, int draw_wireframe, float radius, float gspacing); ///< NanoShaper surface
+  void draw_nanoshaper(float *pos, int surftype, int draw_wireframe, float gspacing, float probe_rad, float skin_parm, float blob_parm); ///< NanoShaper surface
   void draw_quicksurf(float *pos, int quality, float radius, float isovalue, float spacing); ///< Fast surface representation
   void draw_surface(float *pos, int draw_wireframe, float radius); ///< Surf surface from UNC
   void draw_hbonds(float *, float maxangle, int thickness, float cutoff); ///< Hydrogen bonds

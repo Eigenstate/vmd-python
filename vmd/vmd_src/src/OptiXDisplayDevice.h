@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,18 +11,46 @@
 *
 *      $RCSfile: OptiXDisplayDevice.h
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.20 $         $Date: 2015/05/04 06:24:18 $
+*      $Revision: 1.22 $         $Date: 2016/11/28 03:05:02 $
 *
 ***************************************************************************
 * DESCRIPTION:
 *   FileRenderer type for the OptiX interface.
 *
+* This work is described in:
 *  "GPU-Accelerated Molecular Visualization on
 *   Petascale Supercomputing Platforms"
 *   John E. Stone, Kirby L. Vandivort, and Klaus Schulten.
 *   UltraVis'13: Proceedings of the 8th International Workshop on
 *   Ultrascale Visualization, pp. 6:1-6:8, 2013.
 *   http://dx.doi.org/10.1145/2535571.2535595
+*
+*  "Atomic Detail Visualization of Photosynthetic Membranes with
+*   GPU-Accelerated Ray Tracing"
+*   John E. Stone, Melih Sener, Kirby L. Vandivort, Angela Barragan,
+*   Abhishek Singharoy, Ivan Teo, João V. Ribeiro, Barry Isralewitz,
+*   Bo Liu, Boon Chong Goh, James C. Phillips, Craig MacGregor-Chatwin,
+*   Matthew P. Johnson, Lena F. Kourkoutis, C. Neil Hunter, and Klaus Schulten
+*   J. Parallel Computing, 55:17-27, 2016.
+*   http://dx.doi.org/10.1016/j.parco.2015.10.015
+*
+*  "Immersive Molecular Visualization with Omnidirectional
+*   Stereoscopic Ray Tracing and Remote Rendering"
+*   John E. Stone, William R. Sherman, and Klaus Schulten.
+*   High Performance Data Analysis and Visualization Workshop,
+*   2016 IEEE International Parallel and Distributed Processing
+*   Symposium Workshops (IPDPSW), pp. 1048-1057, 2016.
+*   http://dx.doi.org/10.1109/IPDPSW.2016.121
+*
+* Portions of this code are derived from Tachyon:
+*   "An Efficient Library for Parallel Ray Tracing and Animation"
+*   John E. Stone.  Master's Thesis, University of Missouri-Rolla,
+*   Department of Computer Science, April 1998
+*
+*   "Rendering of Numerical Flow Simulations Using MPI"
+*   John Stone and Mark Underwood.
+*   Second MPI Developers Conference, pages 138-141, 1996.
+*   http://dx.doi.org/10.1109/MPIDC.1996.534105
 *
 ***************************************************************************/
 

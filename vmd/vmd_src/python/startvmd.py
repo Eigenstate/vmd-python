@@ -26,7 +26,7 @@ def vmdloop(app):
     select.select([], [], [], 0.001)
   vmd.delete_VMDApp(app)
   del app
-  print "Exiting VMD event loop"
+  print("Exiting VMD event loop")
 
 vmd.init_allocators()
 v = vmd.new_VMDApp()

@@ -3,7 +3,7 @@
 ## Copyright 2002-2011, Board of Trustees of the University of Illinois
 ## Theoretical and Computational Biophysics Group
 ##
-## $Id: Makefile,v 1.138 2015/05/20 15:29:20 johns Exp $
+## $Id: Makefile,v 1.141 2016/07/13 19:24:24 johns Exp $
 ## 
 .SILENT:
 
@@ -34,6 +34,7 @@ INTERSURF =
 #         other plugins directly depend on them
 BUILDDIRS = \
   apbsrun \
+  alascanfep \
   atomedit \
   autoimd \
   autoionize \
@@ -98,6 +99,7 @@ BUILDDIRS = \
   propka \
   psfgen \
   qmtool \
+  qwikmd \
   ramaplot \
   readcharmmpar \
   readcharmmtop \
@@ -115,7 +117,9 @@ BUILDDIRS = \
   solvate \
   ssrestraints \
   stingtool \
+  structurecheck \
   symmetrytool \
+  tablelist \
   timeline \
   topotools \
   torsionplot \

@@ -1,6 +1,7 @@
 /***************************************************************************
+
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -89,10 +90,26 @@ static PyMethodDef methods[] = {
     (char *)"show(name, onoff) -- show/hide registered window"},
   {(char *)"location", (vmdPyMethod)location, METH_VARARGS, 
     (char *)"location(name, (x, y)) -- set menu location"},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef menudef = {
+    PyModuleDef_HEAD_INIT,
+    "vmdmenu",
+    NULL,
+    -1,
+    methods,
+    NULL, NULL, NULL, NULL
+};
+
+PyMODINIT_FUNC PyInit_vmdmenu(void) {
+    PyObject *module = PyModule_Create(&menudef);
+    return module;
+}
+#else
 void initvmdmenu() {
   (void) Py_InitModule((char *)"vmdmenu", methods);
 }
+#endif
 

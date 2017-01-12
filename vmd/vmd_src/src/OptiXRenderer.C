@@ -11,21 +11,38 @@
 *
 *      $RCSfile: OptiXRenderer.C
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.215 $         $Date: 2015/05/31 23:35:47 $
+*      $Revision: 1.308 $         $Date: 2016/11/28 05:50:57 $
 *
 ***************************************************************************
 * DESCRIPTION:
 *   VMD built-in Tachyon/OptiX renderer implementation.
 *
 * This work is described in:
-*  "GPU-Accelerated Molecular Visualization on 
+*  "GPU-Accelerated Molecular Visualization on
 *   Petascale Supercomputing Platforms"
 *   John E. Stone, Kirby L. Vandivort, and Klaus Schulten.
-*   UltraVis'13: Proceedings of the 8th International Workshop on 
+*   UltraVis'13: Proceedings of the 8th International Workshop on
 *   Ultrascale Visualization, pp. 6:1-6:8, 2013.
 *   http://dx.doi.org/10.1145/2535571.2535595
 *
-* Significant portions of this code are derived from Tachyon:
+*  "Atomic Detail Visualization of Photosynthetic Membranes with
+*   GPU-Accelerated Ray Tracing"
+*   John E. Stone, Melih Sener, Kirby L. Vandivort, Angela Barragan,
+*   Abhishek Singharoy, Ivan Teo, João V. Ribeiro, Barry Isralewitz,
+*   Bo Liu, Boon Chong Goh, James C. Phillips, Craig MacGregor-Chatwin,
+*   Matthew P. Johnson, Lena F. Kourkoutis, C. Neil Hunter, and Klaus Schulten
+*   J. Parallel Computing, 55:17-27, 2016.
+*   http://dx.doi.org/10.1016/j.parco.2015.10.015
+*
+*  "Immersive Molecular Visualization with Omnidirectional
+*   Stereoscopic Ray Tracing and Remote Rendering"
+*   John E. Stone, William R. Sherman, and Klaus Schulten.
+*   High Performance Data Analysis and Visualization Workshop,
+*   2016 IEEE International Parallel and Distributed Processing
+*   Symposium Workshops (IPDPSW), pp. 1048-1057, 2016.
+*   http://dx.doi.org/10.1109/IPDPSW.2016.121
+*
+* Portions of this code are derived from Tachyon:
 *   "An Efficient Library for Parallel Ray Tracing and Animation"
 *   John E. Stone.  Master's Thesis, University of Missouri-Rolla,
 *   Department of Computer Science, April 1998
@@ -43,6 +60,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(__linux)
+#include <unistd.h>   // needed for symlink() in movie recorder
+#endif
+
 #include "Inform.h"
 #include "ImageIO.h"
 #include "OptiXRenderer.h"
@@ -51,16 +72,28 @@
 #include "utilities.h"
 #include "WKFUtils.h"
 
+// Enable HMD if VMD compiled with Oculus VR SDK or OpenHMD
+#if defined(VMDUSEOPENHMD) 
+#define VMDOPTIX_USE_HMD 1
+#endif
+
+#if defined(VMDOPTIX_USE_HMD)
+#include "HMDMgr.h"
+#endif
+
+// support Linux event I/O based joystick/spaceball input
+#if defined(VMDUSEEVENTIO)
+#include "eventio.h"
+#endif
+
 // enable the interactive ray tracing capability
 #if defined(VMDOPTIX_INTERACTIVE_OPENGL)
 #include <GL/gl.h>
 #endif
 
-
-// this macro enables or disables the use of an array of
-// template-specialized shaders for every combination of
+// the ORT_USE_TEMPLATE_SHADERS macro enables or disables the use of 
+// an array of template-specialized shaders for every combination of
 // scene-wide and material-specific shader features.
-#define ORT_USE_TEMPLATE_SHADERS 1
 #if defined(ORT_USE_TEMPLATE_SHADERS)
 static const char *onoffstr(int onoff) {
   return (onoff) ? "on" : "off";
@@ -137,70 +170,6 @@ static int vmd_timeout_cb(void) {
              << __FILE__ << ":" << __LINE__ << sendmsg;                \
     }                                                                  \
   }
-
-
-
-static unsigned char * cvt_rgb4f_rgb3u(float * rgb4f, int xs, int ys) {
-  int rowlen3u = xs*3;
-  int sz = xs * ys * 3;
-  unsigned char * rgb3u = (unsigned char *) calloc(1, sz);
-
-  int x3u, x4f, y;
-  for (y=0; y<ys; y++) {
-    int addr3u = y * xs * 3;
-    int addr4f = y * xs * 4;
-    for (x3u=0,x4f=0; x3u<rowlen3u; x3u+=3,x4f+=4) {
-      int tmp;
-
-      tmp = rgb4f[addr4f + x4f    ] * 255.0f;
-      rgb3u[addr3u + x3u    ] = (tmp < 0) ? 0 : ((tmp > 255) ? 255 : tmp);
-
-      tmp = rgb4f[addr4f + x4f + 1] * 255.0f;
-      rgb3u[addr3u + x3u + 1] = (tmp < 0) ? 0 : ((tmp > 255) ? 255 : tmp);
-
-      tmp = rgb4f[addr4f + x4f + 2] * 255.0f;
-      rgb3u[addr3u + x3u + 2] = (tmp < 0) ? 0 : ((tmp > 255) ? 255 : tmp);
-    }
-  }
-
-  return rgb3u;
-}
-
-
-static unsigned char * cvt_rgb4u_rgb3u(unsigned char * rgb4u, int xs, int ys) {
-  int rowlen3u = xs*3;
-  int sz = xs * ys * 3;
-  unsigned char * rgb3u = (unsigned char *) calloc(1, sz);
-
-  int x3u, x4f, y;
-  for (y=0; y<ys; y++) {
-    int addr3u = y * xs * 3;
-    int addr4f = y * xs * 4;
-    for (x3u=0,x4f=0; x3u<rowlen3u; x3u+=3,x4f+=4) {
-      rgb3u[addr3u + x3u    ] = rgb4u[addr4f + x4f    ];
-      rgb3u[addr3u + x3u + 1] = rgb4u[addr4f + x4f + 1];
-      rgb3u[addr3u + x3u + 2] = rgb4u[addr4f + x4f + 2];
-    }
-  }
-
-  return rgb3u;
-}
-
-
-static int checkfileextension(const char * s, const char * extension) {
-  int sz, extsz;
-  sz = strlen(s);
-  extsz = strlen(extension);
-
-  if (extsz > sz)
-    return 0;
-
-  if (!strupncmp(s + (sz - extsz), extension, extsz)) {
-    return 1;
-  }
-
-  return 0;
-}
 
 
 static void print_ctx_devices(RTcontext ctx) {
@@ -284,8 +253,59 @@ static int query_meminfo_ctx_devices(RTcontext &ctx, unsigned long &freemem, uns
 }
 
 
+int OptiXWriteImage(const char* filename, RTbuffer buffer,
+                    RTformat buffer_format,
+                    RTsize buffer_width, RTsize buffer_height) {
+  RTresult result;
+
+  void * imageData;
+  result = rtBufferMap(buffer, &imageData);
+  if (result != RT_SUCCESS) {
+    RTcontext ctx;
+    const char* error;
+    rtBufferGetContext(buffer, &ctx);
+    rtContextGetErrorString(ctx, result, &error);
+    msgErr << "OptiXWriteImage: Error mapping image buffer: " 
+           << error << sendmsg;
+    return -1;
+  }
+
+  // no image data
+  if (buffer_width < 1 || buffer_height < 1 || imageData == NULL) {
+    msgErr << "OptiXWriteImage: No image data in output buffer!" << sendmsg;
+    return -1;
+  }
+
+  // write the image to a file, according to the buffer format
+  int xs = buffer_width;
+  int ys = buffer_height;
+  if (buffer_format == RT_FORMAT_FLOAT4) {
+    if (write_image_file_rgb4f(filename, (const float *) imageData, xs, ys))
+      return -1;
+  } else if (buffer_format == RT_FORMAT_UNSIGNED_BYTE4) {
+    if (write_image_file_rgb4u(filename, (const unsigned char *) imageData, xs, ys))
+      return -1;
+  } else {
+    return -1;
+  }
+
+  result = rtBufferUnmap(buffer);
+  if (result != RT_SUCCESS) {
+    RTcontext ctx;
+    const char* error;
+    rtBufferGetContext(buffer, &ctx);
+    rtContextGetErrorString(ctx, result, &error);
+    msgErr << "OptiXWriteImage: Error unmapping image buffer: " 
+           << error << sendmsg;
+    return -1;
+  }
+
+  return 0;
+}
+
 int OptiXWriteImage(const char* filename, RTbuffer buffer) {
   RTresult result;
+  RTformat buffer_format;
   RTsize buffer_width, buffer_height;
 
   // buffer must be 2-D
@@ -325,85 +345,42 @@ int OptiXWriteImage(const char* filename, RTbuffer buffer) {
     const char* error;
     rtBufferGetContext(buffer, &ctx);
     rtContextGetErrorString(ctx, result, &error);
-    msgErr << "OptiX: Error getting dimensions of buffer: " << error << sendmsg;
+    msgErr << "OptiXRenderer) Error getting dimensions of buffer: " << error << sendmsg;
     return -1;
   }
 
-  RTformat buffer_format;
   if (rtBufferGetFormat(buffer, &buffer_format) != RT_SUCCESS) {
     msgErr << "OptiXWriteImage: failed to query output buffer format!" 
            << sendmsg;
     return -1;
   }
 
-  //
-  // convert the format of the final image, and write it to a file
-  //
-  unsigned char *rgb3u = NULL;
+  // write the image to a file, according to the buffer format
+  int xs = buffer_width;
+  int ys = buffer_height;
   if (buffer_format == RT_FORMAT_FLOAT4) {
-    rgb3u = cvt_rgb4f_rgb3u((float*)imageData, buffer_width, buffer_height);
+    if (write_image_file_rgb4f(filename, (const float *) imageData, xs, ys))
+      return -1;
   } else if (buffer_format == RT_FORMAT_UNSIGNED_BYTE4) {
-    rgb3u = cvt_rgb4u_rgb3u((unsigned char*)imageData, buffer_width, buffer_height);
+    if (write_image_file_rgb4u(filename, (const unsigned char *) imageData, xs, ys))
+      return -1;
   } else {
-    msgErr << "OptiXWriteImage: output buffer format is not rgb4u or rgb4f!" 
-           << sendmsg;
     return -1;
   }
-  
+
   result = rtBufferUnmap(buffer);
   if (result != RT_SUCCESS) {
     RTcontext ctx;
     const char* error;
     rtBufferGetContext(buffer, &ctx);
     rtContextGetErrorString(ctx, result, &error);
-    msgErr << "OptiXWriteImage: Error unmapping image buffer: " 
+    msgErr << "OptiXWriteImage: Error unmapping image buffer: "
            << error << sendmsg;
     return -1;
   }
 
-  if (rgb3u != NULL) {
-    int xs = buffer_width;
-    int ys = buffer_height;
-
-    FILE *outfile=NULL;
-    if ((outfile = fopen(filename, "wb")) == NULL) {
-      msgErr << "Could not open file " << filename
-             << " in current directory for writing!" << sendmsg;
-      free(rgb3u);
-      return -1;
-    }
-
-    // write the image to a file on disk
-    if (checkfileextension(filename, ".bmp")) {
-      vmd_writebmp(outfile, rgb3u, xs, ys);
-#if defined(VMDPNG)
-    } else if (checkfileextension(filename, ".png")) {
-      vmd_writepng(outfile, rgb3u, xs, ys);
-#endif
-    } else if (checkfileextension(filename, ".ppm")) {
-      vmd_writeppm(outfile, rgb3u, xs, ys);
-    } else if (checkfileextension(filename, ".rgb")) {
-      vmd_writergb(outfile, rgb3u, xs, ys);
-    } else if (checkfileextension(filename, ".tga")) {
-      vmd_writetga(outfile, rgb3u, xs, ys);
-    } else {
-#if defined(_MSC_VER) || defined(WIN32)
-      msgErr << "Unrecognized image file extension, writing Windows Bitmap file."
-             << sendmsg;
-      vmd_writebmp(outfile, rgb3u, xs, ys);
-#else
-      msgErr << "Unrecognized image file extension, writing Targa file."
-             << sendmsg;
-      vmd_writetga(outfile, rgb3u, xs, ys);
-#endif
-    }
-    free(rgb3u);
-    fclose(outfile);
-  }
-
   return 0;
 }
-
 
 /// constructor ... initialize some variables
 OptiXRenderer::OptiXRenderer(void *rdev) {
@@ -423,10 +400,18 @@ OptiXRenderer::OptiXRenderer(void *rdev) {
   if (getenv("VMDOPTIXSHADERPATH"))
     strcpy(shaderpath, getenv("VMDOPTIXSHADERPATH"));
 
+  lasterror = RT_SUCCESS;      // begin with no error state set 
   context_created = 0;         // no context yet
   buffers_allocated = 0;       // flag no buffer allocated yet
   buffers_progressive = 0;     // buf bound using progressive API or not
   scene_created = 0;           // scene has been created
+
+  // clear timers
+  time_ctx_setup = 0.0;
+  time_ctx_validate = 0.0;
+  time_ctx_AS_build = 0.0;
+  time_ray_tracing = 0.0;
+  time_image_io = 0.0;
 
   // set default scene background state
   scene_background_mode = RT_BACKGROUND_TEXTURE_SOLID;
@@ -446,18 +431,45 @@ OptiXRenderer::OptiXRenderer(void *rdev) {
   cam_stereo_eyesep = 0.06f;
   cam_stereo_convergence_dist = 2.0f;
 
-  shadows_enabled = RT_SHADOWS_OFF; // disable shadows by default 
-  aa_samples = 0;            // no AA samples by default
+  clipview_mode = RT_CLIP_NONE;      // VR HMD fade+clipping plane/sphere
+  clipview_start = 1.0f;             // VR HMD fade+clipping radial start dist
+  clipview_end = 0.2f;               // VR HMD fade+clipping radial end dist
 
-  ao_samples = 0;            // no AO samples by default
-  ao_direct = 0.3f;          // AO direct contribution is 30%
-  ao_ambient = 0.7f;         // AO ambient contribution is 70%
+  // check for VR headlight and HMD/camera view clipping plane/sphere
+  if (getenv("VMDOPTIXCLIPVIEW")) {
+    clipview_mode = RT_CLIP_SPHERE;
+    msgInfo << "OptiXRenderer) Overriding default clipping mode with RT_CLIP_SPHERE" << sendmsg;
+  }
+  if (getenv("VMDOPTIXCLIPVIEWSTART")) {
+    clipview_start = atof(getenv("VMDOPTIXCLIPVIEWSTART"));
+    msgInfo << "OptiXRenderer) Overriding default clipping start: " 
+            << clipview_start << sendmsg;
+  }
+  if (getenv("VMDOPTIXCLIPVIEWEND")) {
+    clipview_start = atof(getenv("VMDOPTIXCLIPVIEWEND"));
+    msgInfo << "OptiXRenderer) Overriding default clipping end: " 
+            << clipview_start << sendmsg;
+  }
 
-  dof_enabled = 0;           // disable DoF by default
+  headlight_mode = RT_HEADLIGHT_OFF; // VR HMD headlight disabled by default
+  if (getenv("VMDOPTIXHEADLIGHT")) {
+    headlight_mode = RT_HEADLIGHT_ON;
+    msgInfo << "OptiXRenderer) Overriding default headlight mode with RT_HEADLIGHT_ON" << sendmsg;
+  }
+
+  shadows_enabled = RT_SHADOWS_OFF;  // disable shadows by default 
+  aa_samples = 0;                    // no AA samples by default
+
+  ao_samples = 0;                    // no AO samples by default
+  ao_direct = 0.3f;                  // AO direct contribution is 30%
+  ao_ambient = 0.7f;                 // AO ambient contribution is 70%
+  ao_maxdist = RT_DEFAULT_MAX;       // default is no max occlusion distance
+
+  dof_enabled = 0;                   // disable DoF by default
   cam_dof_focal_dist = 2.0f;
   cam_dof_fnumber = 64.0f;
 
-  fog_mode = RT_FOG_NONE;    // fog/cueing disabled by default
+  fog_mode = RT_FOG_NONE;            // fog/cueing disabled by default
   fog_start = 0.0f;
   fog_end = 10.0f;
   fog_density = 0.32f;
@@ -516,22 +528,22 @@ RTRDev OptiXRenderer::remote_connect(const char *cluster,
              << sendmsg;
       msgErr << "  from VMD installation directory!!!" << sendmsg;
     }
-    msgErr << "OptiX VCA remote connect: failed to login to remote VCA cluster" << sendmsg;
+    msgErr << "OptiXRenderer) VCA: failed to login to remote VCA cluster" << sendmsg;
     free(rdev);
     return NULL;
   }
-  msgInfo << "OptiX VCA remote connection established." << sendmsg;
+  msgInfo << "OptiXRenderer) VCA: remote connection established." << sendmsg;
 
   char clusturl[] = "unknown                                                  ";
   rtRemoteDeviceGetAttribute(*rdev, RT_REMOTEDEVICE_ATTRIBUTE_CLUSTER_URL,
                              sizeof(clusturl), &clusturl);
-  msgInfo << "OptiX VCA remote connection cluster URL: "
+  msgInfo << "OptiXRenderer) VCA: remote connection cluster URL: "
           << clusturl << sendmsg;
 
   unsigned int numconfigs = 0;
   rtRemoteDeviceGetAttribute(*rdev,RT_REMOTEDEVICE_ATTRIBUTE_NUM_CONFIGURATIONS,
                              sizeof(numconfigs), &numconfigs);
-  msgInfo << "OptiX VCA configuration count: " << numconfigs << sendmsg;
+  msgInfo << "OptiXRenderer) VCA: configuration count: " << numconfigs << sendmsg;
 
   unsigned int l; 
   const unsigned int badconfig = 999999;
@@ -549,13 +561,29 @@ RTRDev OptiXRenderer::remote_connect(const char *cluster,
 
   for (l=0; l<numconfigs; l++) {
     char VCA_config_name[256];
-    rtRemoteDeviceGetAttribute(*rdev, RT_REMOTEDEVICE_ATTRIBUTE_CONFIGURATIONS,
+    memset(VCA_config_name, 0, sizeof(VCA_config_name));
+    rtRemoteDeviceGetAttribute(*rdev, 
+                               (RTremotedeviceattribute) (RT_REMOTEDEVICE_ATTRIBUTE_CONFIGURATIONS + l),
                                sizeof(VCA_config_name), VCA_config_name);
     if (!strcmp(VCA_config_name, optix38string)) {
       vcaconfigidx=l;
     }
 
     msgInfo << " [" << l << "] " << VCA_config_name << sendmsg;
+  }
+
+  if (getenv("VMDOPTIXVCACONFIG")) {
+    unsigned int idx = atoi(getenv("VMDOPTIXVCACONFIG"));
+    if (idx >= 0 && idx < numconfigs)
+      vcaconfigidx = idx;
+
+    printf("OptiXRenderer) User-specified OptiX VCA config index: %d\n",
+            vcaconfigidx);
+  }
+
+  if (vcaconfigidx == badconfig && numconfigs > 0) {
+    vcaconfigidx = 0;
+    msgInfo << "OptiXRenderer) VCA: didn't match a config, trying config [0]" << sendmsg;
   }
 
 
@@ -565,20 +593,56 @@ RTRDev OptiXRenderer::remote_connect(const char *cluster,
   }
 
   if (vcaconfigidx != badconfig) {
-    msgInfo << "OptiX VCA reserving " << resvnodes << " nodes" << sendmsg;
+    msgInfo << "OptiXRenderer) VCA: reserving " << resvnodes << " nodes" << sendmsg;
     rtRemoteDeviceReserve(*rdev, resvnodes, vcaconfigidx); 
 
     // enter polling loop waiting until reservation is ready...
     int rdevready=0; 
     int pollcount=0;
+    int existingresv=0;
     do {
+      if ((existingresv == 0) && (pollcount > 10) && 
+          (rdevready == RT_REMOTEDEVICE_STATUS_CONNECTED)) {
+        existingresv=1; // prevent infinite loop
+        printf("\n");
+        msgInfo << "OptiXRenderer) VCA: may have a stuck reservation" << sendmsg;
+        rtRemoteDeviceRelease(*rdev); 
+
+        msgInfo << "OptiXRenderer) Restarting reservation process..." <<  sendmsg;
+        pollcount = 0;  // reset poll counter 
+        rtRemoteDeviceReserve(*rdev, resvnodes, vcaconfigidx); 
+      }
+
       if (pollcount > 20)
         break;
 
       vmd_msleep(500);
       rtRemoteDeviceGetAttribute(*rdev, RT_REMOTEDEVICE_ATTRIBUTE_STATUS,
                                  sizeof(rdevready), &rdevready);
-      printf(".");
+      char statec = '.';  
+      switch (rdevready) {
+        case RT_REMOTEDEVICE_STATUS_CONNECTED:
+          statec = 'C';
+          break;
+
+        case RT_REMOTEDEVICE_STATUS_DISCONNECTED:
+          statec = 'D';
+          break;
+
+        case RT_REMOTEDEVICE_STATUS_RESERVED:
+          statec = 'r';
+          break;
+        
+        case RT_REMOTEDEVICE_STATUS_READY:
+          statec = 'R';
+          break;
+
+        default:
+          statec = '.';
+          break;
+      }
+
+      printf("%c", statec);
       fflush(stdout);
 
       pollcount++;
@@ -586,22 +650,32 @@ RTRDev OptiXRenderer::remote_connect(const char *cluster,
     printf("\n");
 
     if (rdevready != RT_REMOTEDEVICE_STATUS_READY) {
-      msgErr << "OptiX VCA reservation timed out, closing connection" << sendmsg;
+      msgErr << "OptiXRenderer) VCA: reservation timed out, closing connection" << sendmsg;
       rtRemoteDeviceRelease(*rdev); 
       rtRemoteDeviceDestroy(*rdev);  
       free(rdev);
       rdev=NULL;
       return rdev;
     }
-    msgInfo << "OptiX VCA reservation ready." << sendmsg;
+    msgInfo << "OptiXRenderer) VCA: reservation ready." << sendmsg;
 
-#if 0
-    msgInfo << "OptiX VCA waiting for reservation to become visible..." << sendmsg;
-    vmd_sleep(20);
+    // Once the remote device connection is established, we can 
+    // query and print info about the node count, gpu count, and other
+    // useful metadata...
+    int rdevnodecount = 0;
+    int rdevgpucount = 0;
+    rtRemoteDeviceGetAttribute(*rdev, 
+                               RT_REMOTEDEVICE_ATTRIBUTE_NUM_RESERVED_NODES,
+                               sizeof(rdevnodecount), &rdevnodecount);
+   
+    rtRemoteDeviceGetAttribute(*rdev,
+                               RT_REMOTEDEVICE_ATTRIBUTE_NUM_GPUS,
+                               sizeof(rdevgpucount), &rdevgpucount);
 
-    msgInfo << "OptiX VCA releasing reservation." << sendmsg;
-    rtRemoteDeviceRelease(*rdev); 
-#endif
+    msgInfo << "OptiXRenderer) VCA node: " << rdevnodecount 
+            << "  GPUs: " << rdevgpucount << sendmsg;
+  } else {
+    msgErr << "OptiXRenderer) VCA: unable to match a usable configuration!" << sendmsg;
   }
 
   return rdev;
@@ -611,11 +685,11 @@ RTRDev OptiXRenderer::remote_connect(const char *cluster,
 void OptiXRenderer::remote_detach(RTRDev vrdev) {
   RTremotedevice *rdev = (RTremotedevice *) vrdev;
 
-  msgInfo << "OptiX VCA remote connection detach" << sendmsg;
+  msgInfo << "OptiXRenderer) VCA: remote connection detach" << sendmsg;
   if (rdev) {
-    msgInfo << "OptiX VCA releasing reservation." << sendmsg;
+    msgInfo << "OptiXRenderer) VCA: releasing reservation." << sendmsg;
     rtRemoteDeviceRelease(*rdev);
-    msgInfo << "OptiX VCA destroying remote connection." << sendmsg;
+    msgInfo << "OptiXRenderer) VCA: destroying remote connection." << sendmsg;
     rtRemoteDeviceDestroy(*rdev);  
     free(rdev);
   }
@@ -704,13 +778,6 @@ unsigned int OptiXRenderer::device_list(int **devlist, char ***devnames) {
       continue;
     }
 #endif
-#if OPTIX_VERSION <= 2051
-    // exclude Kepler and later GPUs if we're running OptiX 2.5.1 or earlier
-    if (compute_capability[0] > 2) {
-//      printf("  Excluded GPU[%d] due to unsupported compute capability\n", i);
-      continue;
-    }
-#endif
 
     // record all usable GPUs we find...
 //    printf("Found usable GPU[%i]\n", i);
@@ -752,6 +819,16 @@ unsigned int OptiXRenderer::optix_version(void) {
 }
 
 
+int OptiXRenderer::material_shader_table_size(void) {
+  // used for initialization info printed to console
+#if defined(ORT_USE_TEMPLATE_SHADERS)
+  return ORTMTABSZ;
+#else
+  return 1;
+#endif
+}
+
+
 void OptiXRenderer::create_context() {
   time_ctx_create = 0;
   if (context_created)
@@ -785,19 +862,17 @@ void OptiXRenderer::create_context() {
   // screen and set what GPU device(s) are used for this context
   // We shouldn't need the compute capability exclusions post-OptiX 3.6.x,
   // but this will benefit from other updates.
-#if OPTIX_VERSION <= 3051
-  int *optixdevlist;
-  int optixdevcount = device_list(&optixdevlist, NULL);
-  if (optixdevcount > 0) {
-    RTERR( rtContextSetDevices(ctx, optixdevcount, optixdevlist) );
-  }
-#else
-  if (getenv("VMDOPTIXDEVICE") != NULL) {
+  if (getenv("VMDOPTIXDEVICEMASK") != NULL) {
+    int *optixdevlist;
+    int optixdevcount = device_list(&optixdevlist, NULL);
+    if (optixdevcount > 0) {
+      RTERR( rtContextSetDevices(ctx, optixdevcount, optixdevlist) );
+    }
+  } else if (getenv("VMDOPTIXDEVICE") != NULL) {
     int optixdev = atoi(getenv("VMDOPTIXDEVICE"));
     msgInfo << "Setting OptiX GPU device to: " << optixdev << sendmsg;
     RTERR( rtContextSetDevices(ctx, 1, &optixdev) );
   }
-#endif
 
   // register ray types for both shadow and radiance rays
   RTERR( rtContextSetRayTypeCount(ctx, RT_RAY_TYPE_COUNT) );
@@ -808,18 +883,28 @@ void OptiXRenderer::create_context() {
 
   // declare various internal state variables
   RTERR( rtContextDeclareVariable(ctx, "max_depth", &max_depth_v) );
+  RTERR( rtContextDeclareVariable(ctx, "anim_interp", &anim_interp_v) );
+  anim_interp = -1.0f; // sentinel value to disable animation
+  RTERR( rtVariableSet1f(anim_interp_v, anim_interp) );
+
   RTERR( rtContextDeclareVariable(ctx, "radiance_ray_type", &radiance_ray_type_v) );
   RTERR( rtContextDeclareVariable(ctx, "shadow_ray_type", &shadow_ray_type_v) );
   RTERR( rtContextDeclareVariable(ctx, "scene_epsilon", &scene_epsilon_v) );
 
   // create light buffers/variables now, populate at render time...
 #if defined(VMDOPTIX_LIGHTUSEROBJS)
-  RTERR( rtContextDeclareVariable(ctx, "light_list", &light_list_v) );
+  RTERR( rtContextDeclareVariable(ctx, "dir_light_list", &dir_light_list_v) );
+  RTERR( rtContextDeclareVariable(ctx, "pos_light_list", &pos_light_list_v) );
 #else
-  RTERR( rtContextDeclareVariable(ctx, "lights", &lightbuffer_v) );
-  RTERR( rtBufferCreate(ctx, RT_BUFFER_INPUT, &lightbuffer) );
-  RTERR( rtBufferSetFormat(lightbuffer, RT_FORMAT_USER) );
-  RTERR( rtBufferSetElementSize(lightbuffer, sizeof(DirectionalLight)) );
+  RTERR( rtContextDeclareVariable(ctx, "dir_lights", &dir_lightbuffer_v) );
+  RTERR( rtBufferCreate(ctx, RT_BUFFER_INPUT, &dir_lightbuffer) );
+  RTERR( rtBufferSetFormat(dir_lightbuffer, RT_FORMAT_USER) );
+  RTERR( rtBufferSetElementSize(dir_lightbuffer, sizeof(DirectionalLight)) );
+
+  RTERR( rtContextDeclareVariable(ctx, "pos_lights", &pos_lightbuffer_v) );
+  RTERR( rtBufferCreate(ctx, RT_BUFFER_INPUT, &pos_lightbuffer) );
+  RTERR( rtBufferSetFormat(pos_lightbuffer, RT_FORMAT_USER) );
+  RTERR( rtBufferSetElementSize(pos_lightbuffer, sizeof(PositionalLight)) );
 #endif
 
   // Current accumulation subframe count, used as part of generating
@@ -827,9 +912,10 @@ void OptiXRenderer::create_context() {
   RTERR( rtContextDeclareVariable(ctx, "accumCount", &accum_count_v) );
   RTERR( rtVariableSet1ui(accum_count_v, 0) );
 
-  // set AO direct lighting scale factor
+  // AO direct lighting scale factors, max occlusion distance
   RTERR( rtContextDeclareVariable(ctx, "ao_direct", &ao_direct_v) );
   RTERR( rtContextDeclareVariable(ctx, "ao_ambient", &ao_ambient_v) );
+  RTERR( rtContextDeclareVariable(ctx, "ao_maxdist", &ao_maxdist_v) );
 
   // shadows, antialiasing, ambient occlusion
   RTERR( rtContextDeclareVariable(ctx, "shadows_enabled", &shadows_enabled_v) );
@@ -844,6 +930,12 @@ void OptiXRenderer::create_context() {
   RTERR( rtContextDeclareVariable(ctx, "scene_gradient_topval", &scene_gradient_topval_v) );
   RTERR( rtContextDeclareVariable(ctx, "scene_gradient_botval", &scene_gradient_botval_v) );
   RTERR( rtContextDeclareVariable(ctx, "scene_gradient_invrange", &scene_gradient_invrange_v) );
+
+  // VR HMD variables
+  RTERR( rtContextDeclareVariable(ctx, "clipview_mode", &clipview_mode_v) );
+  RTERR( rtContextDeclareVariable(ctx, "clipview_start", &clipview_start_v) );
+  RTERR( rtContextDeclareVariable(ctx, "clipview_end", &clipview_end_v) );
+  RTERR( rtContextDeclareVariable(ctx, "headlight_mode", &headlight_mode_v) );
 
   // cueing/fog variables
   RTERR( rtContextDeclareVariable(ctx, "fog_mode", &fog_mode_v) );
@@ -872,14 +964,6 @@ void OptiXRenderer::create_context() {
 
   RTERR( rtContextDeclareVariable(ctx, "accumulation_normalization_factor", &accum_norm_v) );
 
-  // XXX due to the need to switch between progressive and non-progressive mode,
-  //     the key framebuffer variables are currently added/destroyed on-the-fly
-#if 0
-  RTERR( rtContextDeclareVariable(ctx, "accumulation_buffer", &accumulation_buffer_v) );
-#if !defined(VMDOPTIX_PROGRESSIVEAPI)
-  RTERR( rtContextDeclareVariable(ctx, "framebuffer", &framebuffer_v) );
-#endif
-#endif
 
   //
   // allow runtime override of the default shader path for testing
@@ -892,8 +976,20 @@ void OptiXRenderer::create_context() {
       printf("OptiXRenderer) user-override shaderpath: '%s'\n", shaderpath);
   }
 
+  if (verbose >= RT_VERB_TIMING) {
+    printf("OptiXRenderer) creating shader programs...\n");
+    printf("OptiXRenderer)   ");
+    fflush(stdout);
+  }
+
   // load and initialize all of the material programs
   init_materials();
+
+  double time_materials = wkf_timer_timenow(ort_timer); 
+  if (verbose >= RT_VERB_TIMING) {
+    printf("materials(%.1f) ", time_materials - starttime);
+    fflush(stdout);
+  }
 
   // program for clearing the accumulation buffer
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "clear_accumulation_buffer", &clear_accumulation_buffer_pgm) );
@@ -904,13 +1000,51 @@ void OptiXRenderer::create_context() {
   // empty placeholder program for copying the accumulation buffer
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "draw_accumulation_buffer_stub", &draw_accumulation_buffer_stub_pgm) );
 
+  double time_fbops = wkf_timer_timenow(ort_timer);
+  if (verbose >= RT_VERB_TIMING) {
+    printf("fbops(%.1f) ", time_fbops - time_materials);
+    fflush(stdout);
+  }
+
+  // register cubemap VR camera ray gen programs
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_cubemap", &ray_gen_pgm_cubemap) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_cubemap_dof", &ray_gen_pgm_cubemap_dof) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_cubemap_stereo", &ray_gen_pgm_cubemap_stereo) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_cubemap_stereo_dof", &ray_gen_pgm_cubemap_stereo_dof) );
+
   // register planetarium dome master camera ray gen programs
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
          "vmd_camera_dome_master", &ray_gen_pgm_dome_master) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_dome_master_dof", &ray_gen_pgm_dome_master_dof) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_dome_master_stereo", &ray_gen_pgm_dome_master_stereo) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_dome_master_stereo_dof", &ray_gen_pgm_dome_master_stereo_dof) );
 
   // register 360-degree equirectantular projection of spherical camera
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
          "vmd_camera_equirectangular", &ray_gen_pgm_equirectangular) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_equirectangular_dof", &ray_gen_pgm_equirectangular_dof) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_equirectangular_stereo", &ray_gen_pgm_equirectangular_stereo) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_equirectangular_stereo_dof", &ray_gen_pgm_equirectangular_stereo_dof) );
+
+  // register Oculus Rift projection
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_oculus_rift", &ray_gen_pgm_oculus_rift) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_oculus_rift_dof", &ray_gen_pgm_oculus_rift_dof) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_oculus_rift_stereo", &ray_gen_pgm_oculus_rift_stereo) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_oculus_rift_stereo_dof", &ray_gen_pgm_oculus_rift_stereo_dof) );
 
   // register perspective camera ray gen programs
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
@@ -926,7 +1060,11 @@ void OptiXRenderer::create_context() {
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
          "vmd_camera_orthographic", &ray_gen_pgm_orthographic) );
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_orthographic_dof", &ray_gen_pgm_orthographic_dof) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
          "vmd_camera_orthographic_stereo", &ray_gen_pgm_orthographic_stereo) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath,
+         "vmd_camera_orthographic_stereo_dof", &ray_gen_pgm_orthographic_stereo_dof) );
 
   // miss programs for background (solid, gradient sphere/plane)
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "miss_gradient_bg_sky_sphere", &miss_pgm_sky_sphere) );
@@ -935,6 +1073,12 @@ void OptiXRenderer::create_context() {
 
   // exception handler program
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "exception", &exception_pgm) );
+
+  double time_cambgops = wkf_timer_timenow(ort_timer);
+  if (verbose >= RT_VERB_TIMING) {
+    printf("cambgops(%.1f) ", time_cambgops - time_fbops);
+    fflush(stdout);
+  }
 
   // cylinder array programs
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "cylinder_array_bounds", &cylinder_array_bbox_pgm) );
@@ -976,6 +1120,16 @@ void OptiXRenderer::create_context() {
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "trimesh_v3f_bounds", &trimesh_v3f_bbox_pgm) );
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "trimesh_v3f_intersect", &trimesh_v3f_isct_pgm) );
 
+  double time_geompgms = wkf_timer_timenow(ort_timer);
+  if (verbose >= RT_VERB_TIMING) {
+    printf("geompgms(%.1f) ", time_geompgms - time_cambgops);
+    fflush(stdout);
+  }
+
+  if (verbose >= RT_VERB_TIMING) {
+    printf("\n");
+  }
+
   time_ctx_create = wkf_timer_timenow(ort_timer) - starttime;
   
   if (verbose == RT_VERB_TIMING || verbose == RT_VERB_DEBUG) {
@@ -987,6 +1141,9 @@ void OptiXRenderer::create_context() {
 
 
 void OptiXRenderer::setup_context(int w, int h) {
+  double starttime = wkf_timer_timenow(ort_timer);
+  time_ctx_setup = 0;
+
   lasterror = RT_SUCCESS; // clear any error state
   width = w;
   height = h;
@@ -999,10 +1156,10 @@ void OptiXRenderer::setup_context(int w, int h) {
   if (getenv("VMDOPTIXMAXDEPTH")) {
     int maxdepth = atoi(getenv("VMDOPTIXMAXDEPTH"));
     if (maxdepth > 0 && maxdepth <= 20) {
-      printf("OptiX: Setting maxdepth to %d...\n", maxdepth);
+      printf("OptiXRenderer) Setting maxdepth to %d...\n", maxdepth);
       RTERR( rtVariableSet1i(max_depth_v, maxdepth) );
     } else {
-      printf("OptiX: ignoring out-of-range maxdepth to %d...\n", maxdepth);
+      printf("OptiXRenderer) ignoring out-of-range maxdepth to %d...\n", maxdepth);
     }
   } else {
     RTERR( rtVariableSet1i(max_depth_v, 20u) );
@@ -1014,7 +1171,7 @@ void OptiXRenderer::setup_context(int w, int h) {
   float scene_epsilon = 5.e-5f;
   if (getenv("VMDOPTIXSCENEEPSILON") != NULL) {
     scene_epsilon = atof(getenv("VMDOPTIXSCENEEPSILON"));
-    printf("OptiX: user override of scene epsilon: %g\n", scene_epsilon);
+    printf("OptiXRenderer) user override of scene epsilon: %g\n", scene_epsilon);
   }
   RTERR( rtVariableSet1f(scene_epsilon_v, scene_epsilon) );
 
@@ -1024,6 +1181,7 @@ void OptiXRenderer::setup_context(int w, int h) {
 
    // zero out the array of material usage counts for the scene
   memset(material_special_counts, 0, sizeof(material_special_counts));
+  time_ctx_setup = wkf_timer_timenow(ort_timer) - starttime;
 }
 
 
@@ -1083,10 +1241,164 @@ void OptiXRenderer::destroy_scene() {
     geomlist.clear();
     bufferlist.clear();
   }
+
+  materialcache.clear(); // ensure no materials live across renderings
+
   double endtime = wkf_timer_timenow(ort_timer);
   time_ctx_destroy_scene = endtime - starttime;
 
   scene_created = 0; // scene has been destroyed
+}
+
+
+int OptiXRenderer::set_accum_raygen_pgm(CameraProjection &proj, 
+                                        int stereo_on, int dof_on) {
+  //
+  // XXX The ray tracing engine supports a number of camera models that
+  //     are extremely difficult to implement effectively in OpenGL,
+  //     particularly in the context of interactive rasterization.
+  //     The control over use of these camera models is currently implemented
+  //     solely through environment variables, which is undesirable, but
+  //     necessary in the very short term until we come up with a way of
+  //     exposing this in the VMD GUIs.  The environment variables currently
+  //     override the incoming projection settings from VMD.
+  //
+
+
+  // VR cubemap
+  if (getenv("VMDOPTIXCUBEMAP") != NULL) {
+    msgInfo << "Overriding VMD camera projection mode with VR cubemap" << sendmsg;
+    proj = RT_CUBEMAP;
+  }
+
+  // planetarium dome master
+  if (getenv("VMDOPTIXDOMEMASTER") != NULL) {
+    msgInfo << "Overriding VMD camera projection mode with planetarium dome master" << sendmsg;
+    proj = RT_DOME_MASTER;
+  }
+
+  // 360-degree spherical projection into a rectangular (2w x 1h) image
+  if (getenv("VMDOPTIXEQUIRECTANGULAR") != NULL) {
+    msgInfo << "Overriding VMD camera projection mode with spherical equirectangular projection" << sendmsg;
+    proj = RT_EQUIRECTANGULAR;
+  }
+
+  // Oculus Rift w/ barrel distortion applied
+  if (getenv("VMDOPTIXOCULUSRIFT") != NULL) {
+    msgInfo << "Overriding VMD camera projection mode with Oculus Rift projection" << sendmsg;
+    proj = RT_OCULUS_RIFT;
+  }
+
+  // override stereo if an environment variable is set
+  if (getenv("VMDOPTIXSTEREO") != NULL) {
+    msgInfo << "Overriding VMD camera, enabling stereo" << sendmsg;
+    stereo_on = 1;
+  }
+    
+  // set the active ray gen program based on the active projection mode
+  switch (proj) {
+    default:
+      msgErr << "OptiXRenderer) Illegal projection mode! Using perspective." << sendmsg;
+      // XXX fall through to perspective is intentional...
+
+    case RT_PERSPECTIVE:
+      if (stereo_on) {
+        if (dof_on) {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_perspective_stereo_dof) );
+        } else {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_perspective_stereo) );
+        }
+      } else {
+        if (dof_on) {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_perspective_dof) );
+        } else {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_perspective) );
+        }
+      }
+      break;
+
+    case RT_ORTHOGRAPHIC:
+      if (stereo_on) {
+        if (dof_on) {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_orthographic_stereo_dof) );
+        } else {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_orthographic_stereo) );
+        }
+      } else {
+        if (dof_on) {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_orthographic_dof) );
+        } else {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_orthographic) );
+        }
+      }
+      break;
+
+    case RT_CUBEMAP:
+      if (stereo_on) {
+        if (dof_on) {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_cubemap_stereo_dof) );
+        } else {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_cubemap_stereo) );
+        }
+      } else {
+        if (dof_on) {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_cubemap_dof) );
+        } else {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_cubemap) );
+        }
+      }
+      break;
+
+    case RT_DOME_MASTER:
+      if (stereo_on) {
+        if (dof_on) {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_dome_master_stereo_dof) );
+        } else {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_dome_master_stereo) );
+        }
+      } else {
+        if (dof_on) {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_dome_master_dof) );
+        } else {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_dome_master) );
+        }
+      }
+      break;
+
+    case RT_EQUIRECTANGULAR:
+      if (stereo_on) {
+        if (dof_on) {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_equirectangular_stereo_dof) );
+        } else {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_equirectangular_stereo) );
+        }
+      } else {
+        if (dof_on) {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_equirectangular_dof) );
+        } else {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_equirectangular) );
+        }
+      }
+      break;
+
+    case RT_OCULUS_RIFT:
+      if (stereo_on) {
+        if (dof_on) {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_oculus_rift_stereo_dof) );
+        } else {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_oculus_rift_stereo) );
+        }
+      } else {
+        if (dof_on) {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_oculus_rift_dof) );
+        } else {
+          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_oculus_rift) );
+        }
+      }
+      break;
+  }
+
+  return 0;
 }
 
 
@@ -1104,27 +1416,13 @@ void OptiXRenderer::update_rendering_state(int interactive) {
                    trimesh_n3b_v3f_cnt + trimesh_n3f_v3f_cnt + trimesh_v3f_cnt;
 
   if (verbose == RT_VERB_TIMING || verbose == RT_VERB_DEBUG) {
-#if 1
-    printf("OptiXRenderer) cyl %ld, ring %ld, sph %ld, tri %ld, tot: %ld  lt %d\n",
+    printf("OptiXRenderer) cyl %ld, ring %ld, sph %ld, tri %ld, tot: %ld  lt %ld\n",
            cylinder_array_cnt + cylinder_array_color_cnt,
            ring_array_color_cnt,
            sphere_array_cnt + sphere_array_color_cnt,
            totaltris,
            cylinder_array_cnt +  cylinder_array_color_cnt + ring_array_color_cnt + sphere_array_cnt + sphere_array_color_cnt + totaltris,
-           directional_lights.num());
-#else
-    printf("OptiXRenderer) object counts:\n");
-    printf("OptiXRenderer)   %ld cylinders\n", cylinder_array_cnt + cylinder_array_color_cnt);
-    printf("OptiXRenderer)   %ld rings\n", ring_array_color_cnt);
-    printf("OptiXRenderer)   %ld spheres\n", sphere_array_cnt + sphere_array_color_cnt);
-    printf("OptiXRenderer)   %ld triangles\n", totaltris);
-    printf("OptiXRenderer) total objects: %ld\n",
-           cylinder_array_cnt +  cylinder_array_color_cnt +
-           ring_array_color_cnt + 
-           sphere_array_cnt + sphere_array_color_cnt + 
-           totaltris);
-    printf("OptiXRenderer) light count: %d\n", directional_lights.num());
-#endif
+           directional_lights.num() + positional_lights.num());
   }
 
   if (verbose == RT_VERB_DEBUG) {
@@ -1132,24 +1430,33 @@ void OptiXRenderer::update_rendering_state(int interactive) {
     if (getenv("VMDOPTIXFORCEGENERALSHADER") == NULL) {
       printf("OptiXRenderer) using template-specialized shaders and materials:\n");
       int i;
-      for (i=0; i<64; i++) {
+      for (i=0; i<ORTMTABSZ; i++) {
         if (material_special_counts[i] > 0) {
           printf("OptiXRenderer) material_special[%d] usage count: %d\n", 
                  i, material_special_counts[i]); 
     
           printf("OptiXRenderer)   "
+                 "ClipView %s, "
+                 "Headlight %s, "
                  "Fog %s, "
                  "Shadows %s, "
                  "AO %s, "
                  "Outline %s, "
                  "Refl %s, "
                  "Trans %s\n",
-                 onoffstr(i & 32),
-                 onoffstr(i & 16),
-                 onoffstr(i &  8),
-                 onoffstr(i &  4),
-                 onoffstr(i &  2),
-                 onoffstr(i &  1));
+#if defined(VMDOPTIX_VCA_TABSZHACK)
+                 onoffstr(1),
+                 onoffstr(1),
+#else
+                 onoffstr(i & 128),
+                 onoffstr(i &  64),
+#endif
+                 onoffstr(i &  32),
+                 onoffstr(i &  16),
+                 onoffstr(i &   8),
+                 onoffstr(i &   4),
+                 onoffstr(i &   2),
+                 onoffstr(i &   1));
         }
       }
       printf("OptiXRenderer)\n");
@@ -1169,18 +1476,23 @@ void OptiXRenderer::update_rendering_state(int interactive) {
   RTERR( rtVariableSet1f(scene_gradient_botval_v, scene_gradient_botval) );
 
   if (verbose == RT_VERB_DEBUG) {
-    printf("OptiX: scene bg mode: %d\n", scene_background_mode);
+    printf("OptiXRenderer) HMD/camera view clipping mode: %d start: %.2f end: %.2f\n",
+           clipview_mode, clipview_start, clipview_end);
 
-    printf("OptiX: scene bgsolid: %.2f %.2f %.2f\n", 
+    printf("OptiXRenderer) HMD/camera headlight mode: %d\n", headlight_mode);
+
+    printf("OptiXRenderer) scene bg mode: %d\n", scene_background_mode);
+
+    printf("OptiXRenderer) scene bgsolid: %.2f %.2f %.2f\n", 
            scene_bg_color[0], scene_bg_color[1], scene_bg_color[2]);
 
-    printf("OptiX: scene bggradT: %.2f %.2f %.2f\n", 
+    printf("OptiXRenderer) scene bggradT: %.2f %.2f %.2f\n", 
            scene_bg_grad_top[0], scene_bg_grad_top[1], scene_bg_grad_top[2]);
 
-    printf("OptiX: scene bggradB: %.2f %.2f %.2f\n", 
+    printf("OptiXRenderer) scene bggradB: %.2f %.2f %.2f\n", 
            scene_bg_grad_bot[0], scene_bg_grad_bot[1], scene_bg_grad_bot[2]);
   
-    printf("OptiX: bg gradient: %f %f %f  top: %f  bot: %f\n",
+    printf("OptiXRenderer) bg gradient: %f %f %f  top: %f  bot: %f\n",
            scene_gradient[0], scene_gradient[1], scene_gradient[2],
            scene_gradient_topval, scene_gradient_botval);
   }
@@ -1189,34 +1501,59 @@ void OptiXRenderer::update_rendering_state(int interactive) {
   scene_gradient_invrange = 1.0f / (scene_gradient_topval - scene_gradient_botval);
   RTERR( rtVariableSet1f(scene_gradient_invrange_v, scene_gradient_invrange) );
 
+  RTERR( rtVariableSet1i(clipview_mode_v, clipview_mode) );
+  RTERR( rtVariableSet1f(clipview_start_v, clipview_start) );
+  RTERR( rtVariableSet1f(clipview_end_v, clipview_end) );
+  RTERR( rtVariableSet1i(headlight_mode_v, (int) headlight_mode) );
+
   RTERR( rtVariableSet1i(fog_mode_v, (int) fog_mode) );
   RTERR( rtVariableSet1f(fog_start_v, fog_start) );
   RTERR( rtVariableSet1f(fog_end_v, fog_end) );
   RTERR( rtVariableSet1f(fog_density_v, fog_density) );
 
   if (verbose == RT_VERB_DEBUG) {
-    printf("OptiXRenderer) adding lights: %d\n", directional_lights.num());
+    printf("OptiXRenderer) adding lights: dir: %ld  pos: %ld\n", 
+           directional_lights.num(), positional_lights.num());
   }
 
 #if defined(VMDOPTIX_LIGHTUSEROBJS)
-  DirectionalLightList lights;
-  memset(&lights, 0, sizeof(DirectionalLightList));
-  lights.num_lights = directional_lights.num();
-  int lcount = directional_lights.num();
-  lcount = (lcount > DISP_LIGHTS) ? DISP_LIGHTS : lcount;
-  for (i=0; i<lcount; i++) {
-    vec_copy((float*)(&lights.dirs[i]), directional_lights[i].dir);
+  DirectionalLightList dir_lights;
+  memset(&dir_lights, 0, sizeof(DirectionalLightList));
+  dir_lights.num_lights = directional_lights.num();
+  int dlcount = directional_lights.num();
+  dlcount = (dlcount > DISP_LIGHTS) ? DISP_LIGHTS : dlcount;
+  for (i=0; i<dlcount; i++) {
+    vec_copy((float*)(&dir_lights.dirs[i]), directional_lights[i].dir);
   }
-  RTERR( rtVariableSetUserData(light_list_v, sizeof(DirectionalLightList), &lights) );
+  RTERR( rtVariableSetUserData(dir_light_list_v, sizeof(DirectionalLightList), &dir_lights) );
+
+  PositionalLightList pos_lights;
+  memset(&pos_lights, 0, sizeof(PositionalLightList));
+  pos_lights.num_lights = positional_lights.num();
+  int plcount = positional_lights.num();
+  plcount = (plcount > DISP_LIGHTS) ? DISP_LIGHTS : plcount;
+  for (i=0; i<plcount; i++) {
+    vec_copy((float*)(&pos_lights.posns[i]), positional_lights[i].pos);
+  }
+  RTERR( rtVariableSetUserData(pos_light_list_v, sizeof(PositionalLightList), &pos_lights) );
 #else
-  DirectionalLight *lbuf;
-  RTERR( rtBufferSetSize1D(lightbuffer, directional_lights.num()) );
-  RTERR( rtBufferMap(lightbuffer, (void **) &lbuf) );
+  DirectionalLight *dlbuf;
+  RTERR( rtBufferSetSize1D(dir_lightbuffer, directional_lights.num()) );
+  RTERR( rtBufferMap(lightbuffer, (void **) &dlbuf) );
   for (i=0; i<directional_lights.num(); i++) {
-    vec_copy((float*)&lbuf[i].dir, directional_lights[i].dir);
+    vec_copy((float*)&dlbuf[i].dir, directional_lights[i].dir);
   }
-  RTERR( rtBufferUnmap(lightbuffer) );
-  RTERR( rtVariableSetObject(lightbuffer_v, lightbuffer) );
+  RTERR( rtBufferUnmap(dir_lightbuffer) );
+  RTERR( rtVariableSetObject(dir_lightbuffer_v, dir_lightbuffer) );
+
+  PositionalLight *plbuf;
+  RTERR( rtBufferSetSize1D(pos_lightbuffer, positional_lights.num()) );
+  RTERR( rtBufferMap(pos_lightbuffer, (void **) &plbuf) );
+  for (i=0; i<positional_lights.num(); i++) {
+    vec_copy((float*)&plbuf[i].dir, positional_lights[i].dir);
+  }
+  RTERR( rtBufferUnmap(pos_lightbuffer) );
+  RTERR( rtVariableSetObject(pos_lightbuffer_v, pos_lightbuffer) );
 #endif
 
   if (verbose == RT_VERB_DEBUG) printf("Finalizing OptiX scene graph...\n");
@@ -1346,6 +1683,14 @@ void OptiXRenderer::update_rendering_state(int interactive) {
   RTERR( rtVariableSet1i(ao_samples_v, ao_samples) );
   RTERR( rtVariableSet1f(ao_ambient_v, ao_ambient) );
   RTERR( rtVariableSet1f(ao_direct_v, ao_direct) );
+  RTERR( rtVariableSet1f(ao_maxdist_v, ao_maxdist) );
+  if (getenv("VMDOPTIXAOMAXDIST")) {
+    float tmp = atof(getenv("VMDOPTIXAOMAXDIST"));
+    if (verbose == RT_VERB_DEBUG) {
+      printf("OptiXRenderer) setting AO maxdist: %f\n", tmp);
+    }
+    RTERR( rtVariableSet1f(ao_maxdist_v, tmp) );
+  }
 
   if (verbose == RT_VERB_DEBUG) {
     printf("OptiXRenderer) setting sample counts:  AA %d  AO %d\n", aa_samples, ao_samples);
@@ -1385,43 +1730,14 @@ void OptiXRenderer::update_rendering_state(int interactive) {
   RTERR( rtContextSetEntryPointCount(ctx, RT_RAY_GEN_COUNT) );
   RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_CLEAR_ACCUMULATION_BUFFER, clear_accumulation_buffer_pgm) );
 
-  // set the active ray gen program based on the active projection mode
-  if (camera_projection == RT_PERSPECTIVE) {
-    if (dof_enabled) {
-      RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_perspective_dof) );
-    } else {
-      RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_perspective) );
-    }
-  } else if (camera_projection == RT_ORTHOGRAPHIC) {
-    if (dof_enabled) {
-      printf("OptiXRenderer) DoF not available in orthographic projections\n");
-    }
-    RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_orthographic) );
-  } else {
-    msgErr << "OptiX: Illegal projection mode! Rendering aborted." << sendmsg;
-    return;
-  }
+  // set the active color accumulation ray gen program based on the 
+  // camera/projection mode, stereoscopic display mode, 
+  // and depth-of-field state
+  set_accum_raygen_pgm(camera_projection, 0, dof_enabled);
 
   //
-  // XXX we don't have a dome master projection mode in the main VMD code
-  //     yet, so for now, this is handled via environment variable hacks
-  //     that override the active VMD camera projection setting
+  // set the ray gen program to use for the copy/finish operations
   //
-  if (getenv("VMDOPTIXDOMEMASTER") != NULL) {
-    msgInfo << "Overriding VMD camera projection mode with Planetarium Dome Master" << sendmsg;
-    RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_dome_master) );
-  }
-
-  //
-  // XXX we don't have an equirectangular projection mode in the main VMD code
-  //     yet, so for now, this is handled via environment variable hacks
-  //     that override the active VMD camera projection setting
-  //
-  if (getenv("VMDOPTIXEQUIRECTANGULAR") != NULL) {
-    msgInfo << "Overriding VMD camera projection mode with spherical equirectangular projection" << sendmsg;
-    RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_equirectangular) );
-  }
-
 #if defined(VMDOPTIX_PROGRESSIVEAPI)
   if (interactive) {
     RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_COPY_FINISH, draw_accumulation_buffer_stub_pgm) );
@@ -1457,14 +1773,14 @@ void OptiXRenderer::update_rendering_state(int interactive) {
 
   // enable all exceptions for debugging if requested
   if (getenv("VMDOPTIXDEBUG")) {
-    printf("OptiX: Enabling all OptiX exceptions\n");
+    printf("OptiXRenderer) Enabling all OptiX exceptions\n");
     RTERR( rtContextSetExceptionEnabled(ctx, RT_EXCEPTION_ALL, 1) );
   }
 
   // increase default OptiX stack size to prevent runtime failures
   RTsize ssz;
   rtContextGetStackSize(ctx, &ssz);
-  if (verbose == RT_VERB_DEBUG) printf("OptiX: original stack size: %ld\n", ssz);
+  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) original stack size: %ld\n", ssz);
 
   // a decent default stack size is 7KB
   long newstacksize = 7 * 1024;
@@ -1472,12 +1788,12 @@ void OptiXRenderer::update_rendering_state(int interactive) {
   // allow runtime user override of the OptiX stack size in 
   // case we need to render a truly massive scene
   if (getenv("VMDOPTIXSTACKSIZE")) {
-    if (verbose == RT_VERB_DEBUG) printf("OptiX: user stack size override: %ld\n", ssz);
+    if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) user stack size override: %ld\n", ssz);
     newstacksize = atoi(getenv("VMDOPTIXSTACKSIZE"));
   }
   rtContextSetStackSize(ctx, newstacksize);
   rtContextGetStackSize(ctx, &ssz);
-  if (verbose == RT_VERB_DEBUG) printf("OptiX: new stack size: %ld\n", ssz);
+  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) new stack size: %ld\n", ssz);
 #if !defined(VMDOPTIX_PROGRESSIVEAPI)
   rtContextSetPrintEnabled(ctx, 1);
   rtContextSetPrintBufferSize(ctx, 1*1024*1024); 
@@ -1558,6 +1874,24 @@ void OptiXRenderer::config_framebuffer(int fbwidth, int fbheight,
 #ifdef VMDOPTIX_PROGRESSIVEAPI
     if (interactive) {
       RTERR( rtBufferCreate(ctx, RT_BUFFER_PROGRESSIVE_STREAM, &framebuffer) );
+
+      // allow user-override of default 5 Mbit/s video encoding bit rate
+      int stream_bitrate = 5000000;
+      if (getenv("VMDOPTIXBITRATE"))
+        stream_bitrate = atoi(getenv("VMDOPTIXBITRATE"));
+      RTERR( rtBufferSetAttribute(framebuffer, RT_BUFFER_ATTRIBUTE_STREAM_BITRATE, sizeof(int), &stream_bitrate) );
+
+      // allow user-override of default 30 FPS target frame rate
+      int stream_fps = 30;
+      if (getenv("VMDOPTIXFPS"))
+        stream_fps = atoi(getenv("VMDOPTIXFPS"));
+      RTERR( rtBufferSetAttribute(framebuffer, RT_BUFFER_ATTRIBUTE_STREAM_FPS, sizeof(int), &stream_fps) );
+            
+      // allow user-override of Gamma
+      float stream_gamma = 1.0f;
+      if (getenv("VMDOPTIXGAMMS"))
+        stream_gamma = atoi(getenv("VMDOPTIXGAMMA"));
+      RTERR( rtBufferSetAttribute(framebuffer, RT_BUFFER_ATTRIBUTE_STREAM_GAMMA, sizeof(float), &stream_gamma) );
     } else
 #endif
     {
@@ -1587,6 +1921,9 @@ void OptiXRenderer::resize_framebuffer(int fbwidth, int fbheight) {
     return;
 
   if (buffers_allocated) {
+    if (verbose == RT_VERB_DEBUG) 
+      printf("OptiXRenderer) resize_framebuffer(%d x %d)\n", fbwidth, fbheight);
+
     RTERR( rtBufferSetSize2D(framebuffer, width, height) );
     RTERR( rtBufferSetSize2D(accumulation_buffer, width, height) );
   }
@@ -1798,55 +2135,6 @@ static void *createoptixwindow(const char *wintitle, int width, int height) {
 }
 
 
-static void drawoptiximage(void *win, RTbuffer buffer, int stereoon,
-                           int buffer_width, int buffer_height) {
-  void * img;
-  rtBufferMap(buffer, &img);
-
-  int wsx, wsy;
-  glwin_get_winsize(win, &wsx, &wsy);
-
-  glDrawBuffer(GL_BACK);
-  glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-  glClearColor(0.0, 0.0, 0.0, 1.0); /* black */
-  glViewport(0, 0, wsx, wsy);
-  glClear(GL_COLOR_BUFFER_BIT);
-
-  glShadeModel(GL_FLAT);
-  glViewport(0, 0, wsx, wsy);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  glOrtho(0.0, wsx, 0.0, wsy, -1.0, 1.0);
-
-  glMatrixMode(GL_MODELVIEW);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glPixelZoom(1.0, 1.0); 
-
-  if (stereoon) {
-    //printf("wsz: %dx%d  bsz: %dx%d\n", wsx, wsy, buffer_width, buffer_height);
-    unsigned char *leftimg = (unsigned char *) img;
-    unsigned char *rightimg = leftimg + ((buffer_width * (buffer_height/2)) * 4);
-
-    glDrawBuffer(GL_BACK_LEFT);
-    glRasterPos2i(0, 0);
-//    glColorMask(GL_TRUE, GL_TRUE, GL_FALSE, GL_TRUE); // anaglyph or testing
-    glDrawPixels(buffer_width, buffer_height/2, GL_RGBA, GL_UNSIGNED_BYTE, leftimg);
-
-    glDrawBuffer(GL_BACK_RIGHT);
-    glRasterPos2i(0, 0);
-//    glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE); // anaglyph or testing
-    glDrawPixels(buffer_width, buffer_height/2, GL_RGBA, GL_UNSIGNED_BYTE, rightimg);
-  } else {
-    glRasterPos2i(0, 0);
-    glDrawPixels(buffer_width, buffer_height, GL_RGBA, GL_UNSIGNED_BYTE, img);
-  }
-
-  rtBufferUnmap(buffer);
-
-  glwin_swap_buffers(win);
-}
-
-
 static void interactive_viewer_usage(RTcontext ctx, void *win) {
   printf("OptiXRenderer) VMD TachyonL-OptiX Interactive Ray Tracer help:\n");
   printf("OptiXRenderer) ===============================================\n");
@@ -1864,6 +2152,14 @@ static void interactive_viewer_usage(RTcontext ctx, void *win) {
   printf("OptiXRenderer) Stereoscopic display: %s\n",
          (havestereo) ? "Available" : "Not available");
 
+  // check for vertical retrace sync
+  int vsync=0, rc=0;
+  if ((rc = glwin_query_vsync(win, &vsync)) == GLWIN_SUCCESS) {
+    printf("OptiXRenderer) Vert retrace sync: %s\n", (vsync) ? "On" : "Off");
+  } else {
+    printf("OptiXRenderer) Vert retrace sync: indeterminate\n");
+  }
+
   printf("OptiXRenderer)\n");
   printf("OptiXRenderer) General controls:\n");
   printf("OptiXRenderer)   space: save numbered snapshot image\n");
@@ -1877,8 +2173,15 @@ static void interactive_viewer_usage(RTcontext ctx, void *win) {
   printf("OptiXRenderer)      F2: override AO on/off\n");
   printf("OptiXRenderer)      F3: override DoF on/off\n");
   printf("OptiXRenderer)      F4: override Depth cueing on/off\n");
+#if defined(VMDOPTIX_USE_HMD)
+  printf("OptiXRenderer)      F5: override HMD/camera clipping plane/sphere\n");
+  printf("OptiXRenderer)      F6: override HMD/camera headlight\n");
+  printf("OPtiXRenderer)      F7: toggle HMD interleaved drawing\n");
+  printf("OPtiXRenderer)      F8: toggle HMD tex caching/update mode\n");
+  printf("OPtiXRenderer)      F9: switch HMD lens distortion mode\n");
+#endif
 #ifdef USE_REVERSE_SHADOW_RAYS
-  printf("OptiXRenderer)      F5: enable/disable shadow ray optimizations\n");
+  printf("OptiXRenderer)     F10: enable/disable shadow ray optimizations\n");
 #endif
   printf("OptiXRenderer)     F12: toggle full-screen display on/off\n");
   printf("OptiXRenderer)   1-9,0: override samples per update auto-FPS off\n");
@@ -1908,6 +2211,8 @@ static void interactive_viewer_usage(RTcontext ctx, void *win) {
 
 
 void OptiXRenderer::render_to_glwin(const char *filename) {
+  int i;
+
   if (!context_created)
     return;
 
@@ -1915,8 +2220,101 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
   enum RtMouseDown { RTMD_NONE=0, RTMD_LEFT=1, RTMD_MIDDLE=2, RTMD_RIGHT=3 };
   RtMouseMode mm = RTMM_ROT;
   RtMouseDown mousedown = RTMD_NONE;
-  int i;
 
+  // animation free-run flag and interpolation state variable
+  int anim_freerun = 0;
+
+  // user-override of value-range clamping for anim interpolant
+  float anim_interp_min = 0.0f;
+  float anim_interp_max = 1.0f;
+  float anim_interp_inc = 0.03f;
+  if (getenv("VMDOPTIXANIMINTERPMIN")) {
+    anim_interp_min = atof(getenv("VMDOPTIXANIMINTERPMIN"));
+    printf("OptiXRenderer) User-override of anim_interp min value: %f\n", anim_interp_min);
+  }
+  if (getenv("VMDOPTIXANIMINTERPMAX")) {
+    anim_interp_max = atof(getenv("VMDOPTIXANIMINTERPMAX"));
+    printf("OptiXRenderer) User-override of anim_interp max value: %f\n", anim_interp_max);
+  }
+  if (getenv("VMDOPTIXANIMINTERPINC")) {
+    anim_interp_inc = atof(getenv("VMDOPTIXANIMINTERPINC"));
+    printf("OptiXRenderer) User-override of anim_interp inc value: %f\n", anim_interp_inc);
+  }
+  float anim_interp_range = anim_interp_max - anim_interp_min;
+
+  anim_interp = -1.0f; // sentinel value to disable animation
+  RTERR( rtVariableSet1f(anim_interp_v, anim_interp) );
+
+  // initialize HMD free-run flag to off until HMD code enumerates the 
+  // hardware and passes all the way through initialization
+  int hmd_freerun = 0;
+  void *hmd_warp = NULL;
+  int hmd_warp_drawmode=1;
+
+  // default HMD distortion correction coefficients assume an Oculus DK2 HMD
+  int hmd_warp_coeff_update=0; // warp equation was changed
+  int hmd_warp_coeff_edit=1;   // which power of r to edit
+  int hmd_warp_coeff_set=0;    // sets: 0=DK2, 1=MSR, 2=User
+  const float dk2_warp_coeff[5] = { 1.000f, 0.000f, 0.600f, 0.000f, 0.000f };
+//  const float msr_warp_coeff[5] = { 1.000f, 0.290f, 0.195f, 0.045f, 0.360f };
+  const float msr_warp_coeff[5] = { 0.950f, 0.330f, 0.195f, 0.045f, 0.360f };
+  float user_warp_coeff[5]      = { 1.000f, 0.000f, 0.600f, 0.000f, 0.000f };
+  float hmd_warp_coeff[5]       = { 1.000f, 0.000f, 0.600f, 0.000f, 0.000f };
+
+  // obtain user-defined warp coefficients from environment variable if set
+  if (getenv("VMDOPTIXHMDUSERWARPCOEFFS")) {
+    printf("OptiXRenderer) user-override of default user-defined HMD warp coefficients\n");
+    memset(user_warp_coeff, 0, sizeof(user_warp_coeff));
+    int cnt=sscanf(getenv("VMDOPTIXHMDUSERWARPCOEFFS"), "%f %f %f %f %f",
+                   &user_warp_coeff[0], &user_warp_coeff[1],
+                   &user_warp_coeff[2], &user_warp_coeff[3],
+                   &user_warp_coeff[4]);
+    if (cnt != 5) {
+      printf("OptiXRenderer) Warning: only parsed %d coefficients!\n", cnt);
+    } else {
+      printf("OptiXRenderer) user-defined warp coefficients: %d\n", cnt);
+      printf("OptiXRenderer)  %.3f %.3f %.3f %.3f %.3f\n", 
+             user_warp_coeff[0], user_warp_coeff[1], 
+             user_warp_coeff[2], user_warp_coeff[3], user_warp_coeff[4]);
+    }
+  }
+
+  // don't interleave extra HMD update/draw passes between buffer updates
+  // unless the user wants us to, as a means of improving usability of
+  // slow machines
+  int hmd_interleave_draws = 0;
+  if (getenv("VMDOPTIXHMDINTERLEAVEDRAWS")) {
+    hmd_interleave_draws = 1;
+    printf("OptiXRenderer) HMD GL draw call interleaving enabled\n");
+  }
+
+  int hmd_tex_caching = 0;
+  if (getenv("VMDOPTIXHMDTEXCACHING")) {
+    hmd_tex_caching = 1;
+    printf("OptiXRenderer) HMD texture caching enabled\n");
+  }
+
+  // flag to skip the HMD GL draw calls for timing purposes
+  int hmd_no_draw = 0;
+  if (getenv("VMDOPTIXHMDNODRAW")) {
+    hmd_no_draw = 1;
+    printf("OptiXRenderer) HMD GL draw calls disabled\n");
+  }
+  
+  // allow user-override of VR HMD sphere geometric res
+  float hmd_fov = 95;
+  if (getenv("VMDOPTIXHMDFOV")) {
+    hmd_fov = atof(getenv("VMDOPTIXHMDFOV"));
+    printf("OptiXRenderer) User-override of HMD FoV: %.2f\n", hmd_fov);
+  }
+
+  // allow user-override of VR HMD sphere geometric res
+  int hmd_spres = 72; // 50 seems like the useful lower-bound spres setting
+  if (getenv("VMDOPTIXHMDSPRES")) {
+    hmd_spres = atoi(getenv("VMDOPTIXHMDSPRES"));
+    printf("OptiXRenderer) User-override of HMD sph res: %d\n", hmd_spres);
+  }
+ 
   // flags to interactively enable/disable shadows, AO, DoF
 #if defined(USE_REVERSE_SHADOW_RAYS) && defined(USE_REVERSE_SHADOW_RAYS_DEFAULT)
   int gl_shadows_on=(shadows_enabled) ? RT_SHADOWS_ON_REVERSE : RT_SHADOWS_OFF;
@@ -1925,11 +2323,14 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
 #endif
 
   int gl_fs_on=0; // fullscreen window state
-  int owsx=0, owsy=0; // store last win size before fullscreen
+  int fsowsx=0, fsowsy=0; // store last win size before fullscreen
+  int owsx=0, owsy=0; // last win size
   int gl_ao_on=(ao_samples > 0);
   int gl_dof_on, gl_dof_on_old;
   gl_dof_on=gl_dof_on_old=dof_enabled; 
   int gl_fog_on=(fog_mode != RT_FOG_NONE);
+  int gl_clip_on=(clipview_mode != RT_CLIP_NONE);
+  int gl_headlight_on=(headlight_mode != RT_HEADLIGHT_OFF);
 
   // Enable live recording of a session to a stream of image files indexed
   // by their display presentation time, mapped to the nearest frame index
@@ -1941,12 +2342,18 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
   int movie_recording_on = 0;
   double movie_recording_start_time = 0.0;
   int movie_recording_fps = 30;
+  int movie_framecount = 0;
+  int movie_lastframeindex = 0;
   const char *movie_recording_filebase = "vmdlivemovie.%05d.tga";
   if (getenv("VMDOPTIXLIVEMOVIECAPTUREFILEBASE"))
     movie_recording_filebase = getenv("VMDOPTIXLIVEMOVIECAPTUREFILEBASE");
 
   // Enable/disable Spaceball/SpaceNavigator/Magellan input 
   int spaceballenabled=(getenv("VMDDISABLESPACEBALLXDRV") == NULL) ? 1 : 0;
+  int spaceballmode=0;       // default mode is rotation/translation
+  int spaceballflightmode=0; // 0=moves object, 1=camera fly
+  if (getenv("VMDOPTIXSPACEBALLFLIGHT"))
+    spaceballflightmode=1;
 
   // total AA/AO sample count
   int totalsamplecount=0;
@@ -1956,7 +2363,7 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
 
   // flag to enable automatic AO sample count adjustment for FPS rate control
 #if defined(VMDOPTIX_PROGRESSIVEAPI)
-  static int vcarunning=0;      // flag to indicate VCA streaming active/inactive
+  int vcarunning=0;      // flag to indicate VCA streaming active/inactive
   int autosamplecount=0; // disable when targeting VCA for now
 #else
   int autosamplecount=1;
@@ -1971,6 +2378,20 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
   // and output streams required for progressive rendering, either
   // using the new progressive APIs, or using our own code.
   //
+  // Unless overridden by environment variables, we use the incoming
+  // window size parameters from VMD to initialize the RT image dimensions.
+  // If image size is overridden, often when using HMDs, the incoming 
+  // dims are window dims are used to size the GL window, but the image size
+  // is set independently.
+  int wsx=width, wsy=height;
+  const char *imageszstr = getenv("VMDOPTIXIMAGESIZE");
+  if (imageszstr) {
+    if (sscanf(imageszstr, "%d %d", &width, &height) != 2) {
+      width=wsx;
+      height=wsy;
+    } 
+  } 
+
   config_framebuffer(width, height, 1);
 
   // prepare the majority of OptiX rendering state before we go into 
@@ -1981,6 +2402,7 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
   // make a copy of state we're going to interactively manipulate,
   // so that we can recover to the original state on-demand
   int samples_per_pass = 1;
+  int force_ao_1 = 0; // whether or not to force AO count per pass to 1
   int cur_aa_samples = aa_samples;
   int cur_ao_samples = ao_samples;
   float cam_zoom_orig = cam_zoom;
@@ -1992,17 +2414,54 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
   float cam_V_orig[3] = {0.0f, 1.0f, 0.0f};
   float cam_W_orig[3] = {0.0f, 0.0f, -1.0f};
   float cam_pos[3], cam_U[3], cam_V[3], cam_W[3];
+  float hmd_U[3], hmd_V[3], hmd_W[3];
+
   vec_copy(cam_pos, cam_pos_orig);
   vec_copy(cam_U, cam_U_orig);
   vec_copy(cam_V, cam_V_orig);
   vec_copy(cam_W, cam_W_orig);
 
   // copy light directions
-  DirectionalLight *cur_lights = (DirectionalLight *) calloc(1, directional_lights.num() * sizeof(DirectionalLight));
+  DirectionalLight *cur_dlights = (DirectionalLight *) calloc(1, directional_lights.num() * sizeof(DirectionalLight));
   for (i=0; i<directional_lights.num(); i++) {
-    vec_copy((float*)&cur_lights[i].dir, directional_lights[i].dir);
-    vec_normalize((float*)&cur_lights[i].dir);
+    vec_copy((float*)&cur_dlights[i].dir, directional_lights[i].dir);
+    vec_normalize((float*)&cur_dlights[i].dir);
   }
+
+#if defined(VMDOPTIX_USE_HMD)
+  HMDMgr *hmd = NULL;
+  // if using HMD for display, get head tracking data
+  if (getenv("VMDOPTIXUSEHMD") != NULL) {
+    hmd = new HMDMgr();
+    if (hmd->device_count() < 1) {
+      delete hmd;
+      hmd = NULL;
+    }
+  }
+  if (hmd) {
+    autosamplecount=0; // disable when targeting HMDs
+    msgInfo << "OptiXRenderer) HMD in use, disabling auto sample count adjustement," << sendmsg;
+    msgInfo << "OptiXRenderer) optimizing for lowest rendering latency." << sendmsg;
+  }
+
+#if defined(VMDOPTIX_PROGRESSIVEAPI) 
+  hmd_freerun = (hmd != NULL && camera_projection == RT_EQUIRECTANGULAR);
+#endif
+
+#if defined(VMDUSEEVENTIO)
+  evio_handle eviodev = NULL;
+  const char *eviodevname = getenv("VMDOPTIXEVIODEV");
+  if (hmd && eviodevname) {
+    msgInfo << "OptiXRenderer) Attempting to open '" 
+            << eviodevname << "' for Linux event I/O input..." << sendmsg; 
+    eviodev = evio_open(eviodevname);
+    if (eviodev) {
+      msgInfo << "OptiXRenderer) Using Linux event I/O input:" << sendmsg;
+      evio_print_devinfo(eviodev);
+    }
+  }
+#endif
+#endif
 
   // create the display window
   void *win = createoptixwindow("VMD TachyonL-OptiX Interactive Ray Tracer", width, height);
@@ -2012,6 +2471,29 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
   int havestereo=0, havestencil=0;
   int stereoon=0, stereoon_old=0;
   glwin_get_wininfo(win, &havestereo, &havestencil);
+
+#if defined(VMDOPTIX_USE_HMD) && defined(VMDOPTIX_PROGRESSIVEAPI)
+  if (hmd_freerun && hmd != NULL && camera_projection == RT_EQUIRECTANGULAR) {
+    glwin_spheremap_draw_prepare(win);
+
+    // enable HMD optical distortion correction, unless force-disabled
+    if (hmd != NULL && !getenv("VMDOPTIXHMDNOWARP"))
+      hmd_warp = glwin_spheremap_create_hmd_warp(win, wsx, wsy, 21, 0,
+                                                 width, height, hmd_warp_coeff);
+
+    // if an HMD is in use, we trigger full-screen display by default
+    if (hmd) {
+      if (glwin_fullscreen(win, 1, 0) == 0) {
+        gl_fs_on = 1;
+        fsowsx = wsx;
+        fsowsy = wsy;
+        glwin_get_winsize(win, &wsx, &wsy);
+      } else {
+        printf("OptiXRenderer) Fullscreen mode not available\n");
+      }
+    }
+  }
+#endif
 
   // Override AA/AO sample counts since we're doing progressive rendering.
   // Choosing an initial AO sample count of 1 will give us the peak progressive 
@@ -2029,9 +2511,14 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
   int done=0, winredraw=1, accum_count=0;
   int state=0, mousedownx=0, mousedowny=0;
   float cur_cam_zoom = cam_zoom_orig;
+
   double fpsexpave=0.0; 
+  double hmdfpsexpave=0.0;
+  double hmdgldrawtime=0.0;
+  double mapbuftotaltime=0.0;
+  
   double oldtime = wkf_timer_timenow(ort_timer);
-  int wsx=width, wsy=height;
+  double hmdoldtime = oldtime;
   while (!done) { 
     int winevent=0;
 
@@ -2048,6 +2535,73 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
         winredraw = 0;
       } else if (evdev == GLWIN_EV_KBD) {
         switch (evkey) {
+          case 'A': 
+            anim_freerun = !(anim_freerun);
+            printf("OptiXRenderer) Toggling RT animation %s\n",
+                   (anim_freerun) ? "on" : "off");
+
+            if (anim_freerun)
+              anim_interp = 0.0f; // set to animation start point
+            else
+              anim_interp = -1.0f;  // sentinel value to disable animation 
+
+            // apply user-defined anim scaling and offset factors 
+            RTERR( rtVariableSet1f(anim_interp_v, anim_interp_min + (anim_interp * anim_interp_range)) );
+            winredraw=1;
+            break;
+
+          case '`': autosamplecount=0; samples_per_pass=1; 
+                    force_ao_1 = (!force_ao_1); winredraw=1; 
+                    printf("OptiXRenderer) Toggling forced single AO sample per pass: %s\n",
+                           force_ao_1 ? "on" : "off");
+                    break;
+
+          // update HMD warp distortion coefficients
+          case '|': hmd_warp_coeff_set = (hmd_warp_coeff_set + 1) % 3;
+                   switch (hmd_warp_coeff_set) {
+                     case 0: 
+                       printf("\nDistortion correction: DK2 stock lens\n");
+                       memcpy(hmd_warp_coeff, dk2_warp_coeff, 5*sizeof(float));
+                       break;
+
+                     case 1: 
+                       printf("\nDistortion correction: DK2 w/ MSR lens\n");
+                       memcpy(hmd_warp_coeff, msr_warp_coeff, 5*sizeof(float));
+                       break;
+
+                     case 2: 
+                       printf("\nDistortion correction: User defined lens\n");
+                       memcpy(hmd_warp_coeff, user_warp_coeff, 5*sizeof(float));
+                       break;
+                   }
+                   printf("\nHMD warp coeff: %.3f, %.3f, %.3f, %.3f, %.3f\n", 
+                          hmd_warp_coeff[0], hmd_warp_coeff[1], 
+                          hmd_warp_coeff[2], hmd_warp_coeff[3],
+                          hmd_warp_coeff[4]);
+                   hmd_warp_coeff_update=1; winredraw=1; break;
+                   break; 
+
+          case '\\': hmd_warp_coeff_edit = (hmd_warp_coeff_edit + 1) % 5;
+                    printf("\nHMD edit warp coeff: r^%d\n",hmd_warp_coeff_edit);
+                    break; 
+
+          case '[': hmd_warp_coeff[hmd_warp_coeff_edit]-=0.005; 
+                    printf("\nHMD warp coeff: %.3f, %.3f, %.3f, %.3f, %.3f\n", 
+                           hmd_warp_coeff[0], hmd_warp_coeff[1], 
+                           hmd_warp_coeff[2], hmd_warp_coeff[3],
+                           hmd_warp_coeff[4]);
+                    memcpy(user_warp_coeff, hmd_warp_coeff, 5*sizeof(float));
+                    hmd_warp_coeff_update=1; winredraw=1; break;
+
+          case ']': hmd_warp_coeff[hmd_warp_coeff_edit]+=0.005; 
+                    printf("\nHMD warp coeff: %.3f, %.3f, %.3f, %.3f, %.3f\n", 
+                           hmd_warp_coeff[0], hmd_warp_coeff[1], 
+                           hmd_warp_coeff[2], hmd_warp_coeff[3],
+                           hmd_warp_coeff[4]);
+                    memcpy(user_warp_coeff, hmd_warp_coeff, 5*sizeof(float));
+                    hmd_warp_coeff_update=1; winredraw=1; break;
+
+          // update sample counts
           case  '1': autosamplecount=0; samples_per_pass=1; winredraw=1; break;
           case  '2': autosamplecount=0; samples_per_pass=2; winredraw=1; break;
           case  '3': autosamplecount=0; samples_per_pass=3; winredraw=1; break;
@@ -2069,10 +2623,17 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
 
             // restore original light directions
             for (i=0; i<directional_lights.num(); i++) {
-              vec_copy((float*)&cur_lights[i].dir, directional_lights[i].dir);
-              vec_normalize((float*)&cur_lights[i].dir);
+              vec_copy((float*)&cur_dlights[i].dir, directional_lights[i].dir);
+              vec_normalize((float*)&cur_dlights[i].dir);
             }
             winredraw = 1;
+#if defined(VMDOPTIX_USE_HMD)
+            // Handle HMD head orientation updates if we have one attached
+            if (hmd) {
+              hmd->reset_orientation();
+              printf("\nOptiXRenderer) Resetting HMD orientation\n");
+            }
+#endif
             break;
  
           case  ' ': /* spacebar saves current image with counter */
@@ -2107,6 +2668,11 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
           case  'h': /* print help message */
             printf("\n");
             interactive_viewer_usage(ctx, win);
+
+            // we have to force a redraw after querying OptiX context
+            // info due to the current behavior of the progressive API,
+            // which halts upon any API call other than the simplest queries
+            winredraw = 1; 
             break;
 
           case  'l': /* toggle lighting xforms */
@@ -2129,6 +2695,7 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
             printf("OptiXRenderer) Depth-of-Field: %s f/num: %.1f  Foc. Dist: %.2f\n",
                    (gl_dof_on) ? "on" : "off", 
                    cam_dof_fnumber, cam_dof_focal_dist);
+            printf("OptiXRenderer)   Win size: %d x %d\n", wsx, wsy);
             printf("OptiXRenderer) Image size: %d x %d\n", width, height);
             break;
 
@@ -2162,8 +2729,14 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
               movie_recording_on = !(movie_recording_on);
               printf("\nOptiXRenderer) Movie recording %s\n",
                      (movie_recording_on) ? "STARTED" : "STOPPED");
-              if (movie_recording_on)
+              if (movie_recording_on) {
                 movie_recording_start_time = wkf_timer_timenow(ort_timer); 
+                movie_framecount = 0;
+                movie_lastframeindex = 0;
+              } else {
+                printf("OptiXRenderer) Encode movie with:\n");
+                printf("OptiXRenderer)   ffmpeg -f image2 -i vmdlivemovie.%%05d.tga -c:v libx264 -profile:v baseline -level 3.0 -pix_fmt yuv420p -b:v 15000000 output.mp4\n");
+              }
             } else {
               printf("\nOptiXRenderer) Movie recording not available.\n");
             }
@@ -2241,8 +2814,53 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
             winredraw = 1; 
             break;
 
+          case GLWIN_EV_KBD_F5: /* turn HMD/camera fade+clipping on/off */
+            gl_clip_on = (!gl_clip_on);
+            printf("\n");
+            printf("OptiXRenderer) HMD/camera clipping plane/sphere %s\n",
+                   (gl_clip_on) ? "enabled" : "disabled");
+            winredraw = 1; 
+            break;
+
+          case GLWIN_EV_KBD_F6: /* turn HMD/camera headlight on/off */
+            gl_headlight_on = (!gl_headlight_on); 
+            printf("\n");
+            printf("OptiXRenderer) HMD/camera headlight %s\n",
+                   (gl_headlight_on) ? "enabled" : "disabled");
+            winredraw = 1; 
+            break;
+
+          case GLWIN_EV_KBD_F7: /* turn HMD draw interleaving on/off */
+            hmd_interleave_draws = (!hmd_interleave_draws); 
+            printf("\n");
+            printf("OptiXRenderer) HMD interleaved draws %s\n",
+                   (hmd_interleave_draws) ? "enabled" : "disabled");
+            break;
+
+          case GLWIN_EV_KBD_F8: /* turn HMD tex caching on/off */
+            hmd_tex_caching = (!hmd_tex_caching); 
+            printf("\n");
+            printf("OptiXRenderer) HMD tex caching %s\n",
+                   (hmd_tex_caching) ? "enabled" : "disabled");
+            break;
+
+          case GLWIN_EV_KBD_F9: /* switch HMD lens distortion correction mode */
+            hmd_warp_drawmode = (hmd_warp_drawmode+1) % 5;
+            printf("\n");
+            { const char *warpmodestr="Off";
+              switch (hmd_warp_drawmode) {
+                case 0: warpmodestr="Lens: Off  Chroma: Off  Grid: Off"; break;
+                case 1: warpmodestr="Lens: On   Chroma: On   Grid: Off"; break;
+                case 2: warpmodestr="Lens: On   Chroma: On   Grid: On "; break;
+                case 3: warpmodestr="Lens: On   Chroma: Off  Grid: Off"; break;
+                case 4: warpmodestr="Lens: On   Chroma: Off  Grid: On "; break;
+              }
+              printf("OptiXRenderer) HMD Corr.  %s\n", warpmodestr);
+            }
+            break;
+
 #ifdef USE_REVERSE_SHADOW_RAYS
-          case GLWIN_EV_KBD_F5: /* toggle shadow ray reversal on/off */
+          case GLWIN_EV_KBD_F10: /* toggle shadow ray reversal on/off */
             if (gl_shadows_on == RT_SHADOWS_ON) 
               gl_shadows_on = RT_SHADOWS_ON_REVERSE;
             else if (gl_shadows_on == RT_SHADOWS_ON_REVERSE)
@@ -2260,15 +2878,15 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
                    (gl_fs_on) ? "on" : "off");
             if (gl_fs_on) { 
               if (glwin_fullscreen(win, gl_fs_on, 0) == 0) {
-                owsx = wsx;
-                owsy = wsy;
+                fsowsx = wsx;
+                fsowsy = wsy;
                 glwin_get_winsize(win, &wsx, &wsy);
               } else {
                 printf("OptiXRenderer) Fullscreen mode note available\n");
               }
             } else {
               glwin_fullscreen(win, gl_fs_on, 0);
-              glwin_resize(win, owsx, owsy);
+              glwin_resize(win, fsowsx, fsowsy);
             }
             winredraw = 1; 
             break;
@@ -2335,7 +2953,7 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
                 if (xformlights) {
                   // update light directions (comparatively costly)
                   for (i=0; i<directional_lights.num(); i++) {
-                    rm.multnorm3d((float*)&cur_lights[i].dir, (float*)&cur_lights[i].dir);
+                    rm.multnorm3d((float*)&cur_dlights[i].dir, (float*)&cur_dlights[i].dir);
                   }
                 }
 
@@ -2403,48 +3021,20 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
       // Spaceball/Spacenavigator/Magellan event state variables
       int tx=0, ty=0, tz=0, rx=0, ry=0, rz=0, buttons=0;
       if (glwin_get_spaceball(win, &rx, &ry, &rz, &tx, &ty, &tz, &buttons)) {
-        float zoommod = 2.0f*cam_zoom/cam_zoom_orig;
-        float divlen = sqrtf(wsx*wsx + wsy*wsy) * 50;
+        // negate directions if we're in flight mode...
+        if (spaceballflightmode) {
+          rx= -rx;
+          ry= -ry;
+          rz= -rz;
 
-        // check for rotation and handle it...
-        if (rx != 0 || ry !=0 || rz !=0) {
-          Matrix4 rm;
-          rm.rotate_axis(cam_U, -rx * zoommod / divlen);
-          rm.rotate_axis(cam_V, -ry * zoommod / divlen);
-          rm.rotate_axis(cam_W, -rz * zoommod / divlen);
-
-          rm.multpoint3d(cam_pos, cam_pos);
-          rm.multnorm3d(cam_U, cam_U);
-          rm.multnorm3d(cam_V, cam_V);
-          rm.multnorm3d(cam_W, cam_W);
-
-          if (xformgradientsphere) {
-            rm.multnorm3d(scene_gradient, scene_gradient);
-          }
-
-          if (xformlights) {
-            // update light directions (comparatively costly)
-            for (i=0; i<directional_lights.num(); i++) {
-              rm.multnorm3d((float*)&cur_lights[i].dir, (float*)&cur_lights[i].dir);
-            }
-          }
-          winredraw = 1;
-        }
-
-        // check for translation and handle it...
-        if (tx != 0 || ty !=0 || tz !=0) {
-          float dU[3], dV[3], dW[3];
-          vec_scale(dU, -tx * zoommod / divlen, cam_U);
-          vec_scale(dV, -ty * zoommod / divlen, cam_V);
-          vec_scale(dW, -tz * zoommod / divlen, cam_W);
-          vec_add(cam_pos, cam_pos, dU);
-          vec_add(cam_pos, cam_pos, dV);
-          vec_add(cam_pos, cam_pos, dW);
-          winredraw = 1;
+          tx= -tx;
+          ty= -ty;
+          tz= -tz;
         }
 
         // check for button presses to reset the view
-        if (buttons & 1 || buttons & 2) {
+        if (buttons & 1) {
+          printf("OptiXRenderer) spaceball button 1 pressed: reset view\n");
           vec_copy(scene_gradient, scene_gradient_orig);
           cam_zoom = cam_zoom_orig;
           vec_copy(cam_pos, cam_pos_orig);
@@ -2454,35 +3044,245 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
 
           // restore original light directions
           for (i=0; i<directional_lights.num(); i++) {
-            vec_copy((float*)&cur_lights[i].dir, directional_lights[i].dir);
-            vec_normalize((float*)&cur_lights[i].dir);
+            vec_copy((float*)&cur_dlights[i].dir, directional_lights[i].dir);
+            vec_normalize((float*)&cur_dlights[i].dir);
           }
           winredraw = 1;
+        }
+
+        // check for button presses to toggle spaceball mode
+        if (buttons & 2) {
+          spaceballmode = !(spaceballmode);
+          printf("OptiXRenderer) spaceball mode: %s                        \n",
+                 (spaceballmode) ? "scaling" : "rotation/translation");
+        }
+
+        // rotation/translation mode
+        if (spaceballmode == 0) {
+          float zoommod = 2.0f*cam_zoom/cam_zoom_orig;
+          float divlen = sqrtf(wsx*wsx + wsy*wsy) * 50;
+
+          // check for rotation and handle it...
+          if (rx != 0 || ry !=0 || rz !=0) {
+            Matrix4 rm;
+            rm.rotate_axis(cam_U, -rx * zoommod / divlen);
+            rm.rotate_axis(cam_V, -ry * zoommod / divlen);
+            rm.rotate_axis(cam_W, -rz * zoommod / divlen);
+
+            rm.multpoint3d(cam_pos, cam_pos);
+            rm.multnorm3d(cam_U, cam_U);
+            rm.multnorm3d(cam_V, cam_V);
+            rm.multnorm3d(cam_W, cam_W);
+
+            if (xformgradientsphere) {
+              rm.multnorm3d(scene_gradient, scene_gradient);
+            }
+
+            if (xformlights) {
+              // update light directions (comparatively costly)
+              for (i=0; i<directional_lights.num(); i++) {
+                rm.multnorm3d((float*)&cur_dlights[i].dir, (float*)&cur_dlights[i].dir);
+              }
+            }
+            winredraw = 1;
+          }
+
+          // check for translation and handle it...
+          if (tx != 0 || ty !=0 || tz !=0) {
+            float dU[3], dV[3], dW[3];
+            vec_scale(dU, -tx * zoommod / divlen, cam_U);
+            vec_scale(dV, -ty * zoommod / divlen, cam_V);
+            vec_scale(dW, -tz * zoommod / divlen, cam_W);
+            vec_add(cam_pos, cam_pos, dU);
+            vec_add(cam_pos, cam_pos, dV);
+            vec_add(cam_pos, cam_pos, dW);
+            winredraw = 1;
+          }
+        }
+
+        // scaling mode
+        if (spaceballmode == 1) {
+          const float sbscale = 1.0f / (1024.0f * 8.0f);
+          float zoominc = 1.0f - (rz * sbscale);
+          if (zoominc < 0.01) zoominc = 0.01;
+            cam_zoom *= zoominc;
+            winredraw = 1;
         }
 
       }
     }
 
 
+    // if there is no HMD, we use the camera orientation directly  
+    vec_copy(hmd_U, cam_U);
+    vec_copy(hmd_V, cam_V);
+    vec_copy(hmd_W, cam_W);
+
+    //
+    // Handle HMD head orientation by directly manipulating the 
+    // view orientation if we have an HMD attached and we're using
+    // the direct-to-HMD "Oculus Rift" camera mode.  For the other 
+    // equirectangular or cubemap cameras, the head pose processing
+    // and all HMD lens aberration correction must done in the OpenGL 
+    // display code rather than in the RT code itself.  When using the
+    // direct-drive HMD camera, we only run a single rendering pass before
+    // triggering a fresh orientation, since the head pose changes constantly.
+    //
+#if defined(VMDOPTIX_USE_HMD)
+    float hmd_U_new[3] = {1.0f, 0.0f, 0.0f};
+    float hmd_V_new[3] = {0.0f, 1.0f, 0.0f};
+    float hmd_W_new[3] = {0.0f, 0.0f, 1.0f};
+#if defined(VMDUSEEVENTIO)
+    if ((hmd && eviodev) || (hmd && camera_projection == RT_OCULUS_RIFT)) {
+#else    
+    if (hmd && camera_projection == RT_OCULUS_RIFT) {
+#endif
+      float hmd_U_orig[3] = {1.0f, 0.0f, 0.0f};
+      float hmd_V_orig[3] = {0.0f, 1.0f, 0.0f};
+      float hmd_W_orig[3] = {0.0f, 0.0f, 1.0f};
+
+      // query the HMD head pose as late as possible to reduce latency 
+      // between the sensor reads and presentation on the display
+      hmd->update();
+      hmd->rot_basis_quat(hmd_U_new, hmd_V_new, hmd_W_new, 
+                          hmd_U_orig, hmd_V_orig, hmd_W_orig);
+
+      // We use the HMD pose quaternion to transform the standard camera
+      // orientation basis vectors to their new orientation, and then we
+      // project those onto the current view basis vector to get the 
+      // correct final camera view vector that we pass along to OptiX
+      float hmdtmp[3];
+      memset(hmdtmp, 0, sizeof(hmdtmp));
+      vec_scaled_add(hmdtmp, hmd_U_new[0], cam_U);
+      vec_scaled_add(hmdtmp, hmd_U_new[1], cam_V);
+      vec_scaled_add(hmdtmp, hmd_U_new[2], cam_W);
+      vec_copy(hmd_U_new, hmdtmp);
+
+      memset(hmdtmp, 0, sizeof(hmdtmp));
+      vec_scaled_add(hmdtmp, hmd_V_new[0], cam_U);
+      vec_scaled_add(hmdtmp, hmd_V_new[1], cam_V);
+      vec_scaled_add(hmdtmp, hmd_V_new[2], cam_W);
+      vec_copy(hmd_V_new, hmdtmp);
+ 
+      memset(hmdtmp, 0, sizeof(hmdtmp));
+      vec_scaled_add(hmdtmp, hmd_W_new[0], cam_U);
+      vec_scaled_add(hmdtmp, hmd_W_new[1], cam_V);
+      vec_scaled_add(hmdtmp, hmd_W_new[2], cam_W);
+      vec_copy(hmd_W_new, hmdtmp);
+
+#if 0
+      float q[4];
+      hmd->get_rot_quat(q);
+      printf("\nQ: %f %f %f %f\n", q[0], q[1], q[2], q[3]);
+      printf("hmd_U: %.1f %.1f %.1f\n", hmd_U[0], hmd_U[1], hmd_U[2]);
+      printf("hmd_V: %.1f %.1f %.1f\n", hmd_V[0], hmd_V[1], hmd_V[2]);
+      printf("hmd_W: %.1f %.1f %.1f\n", hmd_W[0], hmd_W[1], hmd_W[2]);
+#endif
+
+      if (hmd && camera_projection == RT_OCULUS_RIFT) {
+        vec_copy(hmd_U, hmd_U_new);
+        vec_copy(hmd_V, hmd_V_new);
+        vec_copy(hmd_W, hmd_W_new);
+
+        // when using an HMD in direct-drive mode, we have to do 
+        // a redraw on every rendering pass.
+        winredraw = 1;
+      }
+    }
+#endif
+
+
+#if defined(VMDUSEEVENTIO)
+    //
+    // Handle Linux event-based input device I/O for joysticks/spaceball/etc
+    //
+    if (eviodev) {
+      float ax1, ay1, ax2, ay2;
+      int buttons;
+      int rc=0;
+      rc = evio_get_joystick_status(eviodev, &ax1, &ay1, &ax2, &ay2, &buttons);
+
+      if (buttons) {
+        printf("Joystick: %5.2f %5.2f  %5.2f %5.2f  0x%08x  \n",
+               ax1, ay1, ax2, ay2, buttons);
+      }
+
+      float tx = ax1 + ax2;
+      float ty = ay1;
+      float tz = ay2;
+
+      // check for translation and handle it...
+      if (fabsf(tx) > 0.03 || fabsf(ty) > 0.03 || fabsf(tz) > 0.03) { 
+        tx *= -500;
+        ty *=  500;
+        tz *=  500;
+
+        // Re-use the HMD head pose info obtained above to apply 
+        // head motion translations from joysticks or other controllers
+        float zoommod = 2.0f*cam_zoom/cam_zoom_orig;
+        float divlen = sqrtf(wsx*wsx + wsy*wsy) * 50;
+        float dU[3], dV[3], dW[3];
+        vec_scale(dU, -tx * zoommod / divlen, hmd_U_new);
+        vec_scale(dV, -ty * zoommod / divlen, hmd_V_new);
+        vec_scale(dW, -tz * zoommod / divlen, hmd_W_new);
+        vec_add(cam_pos, cam_pos, dU);
+        vec_add(cam_pos, cam_pos, dV);
+        vec_add(cam_pos, cam_pos, dW);
+        winredraw = 1;
+      }
+
+    }
+#endif
+
+
+    // 
+    // handle RT animation (currently a hack)
+    //
+    if (anim_freerun) {
+      anim_interp = fmodf(anim_interp + anim_interp_inc, 1.0f);
+
+      // apply user-defined anim scaling and offset factors 
+      RTERR( rtVariableSet1f(anim_interp_v, anim_interp_min + (anim_interp * anim_interp_range)) );
+#if 0
+      printf("\nanim freerun: %f, scaled: %f\n", anim_interp,
+             anim_interp_min + (anim_interp * anim_interp_range));
+#endif
+
+      winredraw=1;
+    } 
+
     //
     // handle window resizing, stereoscopic mode changes,
     // destroy and recreate affected OptiX buffers
     //
     int resize_buffers=0;
-    if (wsx != width) {
-      width = wsx;
-      resize_buffers=1;
-    }
+
+#if defined(VMDOPTIX_USE_HMD)
+    // when using spheremaps, we trigger redraw ops but we do not change
+    // the spheremap image size 
+    if (hmd_freerun) {
+      if (wsx != owsx || wsy != owsy)
+        winredraw=1;
+    } 
+    else
+#endif
+    {
+      // only process image/window resizing when not drawing spheremaps
+      if (wsx != width) {
+        width = wsx;
+        resize_buffers=1;
+      }
  
-    if (wsy != height || (stereoon != stereoon_old)) {
-      if (stereoon) {
-        if (height != wsy * 2) {
-          height = wsy * 2; 
+      if (wsy != height || (stereoon != stereoon_old)) {
+        if (stereoon) {
+          if (height != wsy * 2) {
+            height = wsy * 2; 
+            resize_buffers=1;
+          }
+        } else {
+          height = wsy;
           resize_buffers=1;
         }
-      } else {
-        height = wsy;
-        resize_buffers=1;
       }
     }
 
@@ -2499,16 +3299,15 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
         (stereoon != stereoon_old) || (gl_dof_on != gl_dof_on_old)) {
       // need to issue stop command before editing optix objects
       if (vcarunning) {
-        rtContextStopProgressive( ctx );
+        rtContextStopProgressive(ctx);
         vcarunning=0;
       }
     }
 #endif
 
     // check if stereo mode or DoF mode changed, both cases
-    // require changing the active ray gen program
+    // require changing the active color accumulation ray gen program
     if ((stereoon != stereoon_old) || (gl_dof_on != gl_dof_on_old)) {
-
       // when stereo mode changes, we have to regenerate the
       // the RNG, accumulation buffer, and framebuffer
       if (stereoon != stereoon_old) {
@@ -2519,35 +3318,10 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
       stereoon_old = stereoon;
       gl_dof_on_old = gl_dof_on;
 
-      if (stereoon) {
-        // set double-height over/under stereo display dimensions if needed
-//        printf("\nStereo just enabled...\n");
-
-        // set the active ray gen program based on the active projection mode
-        if (camera_projection == RT_PERSPECTIVE) {
-          if (gl_dof_on) {
-            RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_perspective_stereo_dof) );
-          } else {
-            RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_perspective_stereo) );
-          }
-        } else {
-          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_orthographic_stereo) );
-        }
-      } else {
-        // stereo was just turned off, switch ray gen programs
-//        printf("\nStereo just disabled...\n");
-
-        // set the active ray gen program based on the active projection mode
-        if (camera_projection == RT_PERSPECTIVE) {
-          if (gl_dof_on) {
-            RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_perspective_dof) );
-          } else {
-            RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_perspective) );
-          }
-        } else {
-          RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_ACCUMULATE, ray_gen_pgm_orthographic) );
-        }
-      }
+      // set the active color accumulation ray gen program based on the 
+      // camera/projection mode, stereoscopic display mode, 
+      // and depth-of-field state
+      set_accum_raygen_pgm(camera_projection, stereoon, gl_dof_on);
     }
 
     if (resize_buffers) {
@@ -2566,6 +3340,16 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
     int frame_ready = 1; // Default to true for the non-VCA case
     unsigned int subframe_count = 1;
     if (!done) {
+#if defined(VMDOPTIX_USE_HMD)
+      // update HMD lens distortion correction mesh and/or warp coefficients 
+      if (hmd_warp && (winredraw || hmd_warp_coeff_update)) {
+        glwin_spheremap_update_hmd_warp(win, hmd_warp, wsx, wsy, 21,
+                                        width, height, hmd_warp_coeff,
+                                        hmd_warp_coeff_update);
+        hmd_warp_coeff_update=0;
+      }
+#endif
+
       //
       // If the user interacted with the window in a meaningful way, we
       // need to update the OptiX rendering state, recompile and re-validate
@@ -2575,9 +3359,9 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
         // update camera parameters
         RTERR( rtVariableSet1f( cam_zoom_v, cam_zoom) );
         RTERR( rtVariableSet3fv( cam_pos_v, cam_pos) );
-        RTERR( rtVariableSet3fv(   cam_U_v, cam_U) );
-        RTERR( rtVariableSet3fv(   cam_V_v, cam_V) );
-        RTERR( rtVariableSet3fv(   cam_W_v, cam_W) );
+        RTERR( rtVariableSet3fv(   cam_U_v, hmd_U) );
+        RTERR( rtVariableSet3fv(   cam_V_v, hmd_V) );
+        RTERR( rtVariableSet3fv(   cam_W_v, hmd_W) );
         RTERR( rtVariableSet3fv(scene_gradient_v, scene_gradient) );
  
         // update shadow state 
@@ -2586,33 +3370,47 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
         // update depth cueing state
         RTERR( rtVariableSet1i(fog_mode_v, 
                  (int) (gl_fog_on) ? fog_mode : RT_FOG_NONE) );
+
+        // update clipping sphere state
+        RTERR( rtVariableSet1i(clipview_mode_v, 
+                 (int) (gl_clip_on) ? clipview_mode : RT_CLIP_NONE) );
+
+        // update headlight state 
+        RTERR( rtVariableSet1i(headlight_mode_v, 
+                 (int) (gl_headlight_on) ? RT_HEADLIGHT_ON : RT_HEADLIGHT_OFF) );
  
         // update/recompute DoF values 
         RTERR( rtVariableSet1f(cam_dof_focal_dist_v, cam_dof_focal_dist) );
         RTERR( rtVariableSet1f(cam_dof_aperture_rad_v, cam_dof_focal_dist / (2.0f * cam_zoom * cam_dof_fnumber)) );
 
-        // update light directions in the OptiX light buffer, but
-        // only when xformlights is set, otherwise we take a 50%
-        // speed hit when using a remote VCA cluster for rendering
+        //
+        // Update light directions in the OptiX light buffer or user object.
+        // Only update when xformlights is set, otherwise we take a 
+        // speed hit when using a remote VCA cluster for rendering.
+        //
+        // We only transform directional lights, since our positional lights
+        // are normally affixed to the model coordinate system rather than 
+        // the camera.
+        //
         if (xformlights) {
 #if defined(VMDOPTIX_LIGHTUSEROBJS)
-          DirectionalLightList lights;
-          memset(&lights, 0, sizeof(DirectionalLightList) );
-          lights.num_lights = directional_lights.num();
-          int lcount = directional_lights.num();
-          lcount = (lcount > DISP_LIGHTS) ? DISP_LIGHTS : lcount;
-          for (i=0; i<lcount; i++) {
-            //vec_copy( (float*)( &lights.dirs[i] ), cur_lights[i].dir );
-            lights.dirs[i] = cur_lights[i].dir;
+          DirectionalLightList dlights;
+          memset(&dlights, 0, sizeof(DirectionalLightList) );
+          dlights.num_lights = directional_lights.num();
+          int dlcount = directional_lights.num();
+          dlcount = (dlcount > DISP_LIGHTS) ? DISP_LIGHTS : dlcount;
+          for (i=0; i<dlcount; i++) {
+            //vec_copy( (float*)( &lights.dirs[i] ), cur_dlights[i].dir );
+            dlights.dirs[i] = cur_dlights[i].dir;
           }
-          RTERR( rtVariableSetUserData(light_list_v, sizeof(DirectionalLightList), &lights) );
+          RTERR( rtVariableSetUserData(dir_light_list_v, sizeof(DirectionalLightList), &dlights) );
 #else
-          DirectionalLight *lbuf;
-          RTERR( rtBufferMap(lightbuffer, (void **) &lbuf) );
+          DirectionalLight *dlbuf;
+          RTERR( rtBufferMap(dir_lightbuffer, (void **) &dlbuf) );
           for (i=0; i<directional_lights.num(); i++) {
-            vec_copy((float*)&lbuf[i].dir, (float*)&cur_lights[i].dir);
+            vec_copy((float*)&dlbuf[i].dir, (float*)&cur_dlights[i].dir);
           }
-          RTERR( rtBufferUnmap(lightbuffer) );
+          RTERR( rtBufferUnmap(dir_lightbuffer) );
 #endif
         }
 
@@ -2645,7 +3443,10 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
 
         // split samples per pass either among AA and AO, depending on
         // whether DoF and AO are enabled or not. 
-        if (gl_shadows_on && gl_ao_on) {
+        if (force_ao_1) {
+          cur_aa_samples = samples_per_pass;
+          cur_ao_samples = 1;
+        } else if (gl_shadows_on && gl_ao_on) {
           if (gl_dof_on) {
             if (samples_per_pass < 4) {
               cur_aa_samples=samples_per_pass;
@@ -2679,6 +3480,11 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
 #ifdef VMDOPTIX_PROGRESSIVEAPI
         RTERR( rtVariableSet1f(accum_norm_v, 1.0f / float(cur_aa_samples)) );
 #endif
+
+        // updated cached copy of previous window dimensions so we can
+        // trigger updates on HMD spheremaps and FBOs as necessary
+        owsx = wsx;
+        owsy = wsy;
       } 
 
 
@@ -2742,25 +3548,146 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
 #endif
 
         if (lasterror == RT_SUCCESS) {
-          if (frame_ready) {
-            drawoptiximage(win, framebuffer, stereoon, width, height); // display output image
+          if (frame_ready || hmd_freerun || anim_freerun) {
+            double bufnewtime = wkf_timer_timenow(ort_timer);
+
+
+            // if an HMD is connected and one of the panoramic image formats
+            // is in use, we use the appopriate OpenGL HMD viewer for the 
+            // panoramic image format that's currently active, otherwise the
+            // image is displayed as-is in a window.
+#if defined(VMDOPTIX_USE_HMD)
+            if (hmd_freerun) {
+              double hmdnewtime = wkf_timer_timenow(ort_timer);
+              double hmdframetime = (hmdnewtime-hmdoldtime) + 0.00001f;
+              hmdoldtime=hmdnewtime;
+
+              // compute exponential moving average for exp(-1/10)
+              double hmdframefps = 1.0f/hmdframetime;
+              hmdfpsexpave = (hmdfpsexpave * 0.90) + (hmdframefps * 0.10);
+
+              float hmdquat[4];
+              if (hmd_no_draw == 0) {
+                int hmd_warp_on = (hmd_warp_drawmode!=0);
+                int hmd_warp_lines = (hmd_warp_drawmode==2 || hmd_warp_drawmode==4);
+                int hmd_chroma_on = (hmd_warp_drawmode==1 || hmd_warp_drawmode==2);
+
+                // update when frame is ready, or when tex caching is disabled
+                if (frame_ready || (!hmd_tex_caching)) {
+                  // display output image
+                  const unsigned char * img;
+                  rtBufferMap(framebuffer, (void **) &img);
+
+                  // minimize impact of OptiX buffer map and tex update steps
+                  if (hmd_interleave_draws) {
+                    // query HMD sensors immediately prior to draw...
+                    hmd->get_rot_quat(hmdquat, 1);
+                    if (hmd_warp && hmd_warp_drawmode != 0) {
+                      glwin_spheremap_draw_hmd_warp(win, hmd_warp, 
+                          hmd_warp_on, hmd_warp_lines, hmd_chroma_on,
+                          wsx, wsy, width, height, hmdquat, hmd_fov, 15.0f, hmd_spres);
+                    } else {
+                      glwin_spheremap_draw_tex(win, GLWIN_STEREO_OVERUNDER, width, height, hmdquat, hmd_fov, 15.0f, hmd_spres);
+                    }
+                    glwin_swap_buffers(win);
+                  }
+
+                  glwin_spheremap_upload_tex_rgb3u(win, width, height, img);
+
+                  // minimize impact of OptiX buffer map and tex update steps
+                  if (hmd_interleave_draws) {
+                    // query HMD sensors immediately prior to draw...
+                    hmd->get_rot_quat(hmdquat, 1);
+                    if (hmd_warp && hmd_warp_drawmode != 0) {
+                      glwin_spheremap_draw_hmd_warp(win, hmd_warp, 
+                          hmd_warp_on, hmd_warp_lines, hmd_chroma_on,
+                          wsx, wsy, width, height, hmdquat, hmd_fov, 15.0f, hmd_spres);
+                    } else {
+                      glwin_spheremap_draw_tex(win, GLWIN_STEREO_OVERUNDER, width, height, hmdquat, hmd_fov, 15.0f, hmd_spres);
+                    }
+                    glwin_swap_buffers(win);
+                  }
+ 
+                  rtBufferUnmap(framebuffer);
+                  mapbuftotaltime = wkf_timer_timenow(ort_timer) - bufnewtime;
+                }
+
+                // query HMD sensors immediately prior to draw...
+                hmd->get_rot_quat(hmdquat, 1);
+                if (hmd_warp && hmd_warp_drawmode != 0) {
+                  glwin_spheremap_draw_hmd_warp(win, hmd_warp, 
+                      hmd_warp_on, hmd_warp_lines, hmd_chroma_on,
+                      wsx, wsy, width, height, hmdquat, hmd_fov, 15.0f, hmd_spres);
+                } else {
+                  glwin_spheremap_draw_tex(win, GLWIN_STEREO_OVERUNDER, width, height, hmdquat, hmd_fov, 15.0f, hmd_spres);
+                }
+                glwin_swap_buffers(win);
+              }
+
+              hmdgldrawtime = wkf_timer_timenow(ort_timer) - hmdnewtime;
+            } else {
+#endif
+              // display output image
+              const unsigned char * img;
+              rtBufferMap(framebuffer, (void **) &img);
+
+#if 0
+              glwin_draw_image_tex_rgb3u(win, (stereoon!=0)*GLWIN_STEREO_OVERUNDER, width, height, img);
+#else
+              glwin_draw_image_rgb3u(win, (stereoon!=0)*GLWIN_STEREO_OVERUNDER, width, height, img);
+#endif
+              rtBufferUnmap(framebuffer);
+              mapbuftotaltime = wkf_timer_timenow(ort_timer) - bufnewtime;
+
+#if defined(VMDOPTIX_USE_HMD)
+            }
+#endif
+
 
             // if live movie recording is on, we save every displayed frame
             // to a sequence sequence of image files, with each file numbered
             // by its frame index, which is computed by the multiplying image 
             // presentation time by the image sequence fixed-rate-FPS value.
             if (movie_recording_enabled && movie_recording_on) {
+              char moviefilename[2048];
+
+              // compute frame number from wall clock time and the
+              // current fixed-rate movie playback frame rate
               double now = wkf_timer_timenow(ort_timer);
               double frametime = now - movie_recording_start_time;
-              int frameindex = frametime * movie_recording_fps;
-              char moviefilename[256];
-              sprintf(moviefilename, movie_recording_filebase, frameindex);
-              if (OptiXWriteImage(moviefilename, framebuffer) == -1) {
+              int fidx = frametime * movie_recording_fps;
+
+              // always force the first recorded frame to be 0
+              if (movie_framecount==0)
+                fidx=0;
+              movie_framecount++;
+
+#if defined(__linux)
+              // generate symlinks for frame indices between the last written
+              // frame and the current one so that video encoders such as
+              // ffmpeg and mencoder can be fed the contiguous frame sequence
+              // at a fixed frame rate, as they require
+              sprintf(moviefilename, movie_recording_filebase, 
+                      movie_lastframeindex);
+              int symidx;
+              for (symidx=movie_lastframeindex; symidx<fidx; symidx++) {
+                char symlinkfilename[2048];
+                sprintf(symlinkfilename, movie_recording_filebase, symidx);
+                symlink(moviefilename, symlinkfilename);
+              }
+#endif
+               
+              // write the new movie frame               
+              sprintf(moviefilename, movie_recording_filebase, fidx);
+              if (OptiXWriteImage(moviefilename, framebuffer,
+                                  RT_FORMAT_UNSIGNED_BYTE4, width, height) == -1) {
                 movie_recording_on = 0;
                 printf("\n");
                 printf("OptiXRenderer) ERROR during writing image during movie recording!\n");
                 printf("OptiXRenderer) Movie recording STOPPED\n");
-              }              
+              }
+
+              movie_lastframeindex = fidx; // update last frame index written
             }
           }
         } else {
@@ -2784,9 +3711,16 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
       double framefps = 1.0f/frametime;
       fpsexpave = (fpsexpave * 0.90) + (framefps * 0.10);
 
-      printf("OptiXRenderer) %c AA:%2d AO:%2d, %4d total  FPS: %.1f  %.4f s/frame sf: %d  \r",
-             statestr[state], cur_aa_samples, cur_ao_samples, totalsamplecount, 
-             fpsexpave, frametime, subframe_count);
+      if (hmd_freerun) {
+        printf("OptiXRenderer) %c AA%2d AO%2d %5d tot RT FPS %.1f HMD FPS %.0f GL%.4f MB%.4f \r",
+               statestr[state], cur_aa_samples, cur_ao_samples, 
+               totalsamplecount, fpsexpave, 
+               hmdfpsexpave, hmdgldrawtime, mapbuftotaltime);
+      } else {
+        printf("OptiXRenderer) %c AA:%2d AO:%2d, %4d tot RT FPS: %.1f  %.4f s/frame sf: %d  \r",
+               statestr[state], cur_aa_samples, cur_ao_samples, 
+               totalsamplecount, fpsexpave, frametime, subframe_count);
+      }
 
       fflush(stdout);
       state = (state+1) & 3;
@@ -2808,6 +3742,24 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
     }
   }
 
+#if defined(VMDOPTIX_USE_HMD)
+  // if using HMD for display, get head tracking data
+  if (hmd) {
+    delete hmd;
+    hmd = NULL;
+  }
+
+  if (hmd_warp != NULL) {
+    glwin_spheremap_destroy_hmd_warp(win, hmd_warp);
+  }
+#endif
+
+#if defined(VMDUSEEVENTIO)
+  if (eviodev) {
+    evio_close(eviodev);
+  }
+#endif
+
   glwin_destroy(win);
 }
 
@@ -2818,9 +3770,18 @@ void OptiXRenderer::render_to_file(const char *filename) {
   if (!context_created)
     return;
 
-  //
+  // Unless overridden by environment variables, we use the incoming
+  // window size parameters from VMD to initialize the RT image dimensions.
+  int wsx=width, wsy=height;
+  const char *imageszstr = getenv("VMDOPTIXIMAGESIZE");
+  if (imageszstr) {
+    if (sscanf(imageszstr, "%d %d", &width, &height) != 2) {
+      width=wsx;
+      height=wsy;
+    }
+  }
+
   // config/allocate framebuffer and accumulation buffer
-  //
   config_framebuffer(width, height, 0);
 
   update_rendering_state(0);
@@ -2882,15 +3843,8 @@ void OptiXRenderer::destroy_context() {
 
   destroy_framebuffer();
 
-#if 0
-  RTERR( rtProgramDestroy(ray_gen_pgm_perspective) );
-  RTERR( rtProgramDestroy(ray_gen_pgm_perspective_stereo) );
-  RTERR( rtProgramDestroy(ray_gen_pgm_orthographic) );
-  RTERR( rtProgramDestroy(ray_gen_pgm_orthographic_stereo) );
-#endif
-
   if ((lasterror = rtContextDestroy(ctx)) != RT_SUCCESS) {
-    msgErr << "OptiX: An error occured while destroying the OptiX context" << sendmsg;
+    msgErr << "OptiXRenderer) An error occured while destroying the OptiX context" << sendmsg;
   }
 }
 
@@ -2921,7 +3875,7 @@ void OptiXRenderer::add_material(int matindex,
   if (materialcache[matindex].isvalid) {
     return;
   } else {
-    if (verbose == RT_VERB_DEBUG) printf("Adding material[%d]\n", matindex);
+    if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) Adding material[%d]\n", matindex);
 
     materialcache[matindex].ambient      = ambient;
     materialcache[matindex].diffuse      = diffuse; 
@@ -2938,7 +3892,7 @@ void OptiXRenderer::add_material(int matindex,
 
 
 void OptiXRenderer::init_materials() {
-  if (verbose == RT_VERB_DEBUG) printf("OptiX: init_materials()\n");
+  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) init_materials()\n");
 
   // pre-register all of the hit programs to be shared by all materials
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "closest_hit_radiance_general", &closest_hit_pgm_general ) );
@@ -2947,22 +3901,31 @@ void OptiXRenderer::init_materials() {
   // build up the list of closest hit programs from all combinations
   // of shader parameters
   int i;
-  for (i=0; i<64; i++) {
+  for (i=0; i<ORTMTABSZ; i++) {
     char ch_program_name[256];
     snprintf(ch_program_name, sizeof(ch_program_name),
              "closest_hit_radiance_"
+             "CLIP_VIEW_%s_"
+             "HEADLIGHT_%s_"
              "FOG_%s_"
              "SHADOWS_%s_"
              "AO_%s_"
              "OUTLINE_%s_"
              "REFL_%s_"
              "TRANS_%s",
-             onoffstr(i & 32),
-             onoffstr(i & 16),
-             onoffstr(i &  8),
-             onoffstr(i &  4),
-             onoffstr(i &  2),
-             onoffstr(i &  1));
+#if defined(VMDOPTIX_VCA_TABSZHACK)
+             onoffstr(1),
+             onoffstr(1),
+#else
+             onoffstr(i & 128),
+             onoffstr(i &  64),
+#endif
+             onoffstr(i &  32),
+             onoffstr(i &  16),
+             onoffstr(i &   8),
+             onoffstr(i &   4),
+             onoffstr(i &   2),
+             onoffstr(i &   1));
 
     RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, ch_program_name, &closest_hit_pgm_special[i] ) );
   } 
@@ -2970,23 +3933,29 @@ void OptiXRenderer::init_materials() {
 
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "any_hit_opaque", &any_hit_pgm_opaque) );
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "any_hit_transmission", &any_hit_pgm_transmission) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "any_hit_clip_sphere", &any_hit_pgm_clip_sphere) );
 
   RTERR( rtMaterialCreate(ctx, &material_general) );
   RTERR( rtMaterialSetClosestHitProgram(material_general, RT_RAY_TYPE_RADIANCE, closest_hit_pgm_general) );
-  RTERR( rtMaterialSetAnyHitProgram(material_general, RT_RAY_TYPE_SHADOW, any_hit_pgm_transmission) );
+  RTERR( rtMaterialSetAnyHitProgram(material_general, RT_RAY_TYPE_SHADOW, any_hit_pgm_clip_sphere) );
 
 #if defined(ORT_USE_TEMPLATE_SHADERS)
   // build up the list of materials from all combinations of shader parameters
-  for (i=0; i<64; i++) {
+  for (i=0; i<ORTMTABSZ; i++) {
     RTERR( rtMaterialCreate(ctx, &material_special[i]) );
     RTERR( rtMaterialSetClosestHitProgram(material_special[i], RT_RAY_TYPE_RADIANCE, closest_hit_pgm_special[i]) );
 
     // select correct any hit program depending on opacity
-    if (i & 1) {
-      RTERR( rtMaterialSetAnyHitProgram(material_special[i], RT_RAY_TYPE_SHADOW, any_hit_pgm_transmission) );
+    if (clipview_mode == RT_CLIP_SPHERE) {
+      RTERR( rtMaterialSetAnyHitProgram(material_special[i], RT_RAY_TYPE_SHADOW, any_hit_pgm_clip_sphere) );
     } else {
-      RTERR( rtMaterialSetAnyHitProgram(material_special[i], RT_RAY_TYPE_SHADOW, any_hit_pgm_opaque) );
+      if (i & 1) {
+        RTERR( rtMaterialSetAnyHitProgram(material_special[i], RT_RAY_TYPE_SHADOW, any_hit_pgm_transmission) );
+      } else {
+        RTERR( rtMaterialSetAnyHitProgram(material_special[i], RT_RAY_TYPE_SHADOW, any_hit_pgm_opaque) );
+      }
     }
+
     // zero out the array of material usage counts for the scene
     material_special_counts[i] = 0;
   }
@@ -2998,7 +3967,7 @@ void OptiXRenderer::set_material(RTgeometryinstance instance, int matindex, floa
   if (!context_created)
     return;
 
-//if (verbose == RT_VERB_DEBUG) printf("OptiX: setting material\n");
+//if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) setting material\n");
   RTvariable ka, kd, ks, phongexp, krefl;
   RTvariable opacity, outline, outlinewidth, transmode, uniform_col;
   RTmaterial material = material_general; 
@@ -3006,12 +3975,22 @@ void OptiXRenderer::set_material(RTgeometryinstance instance, int matindex, floa
 #if defined(ORT_USE_TEMPLATE_SHADERS)
   if (getenv("VMDOPTIXFORCEGENERALSHADER") == NULL) {
     unsigned int specialized_material_index = 
+      ((clipview_mode != RT_CLIP_NONE)             << 7) |   // VR clip pln/sph
+      ((headlight_mode != RT_HEADLIGHT_OFF)        << 6) |   // VR headlight
       ((fog_mode != RT_FOG_NONE)                   << 5) |   // fog
       ((shadows_enabled != RT_SHADOWS_OFF)         << 4) |   // shadows
       ((ao_samples != 0)                           << 3) |   // AO
       ((materialcache[matindex].outline != 0)      << 2) |   // outline
       ((materialcache[matindex].reflectivity != 0) << 1) |   // reflection
       ((materialcache[matindex].opacity != 1)          );    // transmission
+
+#if defined(VMDOPTIX_VCA_TABSZHACK)
+    // XXX hack to mask down the material index down to the range 
+    //     that works without creating trouble for the VCA
+    if (specialized_material_index >= ORTMTABSZ) { 
+      specialized_material_index &= (ORTMTABSZ - 1);
+    }
+#endif
 
     material = material_special[specialized_material_index];
 
@@ -3056,6 +4035,15 @@ void OptiXRenderer::add_directional_light(const float *dir, const float *color) 
   vec_copy(l.color, color);
 
   directional_lights.append(l);
+}
+
+
+void OptiXRenderer::add_positional_light(const float *pos, const float *color) {
+  ort_positional_light l;
+  vec_copy(l.pos, pos);
+  vec_copy(l.color, color);
+
+  positional_lights.append(l);
 }
 
 
@@ -3499,8 +4487,6 @@ void OptiXRenderer::trimesh_c4n3v3(Matrix4 & wtrans, int numverts,
 }
 
 
-#if 1
-
 // 
 // This implementation translates from the most-compact host representation
 // to a GPU-specific organization that balances performance vs. memory 
@@ -3585,99 +4571,6 @@ void OptiXRenderer::trimesh_c4u_n3b_v3f(Matrix4 & wtrans, unsigned char *c,
 
   append_objects(buf, geom, instance);
 }
-
-#else
-
-// 
-// XXX this implementation unpacks into single-precision floats before
-// transfer to the GPU, so it is comparatively memory inefficient.  
-// It is here mainly for testing purposes. 
-//
-void OptiXRenderer::trimesh_c4u_n3b_v3f(Matrix4 & wtrans, unsigned char *c, 
-                                        char *n, float *v, int numfacets, 
-                                        int matindex) {
-  if (!context_created) return;
-  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating trimesh_c4u_n3b_v3f: %d...\n", numfacets);
-  trimesh_c4u_n3b_v3f_cnt += numfacets;
-
-  int i, j, ind;
-  RTbuffer buf;
-  RTgeometry geom;
-  RTgeometryinstance instance;
-  vmd_tricolor *trimesh;
-
-  // create and fill the OptiX trimesh memory buffer
-  rtBufferCreate(ctx, RT_BUFFER_INPUT, &buf);
-  rtBufferSetFormat(buf, RT_FORMAT_USER);
-  rtBufferSetElementSize(buf, sizeof(vmd_tricolor));
-  rtBufferSetSize1D(buf, numfacets);
-  // rtBufferValidate(buf);
-  rtBufferMap(buf, (void **) &trimesh); // map buffer for writing by host
-
-  const float ci2f = 1.0f / 255.0f;
-  const float cn2f = 1.0f / 127.5f;
-  for (ind=0,i=0,j=0; ind<numfacets; ind++,i+=9,j+=12) {
-    float col[9], norm[9];
-
-    // transform to eye coordinates
-    wtrans.multpoint3d(v + i    , (float*) &trimesh[ind].v0);
-    wtrans.multpoint3d(v + i + 3, (float*) &trimesh[ind].v1);
-    wtrans.multpoint3d(v + i + 6, (float*) &trimesh[ind].v2);
-
-    // conversion from GLbyte format, Table 2.6, p. 44 of OpenGL spec 1.2.1
-    // float = (2c+1)/(2^8-1)
-    norm[0] = n[i    ] * cn2f + ci2f;
-    norm[1] = n[i + 1] * cn2f + ci2f;
-    norm[2] = n[i + 2] * cn2f + ci2f;
-    norm[3] = n[i + 3] * cn2f + ci2f;
-    norm[4] = n[i + 4] * cn2f + ci2f;
-    norm[5] = n[i + 5] * cn2f + ci2f;
-    norm[6] = n[i + 6] * cn2f + ci2f;
-    norm[7] = n[i + 7] * cn2f + ci2f;
-    norm[8] = n[i + 8] * cn2f + ci2f;
-    wtrans.multnorm3d(&norm[0], (float*) &trimesh[ind].n0);
-    wtrans.multnorm3d(&norm[3], (float*) &trimesh[ind].n1);
-    wtrans.multnorm3d(&norm[6], (float*) &trimesh[ind].n2);
-
-    // conversion from GLubyte format, Table 2.6, p. 44 of OpenGL spec 1.2.1
-    // float = c/(2^8-1)
-    col[0] = c[j     ] * ci2f;
-    col[1] = c[j +  1] * ci2f;
-    col[2] = c[j +  2] * ci2f;
-    col[3] = c[j +  4] * ci2f;
-    col[4] = c[j +  5] * ci2f;
-    col[5] = c[j +  6] * ci2f;
-    col[6] = c[j +  8] * ci2f;
-    col[7] = c[j +  9] * ci2f;
-    col[8] = c[j + 10] * ci2f;
-
-    vec_copy((float*) &trimesh[ind].c0, &col[0]);
-    vec_copy((float*) &trimesh[ind].c1, &col[3]);
-    vec_copy((float*) &trimesh[ind].c2, &col[6]);
-  }
-  rtBufferUnmap(buf); // triangle list is complete, unmap buffer
-
-  RTERR( rtGeometryCreate(ctx, &geom) );
-  RTERR( rtGeometrySetPrimitiveCount(geom, numfacets) );
-  RTERR( rtGeometrySetBoundingBoxProgram(geom, tricolor_bbox_pgm) );
-  RTERR( rtGeometrySetIntersectionProgram(geom, tricolor_isct_pgm) );
-
-  // this buffer is associated only with this particular geometry node
-  RTvariable buf_v;
-  RTERR( rtGeometryDeclareVariable(geom, "tricolor_buffer", &buf_v) );
-  RTERR( rtVariableSetObject(buf_v, buf) );
-
-  // create a geometry instance and bind materials to this geometry
-  RTERR( rtGeometryInstanceCreate(ctx, &instance) );
-  RTERR( rtGeometryInstanceSetGeometry(instance, geom) );
-
-  // materialIndex: XXX need to do something with material properties yet...
-  set_material(instance, matindex, NULL);
-
-  append_objects(buf, geom, instance);
-}
-#endif
-
 
 
 void OptiXRenderer::trimesh_c4u_n3f_v3f(Matrix4 & wtrans, unsigned char *c, 

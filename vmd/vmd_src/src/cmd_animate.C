@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: cmd_animate.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.46 $       $Date: 2010/12/16 04:08:53 $
+ *      $Revision: 1.48 $       $Date: 2016/11/28 03:05:06 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -435,7 +435,7 @@ int cmd_rawtimestep(ClientData cd, Tcl_Interp *interp, int argc,
   }
 
   // Check that the size of the byte array and the start option are valid
-  neededLength = 12*mol->nAtoms;
+  neededLength = 12L*mol->nAtoms;
   if (length-start < neededLength) {
     Tcl_SetResult(interp, "rawtimestep: not enough bytes!", TCL_STATIC);
     return TCL_ERROR;
@@ -494,7 +494,7 @@ int cmd_gettimestep(ClientData cd, Tcl_Interp *interp, int argc,
   Timestep *ts = mol->get_frame(frame);
   Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
         (const unsigned char *)(ts->pos),   // bytes
-        3*mol->nAtoms*sizeof(float)));      // length
+        3L*mol->nAtoms*sizeof(float)));      // length
 
   return TCL_OK;
 }

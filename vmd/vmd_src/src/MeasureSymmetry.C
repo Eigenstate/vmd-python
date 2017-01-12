@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: MeasureSymmetry.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.60 $	$Date: 2013/11/22 20:46:06 $
+ *	$Revision: 1.63 $	$Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -252,17 +252,17 @@ Symmetry::Symmetry(AtomSel *mysel, MoleculeList *mymlist, int verbosity) :
   atomindex = NULL;
   uniqueatoms = NULL;
   elementsummarystring = NULL;
-  missingelementstring    = new char[2 + 10*(3+MAXORDERCN+2*MAXORDERCN)];
-  additionalelementstring = new char[2 + 10*(3+MAXORDERCN+2*MAXORDERCN)];
+  missingelementstring    = new char[2 + 10L*(3+MAXORDERCN+2*MAXORDERCN)];
+  additionalelementstring = new char[2 + 10L*(3+MAXORDERCN+2*MAXORDERCN)];
   missingelementstring[0]    = '\0';
   additionalelementstring[0] = '\0';
 
   memset(&elementsummary, 0, sizeof(ElementSummary));
 
   if (sel->selected) {
-    coor      = new float[3*sel->selected];
-    idealcoor = new float[3*sel->selected];
-    bondsum   = new float[3*sel->selected];
+    coor      = new float[3L*sel->selected];
+    idealcoor = new float[3L*sel->selected];
+    bondsum   = new float[3L*sel->selected];
     bondsperatom = new Bondlist[sel->selected];
     atomtype    = new int[sel->selected];
     atomindex   = new int[sel->selected];
@@ -271,10 +271,10 @@ Symmetry::Symmetry(AtomSel *mysel, MoleculeList *mymlist, int verbosity) :
     memset(bondsperatom, 0, sel->selected*sizeof(Bondlist));
   }
 
-  memset(&(inertiaaxes[0][0]),  0, 9*sizeof(float));
-  memset(&(inertiaeigenval[0]), 0, 3*sizeof(float));
-  memset(&(uniqueprimary[0]),   0, 3*sizeof(int));
-  memset(&(rcom[0]), 0, 3*sizeof(float));
+  memset(&(inertiaaxes[0][0]),  0, 9L*sizeof(float));
+  memset(&(inertiaeigenval[0]), 0, 3L*sizeof(float));
+  memset(&(uniqueprimary[0]),   0, 3L*sizeof(int));
+  memset(&(rcom[0]), 0, 3L*sizeof(float));
 
   // Copy coordinates of selected atoms into local array and assign
   // and atomtypes based on chemial element and topology.
@@ -455,7 +455,7 @@ void Symmetry::impose(int have_inversion,
   planes.clear();
   for (i=0; i<nplanes; i++) {
     Plane p;
-    vec_copy(p.v, &planev[3*i]);
+    vec_copy(p.v, &planev[3L*i]);
     vec_normalize(p.v);
     if (norm(p.v)==0.f) continue;
     p.overlap = 1.f;
@@ -471,7 +471,7 @@ void Symmetry::impose(int have_inversion,
   for (i=0; i<naxes; i++) {
     if (axisorder[i]<=1) continue;
     Axis a;
-    vec_copy(a.v, &axisv[3*i]);
+    vec_copy(a.v, &axisv[3L*i]);
     vec_normalize(a.v);
     if (norm(a.v)==0.f) continue;
     a.order = axisorder[i];
@@ -488,7 +488,7 @@ void Symmetry::impose(int have_inversion,
   for (i=0; i<nrotrefl; i++) {
     if (rotreflorder[i]<=1) continue;
     Axis a;
-    vec_copy(a.v, &rotreflv[3*i]);
+    vec_copy(a.v, &rotreflv[3L*i]);
     vec_normalize(a.v);
     if (norm(a.v)==0.f) continue;
     a.order = rotreflorder[i];
@@ -521,7 +521,7 @@ void Symmetry::impose(int have_inversion,
   idealize_coordinates();
 
   // Use improved coordinates
-  memcpy(coor, idealcoor, 3*sel->selected*sizeof(float));
+  memcpy(coor, idealcoor, 3L*sel->selected*sizeof(float));
   }
 }
 
@@ -537,7 +537,7 @@ int Symmetry::guess(float mysigma) {
     elementsummarystring = new char[1];
     elementsummarystring[0] = '\0';
     uniqueatoms[0] = 1;
-    memcpy(idealcoor, coor, 3*sel->selected*sizeof(float));
+    memcpy(idealcoor, coor, 3L*sel->selected*sizeof(float));
 
     return MEASURE_NOERR;
   }
@@ -648,8 +648,8 @@ int Symmetry::guess(float mysigma) {
       beststep = step;
       best.pointgroup = pointgroup;
       best.pointgrouporder = pointgrouporder;
-      if (!best.idealcoor) best.idealcoor = new float[3*sel->selected];
-      memcpy(best.idealcoor, idealcoor, 3*sel->selected*sizeof(float));
+      if (!best.idealcoor) best.idealcoor = new float[3L*sel->selected];
+      memcpy(best.idealcoor, idealcoor, 3L*sel->selected*sizeof(float));
       best.linear = linear;
       best.planar = planar;
       best.inversion = inversion;
@@ -661,7 +661,7 @@ int Symmetry::guess(float mysigma) {
   // the best step and recompute the symmetry elements.
   sigma = (1+beststep)*stepsize;
   if (best.idealcoor) {
-    memcpy(coor, best.idealcoor, 3*sel->selected*sizeof(float));
+    memcpy(coor, best.idealcoor, 3L*sel->selected*sizeof(float));
     delete [] best.idealcoor;
   }
   iterate_element_search();
@@ -842,7 +842,7 @@ int Symmetry::iterate_element_search() {
     if (converged) break;
 
     // Use improved coordinates for the next pass
-    memcpy(coor, idealcoor, 3*sel->selected*sizeof(float));
+    memcpy(coor, idealcoor, 3L*sel->selected*sizeof(float));
 
     oldrmsd = rmsd;
     strcpy(oldelementsummarystring, elementsummarystring);
@@ -945,7 +945,7 @@ void Symmetry::find_symmetry_elements() {
 void Symmetry::find_elements_from_inertia() {
   int i;
   int numuniqueprimary = 0;
-  memset(uniqueprimary, 0, 3*sizeof(int));
+  memset(uniqueprimary, 0, 3L*sizeof(int));
 
   // Normalize eigenvalues
   float eigenval[3];
@@ -1107,7 +1107,7 @@ void Symmetry::find_planes() {
     if (sel->selected > maxnatoms && vmd_random() % sel->selected > maxnatoms)
       continue;
 
-    vec_sub(posA, coor+3*i, rcom);
+    vec_sub(posA, coor+3L*i, rcom);
 
     float rA = sqrtf(posA[0]*posA[0] + posA[1]*posA[1] + posA[2]*posA[2]); 
 
@@ -1117,7 +1117,7 @@ void Symmetry::find_planes() {
     if (rA < sigma || rA < sel->num_atoms/7.0*sigma) continue;
 
     for (j=0; j<i; j++) {
-      vec_sub(posB, coor+3*j, rcom);
+      vec_sub(posB, coor+3L*j, rcom);
 
       float rB = sqrtf(posB[0]*posB[0] + posB[1]*posB[1] + posB[2]*posB[2]);
       
@@ -1167,7 +1167,7 @@ void Symmetry::find_C2axes() {
     if (sel->selected > maxnatoms && vmd_random() % sel->selected > maxnatoms)
       continue;
 
-    vec_sub(posA, coor+3*i, rcom);
+    vec_sub(posA, coor+3L*i, rcom);
 
     rA = sqrtf(posA[0]*posA[0] + posA[1]*posA[1] + posA[2]*posA[2]); 
 
@@ -1177,7 +1177,7 @@ void Symmetry::find_C2axes() {
     if (rA < sigma || rA < sel->num_atoms/7.0*sigma) continue;
 
     for (j=i+1; j<sel->selected; j++) {
-      vec_sub(posB, coor+3*j, rcom);
+      vec_sub(posB, coor+3L*j, rcom);
 
       rB = sqrtf(posB[0]*posB[0] + posB[1]*posB[1] + posB[2]*posB[2]);
       
@@ -1305,7 +1305,7 @@ void Symmetry::find_axes(int order) {
     if (sel->selected > maxnatoms && vmd_random() % sel->selected > maxnatoms)
       continue;
 
-    vec_sub(posA, coor+3*i, rcom);
+    vec_sub(posA, coor+3L*i, rcom);
 
     rA = sqrtf(posA[0]*posA[0] + posA[1]*posA[1] + posA[2]*posA[2]); 
 
@@ -1327,7 +1327,7 @@ void Symmetry::find_axes(int order) {
       // Consider only pairs with identical atom types
       if (atomtype[j]!=atomtype[i]) continue;
       
-      vec_sub(posB, coor+3*j, rcom);
+      vec_sub(posB, coor+3L*j, rcom);
       
       rB = sqrtf(posB[0]*posB[0] + posB[1]*posB[1] + posB[2]*posB[2]);
       
@@ -1365,7 +1365,7 @@ void Symmetry::find_axes(int order) {
       for (m=0; m<order; m++) {
         int atom = atomtuple[combo.get(j)[m]];
         //printf(" %d", atom); //combo.get(j)[m]);
-        vec_sub(pos, coor+3*atom, rcom);
+        vec_sub(pos, coor+3L*atom, rcom);
         vec_add(testaxis, testaxis, pos);
 
         // Find a second atom from the tuple that encloses
@@ -1376,7 +1376,7 @@ void Symmetry::find_axes(int order) {
         for (n=0; n<order; n++) {
           if (n==m) continue;
           int atom2 = atomtuple[combo.get(j)[m]];
-          vec_sub(pos2, coor+3*atom2, rcom);
+          vec_sub(pos2, coor+3L*atom2, rcom);
           if (angle(pos, pos2)>45.f) {
             found = 1;
             break;
@@ -2239,7 +2239,7 @@ void Symmetry::idealize_coordinates() {
   int i;
 
   // copy atom coordinates into idealcoor array
-  memcpy(idealcoor, coor, 3*sel->selected*sizeof(float));
+  memcpy(idealcoor, coor, 3L*sel->selected*sizeof(float));
 
   // -----------Planes-------------
   int *keep = new int[planes.num()];
@@ -2261,7 +2261,7 @@ void Symmetry::idealize_coordinates() {
 
   // -----------Axes-----------
   int   *weight  = new int[sel->selected];
-  float *avgcoor = new float[3*sel->selected];
+  float *avgcoor = new float[3L*sel->selected];
 
   delete [] keep;
   keep = new int[axes.num()];
@@ -2269,7 +2269,7 @@ void Symmetry::idealize_coordinates() {
 
   for (i=0; i<numaxes(); i++) {
     memset(weight,  0,   sel->selected*sizeof(int));
-    memcpy(avgcoor, idealcoor, 3*sel->selected*sizeof(int));
+    memcpy(avgcoor, idealcoor, 3L*sel->selected*sizeof(int));
     int order = axes[i].order;
     //printf("AXIS %i\n", i);
 
@@ -2308,8 +2308,8 @@ void Symmetry::idealize_coordinates() {
         }
 
         float tmpcoor[3];
-        rot.multpoint3d(idealcoor+3*m, tmpcoor);
-        vec_incr(avgcoor+3*j, tmpcoor);
+        rot.multpoint3d(idealcoor+3L*m, tmpcoor);
+        vec_incr(avgcoor+3L*j, tmpcoor);
         weight[j]++;
       }
       if (matchlist) delete [] matchlist;
@@ -2322,7 +2322,7 @@ void Symmetry::idealize_coordinates() {
       // Combine the averaged coordinates for this axis with the existing
       // ideal coordinates
       for(j=0; j<sel->selected; j++) {
-        vec_scale(idealcoor+3*j, 1.0f/(1+weight[j]), avgcoor+3*j);
+        vec_scale(idealcoor+3L*j, 1.0f/(1+weight[j]), avgcoor+3L*j);
       }
 
       keep[i] = 1;
@@ -2404,9 +2404,9 @@ int Symmetry::average_coordinates(Matrix4 *trans) {
 
     // Average between original and image coordinates    
     float avgcoor[3];
-    trans->multpoint3d(idealcoor+3*m, avgcoor);
-    vec_incr(avgcoor, idealcoor+3*j);
-    vec_scale(idealcoor+3*j, 0.5, avgcoor);
+    trans->multpoint3d(idealcoor+3L*m, avgcoor);
+    vec_incr(avgcoor, idealcoor+3L*j);
+    vec_scale(idealcoor+3L*j, 0.5, avgcoor);
   }
   if (matchlist) delete [] matchlist;
 
@@ -2417,20 +2417,20 @@ int Symmetry::average_coordinates(Matrix4 *trans) {
 // transformation trans.
 int Symmetry::check_bondsum(int j, int m, Matrix4 *trans) {
   float tmp[3];
-  vec_add(tmp, bondsum+3*m, rcom);
+  vec_add(tmp, bondsum+3L*m, rcom);
   trans->multpoint3d(tmp, tmp);
   vec_sub(tmp, tmp, rcom);
 
-  if (distance(bondsum+3*j, tmp)>BONDSUMTOL) {
+  if (distance(bondsum+3L*j, tmp)>BONDSUMTOL) {
     if (verbose>4) {
       char buf[256];
       sprintf(buf, "Bond mismatch %i-->%i, bondsum distance = %.2f",
               atomindex[j], atomindex[m], 
-              distance(bondsum+3*j, tmp));
+              distance(bondsum+3L*j, tmp));
       msgInfo << buf << sendmsg;
     }
-    //printf("bondsum 1:        {%.2f %.2f %.2f}\n", bondsum[3*j], bondsum[3*j+1], bondsum[3*j+2]);
-    //printf("bondsum 2:        {%.2f %.2f %.2f}\n", bondsum[3*m], bondsum[3*m+1], bondsum[3*m+2]);
+    //printf("bondsum 1:        {%.2f %.2f %.2f}\n", bondsum[3L*j], bondsum[3L*j+1], bondsum[3L*j+2]);
+    //printf("bondsum 2:        {%.2f %.2f %.2f}\n", bondsum[3L*m], bondsum[3L*m+1], bondsum[3L*m+2]);
     //printf("bondsum 1 transf: {%.2f %.2f %.2f}\n", tmp[0], tmp[1], tmp[2]);
     return 0;
   }
@@ -2449,7 +2449,7 @@ void Symmetry::identify_transformed_atoms(Matrix4 *trans,
   // get atom coordinates
   const float *posA = coor;
 
-  float *posB = new float[3*sel->selected];
+  float *posB = new float[3L*sel->selected];
 
   if (matchlist) delete [] matchlist;
   matchlist = new int[sel->selected];
@@ -2457,7 +2457,7 @@ void Symmetry::identify_transformed_atoms(Matrix4 *trans,
   // generate transformed coordinates
   int i;
   for(i=0; i<sel->selected; i++) {
-    trans->multpoint3d(posA+3*i, posB+3*i);
+    trans->multpoint3d(posA+3L*i, posB+3L*i);
   }
 
   nmatches = 0;
@@ -2470,16 +2470,16 @@ void Symmetry::identify_transformed_atoms(Matrix4 *trans,
 #if 0
         if (checkbonds) {
           float imagebondsum[3];
-          vec_add(imagebondsum, bondsum+3*k, rcom);
+          vec_add(imagebondsum, bondsum+3L*k, rcom);
           trans->multpoint3d(imagebondsum, imagebondsum);
           vec_sub(imagebondsum, imagebondsum, rcom);
 
-          if (distance(bondsum+3*i, imagebondsum)>BONDSUMTOL) {
+          if (distance(bondsum+3L*i, imagebondsum)>BONDSUMTOL) {
             continue;
           }
         }
 #endif
-        float r2 = distance2(posA+3*i, posB+3*k);
+        float r2 = distance2(posA+3L*i, posB+3L*k);
 
         if (r2<minr2) { minr2 = r2; kmatch = k; }
       }
@@ -2516,7 +2516,7 @@ float Symmetry::ideal_coordinate_rmsd () {
   int i, j=0;
   for (i=0; i<sel->num_atoms; i++) {
     if (sel->on[i]) {
-      rmsdsum += distance2(pos+3*i, idealcoor+3*j);
+      rmsdsum += distance2(pos+3L*i, idealcoor+3L*j);
       j++;
     }
   }
@@ -2530,7 +2530,7 @@ int Symmetry::ideal_coordinate_sanity() {
   float mindist2 = float(MINATOMDIST*MINATOMDIST);
   for (i=0; i<sel->selected; i++) {
     for (j=i+1; j<sel->selected; j++) {
-      if (distance2(idealcoor+3*i, idealcoor+3*j)<mindist2)
+      if (distance2(idealcoor+3l*i, idealcoor+3L*j)<mindist2)
         return 0;
     }
   }
@@ -2990,7 +2990,7 @@ void Symmetry::collapse_axis(const float *axis, int order,
                              int *(&connectedunique)) {
   int i;
   float refcoor[3];
-  vec_sub(refcoor, coor+3*refatom, rcom);
+  vec_sub(refcoor, coor+3L*refatom, rcom);
 
   // Project reference coordinate on the plane defined by the rotary axis
   float r0[3];
@@ -3012,7 +3012,7 @@ void Symmetry::collapse_axis(const float *axis, int order,
     int k = i;
     for (image=0; image<order; image++) {
       float tmp[3];
-      vec_sub(tmp, idealcoor+3*k, rcom);
+      vec_sub(tmp, idealcoor+3L*k, rcom);
       
       // Project coordinate on the plane defined by the rotary axis
       float r[3];
@@ -3182,7 +3182,7 @@ void Symmetry::unique_coordinates() {
   vec_sub(refcoor, coor, rcom);
   if (norm(refcoor)<0.1) {
     refatom = 1;
-    vec_sub(refcoor, coor+3*refatom, rcom);
+    vec_sub(refcoor, coor+3L*refatom, rcom);
   }
 
   int *connectedunique = NULL;
@@ -3244,7 +3244,7 @@ void Symmetry::unique_coordinates() {
       if (!uniqueatoms[j] || j==matchlist[j]) continue;
       
       float tmp[3];
-      vec_sub(tmp, coor+3*j, rcom);
+      vec_sub(tmp, coor+3L*j, rcom);
       if (behind_plane(planes[i].v, tmp)!=behind_plane(planes[i].v, refcoor)) {
         uniqueatoms[j] = 0;
         uniqueatoms[matchlist[j]] = 1;
@@ -3598,7 +3598,7 @@ void Symmetry::orient_molecule() {
         if (!uniqueatoms[j]) continue;
 
         float tmpcoor[3];
-        vec_sub(tmpcoor, coor+3*j, rcom);
+        vec_sub(tmpcoor, coor+3L*j, rcom);
         if (norm(tmpcoor)<0.1) continue;
 
         if (collinear(axes[i].v, tmpcoor, collintol)) {
@@ -3717,7 +3717,7 @@ void Symmetry::print_statistics() {
     }
     if (rotreflections.num()>1) {
       msgInfo << "| ----------------------------- |" << sendmsg;
-      sprintf(buf, "| total rotary reflections: %2d  |", rotreflections.num());
+      sprintf(buf, "| total rotary reflections: %2ld  |", long(rotreflections.num()));
       msgInfo << buf << sendmsg;
     }
   }
@@ -3762,7 +3762,7 @@ void Symmetry::build_element_summary() {
 void Symmetry::build_element_summary_string(ElementSummary summary, char *(&sestring)) {
   int i ;
   if (sestring) delete [] sestring;
-  sestring = new char[2 + 10*(MAXORDERCN+2*MAXORDERCN+summary.Cinf
+  sestring = new char[2 + 10L*(MAXORDERCN+2*MAXORDERCN+summary.Cinf
                               +(summary.sigma?1:0)+summary.inv)];
   char buf[100] ;
   sestring[0] = '\0';
@@ -3924,7 +3924,7 @@ void Symmetry::draw_transformed_mol(Matrix4 rot) {
       break;
     }
     float p[3];
-    rot.multpoint3d(pos+3*i, p);
+    rot.multpoint3d(pos+3L*i, p);
     gmol->add_sphere(p, 2*sigma, 16);
     char tmp[10];
     sprintf(tmp, "     %i", i);
@@ -4020,7 +4020,7 @@ int Symmetry::is_planar(const float *normal) {
   float xmin=0.0, xmax=0.0;
   for (j=0; j<sel->selected; j++) {
     float tmpcoor[3];
-    alignx.multpoint3d(coor+3*j, tmpcoor);
+    alignx.multpoint3d(coor+3L*j, tmpcoor);
     xmin = tmpcoor[0];
     xmax = tmpcoor[0];
     break;
@@ -4028,7 +4028,7 @@ int Symmetry::is_planar(const float *normal) {
   
   for (k=j+1; k<sel->selected; k++) {
     float tmpcoor[3];
-    alignx.multpoint3d(coor+3*k, tmpcoor);
+    alignx.multpoint3d(coor+3L*k, tmpcoor);
     if      (tmpcoor[0]<xmin) xmin = tmpcoor[0];
     else if (tmpcoor[0]>xmax) xmax = tmpcoor[0];
   }
@@ -4086,7 +4086,7 @@ void Symmetry::assign_bonds() {
           b.atom1 = m; // index into collapsed atomlist
           b.order = order;
           //printf("i=%i, m=%i, j=%i, bondto=%i\n", i, m, j, bondto);
-          b.length = distance(coor+3*i, coor+3*m);
+          b.length = distance(coor+3L*i, coor+3L*m);
           bonds.append(b);
         }
       }
@@ -4126,7 +4126,7 @@ void Symmetry::assign_bonds() {
 // thus allowing to detect if the bonding pattern has changed.
 void Symmetry::assign_bondvectors() {
   Molecule *mol = mlist->mol_from_id(sel->molid());
-  memset(bondsum, 0, 3*sel->selected*sizeof(float));
+  memset(bondsum, 0, 3L*sel->selected*sizeof(float));
   int i;
   for (i=0; i<sel->selected; i++) {
     int k;
@@ -4141,9 +4141,9 @@ void Symmetry::assign_bondvectors() {
       if (order<0.f) order = 1.f;
 
       float bondvec[3];
-      vec_sub(bondvec, coor+3*bondto, coor+3*i);
+      vec_sub(bondvec, coor+3L*bondto, coor+3L*i);
       vec_normalize(bondvec);
-      vec_scaled_add(bondsum+3*i, order, bondvec);
+      vec_scaled_add(bondsum+3L*i, order, bondvec);
     }
   }
 }
@@ -4167,7 +4167,7 @@ static void assign_atoms(AtomSel *sel, MoleculeList *mlist, float *(&mycoor), in
     if (!sel->on[i]) continue;
 
     // copy coordinates of selected atoms into local array
-    vec_copy(mycoor+3*j, allcoor+3*i);
+    vec_copy(mycoor+3L*j, allcoor+3L*i);
 
 
     // Calculate lightest and heaviest element bonded to this atom
@@ -4184,7 +4184,7 @@ static void assign_atoms(AtomSel *sel, MoleculeList *mlist, float *(&mycoor), in
     // Build up a string describing the atom type. It is not meant
     // to be human-readable, so it's not nice but since the contained
     // properties are ordered it can be used to compare two atoms.
-    char *typestring = new char[8+12*mol->atom(i)->bonds];
+    char *typestring = new char[8L+12L*mol->atom(i)->bonds];
     typestring[0] = '\0';
     char buf[100];
 
@@ -4198,7 +4198,7 @@ static void assign_atoms(AtomSel *sel, MoleculeList *mlist, float *(&mycoor), in
     int m;
     for (m=minatomicnum; m<=maxatomicnum; m++) {
       unsigned char bondorder[7];
-      memset(bondorder, 0, 7*sizeof(unsigned char));
+      memset(bondorder, 0, 7L*sizeof(unsigned char));
 
       unsigned char bondedatomicnum = 0;
       for (k=0; k<mol->atom(i)->bonds; k++) {
@@ -4206,7 +4206,7 @@ static void assign_atoms(AtomSel *sel, MoleculeList *mlist, float *(&mycoor), in
           bondedatomicnum++;
           float bo = mol->getbondorder(i, k);
           if (bo<0.f) bo = 1.f;
-          (bondorder[(int)(2*bo)])++;
+          (bondorder[(long)(2L*bo)])++;
         }
       }
       for (k=0; k<7; k++) {
@@ -4268,17 +4268,17 @@ static float trans_overlap(int *atomtype, float *(&coor), int numcoor,
   posA = coor;
 
   int   *flgs = new int[numcoor];
-  float *posB = new float[3*numcoor];
+  float *posB = new float[3L*numcoor];
   memset(flgs, 0, numcoor*sizeof(int));
 
   // generate transformed coordinates
   int i, ncompare=0;
   for(i=0; i<numcoor; i++) {
-    trans->multpoint3d(posA+3*i, posB+3*i);
+    trans->multpoint3d(posA+3L*i, posB+3L*i);
 
     // Depending on the flag skip atoms that underwent an almost
     // identical transformation.
-    if (!(skipident && distance(posA+3*i, posB+3*i) < sigma)) {
+    if (!(skipident && distance(posA+3L*i, posB+3L*i) < sigma)) {
       flgs[i] = 1;
       ncompare++;   // # of compared atoms with dist<sigma
     }
@@ -4316,7 +4316,7 @@ static float trans_overlap(int *atomtype, float *(&coor), int numcoor,
     for (j=0; j<numcoor; j++) {
       if (!flgs[j]) continue;
 
-      r2 = distance2(posA+3*i1, posB+3*j);
+      r2 = distance2(posA+3L*i1, posB+3L*j);
 
       if (r2<minr2) { minr2 = r2; i2 = j; }
     }
@@ -4396,7 +4396,7 @@ int measure_trans_overlap(AtomSel *sel, MoleculeList *mlist, const Matrix4 *tran
   if (!sel)                     return MEASURE_ERR_NOSEL;
   if (sel->num_atoms == 0)      return MEASURE_ERR_NOATOMS;
 
-  float *coor = new float[3*sel->selected];
+  float *coor = new float[3L*sel->selected];
 
   int *atomtypes = new int[sel->selected];
   assign_atoms(sel, mlist, coor, atomtypes);
@@ -4430,9 +4430,9 @@ int measure_pointset_overlap(const float *posA, int natomsA, int *flagsA,
   for (p=pairlist; p; p=p->next) {
     i1 = p->ind1;
     i2 = p->ind2;
-    dx = posA[3*i1  ]-posB[3*i2];
-    dy = posA[3*i1+1]-posB[3*i2+1];
-    dz = posA[3*i1+2]-posB[3*i2+2];
+    dx = posA[3L*i1  ]-posB[3L*i2];
+    dy = posA[3L*i1+1]-posB[3L*i2+1];
+    dz = posA[3L*i1+2]-posB[3L*i2+2];
     r2 = dx*dx + dy*dy + dz*dz;
     overlap += expf(-itwosig2*r2);
   }
