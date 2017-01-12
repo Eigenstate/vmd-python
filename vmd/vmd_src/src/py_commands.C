@@ -25,8 +25,8 @@
 
 /*
 
-Some distributed versions of VMD are linked against the Python 2.0 
-library.  The following BeOpen license agreement permits us to use the 
+Some distributed versions of VMD are linked against the Python 2.0
+library.  The following BeOpen license agreement permits us to use the
 Python 2.0 libraries in this fashion.  The BeOpen license agreement is in
 no way applicable to the license under which VMD itself is distributed;
 persuant to item 2 below, we merely include a copy of the BeOpen license
@@ -105,10 +105,14 @@ Agreement.
 
 
 // The VMDApp instance will be found in the VMDApp module, under the
-// VMDApp dictionary entry.  Got it?  
+// VMDApp dictionary entry.  Got it?
 
 VMDApp *get_vmdapp() {
+#if PY_MAJOR_VERSION >= 3
+  PyObject *module = PyImport_ImportModule((char *)"builtins");
+#else
   PyObject *module = PyImport_ImportModule((char *)"__builtin__");
+#endif
   if (!module) return NULL;
   PyObject *module_dict = PyModule_GetDict(module);
   if (!module_dict) return NULL;
@@ -135,7 +139,7 @@ void set_vmdapp(VMDApp *app) {
                          PyCapsule_New(app, NULL, NULL));
 #else
   PyObject *mod = PyImport_ImportModule((char *)"__builtin__");
-  PyObject_SetAttrString(mod, (char *)"-vmdapp-", 
+  PyObject_SetAttrString(mod, (char *)"-vmdapp-",
       PyCObject_FromVoidPtr(app, NULL));
 #endif
   Py_DECREF(mod);

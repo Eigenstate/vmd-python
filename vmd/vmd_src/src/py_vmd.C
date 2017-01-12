@@ -3,7 +3,6 @@
 #include "DisplayDevice.h"
 #include "UIText.h"
 
-#include "py_axes.C"
 
 #include <tcl.h>
 
@@ -81,7 +80,7 @@ static struct PyModuleDef vmddef = {
     "vmd",
     NULL,
     -1,
-    VmdAppMethods,
+    VMDAppMethods,
     NULL, NULL, NULL, NULL
 };
 
@@ -116,9 +115,9 @@ void initvmd() {
 
   int argc=1;
   char **argv = (char**)malloc(sizeof(char*));
-  argv[0] = Py_GetProgramFullPath();
+  argv[0] = (char*) Py_GetProgramFullPath();
   if (!VMDinitialize(&argc, (char ***) &argv, mpienabled)) {
-    return;
+    INITERROR;
   }
 
   // XXX this is a hack, and it would be better to tie this into
@@ -149,54 +148,49 @@ void initvmd() {
   PyObject *vmdmodule = PyModule_Create(&vmddef);
 #else
   PyObject *vmdmodule = Py_InitModule((char *)"vmd", VMDAppMethods);
+#endif
 
-  initanimate();
-  initatomsel();
-  initaxes();
-  initcolor();
-  initdisplay();
-  initgraphics();
-  initimd();
-  initlabel();
-  initmaterial();
-  initmolecule();
-  initmolrep();
-  initmouse();
-  initrender();
-  inittrans();
-  initvmdmenu();
-
+// This array of function pointers initializes all of the modules
+PyObject* (*initializers[])(void) = {
+  initaxes,
+  initanimate,
+  initatomsel,
+  initcolor,
+  initdisplay,
+  initgraphics,
+  initimd,
+  initlabel,
+  initmaterial,
+  initmolecule,
+  initmolrep,
+  initmouse,
+  initrender,
+  inittrans,
+  initvmdmenu,
 #ifdef VMDNUMPY
-  initvmdnumpy();
+  initvmdnumpy,
 #endif
-#endif
+};
 
-// DEBUG TEST TODO --Robin
-printf("Testing axes\n");
-PyObject *axes = PyModule_Create(&axesdef);
-int retval = PyModule_AddObject(vmdmodule, "axes", axes);
-printf("Retval %d\n", retval);
-
-  if (PyErr_Occurred()) INITERROR;
-
-  static const char *modules[] = {
-    "animate", "atomsel", "axes", "color", "display", "graphics",
+const char *modules[] = {
+    "axes", "animate", "atomsel", "color", "display", "graphics",
     "imd", "label", "material", "molecule", "molrep", "mouse",
-    "render", "trans", "vmdmenu", "vmdnumpy"
-  };
-  for (unsigned i=0; i<sizeof(modules)/sizeof(const char *); i++) {
-    const char *m = modules[i];
+    "render", "trans", "vmdmenu","vmdnumpy"
+};
+
 #if (PY_MAJOR_VERSION == 2) && (PY_MINOR_VERSION < 5)
 #define CAST_HACK (char *)
 #else
 #define CAST_HACK
 #endif
-// I don't like this TODO DEBUG --Robin
-/*
-    int retval = PyModule_AddObject(vmdmodule, CAST_HACK m, PyImport_ImportModule( CAST_HACK m));
-    printf("Added module %s retval %d\n", modules[i], retval);
-*/
-  }
+
+for (unsigned i=0; i<sizeof(initializers)/sizeof(void(*)(void)); i++) {
+  PyObject *module = (*initializers[i])();
+  if (!module) INITERROR;
+  int retval = PyModule_AddObject(vmdmodule, CAST_HACK modules[i], module);
+  if (retval) INITERROR;
+}
+
   event_tstate = PyThreadState_Get();
 #if defined(VMD_SHARED)
   PyOS_InputHook = vmd_input_hook;
@@ -204,7 +198,6 @@ printf("Retval %d\n", retval);
 
 
 #if PY_MAJOR_VERSION >= 3
-  printf("returning module\n");
   return vmdmodule;
 #endif
 }

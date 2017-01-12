@@ -69,10 +69,12 @@ static struct PyModuleDef axesdef = {
     NULL,
     NULL
 };
-PyMODINIT_FUNC PyInit_axes(void) {
-    PyObject *m = PyModule_Create(&axesdef);
+#endif
+
+PyObject* initaxes(void) {
+#if PY_MAJOR_VERSION >= 3
+  PyObject *m = PyModule_Create(&axesdef);
 #else
-void initaxes() {
   PyObject *m = Py_InitModule((char *)"axes", methods);
 #endif
   VMDApp *app = get_vmdapp();
@@ -83,7 +85,5 @@ void initaxes() {
   PyModule_AddStringConstant(m, (char *)"UPPERLEFT", (char *)app->axes->loc_description(4));
   PyModule_AddStringConstant(m, (char *)"UPPERRIGHT", (char *)app->axes->loc_description(5));
 
-#if PY_MAJOR_VERSION >= 3
   return m;
-#endif
 }

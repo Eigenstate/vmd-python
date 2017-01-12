@@ -29,7 +29,7 @@ static PyObject *rotate(PyObject *self, PyObject *args) {
   char axis;
   float angle;
 
-  if (!PyArg_ParseTuple(args, (char *)"cf:trans.rotate", &axis, &angle)) 
+  if (!PyArg_ParseTuple(args, (char *)"cf:trans.rotate", &axis, &angle))
     return NULL;
 
   if (axis != 'x' && axis != 'y' && axis != 'z') {
@@ -46,13 +46,13 @@ static PyObject *rotate(PyObject *self, PyObject *args) {
 // translate(x,y,z)
 static PyObject *translate(PyObject *self, PyObject *args) {
   float x,y,z;
-  
+
   if (!PyArg_ParseTuple(args, (char *)"fff:trans.translate", &x, &y, &z))
     return NULL;
 
-  VMDApp *app = get_vmdapp(); 
+  VMDApp *app = get_vmdapp();
   app->scene_translate_by(x,y,z);
-  
+
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -80,9 +80,9 @@ static PyObject *get_center(PyObject *self, PyObject *args) {
   if (!mol) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   PyObject *newlist = PyList_New(3);
-  for (int i=0; i<3; i++) 
+  for (int i=0; i<3; i++)
     PyList_SET_ITEM(newlist, i, PyFloat_FromDouble(mol->centt[i]));
 
   return newlist;
@@ -99,7 +99,7 @@ static PyObject *get_scale(PyObject *self, PyObject *args) {
   if (!mol) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   return PyFloat_FromDouble(mol->scale);
 }
 
@@ -114,9 +114,9 @@ static PyObject *get_trans(PyObject *self, PyObject *args) {
   if (!mol) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   PyObject *newlist = PyList_New(3);
-  for (int i=0; i<3; i++) 
+  for (int i=0; i<3; i++)
     PyList_SET_ITEM(newlist, i, PyFloat_FromDouble(mol->globt[i]));
 
   return newlist;
@@ -133,7 +133,7 @@ static PyObject *get_rotation(PyObject *self, PyObject *args) {
   if (!mol) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   PyObject *mat = PyList_New(16);
   Matrix4 &rotm = mol->rotm;
   for (int i=0; i<16; i++) {
@@ -155,12 +155,12 @@ static PyObject *set_center(PyObject *self, PyObject *args) {
   if (!mol) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (PyList_GET_SIZE(pylist) != 3) {
     PyErr_SetString(PyExc_ValueError, (char *)"List must be of length 3");
     return NULL;
   }
-  
+
   for (i=0; i<3; i++) {
     c[i] = PyFloat_AsDouble(PyList_GET_ITEM(pylist, i));
     if (PyErr_Occurred())
@@ -176,7 +176,7 @@ static PyObject *set_center(PyObject *self, PyObject *args) {
 static PyObject *set_scale(PyObject *self, PyObject *args) {
   int molid;
   float scale;
-  if (!PyArg_ParseTuple(args, (char *)"if:trans.set_scale", &molid, &scale)) 
+  if (!PyArg_ParseTuple(args, (char *)"if:trans.set_scale", &molid, &scale))
     return NULL;
 
   VMDApp *app = get_vmdapp();
@@ -190,7 +190,7 @@ static PyObject *set_scale(PyObject *self, PyObject *args) {
   Py_INCREF(Py_None);
   return Py_None;
 }
-  
+
 // set_trans(molid)
 static PyObject *set_trans(PyObject *self, PyObject *args) {
   int i, molid;
@@ -204,18 +204,18 @@ static PyObject *set_trans(PyObject *self, PyObject *args) {
   if (!mol) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (PyList_GET_SIZE(pylist) != 3) {
     PyErr_SetString(PyExc_ValueError, (char *)"List must be of length 3");
     return NULL;
   }
-  
+
   for (i=0; i<3; i++) {
     c[i] = PyFloat_AsDouble(PyList_GET_ITEM(pylist, i));
     if (PyErr_Occurred())
       return NULL;
   }
-  mol->set_glob_trans(c[0], c[1], c[2]); 
+  mol->set_glob_trans(c[0], c[1], c[2]);
 
   Py_INCREF(Py_None);
   return Py_None;
@@ -234,12 +234,12 @@ static PyObject *set_rotation(PyObject *self, PyObject *args) {
   if (!mol) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (PyList_GET_SIZE(pylist) != 16) {
     PyErr_SetString(PyExc_ValueError, (char *)"List must be of length 16");
     return NULL;
   }
-  
+
   for (i=0; i<16; i++) {
     c[i] = PyFloat_AsDouble(PyList_GET_ITEM(pylist, i));
     if (PyErr_Occurred())
@@ -269,7 +269,7 @@ static PyObject *resetview(PyObject *self, PyObject *args) {
     return NULL;
   }
   Molecule *topmol = mlist->top();
-  mlist->make_top(mol); 
+  mlist->make_top(mol);
   app->scene_resetview();
   mlist->make_top(topmol);
 
@@ -290,9 +290,9 @@ static PyObject *is_fixed(PyObject *self, PyObject *args) {
     return NULL;
   }
 #if PY_MAJOR_VERSION >= 3
-  return PyLong_FromLong(mol->fixed()); 
+  return PyLong_FromLong(mol->fixed());
 #else
-  return PyInt_FromLong(mol->fixed()); 
+  return PyInt_FromLong(mol->fixed());
 #endif
 }
 
@@ -328,13 +328,13 @@ static PyObject *is_shown(PyObject *self, PyObject *args) {
     return NULL;
   }
 #if PY_MAJOR_VERSION >= 3
-  return PyLong_FromLong(mol->displayed()); 
+  return PyLong_FromLong(mol->displayed());
 #else
-  return PyInt_FromLong(mol->displayed()); 
+  return PyInt_FromLong(mol->displayed());
 #endif
 }
 
-// show(molid, bool) 
+// show(molid, bool)
 static PyObject *show(PyObject *self, PyObject *args) {
   int molid;
   PyObject *boolobj;
@@ -349,7 +349,7 @@ static PyObject *show(PyObject *self, PyObject *args) {
   }
   app->molecule_display(molid, PyObject_IsTrue(boolobj));
 
-  Py_INCREF(Py_None);  
+  Py_INCREF(Py_None);
   return Py_None;
 }
 
@@ -382,14 +382,14 @@ static struct PyModuleDef transdef = {
     TransMethods,
     NULL, NULL, NULL, NULL
 };
+#endif
 
-PyMODINIT_FUNC PyInit_trans(void) {
+PyObject* inittrans() {
+#if PY_MAJOR_VERSION >= 3
     PyObject *m = PyModule_Create(&transdef);
+#else
+    PyObject *m = Py_InitModule((char *)"trans", TransMethods);
+#endif
     return m;
 }
-#else
-void inittrans() {
-  (void) Py_InitModule((char *)"trans", TransMethods);
-}
-#endif 
 

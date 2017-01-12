@@ -29,19 +29,19 @@
 // make python happier
 extern "C" {
 
-/* 
+/*
  * Note: changes to the timestep method now return an N x 3 array
  * rather than flat 3N arrays.  This may break older plugins like IED
  * if they are not kept up-to-date with VMD.
- */ 
-static char timestep_doc[] = 
+ */
+static char timestep_doc[] =
   "timestep(molid = -1, frame = -1) -> NumPy (N x 3) float32 array\n"
   "Returns zero-copy reference to atom coordinates.  molid defaults to\n"
   "top molecule; frame defaults to current frame.  Array has shape\n"
   "N x 3 where N is the number of atoms in the molecule.";
 static PyObject *timestep(PyObject *self, PyObject *args, PyObject *kwds) {
   int molid = -1;  // default : top
-  int frame = -1;  // default : current frame 
+  int frame = -1;  // default : current frame
   static char *kwlist[] = { (char *)"molid", (char *)"frame", NULL };
   if (!PyArg_ParseTupleAndKeywords(args, kwds, (char *)"|ii", kwlist,
         &molid, &frame))
@@ -54,7 +54,7 @@ static PyObject *timestep(PyObject *self, PyObject *args, PyObject *kwds) {
   return PyArray_Return(result);
 }
 
-static char velocities_doc[] = 
+static char velocities_doc[] =
   "velocities(molid = -1, frame = -1) -> NumPy (N x 3) float32 array\n"
   "Returns zero-copy reference to atom velocities.  molid defaults to\n"
   "top molecule; frame defaults to current frame.  Array has shape\n"
@@ -62,7 +62,7 @@ static char velocities_doc[] =
   "holds no velocities, None is returned.";
 static PyObject *velocities(PyObject *self, PyObject *args, PyObject *kwds) {
   int molid = -1;  // default : top
-  int frame = -1;  // default : current frame 
+  int frame = -1;  // default : current frame
   static char *kwlist[] = { (char *)"molid", (char *)"frame", NULL };
   if (!PyArg_ParseTupleAndKeywords(args, kwds, (char *)"|ii", kwlist,
         &molid, &frame))
@@ -78,7 +78,7 @@ static PyObject *velocities(PyObject *self, PyObject *args, PyObject *kwds) {
       2, dims, NPY_FLOAT, (char *)ts->vel);
   return PyArray_Return(result);
 }
- 
+
 // Return an array of ints representing flags for on/off atoms in an atom
 // selection.
 // atomselect(molid, frame, selection) -> array
@@ -130,22 +130,22 @@ static struct PyModuleDef vmdnumpydef = {
     Methods,
     NULL, NULL, NULL, NULL
 };
+#endif
 
-PyMODINIT_FUNC PyInit_vmdnumpy(void) {
+PyObject* initvmdnumpy() {
+#if PY_MAJOR_VERSION >= 3
   if (_import_array() < 0) {
     PyErr_SetString(PyExc_ValueError, "vmdnumpy module not available.");
     return NULL;
   }
   PyObject *module = PyModule_Create(&vmdnumpydef);
-  return module;
-}
 #else
-void initvmdnumpy() {
   if (_import_array() < 0) {
     PyErr_SetString(PyExc_ValueError, "vmdnumpy module not available.");
     return;
   }
-  (void)Py_InitModule((char *)"vmdnumpy", Methods);
-}
+    PyObject *module = Py_InitModule((char *)"vmdnumpy", Methods);
 #endif
+    return module;
+}
 

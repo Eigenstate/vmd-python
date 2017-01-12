@@ -15,7 +15,7 @@
  *
  ***************************************************************************
  * DESCRIPTION:
- *  Python interface to external renderer commands  
+ *  Python interface to external renderer commands
  ***************************************************************************/
 
 #include "py_commands.h"
@@ -35,7 +35,7 @@ static PyObject *listall(PyObject *self, PyObject *args) {
 #else
     PyList_Append(newlist, PyString_FromString(app->filerender_name(i)));
 #endif
-  
+
   return newlist;
 }
 
@@ -52,7 +52,7 @@ static PyObject *render(PyObject *self, PyObject *args, PyObject *keywds) {
     return NULL;
 
   VMDApp *app = get_vmdapp();
-  
+
   if (!app->filerender_render(method, filename, NULL)) {
     PyErr_SetString(PyExc_ValueError, "Unable to render to file");
     return NULL;
@@ -77,13 +77,13 @@ static struct PyModuleDef renderdef = {
     methods,
     NULL, NULL, NULL, NULL
 };
+#endif
 
-PyMODINIT_FUNC PyInit_render(void) {
+PyObject* initrender() {
+#if PY_MAJOR_VERSION >= 3
     PyObject *m = PyModule_Create(&renderdef);
+#else
+    PyObject *m = Py_InitModule((char *)"render", methods);
+#endif
     return m;
 }
-#else
-void initrender() {
-  (void)Py_InitModule((char *)"render", methods);
-}
-#endif

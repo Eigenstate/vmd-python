@@ -257,15 +257,16 @@ static struct PyModuleDef animatedef = {
     NULL, // m_clear gc clear
     NULL  // m_free gc free
 };
-PyMODINIT_FUNC PyInit_animate(void) {
+#endif
+
+PyObject* initanimate() {
+#if PY_MAJOR_VERSION >= 3
   PyObject *m = PyModule_Create(&animatedef);
+#else
+  PyObject *m = Py_InitModule((char *)"animate", methods);
+#endif
   return m;
 }
-#else
-void initanimate() {
-  (void) Py_InitModule((char *)"animate", methods);
-}
-#endif
 
 
 

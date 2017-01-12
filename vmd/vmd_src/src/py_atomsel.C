@@ -53,7 +53,7 @@ static char *atomsel_doc = (char *)
     "atomsel( selection, molid = top, frame = now) -> new selection object\n"
     ;
 
-static void 
+static void
 atomsel_dealloc( PyAtomSelObject *obj ) {
   delete obj->atomSel;
   ((PyObject *)(obj))->ob_type->tp_free((PyObject *)obj);
@@ -63,7 +63,7 @@ static PyObject *
 atomsel_repr( PyAtomSelObject *obj ) {
   AtomSel *sel = obj->atomSel;
   char *s = new char[strlen(sel->cmdStr) + 100];
-  sprintf(s, "atomsel('%s', molid=%d, frame=%d)", 
+  sprintf(s, "atomsel('%s', molid=%d, frame=%d)",
       sel->cmdStr, sel->molid(), sel->which_frame);
 #if PY_MAJOR_VERSION >= 3
   PyObject *result = PyUnicode_FromString(s);
@@ -83,7 +83,7 @@ atomsel_str( PyAtomSelObject *obj ) {
 #endif
 }
 
-// Create a new atom selection 
+// Create a new atom selection
 static PyObject *
 atomsel_new( PyTypeObject *type, PyObject *args, PyObject *kwds ) {
 
@@ -91,10 +91,10 @@ atomsel_new( PyTypeObject *type, PyObject *args, PyObject *kwds ) {
   int molid = -1;  // if not overridden, use top molecule
   int frame = -1;  // corresponds to current frame
 
-  static char *kwlist[] = { (char *)"selection", (char *)"molid", 
+  static char *kwlist[] = { (char *)"selection", (char *)"molid",
                             (char *)"frame", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|sii", kwlist, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|sii", kwlist,
         &sel, &molid, &frame))
     return NULL;
 
@@ -136,7 +136,7 @@ static char *get_doc = (char *)
 
 static PyObject *atomsel_get(PyAtomSelObject *a, PyObject *keyobj) {
 
-  // FIXME: make everything in this pipeline const so that it's 
+  // FIXME: make everything in this pipeline const so that it's
   // thread-safe.
   VMDApp *app = a->app;
   AtomSel *atomSel = a->atomSel;
@@ -152,7 +152,7 @@ static PyObject *atomsel_get(PyAtomSelObject *a, PyObject *keyobj) {
 
   if (!attr) return NULL;
 
-  // 
+  //
   // Check for a valid attribute
   //
   SymbolTable *table = app->atomSelParser;
@@ -167,14 +167,14 @@ static PyObject *atomsel_get(PyAtomSelObject *a, PyObject *keyobj) {
     PyErr_SetString(PyExc_ValueError, "attribute is not a keyword or singleword");
     return NULL;
   }
- 
-  // 
+
+  //
   // fetch the data
   //
 
   int *flgs = atomSel->on;
   atomsel_ctxt context(table, mol, atomSel->which_frame, attr);
-  PyObject *newlist = PyList_New(atomSel->selected); 
+  PyObject *newlist = PyList_New(atomSel->selected);
 
   if (elem->is_a == SymbolTableElement::SINGLEWORD) {
     int *tmp = new int[num_atoms];
@@ -231,7 +231,7 @@ static PyObject *atomsel_get(PyAtomSelObject *a, PyObject *keyobj) {
         elem->keyword_double(&context, num_atoms, tmp, flgs);
         int j=0;
         for (int i=0; i<num_atoms; i++) {
-          if (flgs[i])  
+          if (flgs[i])
             PyList_SET_ITEM(newlist, j++, PyFloat_FromDouble(tmp[i]));
         }
         delete [] tmp;
@@ -249,7 +249,7 @@ static char *set_doc = (char *)
 
 static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
 
-  // FIXME: make everything in this pipeline const so that it's 
+  // FIXME: make everything in this pipeline const so that it's
   // thread-safe.
   VMDApp *app = a->app;
   AtomSel *atomSel = a->atomSel;
@@ -281,7 +281,7 @@ static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
     return NULL;
   }
 
-  // 
+  //
   // check that we have been given either one value or one for each selected
   // atom
   //
@@ -304,8 +304,8 @@ static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
   }
 
   int *flgs = atomSel->on;
- 
-  //  
+
+  //
   // set the data
   //
 
@@ -343,7 +343,7 @@ static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
     double *list = new double[num_atoms];
     if (fastval) {
       int j=0;
-      for (int i=0; i<num_atoms; i++) { 
+      for (int i=0; i<num_atoms; i++) {
         if (!flgs[i]) continue;
         float dval = (float)PyFloat_AsDouble(PySequence_Fast_GET_ITEM(fastval, j++));
         list[i] = dval;
@@ -360,9 +360,9 @@ static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
 
   } else if (elem->returns_a == SymbolTableElement::IS_STRING) {
     const char **list = new const char *[num_atoms];
-    if (fastval) { 
+    if (fastval) {
       int j=0;
-      for (int i=0; i<num_atoms; i++) { 
+      for (int i=0; i<num_atoms; i++) {
         if (!flgs[i]) continue;
 #if PY_MAJOR_VERSION >= 3
         const char *sval = PyBytes_AsString(PySequence_Fast_GET_ITEM(fastval, j++));
@@ -391,10 +391,10 @@ static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
       !strcmp(attr, "resname") ||
       !strcmp(attr, "chain") ||
       !strcmp(attr, "segid") ||
-      !strcmp(attr, "segname")) 
+      !strcmp(attr, "segname"))
     app->moleculeList->add_color_names(mol->id());
 
-  mol->force_recalc(DrawMolItem::SEL_REGEN | DrawMolItem::COL_REGEN); 
+  mol->force_recalc(DrawMolItem::SEL_REGEN | DrawMolItem::COL_REGEN);
 
   Py_XDECREF(fastval);
   Py_INCREF(Py_None);
@@ -426,7 +426,7 @@ static int setframe(PyAtomSelObject *a, PyObject *frameobj, void *) {
   int frame = PyInt_AsLong(frameobj);
 #endif
   if (frame < 0 && PyErr_Occurred()) return -1;
-  if (frame != AtomSel::TS_LAST && frame != AtomSel::TS_NOW && 
+  if (frame != AtomSel::TS_LAST && frame != AtomSel::TS_NOW &&
       (frame < 0 || frame >= mol->numframes())) {
     PyErr_SetString(PyExc_ValueError, "Invalid frame");
     return -1;
@@ -466,13 +466,13 @@ static char *write_doc = (char *)
   "Write the atoms in the selection to a file of the given type.";
 
 static PyObject *py_write(PyAtomSelObject *a, PyObject *args, PyObject *kwds) {
-  
+
   AtomSel *atomSel = a->atomSel;
   DrawMolecule *mol;
   if (!(mol = get_molecule(a))) return NULL;
   const char *filetype, *filename;
   static char *kwlist[] = { (char *)"filetype", (char *)"filename", NULL };
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "ss", kwlist, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "ss", kwlist,
         &filetype, &filename))
     return NULL;
 
@@ -506,7 +506,7 @@ static PyObject *py_write(PyAtomSelObject *a, PyObject *args, PyObject *kwds) {
 }
 
 static PyObject *getbonds(PyAtomSelObject *a, void *) {
-   
+
   AtomSel *atomSel = a->atomSel;
   DrawMolecule *mol;
   if (!(mol = get_molecule(a))) return NULL;
@@ -537,7 +537,7 @@ static int setbonds(PyAtomSelObject *a, PyObject *obj, void *) {
   if (!(mol = get_molecule(a))) return -1;
 
   if (!PySequence_Check(obj) || PySequence_Size(obj) != atomSel->selected) {
-    PyErr_SetString(PyExc_ValueError, 
+    PyErr_SetString(PyExc_ValueError,
       (char *)"setbonds: atomlist and bondlist must have the same size");
     return -1;
   }
@@ -549,7 +549,7 @@ static int setbonds(PyAtomSelObject *a, PyObject *obj, void *) {
   for (int i=0; i<atomSel->num_atoms; i++) {
     if (!atomSel->on[i]) continue;
     MolAtom *atom = mol->atom(i);
-   
+
     PyObject *atomids = PySequence_Fast_GET_ITEM(fastbonds, ibond++);
     if (!PyList_Check(atomids)) continue;
     int numbonds = PyList_Size(atomids);
@@ -725,7 +725,7 @@ SYMBOL_TABLE_FUNC(functions, SymbolTableElement::FUNCTION)
 SYMBOL_TABLE_FUNC(stringfunctions, SymbolTableElement::STRINGFCTN)
 
 #undef SYMBOL_TABLE_FUNC
- 
+
 // utility routine for parsing weight values.  Uses the sequence protocol
 // so that sequence-type structure (list, tuple) will be accepted.
 static float *parse_weight(AtomSel *sel, PyObject *wtobj) {
@@ -778,7 +778,7 @@ static PyObject *minmax(PyAtomSelObject *a, PyObject *withradii) {
     PyErr_SetString(PyExc_ValueError, measure_error(rc));
     return NULL;
   }
-  return Py_BuildValue("[f,f,f],[f,f,f]", 
+  return Py_BuildValue("[f,f,f],[f,f,f]",
       min[0], min[1], min[2], max[0], max[1], max[2]);
 }
 
@@ -803,7 +803,7 @@ static PyObject *center(PyAtomSelObject *a, PyObject *args, PyObject *kwds) {
 
   float cen[3];
   // compute center
-  int ret_val = measure_center(atomSel, 
+  int ret_val = measure_center(atomSel,
       atomSel->coordinates(a->app->moleculeList),
       weight, cen);
   delete [] weight;
@@ -851,8 +851,8 @@ static PyObject *py_rmsd(PyAtomSelObject *a, PyObject *args) {
 
   float rmsd;
   int rc = measure_rmsd(a->atomSel, sel2, a->atomSel->selected,
-      a->atomSel->coordinates(a->app->moleculeList), 
-      sel2->coordinates(a->app->moleculeList), 
+      a->atomSel->coordinates(a->app->moleculeList),
+      sel2->coordinates(a->app->moleculeList),
       weight, &rmsd);
   delete [] weight;
   if (rc < 0) {
@@ -869,7 +869,7 @@ static char* rmsf_doc = (char *)
 static PyObject *py_rmsf(PyAtomSelObject *a, PyObject *args, PyObject *kwds) {
   int first=0, last=-1, step=1;
   static char *kwlist[] = {(char *)"first",(char *)"last",(char *)"step", NULL };
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iii", kwlist, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iii", kwlist,
         &first, &last, &step)) { return NULL;}
   float *rmsf = new float[a->atomSel->selected];
   int ret_val = measure_rmsf(a->atomSel, a->app->moleculeList, first, last, step, rmsf);
@@ -925,7 +925,7 @@ static PyObject *py_fit(PyAtomSelObject *a, PyObject *args) {
   if (!weight) return NULL;
 
   Matrix4 mat;
-  int rc = measure_fit(a->atomSel, sel2, 
+  int rc = measure_fit(a->atomSel, sel2,
       a->atomSel->coordinates(a->app->moleculeList),
       sel2->coordinates(a->app->moleculeList),
       weight, NULL, &mat);
@@ -984,8 +984,8 @@ static PyObject *py_move(PyAtomSelObject *a, PyObject *matobj) {
 
   int err;
   if ((err = measure_move(
-          atomSel, 
-          atomSel->coordinates(a->app->moleculeList), 
+          atomSel,
+          atomSel->coordinates(a->app->moleculeList),
           mat)) != MEASURE_NOERR) {
     PyErr_SetString(PyExc_ValueError, measure_error(err));
     return NULL;
@@ -1000,7 +1000,7 @@ static char *contacts_doc = (char *)
   "Return two lists, whose corresponding elements contain atom indices\n"
   "in selection that are within cutoff of sel, but not directly bonded.\n";
 
-// Find all atoms p in sel1 and q in sel2 within the cutoff.  
+// Find all atoms p in sel1 and q in sel2 within the cutoff.
 static PyObject *contacts(PyAtomSelObject *a, PyObject *args) {
   AtomSel *sel1 = a->atomSel;
   DrawMolecule *mol;
@@ -1083,8 +1083,8 @@ static PyObject *sasa(PyAtomSelObject *a, PyObject *args, PyObject *keywds) {
   static char *kwlist[] = {
     "srad", "samples", "points", "restrict", NULL
   };
-  if (!PyArg_ParseTupleAndKeywords(args, keywds, 
-        "f|iOO:atomsel.sasa", kwlist, 
+  if (!PyArg_ParseTupleAndKeywords(args, keywds,
+        "f|iOO:atomsel.sasa", kwlist,
         &srad, &samples, &pointsobj, &restrictobj))
     return NULL;
 
@@ -1112,10 +1112,10 @@ static PyObject *sasa(PyAtomSelObject *a, PyObject *args, PyObject *keywds) {
   // if points are requested, fetch them
   ResizeArray<float> sasapts;
   ResizeArray<float> *sasaptsptr = pointsobj ? &sasapts : NULL;
- 
+
   // go!
   float sasa = 0;
-  int rc = measure_sasa(sel, coords, radii, srad, &sasa, 
+  int rc = measure_sasa(sel, coords, radii, srad, &sasa,
         sasaptsptr, restrictsel, sampleptr);
   if (rc) {
     PyErr_SetString(PyExc_ValueError, measure_error(rc));
@@ -1134,7 +1134,7 @@ static PyObject *sasa(PyAtomSelObject *a, PyObject *args, PyObject *keywds) {
 }
 
 /*
- * Support for mapping protocol 
+ * Support for mapping protocol
  */
 
 static Py_ssize_t
@@ -1152,7 +1152,7 @@ atomselection_subscript( PyAtomSelObject * a, PyObject * keyobj ) {
 #endif
   if (ind < 0 && PyErr_Occurred()) return NULL;
   PyObject *result = Py_False;
-  if (ind >= 0 && ind < a->atomSel->num_atoms && 
+  if (ind >= 0 && ind < a->atomSel->num_atoms &&
       a->atomSel->on[ind]) {
     result = Py_True;
   }
@@ -1198,7 +1198,7 @@ namespace {
 
   PyObject *iter_next(iterobject *it) {
     for ( ; it->index < it->a->atomSel->num_atoms; ++it->index) {
-      if (it->a->atomSel->on[it->index]) 
+      if (it->a->atomSel->on[it->index])
 #if PY_MAJOR_VERSION >= 3
         return PyLong_FromLong(it->index++);
 #else
@@ -1333,7 +1333,7 @@ PyTypeObject atomsel_type = {
   0,          /* tp_setattro */
   0,          /* tp_as_buffer */
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_CLASS, /* tp_flags */
-  atomsel_doc,       /* tp_doc */ 
+  atomsel_doc,       /* tp_doc */
   0,          /* tp_traverse */
   0,          /* tp_clear */
   0,          /* tp_richcompare */
@@ -1383,7 +1383,7 @@ static PyMethodDef atomsel_methods[] = {
     "If both name and selection are None, return list of macro names.\n"
     "If selection is None, return definition for name.\n"
     "If both name and selection are given, define new macro.\n" },
-  {"delmacro", (vmdPyMethod)delmacro, METH_VARARGS, 
+  {"delmacro", (vmdPyMethod)delmacro, METH_VARARGS,
     "delmacro(name) -> Delete atom selection macro with given name." },
   {"inverse", (PyCFunction)inverse, METH_O,
     "inverse(matrix) -> Inverse of matrix returned by atomsel.fit(...)"},
@@ -1422,35 +1422,30 @@ static struct PyModuleDef atomseldef = {
     module_doc,
     -1, // global state, no sub-interpreters
     atomsel_methods,
-    NULL, 
+    NULL,
     NULL, // m_traverse gc traversal
     NULL, // m_clear gc clear
     NULL  // m_free gc free
 };
-PyMODINIT_FUNC PyInit_atomsel(void) {
-  PyObject *m = PyModule_Create(&atomseldef);
-  ((PyObject*)(&atomsel_type))->ob_type = &PyType_Type;
-#define INITERROR return NULL
-#else
-void
-initatomsel(void) {
-  PyObject *m = Py_InitModule3( "atomsel", atomsel_methods, module_doc );
-  atomsel_type.ob_type = &PyType_Type;
-#define INITERROR return
 #endif
 
+
+PyObject* initatomsel(void) {
+#if PY_MAJOR_VERSION >= 3
+  PyObject *m = PyModule_Create(&atomseldef);
+  ((PyObject*)(&atomsel_type))->ob_type = &PyType_Type;
+#else
+  PyObject *m = Py_InitModule3( "atomsel", atomsel_methods, module_doc );
+  atomsel_type.ob_type = &PyType_Type;
+#endif
 
   Py_INCREF((PyObject *)&atomsel_type);
   if (PyModule_AddObject(m, "atomsel",
-      (PyObject *)&atomsel_type) !=0) 
-      INITERROR;
+      (PyObject *)&atomsel_type) !=0)
+      return NULL;
   if (PyType_Ready(&atomsel_type) < 0)
-      INITERROR;
+      return NULL;
 
-#if PY_MAJOR_VERSION >= 3
   return m;
-#else
-  return;
-#endif
 }
 

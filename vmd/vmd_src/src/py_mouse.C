@@ -12,7 +12,7 @@
 
 static PyObject *mousemode(PyObject *self, PyObject *args) {
   int mode, submode = -1;
-  if (!PyArg_ParseTuple(args, (char *)"i|i", &mode, &submode)) 
+  if (!PyArg_ParseTuple(args, (char *)"i|i", &mode, &submode))
     return NULL;
 
   VMDApp *app = get_vmdapp();
@@ -36,12 +36,12 @@ static struct PyModuleDef mousedef = {
     methods,
     NULL, NULL, NULL, NULL
 };
+#endif
 
-PyMODINIT_FUNC PyInit_mouse(void) {
+PyObject* initmouse() {
+#if PY_MAJOR_VERSION >= 3
   PyObject *m = PyModule_Create(&mousedef);
-    
 #else
-void initmouse() {
   PyObject *m = Py_InitModule((char *)"mouse", methods);
 #endif
   PyModule_AddIntConstant(m, "ROTATE", Mouse::ROTATION);
@@ -50,7 +50,7 @@ void initmouse() {
   PyModule_AddIntConstant(m, "LIGHT", Mouse::LIGHT);
   PyModule_AddIntConstant(m, "PICK", Mouse::PICK);
   PyModule_AddIntConstant(m, "USERPOINT", Mouse::USERPOINT);
-  
+
   PyModule_AddIntConstant(m, "QUERY", Mouse::QUERY);
   PyModule_AddIntConstant(m, "CENTER", Mouse::CENTER);
   PyModule_AddIntConstant(m, "LABELATOM", Mouse::LABELATOM);
@@ -67,8 +67,6 @@ void initmouse() {
   PyModule_AddIntConstant(m, "FORCEFRAG", Mouse::FORCEFRAG);
   PyModule_AddIntConstant(m, "ADDBOND", Mouse::ADDBOND);
 
-#if PY_MAJOR_VERSION >= 3
   return m;
-#endif
 }
 

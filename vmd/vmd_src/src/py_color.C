@@ -21,18 +21,18 @@
 #include "py_commands.h"
 #include "VMDApp.h"
 
-static char categories_doc[] = 
+static char categories_doc[] =
   "categories() -> list\n"
   "Return list of available color categories";
 static PyObject *categories(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, (char *)""))
     return NULL;
 
-  VMDApp *app = get_vmdapp(); 
+  VMDApp *app = get_vmdapp();
   int num = app->num_color_categories();
   PyObject *newlist = PyList_New(num);
   for (int i=0; i<num; i++) {
-    PyList_SET_ITEM(newlist, i, 
+    PyList_SET_ITEM(newlist, i,
 #if PY_MAJOR_VERSION >= 3
       PyUnicode_FromString(app->color_category(i))
 #else
@@ -43,7 +43,7 @@ static PyObject *categories(PyObject *self, PyObject *args) {
   return newlist;
 }
 
-static char get_colormap_doc[] = 
+static char get_colormap_doc[] =
   "get_colormap(name) -> dictionary\n"
   "Return dictionary of name/color pairs in the given category";
 static PyObject *get_colormap(PyObject *self, PyObject *args) {
@@ -51,7 +51,7 @@ static PyObject *get_colormap(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, (char *)"s", &name))
     return NULL;
 
-  VMDApp *app = get_vmdapp(); 
+  VMDApp *app = get_vmdapp();
   int num_names = app->num_color_category_items(name);
   PyObject *newdict = PyDict_New();
   for (int i=0; i<num_names; i++) {
@@ -66,7 +66,7 @@ static PyObject *get_colormap(PyObject *self, PyObject *args) {
   return newdict;
 }
 
-static char set_colormap_doc[] = 
+static char set_colormap_doc[] =
   "set_colormap(name, dict) -> None\n"
   "Update name/color pairs in given color category.";
 static PyObject *set_colormap(PyObject *self, PyObject *args) {
@@ -100,7 +100,7 @@ static PyObject *set_colormap(PyObject *self, PyObject *args) {
       break;
     }
     if (!app->color_changename(name, keyname, valname)) {
-      PyErr_SetString(PyExc_ValueError, 
+      PyErr_SetString(PyExc_ValueError,
         (char *)"Invalid color category or item specified");
       return NULL;
     }
@@ -109,25 +109,25 @@ static PyObject *set_colormap(PyObject *self, PyObject *args) {
   Py_DECREF(vals);
   if (error)
     return NULL;
-  
+
   Py_INCREF(Py_None);
   return Py_None;
 }
-   
-static char get_colors_doc[] = 
+
+static char get_colors_doc[] =
   "get_colors() -> dictionary\n"
   "Returns dictionary of name/rgb pairs.  rgb is a 3-tuple.";
 static PyObject *get_colors(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, (char *)""))
     return NULL;
-  
+
   VMDApp *app = get_vmdapp();
   PyObject *newdict = PyDict_New();
   for (int i=0; i<app->num_regular_colors(); i++) {
     float col[3];
     const char *name = app->color_name(i);
     if (!app->color_value(name, col, col+1, col+2)) {
-      PyErr_SetString(PyExc_ValueError, (char *) 
+      PyErr_SetString(PyExc_ValueError, (char *)
         "Unable to get color definition");
       return NULL;
     }
@@ -139,13 +139,13 @@ static PyObject *get_colors(PyObject *self, PyObject *args) {
   return newdict;
 }
 
-static char get_colorlist_doc[] = 
+static char get_colorlist_doc[] =
   "get_colorlist() -> list\n"
   "Returns list of rgb values.  rgb is a 3-tuple.";
 static PyObject *get_colorlist(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, (char *)""))
     return NULL;
-  
+
   VMDApp *app = get_vmdapp();
   int listlen = app->num_regular_colors();
   PyObject *newlist = PyList_New(listlen);
@@ -153,7 +153,7 @@ static PyObject *get_colorlist(PyObject *self, PyObject *args) {
     float col[3];
     const char *name = app->color_name(i);
     if (!app->color_value(name, col, col+1, col+2)) {
-      PyErr_SetString(PyExc_ValueError, (char *) 
+      PyErr_SetString(PyExc_ValueError, (char *)
         "Unable to get color definition");
       return NULL;
     }
@@ -165,7 +165,7 @@ static PyObject *get_colorlist(PyObject *self, PyObject *args) {
   return newlist;
 }
 
-static char set_colors_doc[] =  
+static char set_colors_doc[] =
     "set_colors(dict) -> None\n"
     "Set colors using given dicionary of name/rgb pairs";
 static PyObject *set_colors(PyObject *self, PyObject *args) {
@@ -199,7 +199,7 @@ static PyObject *set_colors(PyObject *self, PyObject *args) {
       break;
     }
     float rgb[3];
-    for (int j=0; j<3; j++) 
+    for (int j=0; j<3; j++)
       rgb[j] = (float)PyFloat_AsDouble(PyTuple_GET_ITEM(newtuple, j));
     if (PyErr_Occurred()) {
       error = 1;
@@ -215,7 +215,7 @@ static PyObject *set_colors(PyObject *self, PyObject *args) {
   Py_INCREF(Py_None);
   return Py_None;
 }
-static char set_colorid_doc[] =  
+static char set_colorid_doc[] =
     "set_colors(id, (r, g, b)) -> None\n"
     "Set colors using given color index and rgb values";
 static PyObject *set_colorid(PyObject *self, PyObject *args) {
@@ -235,7 +235,7 @@ static PyObject *set_colorid(PyObject *self, PyObject *args) {
 	Py_INCREF(Py_None);
 	return Py_None;
 }
-static char scale_method_doc[] = 
+static char scale_method_doc[] =
     "scale_method() -> string\n"
     "Return current colorscale method name";
 static PyObject *scale_method(PyObject *self, PyObject *args) {
@@ -243,7 +243,7 @@ static PyObject *scale_method(PyObject *self, PyObject *args) {
     return NULL;
 
   VMDApp *app = get_vmdapp();
-  const char *method = 
+  const char *method =
     app->colorscale_method_name(app->colorscale_method_current());
 #if PY_MAJOR_VERSION >= 3
   return PyUnicode_FromString(method);
@@ -252,7 +252,7 @@ static PyObject *scale_method(PyObject *self, PyObject *args) {
 #endif
 }
 
-static char scale_methods_doc[] = 
+static char scale_methods_doc[] =
     "scale_methods() -> list\n"
     "Return list of available colorscale methods";
 static PyObject *scale_methods(PyObject *self, PyObject *args) {
@@ -263,7 +263,7 @@ static PyObject *scale_methods(PyObject *self, PyObject *args) {
   int num = app->num_colorscale_methods();
   PyObject *newlist = PyList_New(num);
   for (int i=0; i<num; i++) {
-    PyList_SET_ITEM(newlist, i, 
+    PyList_SET_ITEM(newlist, i,
 #if PY_MAJOR_VERSION >= 3
       PyUnicode_FromString(app->colorscale_method_name(i))
 #else
@@ -274,7 +274,7 @@ static PyObject *scale_methods(PyObject *self, PyObject *args) {
   return newlist;
 }
 
-static char scale_midpoint_doc[] = 
+static char scale_midpoint_doc[] =
     "scale_midpoint() -> float\n"
     "Return current colorscale midpoint value";
 static PyObject *scale_midpoint(PyObject *self, PyObject *args) {
@@ -297,7 +297,7 @@ static PyObject *scale_min(PyObject *self, PyObject *args) {
   get_vmdapp()->colorscale_info(&mid, &min, &max);
   return PyFloat_FromDouble(min);
 }
- 
+
 static char scale_max_doc[] =
     "scale_max() -> float\n"
     "Return current colorscale midpoint max";
@@ -322,20 +322,20 @@ static PyObject *set_scale(PyObject *self, PyObject *args, PyObject *keywds) {
   float midpoint = -1, min = -1, max = -1;
   VMDApp *app = get_vmdapp();
   app->colorscale_info(&midpoint, &min, &max);
- 
+
   if (!PyArg_ParseTupleAndKeywords(args, keywds, (char *)"|sfff", kwlist,
-                                   &method, &midpoint, &min, &max)) 
-    return NULL; 
+                                   &method, &midpoint, &min, &max))
+    return NULL;
 
   if (method) {
     int ind = app->colorscale_method_index(method);
-    if (ind < 0) { 
+    if (ind < 0) {
       PyErr_SetString(PyExc_ValueError, (char *)"Invalid color scale method");
       return NULL;
     }
     app->colorscale_setmethod(ind);
   }
-  app->colorscale_setvalues(midpoint, min, max);  
+  app->colorscale_setvalues(midpoint, min, max);
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -370,14 +370,15 @@ static struct PyModuleDef colordef = {
     NULL,
     NULL
 };
-PyMODINIT_FUNC PyInit_color(void) {
-    PyObject *module = PyModule_Create(&colordef);
-    return module;
-}
-#else
-void initcolor() {
-  (void) Py_InitModule((char *)"color", ColorMethods);
-}
 #endif
- 
+
+PyObject* initcolor() {
+#if PY_MAJOR_VERSION >= 3
+  PyObject *module = PyModule_Create(&colordef);
+#else
+  PyObject *module = Py_InitModule((char *)"color", ColorMethods);
+#endif
+  return module;
+}
+
 

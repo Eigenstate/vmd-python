@@ -30,7 +30,7 @@
 
 // connect(host, port)
 static PyObject *imdconnect(PyObject *self, PyObject *args, PyObject *keywds) {
-  
+
   char *host;
   int port;
 
@@ -54,7 +54,7 @@ static PyObject *imdconnect(PyObject *self, PyObject *args, PyObject *keywds) {
   if (!app->imd_connect(mol->id(), host, port)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Unable to connect to IMD server");
     return NULL;
-  } 
+  }
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -65,7 +65,7 @@ static PyObject *pause(PyObject *self, PyObject *args) {
     return NULL;
   VMDApp *app = get_vmdapp();
   app->imdMgr->togglepause();
-  app->commandQueue->runcommand(new CmdIMDSim(CmdIMDSim::PAUSE_TOGGLE)); 
+  app->commandQueue->runcommand(new CmdIMDSim(CmdIMDSim::PAUSE_TOGGLE));
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -87,8 +87,8 @@ static PyObject *kill(PyObject *self, PyObject *args) {
     return NULL;
   VMDApp *app = get_vmdapp();
   app->imdMgr->kill();
-  app->commandQueue->runcommand(new CmdIMDSim(CmdIMDSim::KILL)); 
-  
+  app->commandQueue->runcommand(new CmdIMDSim(CmdIMDSim::KILL));
+
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -118,7 +118,7 @@ static PyObject *transfer(PyObject *self, PyObject *args, PyObject *keywds) {
 
 // keep(rate): rate is optional, return current (new) value
 static PyObject *keep(PyObject *self, PyObject *args, PyObject *keywds) {
-  
+
   int rate = -1;
   static char *kwlist[] = {
     (char *)"rate", NULL
@@ -143,7 +143,7 @@ static PyObject *keep(PyObject *self, PyObject *args, PyObject *keywds) {
 // copyunitcell(True/False)
 static PyObject *copyunitcell(PyObject *self, PyObject *args) {
 
-  PyObject *boolobj; 
+  PyObject *boolobj;
   if (!PyArg_ParseTuple(args, (char *)"O:imd.copyunitcell", &boolobj))
     return NULL;
 
@@ -161,7 +161,7 @@ static PyObject *copyunitcell(PyObject *self, PyObject *args) {
 static PyObject *imdconnected(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, (char *)"")) return NULL;
   VMDApp *app = get_vmdapp();
-  return Py_BuildValue( "O", 
+  return Py_BuildValue( "O",
       app->imdMgr->connected() ? Py_True : Py_False );
 }
 
@@ -170,9 +170,9 @@ static PyMethodDef methods[] = {
     (char *)"connected() -- True/False" },
   {(char *)"connect", (PyCFunction)imdconnect, METH_VARARGS | METH_KEYWORDS,
     (char *)"connect(host, port) -- establish IMD connection simulation on host:port"},
-  {(char *)"pause", (vmdPyMethod)pause, METH_VARARGS, 
+  {(char *)"pause", (vmdPyMethod)pause, METH_VARARGS,
     (char *)"pause() -- pause a running IMD simulation"},
-  {(char *)"detach", (vmdPyMethod)detach, METH_VARARGS, 
+  {(char *)"detach", (vmdPyMethod)detach, METH_VARARGS,
     (char *)"detach() -- detach from a running IMD simulation"},
   {(char *)"kill", (vmdPyMethod)kill, METH_VARARGS,
     (char *)"kill() -- halt a running IMD simulation (also detaches)"},
@@ -202,14 +202,14 @@ static struct PyModuleDef imddef = {
     methods,
     NULL, NULL, NULL, NULL
 };
+#endif
 
-PyMODINIT_FUNC PyInit_imd(void) {
+PyObject* initimd() {
+#if PY_MAJOR_VERSION >= 3
     PyObject *module = PyModule_Create(&imddef);
+#else
+    PyObject *module = Py_InitModule((char *)"imd", methods);
+#endif
     return module;
 }
-#else
-void initimd() {
-  (void) Py_InitModule((char *)"imd", methods);
-}
-#endif
 

@@ -27,7 +27,7 @@
 
 // helper function to turn a GeometryMol object into a dictionary
 static PyObject *geom2dict(GeometryMol *g) {
-  
+
   PyObject *newdict = PyDict_New();
   {
     int n = g->items();
@@ -41,7 +41,7 @@ static PyObject *geom2dict(GeometryMol *g) {
       PyTuple_SET_ITEM(molid_tuple, i, PyInt_FromLong(g->obj_index(i)));
       PyTuple_SET_ITEM(atomid_tuple, i, PyInt_FromLong(g->com_index(i)));
 #endif
-    } 
+    }
     PyDict_SetItemString(newdict, (char *)"molid", molid_tuple);
     PyDict_SetItemString(newdict, (char *)"atomid", atomid_tuple);
   }
@@ -64,11 +64,11 @@ static PyObject *geom2dict(GeometryMol *g) {
   if (PyErr_Occurred()) {
     Py_DECREF(newdict);
     return NULL;
-  } 
-  return newdict; 
+  }
+  return newdict;
 }
 
-// listall(category) - return a list of labels for the given label category. 
+// listall(category) - return a list of labels for the given label category.
 // labels will be returned as dictionary objects with the following keys:
 // molid, atomid, value, on.  molid and atomid will be tuples, value will
 // be either a float or PyNone, and on will be 1 or 0.
@@ -84,7 +84,7 @@ static PyObject *listall(PyObject *self, PyObject *args) {
     return NULL;
   }
   GeomListPtr glist = app->geometryList->geom_list(cat);
-  int gnum = glist->num(); 
+  int gnum = glist->num();
   PyObject *newlist = PyList_New(gnum);
   for (int i=0; i<gnum; i++) {
     PyObject *obj = geom2dict((*glist)[i]);
@@ -95,14 +95,14 @@ static PyObject *listall(PyObject *self, PyObject *args) {
     PyList_SET_ITEM(newlist, i, geom2dict((*glist)[i]));
   }
   return newlist;
-} 
+}
 
 // add(category, (molids), (atomids))
 static PyObject *label_add(PyObject *self, PyObject *args) {
   char *type;
   PyObject *molids, *atomids;
   int i;
-  if (!PyArg_ParseTuple(args, (char *)"sO!O!:label.add", 
+  if (!PyArg_ParseTuple(args, (char *)"sO!O!:label.add",
     &type, &PyTuple_Type, &molids, &PyTuple_Type, &atomids))
     return NULL;
 
@@ -117,7 +117,7 @@ static PyObject *label_add(PyObject *self, PyObject *args) {
   if (PyTuple_Size(molids) == 1 && PyTuple_Size(atomids) == 1)
     numitems = 1;
   else if (PyTuple_Size(molids) == 2 && PyTuple_Size(atomids) == 2)
-    numitems = 2; 
+    numitems = 2;
   else if (PyTuple_Size(molids) == 3 && PyTuple_Size(atomids) == 3)
     numitems = 3;
   else if (PyTuple_Size(molids) == 4 && PyTuple_Size(atomids) == 4)
@@ -147,8 +147,8 @@ static PyObject *label_add(PyObject *self, PyObject *args) {
       PyErr_SetString(PyExc_ValueError, (char *)"Invalid atom id");
       return NULL;
     }
-  } 
-  // Add the label, but don't toggle the on/off status.  
+  }
+  // Add the label, but don't toggle the on/off status.
   int ind = app->label_add(type, numitems, m, a, NULL, 0.0f, 0);
   if (ind < 0) {
     Py_INCREF(Py_None);
@@ -164,10 +164,10 @@ static PyObject *label_add(PyObject *self, PyObject *args) {
 
 // returns true if the given label object matches the given geometry object
 static int dict2geom(PyObject *dict, GeometryMol *g) {
-  
+
   PyObject *molid = PyDict_GetItemString(dict, (char *)"molid");
   PyObject *atomid = PyDict_GetItemString(dict, (char *)"atomid");
-  if (molid == NULL || atomid == NULL || 
+  if (molid == NULL || atomid == NULL ||
       !PyTuple_Check(molid) || !PyTuple_Check(atomid)) {
     return 0;
   }
@@ -195,12 +195,12 @@ static int dict2geom(PyObject *dict, GeometryMol *g) {
   }
   return 1;
 }
-   
+
 // show(category, labeldict)
 static PyObject *label_show(PyObject *self, PyObject *args) {
   char *type;
   PyObject *labeldict;
-  if (!PyArg_ParseTuple(args, (char *)"sO!:label.show", 
+  if (!PyArg_ParseTuple(args, (char *)"sO!:label.show",
     &type, &PyDict_Type, &labeldict))
     return NULL;
 
@@ -221,14 +221,14 @@ static PyObject *label_show(PyObject *self, PyObject *args) {
   }
   PyErr_SetString(PyExc_ValueError, "Invalid labeldict.");
   return NULL;
-} 
- 
+}
+
 // hide(category, labeldict)
 // XXX cut 'n paste from show...
 static PyObject *label_hide(PyObject *self, PyObject *args) {
   char *type;
   PyObject *labeldict;
-  if (!PyArg_ParseTuple(args, (char *)"sO!:label.hide", 
+  if (!PyArg_ParseTuple(args, (char *)"sO!:label.hide",
     &type, &PyDict_Type, &labeldict))
     return NULL;
 
@@ -249,14 +249,14 @@ static PyObject *label_hide(PyObject *self, PyObject *args) {
   }
   PyErr_SetString(PyExc_ValueError, "Invalid labeldict.");
   return NULL;
-} 
+}
 
 // delete(category, labeldict)
 // XXX cut 'n paste from show...
 static PyObject *label_delete(PyObject *self, PyObject *args) {
   char *type;
   PyObject *labeldict;
-  if (!PyArg_ParseTuple(args, (char *)"sO!:label.delete", 
+  if (!PyArg_ParseTuple(args, (char *)"sO!:label.delete",
     &type, &PyDict_Type, &labeldict))
     return NULL;
 
@@ -277,7 +277,7 @@ static PyObject *label_delete(PyObject *self, PyObject *args) {
   }
   PyErr_SetString(PyExc_ValueError, "Invalid labeldict.");
   return NULL;
-} 
+}
 
 // return Python list of values for this label.  Return None if this label
 // has no values (e.g. Atom labels), or NULL on error.
@@ -303,9 +303,9 @@ static PyObject *getvalues(GeometryMol *g) {
 // returns list containing value of label for every frame in the label
 // if the label contains atoms from more than one molecule, only the first
 // molecule is cycled (this the behavior of GeometryMol).
-// XXX Note: this command is bad: the GeometryMol::calculate_all method 
-// twiddles the frame of the molecule, so this command isn't read only as 
-// its semantics would imply.  But it should be possible to fix this 
+// XXX Note: this command is bad: the GeometryMol::calculate_all method
+// twiddles the frame of the molecule, so this command isn't read only as
+// its semantics would imply.  But it should be possible to fix this
 // in GeometryMol.
 static PyObject *label_getvalues(PyObject *self, PyObject *args) {
   char *type;
@@ -323,7 +323,7 @@ static PyObject *label_getvalues(PyObject *self, PyObject *args) {
   GeomListPtr glist = app->geometryList->geom_list(cat);
   int gnum = glist->num();
   for (int i=0; i<gnum; i++) {
-    if (dict2geom(labeldict, (*glist)[i])) 
+    if (dict2geom(labeldict, (*glist)[i]))
       return getvalues((*glist)[i]);
   }
   PyErr_SetString(PyExc_ValueError, (char *)"Invalid label");
@@ -376,19 +376,18 @@ static struct PyModuleDef labeldef = {
     LabelMethods,
     NULL, NULL, NULL, NULL
 };
+#endif
 
-PyMODINIT_FUNC PyInit_label(void) {
-  PyObject *m = PyModule_Create(&labeldef);  
+PyObject* initlabel() {
+#if PY_MAJOR_VERSION >= 3
+  PyObject *m = PyModule_Create(&labeldef);
 #else
-void initlabel() {
   PyObject *m = Py_InitModule((char *)"label", LabelMethods);
 #endif
-  PyModule_AddStringConstant(m, (char *)"ATOM", (char *)"Atoms"); 
-  PyModule_AddStringConstant(m, (char *)"BOND", (char *)"Bonds"); 
-  PyModule_AddStringConstant(m, (char *)"ANGLE", (char *)"Angles"); 
-  PyModule_AddStringConstant(m, (char *)"DIHEDRAL", (char *)"Dihedrals"); 
-#if PY_MAJOR_VERSION >= 3
+  PyModule_AddStringConstant(m, (char *)"ATOM", (char *)"Atoms");
+  PyModule_AddStringConstant(m, (char *)"BOND", (char *)"Bonds");
+  PyModule_AddStringConstant(m, (char *)"ANGLE", (char *)"Angles");
+  PyModule_AddStringConstant(m, (char *)"DIHEDRAL", (char *)"Dihedrals");
   return m;
-#endif
 }
- 
+

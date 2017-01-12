@@ -31,7 +31,7 @@ static PyObject *molrep_num(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
 #if PY_MAJOR_VERSION >= 3
   return PyLong_FromLong(app->num_molreps(molid));
 #else
@@ -44,10 +44,10 @@ static PyObject *addrep(PyObject *self, PyObject *args, PyObject *keywds) {
   int molid;
   char *style=NULL, *color=NULL, *selection=NULL, *material=NULL;
   static char *kwlist[] = {
-    (char *)"molid", (char *)"style", (char *)"color", (char *)"selection", 
+    (char *)"molid", (char *)"style", (char *)"color", (char *)"selection",
     (char *)"material", NULL
   };
-  if (!PyArg_ParseTupleAndKeywords(args, keywds, 
+  if (!PyArg_ParseTupleAndKeywords(args, keywds,
         (char *)"i|ssss:molrep.addrep", kwlist,
         &molid, &style, &color, &selection, &material))
     return NULL;
@@ -56,7 +56,7 @@ static PyObject *addrep(PyObject *self, PyObject *args, PyObject *keywds) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (style && !app->molecule_set_style(style)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid style");
     return NULL;
@@ -74,7 +74,7 @@ static PyObject *addrep(PyObject *self, PyObject *args, PyObject *keywds) {
     return NULL;
   }
   app->molecule_addrep(molid);
-  
+
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -89,13 +89,13 @@ static PyObject *delrep(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (rep < 0 || rep >= app->num_molreps(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid rep number");
     return NULL;
-  } 
-  app->molrep_delete(molid, rep);   
-  
+  }
+  app->molrep_delete(molid, rep);
+
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -110,11 +110,11 @@ static PyObject *get_style(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (rep < 0 || rep >= app->num_molreps(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid rep number");
     return NULL;
-  } 
+  }
 #if PY_MAJOR_VERSION >= 3
   return PyUnicode_FromString((char *)app->molrep_get_style(molid, rep));
 #else
@@ -132,11 +132,11 @@ static PyObject *get_selection(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (rep < 0 || rep >= app->num_molreps(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid rep number");
     return NULL;
-  } 
+  }
 #if PY_MAJOR_VERSION >= 3
   return PyUnicode_FromString((char *)app->molrep_get_selection(molid, rep));
 #else
@@ -154,11 +154,11 @@ static PyObject *get_color(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (rep < 0 || rep >= app->num_molreps(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid rep number");
     return NULL;
-  } 
+  }
 #if PY_MAJOR_VERSION >= 3
   return PyUnicode_FromString((char *)app->molrep_get_color(molid, rep));
 #else
@@ -176,11 +176,11 @@ static PyObject *get_material(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (rep < 0 || rep >= app->num_molreps(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid rep number");
     return NULL;
-  } 
+  }
 #if PY_MAJOR_VERSION >= 3
   return PyUnicode_FromString((char *)app->molrep_get_material(molid, rep));
 #else
@@ -198,11 +198,11 @@ static PyObject *get_scaleminmax(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (rep < 0 || rep >= app->num_molreps(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid rep number");
     return NULL;
-  } 
+  }
   float min, max;
   if (!app->molrep_get_scaleminmax(molid, rep, &min, &max)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Unable to get color scale range for this rep");
@@ -215,7 +215,7 @@ static PyObject *get_scaleminmax(PyObject *self, PyObject *args) {
 static PyObject *set_scaleminmax(PyObject *self, PyObject *args) {
   int molid, rep;
   float min, max;
-  if (!PyArg_ParseTuple(args, (char *)"iiff:molrep.set_scaleminmax", &molid, 
+  if (!PyArg_ParseTuple(args, (char *)"iiff:molrep.set_scaleminmax", &molid,
         &rep, &min, &max))
     return NULL;
 
@@ -223,11 +223,11 @@ static PyObject *set_scaleminmax(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (rep < 0 || rep >= app->num_molreps(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid rep number");
     return NULL;
-  } 
+  }
   if (!app->molrep_set_scaleminmax(molid, rep, min, max)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Unable to get color scale range for this rep");
     return NULL;
@@ -246,11 +246,11 @@ static PyObject *reset_scaleminmax(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (rep < 0 || rep >= app->num_molreps(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid rep number");
     return NULL;
-  } 
+  }
   if (!app->molrep_reset_scaleminmax(molid, rep)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Unable to reset color scale range for this rep");
     return NULL;
@@ -266,9 +266,9 @@ static PyObject *modrep(PyObject *self, PyObject *args, PyObject *keywds) {
   char *style=NULL, *sel=NULL, *color=NULL, *material=NULL;
   PyObject *scaleminmax = NULL;
   int molid, rep;
- 
+
   static char *kwlist[] = {
-    (char *)"molid", (char *)"rep", (char *)"style", (char *)"sel", 
+    (char *)"molid", (char *)"rep", (char *)"style", (char *)"sel",
     (char *)"color", (char *)"material", (char *)"scaleminmax", NULL
   };
 
@@ -280,20 +280,20 @@ static PyObject *modrep(PyObject *self, PyObject *args, PyObject *keywds) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (rep < 0 || rep >= app->num_molreps(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid rep number");
     return NULL;
-  } 
+  }
 
   int rc = 1;
-  if (style) 
+  if (style)
     rc &= app->molrep_set_style(molid, rep, style);
-  if (sel) 
+  if (sel)
     rc &= app->molrep_set_selection(molid, rep, sel);
-  if (color) 
+  if (color)
     rc &= app->molrep_set_color(molid, rep, color);
-  if (material) 
+  if (material)
     rc &= app->molrep_set_material(molid, rep, material);
   if (scaleminmax) {
     if (PyList_Size(scaleminmax) == 2) {
@@ -330,7 +330,7 @@ static PyObject *get_repname(PyObject *self, PyObject *args) {
   return PyString_FromString((char *)name);
 #endif
 }
-  
+
 // repindex(molid, name)
 static PyObject *repindex(PyObject *self, PyObject *args) {
   int molid;
@@ -516,14 +516,14 @@ static struct PyModuleDef molrepdef = {
     methods,
     NULL, NULL, NULL, NULL
 };
+#endif
 
-PyMODINIT_FUNC PyInit_molrep(void) {
+PyObject* initmolrep() {
+#if PY_MAJOR_VERSION >= 3
     PyObject *module = PyModule_Create(&molrepdef);
+#else
+    PyObject *module = Py_InitModule((char *)"molrep", methods);
+#endif
     return module;
 }
-#else
-void initmolrep() {
-  (void) Py_InitModule((char *)"molrep", methods);
-}
-#endif
 
