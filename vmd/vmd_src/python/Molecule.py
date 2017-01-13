@@ -17,29 +17,29 @@
 
 """
 /***************************************************************************
- *cr                                                                       
- *cr            (C) Copyright 1995-2007 The Board of Trustees of the           
- *cr                        University of Illinois                       
- *cr                         All Rights Reserved                        
- *cr                                                                   
+ *cr
+ *cr            (C) Copyright 1995-2007 The Board of Trustees of the
+ *cr                        University of Illinois
+ *cr                         All Rights Reserved
+ *cr
  ***************************************************************************/
 """
 
 import VMD
-import molecule, molrep
+from vmd import molecule, molrep
 
 class Molecule:
   """
-  The Molecule class is a proxy for molecules loaded into VMD.  Most 
+  The Molecule class is a proxy for molecules loaded into VMD.  Most
   operations raise ValueError if the proxy no longer refers to a valid
   molecule (i.e. if the molecule has been deleted).
   """
-  
+
   def __init__(self, name=None, id=None, atoms=0):
     """
-    Creating a new Molecule instance with no arguments will create a new 
-    empty molecule in VMD.  Passing a valid molecule id will make the 
-    Molecule instance mirror the state of the corresponding molecule in VMD. 
+    Creating a new Molecule instance with no arguments will create a new
+    empty molecule in VMD.  Passing a valid molecule id will make the
+    Molecule instance mirror the state of the corresponding molecule in VMD.
     If id is None, and a name is given, the new molecule will have that name.
     """
     if id is None:
@@ -52,7 +52,7 @@ class Molecule:
 
     if not molecule.exists(self.id):
       raise ValueError("Molecule with id %d does not exist." % self.id)
-  
+
   def __int__(self):
     """ Casting a Molecule to an int returns the molecule ID."""
     return self.id
@@ -84,7 +84,7 @@ class Molecule:
     """ Deletes the molecule corresonding to this Molecule instance.  The
     object can no longer be used."""
     molecule.delete(self.id)
-    
+
   def _guessFiletype(self, filename):
     """ Utility routine for guessing filetype from filename."""
     filetype='pdb'
@@ -120,7 +120,7 @@ class Molecule:
       filetype = self._guessFiletype(filename)
 ####################################################
 # XXX AtomSel is no longer imported automatically,
-#     so the following piece of code will fail when 
+#     so the following piece of code will fail when
 #     using the save() method with a selection.
 #     if the selection is an atomsel builtin type, it
 #     can be passed on directly. otherwise we get a
@@ -166,7 +166,7 @@ class Molecule:
   def curFrame(self):
     """ Returns the current coordinate frame for the molecule. """
     return molecule.get_frame(self.id)
-  
+
   def delFrame(self, first=0, last=-1, step=-1):
     """ Delete the given range of frames."""
     molecule.delframe(self.id, beg=first, end=last, skip=step)
@@ -175,17 +175,17 @@ class Molecule:
   def dupFrame(self, frame = None):
     """ Duplicate the given frame, appending it to the end.  If no frame is
     given then the current frame is used."""
-    if frame is None: 
+    if frame is None:
       frame = self.curFrame()
     molecule.dupframe(self.id, frame)
     return self
 
-     
+
   def numReps(self):
-    """ Returns the number of molecular representations (reps) in the given 
+    """ Returns the number of molecular representations (reps) in the given
     molecule. """
     return molrep.num(self.id)
-    
+
   def reps(self):
     """ Creates MoleculeRep objects, one for each rep in the molecule. """
     result = []
@@ -209,7 +209,7 @@ class Molecule:
     repid = molrep.num(self.id)-1
     repname = molrep.get_repname(self.id, repid)
     rep.assign_molecule(self.id, repname)
-    
+
   def delRep(self, rep):
     """ Remove the given rep from the molecule."""
     repname = rep.remove_molecule(self.id)
@@ -241,7 +241,7 @@ class Molecule:
   def ssRecalc(self):
     """ Recalculate the secondary structure for this molecule."""
     return molecule.ssrecalc(self.id)
-  
+
 def moleculeList():
   """ Returns a Molecule instance for all current molecules. """
   return [Molecule(id=id) for id in molecule.listall()]
@@ -260,16 +260,16 @@ class MoleculeRep:
   defMaterial = "Opaque"
 
   def __init__(self, style=defStyle, color=defColor, selection=defSelection, material=defMaterial):
-    """ Constructor - initialize with style, color, selection or material if 
+    """ Constructor - initialize with style, color, selection or material if
     you like."""
-    
+
     self.style=style
     self.color=color
     self.selection=selection
     self.material=material
 
     # molecules hashes Molecule objects to rep names
-    self.molecules = {} 
+    self.molecules = {}
 
   def __str__(self):
     """ Returns human-readable summary of the rep properties."""
@@ -304,7 +304,7 @@ class MoleculeRep:
       if not molrep.modrep(id, repid, style=style):
         raise ValueError("Invalid style '%s'" % style)
     self.style = str(style)
-  
+
   def changeColor(self, color):
     """ Change the coloring method the rep to 'color'."""
     for id,name in self.molecules.items():
@@ -312,7 +312,7 @@ class MoleculeRep:
       if not molrep.modrep(id, repid, color=color):
         raise ValueError("Invalid color '%s'" % color)
     self.color = str(color)
-  
+
   def changeSelection(self, selection):
     """ Change the atom selection of the rep to 'selection'."""
     for id,name in self.molecules.items():
@@ -320,7 +320,7 @@ class MoleculeRep:
       if not molrep.modrep(id, repid, sel=selection):
         raise ValueError("Invalid selection '%s'" % selection)
     self.selection = str(selection)
-  
+
   def changeMaterial(self, material):
     """ Change the material for the rep to 'material'."""
     for id,name in self.molecules.items():
@@ -329,7 +329,7 @@ class MoleculeRep:
         raise ValueError("Invalid material'%s'" % material)
     self.material = str(material)
 
-# The following functions return strings that can be passed to 
+# The following functions return strings that can be passed to
 # MoleculeRep.changeStyle to set a particular drawing style.
 # Use keyword arguments to set the various style parameters.
 

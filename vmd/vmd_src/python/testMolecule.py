@@ -32,7 +32,7 @@ class MoleculeTestCase(unittest.TestCase):
     newmol.load('1tit')
     self.failUnlessEqual(newmol.numFrames(), 1)
     newmol.delete()
-    
+
   def testRename(self):
     newname = 'titin from rcsb'
     self.mol1.rename(newname)
@@ -49,7 +49,7 @@ class MoleculeTestCase(unittest.TestCase):
   def testRepStr(self):
     for rep in self.mol1.reps():
       print(rep)
-  
+
   def testFiles(self):
     m=Molecule()
     file1='../proteins/alanin.psf'
@@ -78,7 +78,7 @@ class MoleculeTestCase(unittest.TestCase):
     self.mol1.load('../proteins/brH.pdb')
     self.mol1.load('../proteins/brH.pdb')
     self.failUnlessEqual(self.mol1.setFrame(2).curFrame(), 2)
-    
+
   def testFrameRange(self):
     m=Molecule()
     m.load('../proteins/alanin.psf')
@@ -129,7 +129,7 @@ class MoleculeTestCase(unittest.TestCase):
     self.failUnlessEqual(newrep.color, color)
     self.failUnlessEqual(newrep.selection, sel)
     self.failUnlessEqual(newrep.material, mat)
-  
+
   def testRepAutoUpdate(self):
     for rep in self.mol1.reps():
       self.failUnlessEqual(self.mol1.autoUpdate(rep), 0)

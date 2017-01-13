@@ -11,10 +11,10 @@ static PyObject *measure_bond(PyObject *self, PyObject *args, PyObject *kwds) {
 	int molid[2] = {-1, -1};
 	int atmid[2];
 	VMDApp *app = get_vmdapp();
-	static char *kwlist[] = { (char *)"atom1",(char *)"atom2",(char *)"molid", (char *)"molid2", 
+	static char *kwlist[] = { (char *)"atom1",(char *)"atom2",(char *)"molid", (char *)"molid2",
                             (char *)"frame", (char *)"first", (char *)"last", NULL };
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "ii|iiiii", kwlist, 
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "ii|iiiii", kwlist,
         &atmid[0], &atmid[1], &molid[0], &molid[1], &frame, &first, &last)) { return NULL;}
 	if (molid[0] == -1)
 		molid[0] = app->molecule_top();
@@ -41,7 +41,7 @@ static PyObject *measure_bond(PyObject *self, PyObject *args, PyObject *kwds) {
     PyObject* returnlist = PyList_New(numvalues);
     for (int i = 0; i < numvalues; i++)
     	PyList_SetItem(returnlist, i, Py_BuildValue("f", gValues[i]));
-    
+
     return returnlist;
 }
 static char* angle_doc = (char *)
@@ -58,7 +58,7 @@ static PyObject *measure_angle(PyObject *self, PyObject *args, PyObject *kwds) {
 	static char *kwlist[] = { (char *)"atom1",(char *)"atom2",(char *)"atom3",(char *)"molid",
 				(char *)"molid2", (char *)"molid3", (char *)"frame", (char *)"first", (char *)"last", NULL };
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "iii|iiiiii", kwlist, 
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "iii|iiiiii", kwlist,
         &atmid[0], &atmid[1], &atmid[2], &molid[0], &molid[1], &molid[2], &frame, &first, &last)) { return NULL;}
 	if (molid[0] == -1)
 		molid[0] = app->molecule_top();
@@ -103,7 +103,7 @@ static PyObject *measure_dihed(PyObject *self, PyObject *args, PyObject *kwds) {
 	static char *kwlist[] = { (char *)"atom1",(char *)"atom2",(char *)"atom3",(char *)"atom4",(char *)"molid",
 				(char *)"molid2", (char *)"molid3", (char *)"molid4", (char *)"frame", (char *)"first", (char *)"last", NULL };
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "iiii|iiiiiii", kwlist, 
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "iiii|iiiiiii", kwlist,
         &atmid[0], &atmid[1], &atmid[2], &atmid[3], &molid[0], &molid[1], &molid[2], &molid[3], &frame, &first, &last)) { return NULL;}
 	if (molid[0] == -1)
 		molid[0] = app->molecule_top();

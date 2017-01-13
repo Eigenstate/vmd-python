@@ -58,7 +58,7 @@ static PyObject *get_colormap(PyObject *self, PyObject *args) {
     const char *key = app->color_category_item(name, i);
     const char *value = app->color_mapping(name, key);
 #if PY_MAJOR_VERSION >= 3
-    PyDict_SetItemString(newdict, (char *)key, PyBytes_FromString(value));
+    PyDict_SetItemString(newdict, (char *)key, PyUnicode_FromString(value));
 #else
     PyDict_SetItemString(newdict, (char *)key, PyString_FromString(value));
 #endif

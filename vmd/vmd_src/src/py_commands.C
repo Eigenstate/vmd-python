@@ -117,12 +117,10 @@ VMDApp *get_vmdapp() {
   PyObject *module_dict = PyModule_GetDict(module);
   if (!module_dict) return NULL;
 #if PY_MAJOR_VERSION >= 3
-  PyObject *c_obj = PyCapsule_New(PyDict_GetItemString(module_dict,
-                                                        (char *)"-vmdapp-"),
-                                   NULL, NULL);
+  PyObject *c_obj = PyDict_GetItemString(module_dict, "-vmdapp-");
   if (!c_obj) return NULL;
   if (PyCapsule_CheckExact(c_obj))
-    return (VMDApp *)PyCapsule_GetPointer(c_obj, NULL);
+    return (VMDApp *)PyCapsule_GetPointer(c_obj, "-vmdapp-");
 #else
   PyObject *c_obj = PyDict_GetItemString(module_dict, (char *)"-vmdapp-");
   if (!c_obj) return NULL;
@@ -135,8 +133,8 @@ VMDApp *get_vmdapp() {
 void set_vmdapp(VMDApp *app) {
 #if PY_MAJOR_VERSION >= 3
   PyObject *mod = PyImport_ImportModule((char *)"builtins");
-  PyObject_SetAttrString(mod, (char *)"-vmdapp-",
-                         PyCapsule_New(app, NULL, NULL));
+  PyObject *cap = PyCapsule_New(app, "-vmdapp-", NULL);
+  PyObject_SetAttrString(mod, (char *)"-vmdapp-", cap);
 #else
   PyObject *mod = PyImport_ImportModule((char *)"__builtin__");
   PyObject_SetAttrString(mod, (char *)"-vmdapp-",

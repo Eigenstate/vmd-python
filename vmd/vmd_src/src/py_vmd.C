@@ -40,12 +40,12 @@ static PyObject *py_evaltcl(PyObject *self, PyObject *args) {
   char *cmd;
   if (!PyArg_ParseTuple(args, "s", &cmd)) return NULL;
   VMDApp *app = get_vmdapp();
-  Tcl_Interp *interp = app->uiText->get_tcl_interp();
+  Tcl_Interp *interp = app->uiText->get_tcl_interp(); // THIS FAILS
   if (Tcl_Eval(interp, cmd) != TCL_OK) {
     PyErr_SetString(PyExc_ValueError, Tcl_GetStringResult(interp));
     return NULL;
   }
-  return PyBytes_FromString(Tcl_GetStringResult(interp));
+  return PyUnicode_FromString(Tcl_GetStringResult(interp));
 }
 
 static PyMethodDef VMDAppMethods [] = {
@@ -175,7 +175,7 @@ PyObject* (*initializers[])(void) = {
 const char *modules[] = {
     "axes", "animate", "atomsel", "color", "display", "graphics",
     "imd", "label", "material", "molecule", "molrep", "mouse",
-    "render", "trans", "vmdmenu","vmdnumpy"
+    "render", "trans", "vmdmenu", "vmdnumpy"
 };
 
 #if (PY_MAJOR_VERSION == 2) && (PY_MINOR_VERSION < 5)
@@ -195,7 +195,6 @@ for (unsigned i=0; i<sizeof(initializers)/sizeof(void(*)(void)); i++) {
 #if defined(VMD_SHARED)
   PyOS_InputHook = vmd_input_hook;
 #endif
-
 
 #if PY_MAJOR_VERSION >= 3
   return vmdmodule;

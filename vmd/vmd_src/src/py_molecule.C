@@ -678,7 +678,7 @@ static PyObject *get_filenames(PyObject *self, PyObject *args) {
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
 #if PY_MAJOR_VERSION >= 3
-    PyList_SET_ITEM(result, i, PyBytes_FromString(mol->get_file(i)));
+    PyList_SET_ITEM(result, i, PyUnicode_FromString(mol->get_file(i)));
 #else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_file(i)));
 #endif
@@ -700,7 +700,7 @@ static PyObject *get_filetypes(PyObject *self, PyObject *args) {
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
 #if PY_MAJOR_VERSION >= 3
-    PyList_SET_ITEM(result, i, PyBytes_FromString(mol->get_type(i)));
+    PyList_SET_ITEM(result, i, PyUnicode_FromString(mol->get_type(i)));
 #else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_type(i)));
 #endif
@@ -722,7 +722,7 @@ static PyObject *get_databases(PyObject *self, PyObject *args) {
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
 #if PY_MAJOR_VERSION >= 3
-    PyList_SET_ITEM(result, i, PyBytes_FromString(mol->get_database(i)));
+    PyList_SET_ITEM(result, i, PyUnicode_FromString(mol->get_database(i)));
 #else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_database(i)));
 #endif
@@ -744,7 +744,7 @@ static PyObject *get_accessions(PyObject *self, PyObject *args) {
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
 #if PY_MAJOR_VERSION >= 3
-    PyList_SET_ITEM(result, i, PyBytes_FromString(mol->get_accession(i)));
+    PyList_SET_ITEM(result, i, PyUnicode_FromString(mol->get_accession(i)));
 #else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_accession(i)));
 #endif
@@ -766,7 +766,7 @@ static PyObject *get_remarks(PyObject *self, PyObject *args) {
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
 #if PY_MAJOR_VERSION >= 3
-    PyList_SET_ITEM(result, i, PyBytes_FromString(mol->get_remarks(i)));
+    PyList_SET_ITEM(result, i, PyUnicode_FromString(mol->get_remarks(i)));
 #else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_remarks(i)));
 #endif

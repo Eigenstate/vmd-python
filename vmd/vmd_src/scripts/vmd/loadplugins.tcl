@@ -1,9 +1,9 @@
 ############################################################################
-#cr                                                                       
-#cr            (C) Copyright 1995-2007 The Board of Trustees of the            
-#cr                        University of Illinois                         
-#cr                         All Rights Reserved                           
-#cr                                                                       
+#cr
+#cr            (C) Copyright 1995-2007 The Board of Trustees of the
+#cr                        University of Illinois
+#cr                         All Rights Reserved
+#cr
 ############################################################################
 
 ############################################################################
@@ -30,7 +30,7 @@ lappend auto_path [file join $env(VMDDIR) plugins noarch tcl]
 
 
 #######################################
-# Add plugin directories (plugins/$ARCH/python/<pkg> and plugins/noarch/python/<pkg>) 
+# Add plugin directories (plugins/$ARCH/python/<pkg> and plugins/noarch/python/<pkg>)
 # to the Python package search path.  The path list is semicolon-delimited on
 # Windows, and colon-delimited everywhere else.
 # Put everything a function that we'll delete later
@@ -126,14 +126,14 @@ proc vmd_install_extension {package tk_callback menupath {winname ""}} {
 # These packages create new menu items in the VMD menubar, and therefore
 # should be loaded automatically by VMD.  They should, however, not be
 # loaded until after the .vmdrc file is read, so that users (and VMD
-# maintainers) can customize the Tcl search paths and insert their own 
+# maintainers) can customize the Tcl search paths and insert their own
 # packages.
 proc vmd_load_extension_packages {} {
   global tk_version
   global env
   if ![info exists tk_version] return
 
-  ### Analysis menu  
+  ### Analysis menu
   vmd_install_extension parsefep   ParseFEP_tk_cb "Analysis/Analyze FEP Simulation"
   vmd_install_extension apbsrun    apbsrun_tk_cb  "Analysis/APBS Electrostatics"
   vmd_install_extension plumed     plumed_tk      "Analysis/Collective variable analysis (PLUMED)"
@@ -157,13 +157,13 @@ proc vmd_load_extension_packages {} {
   vmd_install_extension saltbr   saltbr_tk_cb    "Analysis/Salt Bridges"
   vmd_install_extension symmetrytool symmetrytool_tk "Analysis/Symmetry Tool"
   vmd_install_extension zoomseq  zoomseq_tk      "Analysis/Sequence Viewer" sequence
-  vmd_install_extension timeline timeline        "Analysis/Timeline"  
+  vmd_install_extension timeline timeline        "Analysis/Timeline"
 # wait for bug fixes
 #  vmd_install_extension truncate_trajectory tt_GUI_tk "Analysis/Truncate Trajectory"
   vmd_install_extension volmapgui volmapgui_tk    "Analysis/VolMap Tool" volmap
- 
 
-  ### BioCoRE menu 
+
+  ### BioCoRE menu
 #  vmd_install_extension biocorelogin   biocorelogin_tk_cb   "BioCoRE/Login"
 #  vmd_install_extension biocorechat    biocorechat_tk_cb    "BioCoRE/Chat"
 #  vmd_install_extension biocorepubsync biocorepubsync_tk_cb "BioCoRE/Share VMD Views"
@@ -177,7 +177,7 @@ proc vmd_load_extension_packages {} {
 #  vmd_install_extension stingtool stingtool_tk_cb  "Data/STING Database Query"
   vmd_install_extension multitext multitext_tk     "Data/Text Editor"
 
-  ### Modeling menu 
+  ### Modeling menu
   vmd_install_extension autoionizegui autoigui  "Modeling/Add Ions" autoionize
   vmd_install_extension solvate  solvategui     "Modeling/Add Solvation Box"
   vmd_install_extension autopsf  autopsf_tk_cb  "Modeling/Automatic PSF Builder"
@@ -202,12 +202,12 @@ proc vmd_load_extension_packages {} {
   vmd_install_extension imdmenu  imdmenu_tk   "Simulation/IMD Connect (NAMD)" imd
   vmd_install_extension namdgui  namdgui_tk   "Simulation/NAMD Graphical Interface"
   vmd_install_extension qwikmd   qwikmd       "Simulation/QwikMD"
-  vmd_install_extension qmtool   qmtool_tk_cb "Simulation/QMTool" 
+  vmd_install_extension qmtool   qmtool_tk_cb "Simulation/QMTool"
 
 
-  ### Visualization menu  
+  ### Visualization menu
   vmd_install_extension bendix   bendix         "Visualization/Bendix"
-  vmd_install_extension navigate navigate_tk_cb "Visualization/Camera Navigator (Keys)" 
+  vmd_install_extension navigate navigate_tk_cb "Visualization/Camera Navigator (Keys)"
   vmd_install_extension navfly   navfly_tk_cb   "Visualization/Camera Navigator (Mouse)"
   vmd_install_extension cliptool cliptool_tk_cb "Visualization/Clipping Plane Tool"
   vmd_install_extension clonerep clonerep_tk_cb "Visualization/Clone Representations"
@@ -231,12 +231,12 @@ proc vmd_load_extension_packages {} {
   vmd_install_extension ViewMaster viewmaster_tk_cb "Visualization/ViewMaster" viewmaster
   vmd_install_extension vdna vdna_tk_cb "Visualization/Virtual DNA Viewer"
 
-  ### Others 
-  vmd_install_extension vmdtkcon vmdtkcon     "Tk Console" tkcon 
+  ### Others
+  vmd_install_extension vmdtkcon vmdtkcon     "Tk Console" tkcon
   vmd_install_extension vmdprefs vmdPrefs     "VMD Preferences"
 
   ### Python
-# XXX don't turn on Python plugins yet until I solve the crashing problem 
+# XXX don't turn on Python plugins yet until I solve the crashing problem
 # that occurs when TkInter windows are closed
 #  # Install Python-based plugins if VMD was compiled with Python support.
 #  if [llength [info commands gopython]] {
@@ -248,7 +248,7 @@ proc vmd_load_extension_packages {} {
 
 ##
 #  XXX while I agree with the idea, I think this implementation will
-#      break if installed in directories containing spaces in the 
+#      break if installed in directories containing spaces in the
 #      names?  The purpose here is to allow extra extension
 #      rpms to be produced with populate another directory.
 #      we should probably come up with a nicer way of integrating
@@ -262,8 +262,8 @@ proc vmd_load_extension_packages {} {
       source $ext
     }
   }
-  
-  
+
+
   ### Here, load packages that do not have their own GUI window
   package require ruler
 

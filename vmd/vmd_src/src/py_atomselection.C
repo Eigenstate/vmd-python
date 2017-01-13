@@ -51,7 +51,7 @@ static PyObject *create(PyObject *self, PyObject *args) {
     delete atomSel;
     return NULL;
   }
-  
+
   // construct a Python tuple to return
   PyObject *newlist = PyTuple_New(atomSel->selected);
   int j=0;
@@ -77,7 +77,7 @@ static PyObject *get(PyObject *self, PyObject *args) {
   //
   // get molid, list, and attribute
   //
-  if (!PyArg_ParseTuple(args, (char *)"iiO!s", 
+  if (!PyArg_ParseTuple(args, (char *)"iiO!s",
                         &molid, &frame, &PyTuple_Type, &selected, &attr))
     return NULL;  // bad args
 
@@ -91,8 +91,8 @@ static PyObject *get(PyObject *self, PyObject *args) {
     return NULL;
   }
   const int num_atoms = mol->nAtoms;
- 
-  // 
+
+  //
   // Check for a valid attribute
   //
   SymbolTable *table = app->atomSelParser;
@@ -107,19 +107,19 @@ static PyObject *get(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, "attribute is not a keyword or singleword");
     return NULL;
   }
- 
-  // 
+
+  //
   // fetch the data
   //
 
   atomsel_ctxt context(table, mol, frame, attr);
   num_selected = PyTuple_Size(selected);
-  PyObject *newlist = PyList_New(num_selected); 
+  PyObject *newlist = PyList_New(num_selected);
 
   // XXX should check that selected contains valid indices
   int *flgs = new int[num_atoms];
   memset(flgs,0,num_atoms*sizeof(int));
-  for (i=0; i<num_selected; i++) 
+  for (i=0; i<num_selected; i++)
 #if PY_MAJOR_VERSION >= 3
     flgs[PyLong_AsLong(PyTuple_GET_ITEM(selected,i))] = 1;
 #else
@@ -135,15 +135,15 @@ static PyObject *get(PyObject *self, PyObject *args) {
       if (flgs[i]) {
         if (tmp[i]) {
 #if PY_MAJOR_VERSION >= 3
-          PyList_SET_ITEM(newlist, j++, PyLong_FromLong(1));       
+          PyList_SET_ITEM(newlist, j++, PyLong_FromLong(1));
 #else
-          PyList_SET_ITEM(newlist, j++, PyInt_FromLong(1));       
+          PyList_SET_ITEM(newlist, j++, PyInt_FromLong(1));
 #endif
         } else {
 #if PY_MAJOR_VERSION >= 3
-          PyList_SET_ITEM(newlist, j++, PyLong_FromLong(0));       
+          PyList_SET_ITEM(newlist, j++, PyLong_FromLong(0));
 #else
-          PyList_SET_ITEM(newlist, j++, PyInt_FromLong(0));       
+          PyList_SET_ITEM(newlist, j++, PyInt_FromLong(0));
 #endif
         }
       }
@@ -159,7 +159,7 @@ static PyObject *get(PyObject *self, PyObject *args) {
         for (int i=0; i<num_atoms; i++) {
           if (flgs[i]) {
 #if PY_MAJOR_VERSION >= 3
-            PyList_SET_ITEM(newlist, j++, PyBytes_FromString(tmp[i]));
+            PyList_SET_ITEM(newlist, j++, PyUnicode_FromString(tmp[i]));
 #else
             PyList_SET_ITEM(newlist, j++, PyString_FromString(tmp[i]));
 #endif
@@ -191,7 +191,7 @@ static PyObject *get(PyObject *self, PyObject *args) {
         elem->keyword_double(&context, num_atoms, tmp, flgs);
         int j=0;
         for (int i=0; i<num_atoms; i++) {
-          if (flgs[i])  
+          if (flgs[i])
             PyList_SET_ITEM(newlist, j++, PyFloat_FromDouble(tmp[i]));
         }
         delete [] tmp;
@@ -213,11 +213,11 @@ static PyObject *set(PyObject *self, PyObject *args) {
   // get molid, frame, list, attribute, and value
   //
   if (!PyArg_ParseTuple(args, (char *)"iiO!sO!", &molid, &frame,
-                        &PyTuple_Type, &selected, 
+                        &PyTuple_Type, &selected,
                         &attr, &PyTuple_Type, &val ))
     return NULL;  // bad args
 
-  // 
+  //
   // check that we have been given either one value or one for each selected
   // atom
   //
@@ -225,9 +225,9 @@ static PyObject *set(PyObject *self, PyObject *args) {
   int tuplesize = PyTuple_Size(val);
   if (tuplesize != 1 && tuplesize != num_selected) {
     PyErr_SetString(PyExc_ValueError, "wrong number of items");
-    return NULL; 
+    return NULL;
   }
- 
+
   //
   // check molecule
   //
@@ -256,10 +256,10 @@ static PyObject *set(PyObject *self, PyObject *args) {
   }
   if (!table->is_changeable(attrib_index)) {
     PyErr_SetString(PyExc_ValueError, "attribute is not modifiable");
-    return NULL; 
+    return NULL;
   }
 
-  // 
+  //
   // convert the list of selected atoms into an array of integer flags
   //
   // XXX should check that selected contains valid indices
@@ -271,8 +271,8 @@ static PyObject *set(PyObject *self, PyObject *args) {
 #else
     flgs[PyInt_AsLong(PyTuple_GET_ITEM(selected,i))] = 1;
 #endif
- 
-  //  
+
+  //
   // set the data
   //
 
@@ -305,9 +305,9 @@ static PyObject *set(PyObject *self, PyObject *args) {
 
   } else if (elem->returns_a == SymbolTableElement::IS_FLOAT) {
     double *list = new double[num_atoms];
-    if (tuplesize > 1) { 
+    if (tuplesize > 1) {
       int j=0;
-      for (int i=0; i<num_atoms; i++) { 
+      for (int i=0; i<num_atoms; i++) {
         if (flgs[i])
           list[i] = PyFloat_AsDouble(PyTuple_GET_ITEM(val, j++));
       }
@@ -324,9 +324,9 @@ static PyObject *set(PyObject *self, PyObject *args) {
   } else if (elem->returns_a == SymbolTableElement::IS_STRING) {
 
     const char **list = new const char *[num_atoms];
-    if (tuplesize > 1) { 
+    if (tuplesize > 1) {
       int j=0;
-      for (int i=0; i<num_atoms; i++) { 
+      for (int i=0; i<num_atoms; i++) {
         if (flgs[i])
 #if PY_MAJOR_VERSION >= 3
           list[i] = PyBytes_AsString(PyTuple_GET_ITEM(val, j++));
@@ -354,10 +354,10 @@ static PyObject *set(PyObject *self, PyObject *args) {
       !strcmp(attr, "resname") ||
       !strcmp(attr, "chain") ||
       !strcmp(attr, "segid") ||
-      !strcmp(attr, "segname")) 
+      !strcmp(attr, "segname"))
     app->moleculeList->add_color_names(molid);
 
-  mol->force_recalc(DrawMolItem::SEL_REGEN | DrawMolItem::COL_REGEN); 
+  mol->force_recalc(DrawMolItem::SEL_REGEN | DrawMolItem::COL_REGEN);
   delete [] flgs;
   Py_INCREF(Py_None);
   return Py_None;
@@ -368,11 +368,11 @@ static char getbonds_doc[] = "getbonds(molid, tuple) -> bondlists\nReturn list o
 static PyObject *getbonds(PyObject *self, PyObject *args) {
   int molid;
   PyObject *atomlist;
-   
-  if (!PyArg_ParseTuple(args, (char *)"iO!:getbonds", &molid, 
-                        &PyTuple_Type, &atomlist)) 
+
+  if (!PyArg_ParseTuple(args, (char *)"iO!:getbonds", &molid,
+                        &PyTuple_Type, &atomlist))
     return NULL;  // bad args
- 
+
   Molecule *mol = get_vmdapp()->moleculeList->mol_from_id(molid);
   if (!mol) {
     PyErr_SetString(PyExc_ValueError, "molecule no longer exists");
@@ -414,12 +414,12 @@ static PyObject *getbonds(PyObject *self, PyObject *args) {
 static char setbonds_doc[] = "setbonds(molid, tuple, bondlist) -> None\nSet bonds for each atom in tuple using bondlist.";
 static PyObject *setbonds(PyObject *self, PyObject *args) {
   int molid;
-  PyObject *atomlist, *bondlist; 
+  PyObject *atomlist, *bondlist;
 
-  if (!PyArg_ParseTuple(args, (char *)"iO!O!:setbonds", &molid, 
-                        &PyTuple_Type, &atomlist, &PyList_Type, &bondlist)) 
+  if (!PyArg_ParseTuple(args, (char *)"iO!O!:setbonds", &molid,
+                        &PyTuple_Type, &atomlist, &PyList_Type, &bondlist))
     return NULL;  // bad args
- 
+
   Molecule *mol = get_vmdapp()->moleculeList->mol_from_id(molid);
   if (!mol) {
     PyErr_SetString(PyExc_ValueError, "molecule no longer exists");
@@ -428,7 +428,7 @@ static PyObject *setbonds(PyObject *self, PyObject *args) {
   int num_atoms = mol->nAtoms;
   int num_selected = PyTuple_Size(atomlist);
   if (PyList_Size(bondlist) != num_selected) {
-    PyErr_SetString(PyExc_ValueError, 
+    PyErr_SetString(PyExc_ValueError,
       (char *)"setbonds: atomlist and bondlist must have the same size");
     return NULL;
   }
@@ -447,10 +447,10 @@ static PyObject *setbonds(PyObject *self, PyObject *args) {
       return NULL;
     }
     MolAtom *atom = mol->atom(id);
-   
+
     PyObject *atomids = PyList_GET_ITEM(bondlist, i);
     if (!PyList_Check(atomids)) {
-      PyErr_SetString(PyExc_TypeError, 
+      PyErr_SetString(PyExc_TypeError,
         (char *)"bondlist must contain lists");
       return NULL;
     }
@@ -543,7 +543,7 @@ static PyObject *delmacro(PyObject *self, PyObject *args) {
   Py_INCREF(Py_None);
   return Py_None;
 }
-      
+
 static AtomSel *sel_from_py(int molid, int frame, PyObject *selected, VMDApp *app) {
   Molecule *mol = app->moleculeList->mol_from_id(molid);
   if (!mol) {
@@ -619,14 +619,14 @@ static PyObject *minmax(PyObject *self, PyObject *args) {
   int molid, frame;
   PyObject *selected;
 
-  if (!PyArg_ParseTuple(args, (char *)"iiO!", 
+  if (!PyArg_ParseTuple(args, (char *)"iiO!",
                         &molid, &frame, &PyTuple_Type, &selected))
     return NULL;  // bad args
 
   VMDApp *app = get_vmdapp();
   AtomSel *sel = sel_from_py(molid, frame, selected, app);
   if (!sel) return NULL;
-  const Timestep *ts = app->moleculeList->mol_from_id(molid)->get_frame(frame); 
+  const Timestep *ts = app->moleculeList->mol_from_id(molid)->get_frame(frame);
   if (!ts) {
     PyErr_SetString(PyExc_ValueError, "No coordinates in selection");
     delete sel;
@@ -714,7 +714,7 @@ static PyObject *py_align(PyObject *self, PyObject *args) {
   const float *selts, *refts;
   float *movets;
   if (!(selts = sel->coordinates(app->moleculeList)) ||
-      !(refts = ref->coordinates(app->moleculeList)) || 
+      !(refts = ref->coordinates(app->moleculeList)) ||
       !(movets = move->coordinates(app->moleculeList))) {
     delete sel;
     delete ref;
@@ -772,8 +772,8 @@ static PyObject *py_rmsd(PyObject *self, PyObject *args) {
     delete sel2;
     return NULL;
   }
-  const Timestep *ts1 =app->moleculeList->mol_from_id(mol1)->get_frame(frame1); 
-  const Timestep *ts2 =app->moleculeList->mol_from_id(mol2)->get_frame(frame2); 
+  const Timestep *ts1 =app->moleculeList->mol_from_id(mol1)->get_frame(frame1);
+  const Timestep *ts2 =app->moleculeList->mol_from_id(mol2)->get_frame(frame2);
   if (!ts1 || !ts2) {
     PyErr_SetString(PyExc_ValueError, "No coordinates in selection");
     delete sel1;
@@ -799,10 +799,10 @@ static PyObject *py_rmsd(PyObject *self, PyObject *args) {
   return PyFloat_FromDouble(rmsd);
 }
 
-// Find all atoms p in sel1 and q in sel2 within the cutoff.  
+// Find all atoms p in sel1 and q in sel2 within the cutoff.
 static char contacts_doc[] = "contacts(mol1, frame1, tuple1, mol2, frame2, tuple2, cutoff) -> contact pairs\nReturn pairs of atoms, one from each selection, within cutoff of each other.";
 static PyObject *contacts(PyObject *self, PyObject *args) {
-  
+
   int mol1, frame1, mol2, frame2;
   PyObject *selected1, *selected2;
   float cutoff;
@@ -845,7 +845,7 @@ static PyObject *contacts(PyObject *self, PyObject *args) {
     // throw out pairs that are already bonded
     MolAtom *a1 = mol->atom(p->ind1);
     if (mol1 != mol2 || !a1->bonded(p->ind2)) {
-      // Needed to avoid a memory leak. Append increments the refcount 
+      // Needed to avoid a memory leak. Append increments the refcount
       // of whatever gets added to it, but so does PyLong_FromLong.
       // Without a decref, the integers created never have their refcount
       //  go to zero, and you leak memory.
@@ -884,9 +884,9 @@ static PyObject *sasa(PyObject *self, PyObject *args, PyObject *keywds) {
     (char *)"srad", (char *)"molid", (char *)"frame", (char *)"selected",
     (char *)"samples", (char *)"points", (char *)"restrict"
   };
-  if (!PyArg_ParseTupleAndKeywords(args, keywds, 
-        (char *)"fiiO!|iO!O!:atomselection.sasa", kwlist, 
-        &srad, &molid, &frame, &PyTuple_Type, &selobj, 
+  if (!PyArg_ParseTupleAndKeywords(args, keywds,
+        (char *)"fiiO!|iO!O!:atomselection.sasa", kwlist,
+        &srad, &molid, &frame, &PyTuple_Type, &selobj,
         &samples, &PyList_Type, &pointsobj, &PyTuple_Type, &restrictobj))
     return NULL;
 
@@ -902,7 +902,7 @@ static PyObject *sasa(PyObject *self, PyObject *args, PyObject *keywds) {
   if (!sel) return NULL;
 
   // fetch the radii and coordinates
-  const float *radii = 
+  const float *radii =
     app->moleculeList->mol_from_id(sel->molid())->extraflt.data("radius");
   const float *coords = sel->coordinates(app->moleculeList);
 
@@ -921,10 +921,10 @@ static PyObject *sasa(PyObject *self, PyObject *args, PyObject *keywds) {
   // if points are requested, fetch them
   ResizeArray<float> sasapts;
   ResizeArray<float> *sasaptsptr = pointsobj ? &sasapts : NULL;
- 
+
   // go!
   float sasa = 0;
-  int rc = measure_sasa(sel, coords, radii, srad, &sasa, 
+  int rc = measure_sasa(sel, coords, radii, srad, &sasa,
         sasaptsptr, restrictsel, sampleptr);
   delete sel;
   delete restrictsel;
@@ -968,7 +968,7 @@ static struct PyModuleDef atomselectiondef = {
     NULL,
     -1, // global state, no sub-interpreters
     AtomselectionMethods,
-    NULL, 
+    NULL,
     NULL, // m_traverse gc traversal
     NULL, // m_clear gc clear
     NULL  // m_free gc free
@@ -984,5 +984,5 @@ void initatomselection(void) {
 #endif
 
 
-  
-  
+
+

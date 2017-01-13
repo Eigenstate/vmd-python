@@ -123,7 +123,7 @@ static PyObject *add(PyObject *self, PyObject *args) {
     return NULL;
   }
 #if PY_MAJOR_VERSION >= 3
-  return PyBytes_FromString((char *)result);
+  return PyUnicode_FromString((char *)result);
 #else
   return PyString_FromString((char *)result);
 #endif

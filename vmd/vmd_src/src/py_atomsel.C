@@ -145,7 +145,8 @@ static PyObject *atomsel_get(PyAtomSelObject *a, PyObject *keyobj) {
   if (!(mol = get_molecule(a))) return NULL;
 
 #if PY_MAJOR_VERSION >= 3
-  const char *attr = PyBytes_AsString(keyobj);
+  const char *attr = PyUnicode_AsUTF8(keyobj);
+  //const char *attr = PyUnicode_AsUTF8(keyobj);//PyBytes_AsString(keyobj);
 #else
   const char *attr = PyString_AsString(keyobj);
 #endif
@@ -199,7 +200,7 @@ static PyObject *atomsel_get(PyAtomSelObject *a, PyObject *keyobj) {
         for (int i=0; i<num_atoms; i++) {
           if (flgs[i]) {
 #if PY_MAJOR_VERSION >= 3
-            PyList_SET_ITEM(newlist, j++, PyBytes_FromString(tmp[i]));
+            PyList_SET_ITEM(newlist, j++, PyUnicode_FromString(tmp[i]));
 #else
             PyList_SET_ITEM(newlist, j++, PyString_FromString(tmp[i]));
 #endif
@@ -616,7 +617,7 @@ static PyObject *macro(PyObject *self, PyObject *args, PyObject *keywds) {
       const char *s = table->custom_singleword_name(i);
       if (s && strlen(s))
 #if PY_MAJOR_VERSION >= 3
-        PyList_Append(macrolist, PyBytes_FromString(s));
+        PyList_Append(macrolist, PyUnicode_FromString(s));
 #else
         PyList_Append(macrolist, PyString_FromString(s));
 #endif
@@ -631,7 +632,7 @@ static PyObject *macro(PyObject *self, PyObject *args, PyObject *keywds) {
       return NULL;
     }
 #if PY_MAJOR_VERSION >= 3
-    return PyBytes_FromString(s);
+    return PyUnicode_FromString(s);
 #else
     return PyString_FromString(s);
 #endif
@@ -702,7 +703,7 @@ static PyObject *funcname(PyObject *self) { \
   int i, n = table->fctns.num(); \
   for (i=0; i<n; i++) \
     if (table->fctns.data(i)->is_a == elemtype) \
-      PyList_Append(result, PyBytes_FromString(table->fctns.name(i))); \
+      PyList_Append(result, PyUnicode_FromString(table->fctns.name(i))); \
   return result; \
 }
 #else

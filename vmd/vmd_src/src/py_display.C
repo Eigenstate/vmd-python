@@ -230,7 +230,7 @@ static PyObject *stereomodes(PyObject *self, PyObject *args) {
   PyObject *newlist = PyList_New(num);
   for (int j=0; j<num; j++)
 #if PY_MAJOR_VERSION >= 3
-    PyList_SET_ITEM(newlist, j, PyBytes_FromString(disp->stereo_name(j)));
+    PyList_SET_ITEM(newlist, j, PyUnicode_FromString(disp->stereo_name(j)));
 #else
     PyList_SET_ITEM(newlist, j, PyString_FromString(disp->stereo_name(j)));
 #endif

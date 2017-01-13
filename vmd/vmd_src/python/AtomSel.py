@@ -23,7 +23,7 @@ except:
 else:
   warnings.warn(_deprecation_warning, DeprecationWarning)
 
-import atomselection, molecule
+from vmd import atomselection, molecule
 
 def macro(*args, **keywds):
   return apply(atomselection.macro, args, keywds)

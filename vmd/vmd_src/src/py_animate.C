@@ -71,7 +71,7 @@ static PyObject *style(PyObject *self, PyObject *args) {
     return NULL;
 
   int stylenum = get_vmdapp()->anim->anim_style();
-  return PyBytes_FromString(animationStyleName[stylenum]);
+  return PyUnicode_FromString(animationStyleName[stylenum]);
 }
 
 // goto(frame)

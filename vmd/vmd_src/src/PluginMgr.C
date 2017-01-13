@@ -15,13 +15,13 @@
  *
  ***************************************************************************
  * DESCRIPTION:
- *  Plugin manager code, loads and registers static and dynamic 
+ *  Plugin manager code, loads and registers static and dynamic
  *  plugins, does version checks, etc.
- * 
+ *
  * LICENSE:
  *   UIUC Open Source License
  *   http://www.ks.uiuc.edu/Research/vmd/plugins/pluginlicense.html
- * 
+ *
  ***************************************************************************/
 
 #include "PluginMgr.h"
@@ -42,8 +42,8 @@ extern "C" {
 
 // return true of a plugin is the same or older than ones we already have
 static int plugincmp(const vmdplugin_t *newp, const vmdplugin_t *oldp) {
-  int issameorolder = 
-         !strcmp(newp->type, oldp->type) && 
+  int issameorolder =
+         !strcmp(newp->type, oldp->type) &&
          !strcmp(newp->name, oldp->name) &&
          (newp->majorv <= oldp->majorv) &&           // only load new ones
          ((newp->majorv < oldp->majorv) ||           // only load new ones
@@ -115,48 +115,48 @@ int PluginMgr::register_cb(void *v, vmdplugin_t *plugin) {
   self->pluginlist.append(plugin);
   return 0;
 }
- 
+
 int PluginMgr::load_sharedlibrary_plugins(const char *fullpath) {
   // Open the dll; try to execute the init function.
   void *handle = vmddlopen(fullpath);
   if (!handle) {
     msgWarn << "Unable to open dynamic library '" << fullpath << "'." << sendmsg;
-    msgWarn << vmddlerror() << sendmsg; 
+    msgWarn << vmddlerror() << sendmsg;
     return -1;
   }
 
   if (handlelist.find(handle) >= 0) {
-    msgWarn << "Already have a handle to the shared library " 
+    msgWarn << "Already have a handle to the shared library "
             << fullpath << "." << sendmsg;
     return 0;
   }
 
   void *ifunc = vmddlsym(handle, "vmdplugin_init");
   if (ifunc && ((initfunc)(ifunc))()) {
-    msgWarn << "vmdplugin_init() for " << fullpath 
+    msgWarn << "vmdplugin_init() for " << fullpath
             << " returned an error; plugin(s) not loaded." << sendmsg;
     vmddlclose(handle);
     return 0;
   }
   handlelist.append(handle);
-   
+
   void *registerfunc = vmddlsym(handle, "vmdplugin_register");
   num_in_library = 0;
   curpath = fullpath;
   if (!registerfunc) {
-    msgWarn << "Didn't find the register function in" << fullpath 
+    msgWarn << "Didn't find the register function in" << fullpath
             << "; plugin(s) not loaded." << sendmsg;
   } else {
     // Load plugins from the library.
     ((regfunc)registerfunc)(this, register_cb);
-  } 
+  }
   return num_in_library;
 }
 
 int PluginMgr::plugins(PluginList &pl, const char *type, const char *name) {
   int nfound = 0;
   for (int i=0; i<pluginlist.num(); i++) {
-    vmdplugin_t *p = pluginlist[i]; 
+    vmdplugin_t *p = pluginlist[i];
     if (type && strcmp(p->type, type)) continue;
     if (name && strcmp(p->name, name)) continue;
     pl.append(p);
@@ -186,5 +186,5 @@ int main(int argc, char *argv[]) {
   delete mgr;
   return 0;
 }
-  
+
 #endif

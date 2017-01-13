@@ -16,9 +16,9 @@
  ***************************************************************************
  * DESCRIPTION:
  *
- * vmd console redirector 
+ * vmd console redirector
  * (c) 2006-2009 Axel Kohlmeyer <akohlmey@cmm.chem.upenn.edu>
- * 
+ *
  ***************************************************************************/
 
 /* common definitions for the vmdconsole plugin */
@@ -87,7 +87,7 @@ extern int vmdcon_fputs(const int lvl, const char *text);
 
 /* insert text into an existing text widget.
  * returns NULL on success, or an error message on failure. */
-extern const char *tcl_vmdcon_insert(void *interp, const char *w_path, 
+extern const char *tcl_vmdcon_insert(void *interp, const char *w_path,
                                      const char *mark, const char *text);
 
 /* synchronize tcl variable for vmdcon status */

@@ -21,8 +21,8 @@ class Material:
 	def __init__(self, name, **keywds):
 		""" Create a reference to a material used in VMD.  If the named material
 		doesn't exist, a new one will be created with the default properties.
-		Pass keyword arguments to set the properties of the newly created 
-		or referenced material.  
+		Pass keyword arguments to set the properties of the newly created
+		or referenced material.
 		"""
 		try:
 			material.add(name)
@@ -30,7 +30,7 @@ class Material:
 			pass
 		self.__dict__["name"] = name
 		apply(material.change, (self.name,), keywds)
-	
+
 	def rename(self, newname):
 		""" Rename this material.  The name cannot already exist. """
 		material.rename(self.name, newname)
