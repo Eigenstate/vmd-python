@@ -174,7 +174,7 @@ setup(name='vmd-python',
       extras_require = { 'hoomdplugin': ["expat"] },
 
       packages=['vmd'],
-      package_data = { 'vmd' : ['vmd.so']},
+      package_data = { 'vmd' : ['libvmd.so']},
       cmdclass={
           'build': VMDBuild,
           'test': VMDTest,

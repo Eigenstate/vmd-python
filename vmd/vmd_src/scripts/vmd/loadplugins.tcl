@@ -76,8 +76,6 @@ proc vmd_plugin_scandirectory { dir pattern } {
   }
   if { $num } {
     plugin update
-    puts "Info) Dynamically loaded $num plugins in directory:"
-    puts "Info) $dir"
   }
   return
 }

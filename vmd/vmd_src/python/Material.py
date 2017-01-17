@@ -15,7 +15,7 @@
 #
 ############################################################################
 
-from VMD import material
+from vmd import material
 
 class Material:
 	def __init__(self, name, **keywds):

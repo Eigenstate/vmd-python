@@ -381,7 +381,7 @@ $config_progname = "vmd_${config_arch}";
 
 # Tcl and Python expects shared libraries to be named like this.
 if ($config_shared) {
-  $config_progname = "vmd.so";
+  $config_progname = "libvmd.so";
 }
 
 
@@ -3271,8 +3271,8 @@ install:
 	(cd "$install_library_dir" ; \$(TAR) -xf -)
 	-\$(CD) $vmd_library_dir; \$(TAR) -cf - scripts | \\
 	(cd "$install_library_dir" ; \$(TAR) -xf -)
-	-\$(CD) ..; \$(TAR) -cf - python | \\
-	(cd "$install_library_dir"/scripts ; \$(TAR) -xf -)
+	-\$(CD) ../python; \$(TAR) -cf - * | \\
+	(cd "$install_library_dir" ; \$(TAR) -xf -)
 	-\$(CD) ..; \$(TAR) -cf - plugins | \\
 	(cd "$install_library_dir" ; \$(TAR) -xf -)
 	-\$(CD) ..; \$(TAR) -cf - shaders | \\

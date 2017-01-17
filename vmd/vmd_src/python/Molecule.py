@@ -25,7 +25,6 @@
  ***************************************************************************/
 """
 
-import VMD
 from vmd import molecule, molrep
 
 class Molecule:

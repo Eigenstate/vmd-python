@@ -37,7 +37,7 @@ cd $vmd_src/vmd_src
 $vmd_src/vmd_src/configure
 cd $vmd_src/vmd_src/src
 make veryclean
-make vmd.so
+make libvmd.so
 make install
 
 # Clean up built files in src dir

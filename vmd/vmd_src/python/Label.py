@@ -15,13 +15,13 @@
 #
 ############################################################################
 
-from VMD import label
+from vmd import label
 
 class VMDLabel:
 	""" VMDLabel represents the state of a label in VMD.  This class should
 	not be instantiated directly; use one of the four base classes instead.
 	The on/off status is reflected in the 'on' attribute; the value of the
-	label (for all but AtomLabel instances, which have no value) is 
+	label (for all but AtomLabel instances, which have no value) is
 	reflected in the 'value' attribute.  Call the update() method to ensure
 	that 'on' and 'value' are current."""
 	def __init__(self, type, molid, atomid):
@@ -48,7 +48,7 @@ class VMDLabel:
 			raise ValueError("Label has been deleted.")
 
 	def delete(self):
-		""" Deletes this labe. """ 
+		""" Deletes this labe. """
 		try:
 			label.delete(self.type, self.__dict__)
 		except ValueError:
@@ -78,7 +78,7 @@ class DihedralLabel(VMDLabel):
 		VMDLabel.__init__(self, "Dihedrals", (m1, m2, m3, m4), (a1, a2, a3, a4))
 
 """
-The following functions return a list of VMDLabel subclass instances 
+The following functions return a list of VMDLabel subclass instances
 corresponding to the existing labels in VMD.
 """
 def atomLabels():
@@ -107,6 +107,6 @@ if __name__=="__main__":
 	b2=BondLabel(m, m, 9, 15)
 	for i in range(10):
 		AtomLabel(m,i)
-	
+
 	print(atomLabels())
 	print(bondLabels())
