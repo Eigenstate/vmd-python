@@ -69,3 +69,6 @@ def evaltcl(args):
   return VMDevaltcl(args)
 
 #==============================================================================
+
+vmd.evaltcl = evaltcl
+
