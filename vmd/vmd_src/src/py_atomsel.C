@@ -146,7 +146,6 @@ static PyObject *atomsel_get(PyAtomSelObject *a, PyObject *keyobj) {
 
 #if PY_MAJOR_VERSION >= 3
   const char *attr = PyUnicode_AsUTF8(keyobj);
-  //const char *attr = PyUnicode_AsUTF8(keyobj);//PyBytes_AsString(keyobj);
 #else
   const char *attr = PyString_AsString(keyobj);
 #endif
@@ -291,7 +290,7 @@ static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
   PyObject *fastval = NULL;
   int nvals = 1;
 #if PY_MAJOR_VERSION >= 3
-  if (PySequence_Check(val) && !PyBytes_Check(val)) {
+  if (PySequence_Check(val) && !PyUnicode_Check(val)) {
 #else
   if (PySequence_Check(val) && !PyString_Check(val)) {
 #endif
@@ -366,7 +365,7 @@ static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
       for (int i=0; i<num_atoms; i++) {
         if (!flgs[i]) continue;
 #if PY_MAJOR_VERSION >= 3
-        const char *sval = PyBytes_AsString(PySequence_Fast_GET_ITEM(fastval, j++));
+        const char *sval = PyUnicode_AsUTF8(PySequence_Fast_GET_ITEM(fastval, j++));
 #else
         const char *sval = PyString_AsString(PySequence_Fast_GET_ITEM(fastval, j++));
 #endif
@@ -374,7 +373,7 @@ static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
       }
     } else {
 #if PY_MAJOR_VERSION >= 3
-      const char *sval = PyBytes_AsString(val);
+      const char *sval = PyUnicode_AsUTF8(val);
 #else
       const char *sval = PyString_AsString(val);
 #endif

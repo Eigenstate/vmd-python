@@ -329,7 +329,7 @@ static PyObject *set(PyObject *self, PyObject *args) {
       for (int i=0; i<num_atoms; i++) {
         if (flgs[i])
 #if PY_MAJOR_VERSION >= 3
-          list[i] = PyBytes_AsString(PyTuple_GET_ITEM(val, j++));
+          list[i] = PyUnicode_AsUTF8(PyTuple_GET_ITEM(val, j++));
 #else
           list[i] = PyString_AsString(PyTuple_GET_ITEM(val, j++));
 #endif
@@ -338,7 +338,7 @@ static PyObject *set(PyObject *self, PyObject *args) {
       for (int i=0; i<num_atoms; i++) {
         if (flgs[i])
 #if PY_MAJOR_VERSION >= 3
-          list[i] = PyBytes_AsString(PyTuple_GET_ITEM(val, 0));
+          list[i] = PyUnicode_AsUTF8(PyTuple_GET_ITEM(val, 0));
 #else
           list[i] = PyString_AsString(PyTuple_GET_ITEM(val, 0));
 #endif

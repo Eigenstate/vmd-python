@@ -279,8 +279,8 @@ static PyObject *graphics_color(PyObject *self, PyObject *args) {
       result = mol->use_color(index);
 
 #if PY_MAJOR_VERSION >= 3
-  } else if (PyBytes_Check(obj)) {
-    char *name = PyBytes_AsString(obj);
+  } else if (PyUnicode_Check(obj)) {
+    char *name = PyUnicode_AsUTF8(obj);
 #else
   } else if (PyString_Check(obj)) {
     char *name = PyString_AsString(obj);
@@ -423,8 +423,8 @@ static PyObject *graphics_delete(PyObject *self, PyObject *args) {
   if (PyLong_Check(obj)) {
     int index = PyLong_AsLong(obj);
     mol->delete_id(index);
-  } else if (PyBytes_Check(obj)) {
-    char *s = PyBytes_AsString(obj);
+  } else if (PyUnicode_Check(obj)) {
+    char *s = PyUnicode_AsUTF8(obj);
 #else
   if (PyInt_Check(obj)) {
     int index = PyInt_AsLong(obj);

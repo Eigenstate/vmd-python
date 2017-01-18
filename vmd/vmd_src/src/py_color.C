@@ -82,7 +82,7 @@ static PyObject *set_colormap(PyObject *self, PyObject *args) {
   int error = 0;
   for (int i=0; i<PyList_Size(keys); i++) {
 #if PY_MAJOR_VERSION >= 3
-    char *keyname = PyBytes_AsString(PyList_GET_ITEM(keys, i));
+    char *keyname = PyUnicode_AsUTF8(PyList_GET_ITEM(keys, i));
 #else
     char *keyname = PyString_AsString(PyList_GET_ITEM(keys, i));
 #endif
@@ -91,7 +91,7 @@ static PyObject *set_colormap(PyObject *self, PyObject *args) {
       break;
     }
 #if PY_MAJOR_VERSION >= 3
-    char *valname = PyBytes_AsString(PyList_GET_ITEM(vals, i));
+    char *valname = PyUnicode_AsUTF8(PyList_GET_ITEM(vals, i));
 #else
     char *valname = PyString_AsString(PyList_GET_ITEM(vals, i));
 #endif
@@ -179,7 +179,7 @@ static PyObject *set_colors(PyObject *self, PyObject *args) {
   int error = 0;
   for (int i=0; i<PyList_Size(keys); i++) {
 #if PY_MAJOR_VERSION >= 3
-    char *keyname = PyBytes_AsString(PyList_GET_ITEM(keys, i));
+    char *keyname = PyUnicode_AsUTF8(PyList_GET_ITEM(keys, i));
 #else
     char *keyname = PyString_AsString(PyList_GET_ITEM(keys, i));
 #endif
