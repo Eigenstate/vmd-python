@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Molecule.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.61 $	$Date: 2010/12/16 04:08:24 $
+ *	$Revision: 1.63 $	$Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -38,7 +38,7 @@ class Molecule : public DrawMolecule {
 
 private:
   ResizeArray<char *> fileList;       ///< files loaded into this molecule
-  ResizeArray<char *> fileSpecList;  ///< file loading options used
+  ResizeArray<char *> fileSpecList;   ///< file loading options used
   ResizeArray<char *> typeList;       ///< file types loaded into this molecule
   ResizeArray<char *> dbList;         ///< database each file came from
   ResizeArray<char *> accessionList;  ///< database access code for each file

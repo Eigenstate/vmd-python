@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Vrml2DisplayDevice.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.42 $	$Date: 2013/04/17 03:57:43 $
+ *	$Revision: 1.44 $	$Date: 2016/11/28 04:03:27 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -58,13 +58,14 @@ void Vrml2DisplayDevice::set_color(int mycolorIndex) {
 void Vrml2DisplayDevice::text(float *pos, float size, float thickness,
                               const char *str) {
   float textpos[3];
-  float textsize, textthickness;
   hersheyhandle hh;
 
   // transform the world coordinates
   (transMat.top()).multpoint3d(pos, textpos);
-  textsize = size * 1.5f;
-  textthickness = thickness*DEFAULT_RADIUS;
+  float textsize = size * 1.5f;
+  //  XXX text thickness not usable with VRML2 since we don't have a line
+  //      thickness parameter when drawing indexed line sets, apparently...
+  //  float textthickness = thickness*DEFAULT_RADIUS;
 
   while (*str != '\0') {
     float lm, rm, x, y, ox, oy;

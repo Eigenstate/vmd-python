@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: VolumeTexture.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.17 $      $Date: 2013/12/14 07:04:51 $
+ *      $Revision: 1.20 $      $Date: 2016/11/28 03:05:06 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -56,12 +56,12 @@ int VolumeTexture::allocateTextureMap(int npixels) {
     vmd_dealloc(texmap);
     texmap = NULL;
   }
-  texmap = (unsigned char *) vmd_alloc(npixels*3*sizeof(unsigned char));
+  texmap = (unsigned char *) vmd_alloc(npixels*3L*sizeof(unsigned char));
   if (texmap == NULL) {
     msgErr << "Texture map allocation failed, out of memory?" << sendmsg;
     return FALSE;
   }
-  memset(texmap, 0, npixels*3*sizeof(unsigned char));
+  memset(texmap, 0, npixels*3L*sizeof(unsigned char));
   texid = VMDApp::get_texserialnum();
   return TRUE;
 }
@@ -70,8 +70,8 @@ void VolumeTexture::generatePosTexture() {
   // nice small texture that will work everywhere
   size[0] = size[1] = size[2] = 32; 
   int x, y, z;
-  int addr, addr2;
-  int num = size[0]*size[1]*size[2];
+  long addr, addr2;
+  long num = size[0]*size[1]*size[2];
 
   if (!allocateTextureMap(num)) return;
 
@@ -79,7 +79,7 @@ void VolumeTexture::generatePosTexture() {
     for (y=0; y<size[1]; y++) {
       addr = z * size[0] * size[1] + y * size[0];
       for (x=0; x<size[0]; x++) {
-        addr2 = (addr + x) * 3;
+        addr2 = (addr + x) * 3L;
         texmap[addr2    ] = (unsigned char) (((float) x / (float) size[0]) * 255.0f);
         texmap[addr2 + 1] = (unsigned char) (((float) y / (float) size[1]) * 255.0f);
         texmap[addr2 + 2] = (unsigned char) (((float) z / (float) size[2]) * 255.0f);
@@ -127,8 +127,8 @@ void VolumeTexture::generateIndexTexture() {
   // nice small texture that will work everywhere
   size[0] = size[1] = size[2] = 32; 
   int x, y, z;
-  int addr, addr2, addr3, index;
-  int num = size[0]*size[1]*size[2];
+  long addr, addr2, addr3, index;
+  long num = size[0]*size[1]*size[2];
   unsigned char coltable[3 * 4096];
 
   if (!allocateTextureMap(num)) return;
@@ -160,8 +160,8 @@ void VolumeTexture::generateChargeTexture(float vmin, float vmax) {
   if (!v) return;
 
   int x, y, z;
-  int addr, addr2;
-  int daddr;
+  long addr, addr2;
+  long daddr;
   float vscale, vrange;
 
   size[0] = v->xsize;
@@ -170,7 +170,7 @@ void VolumeTexture::generateChargeTexture(float vmin, float vmax) {
   for (int i=0; i<3; i++) {
     size[i] = nextpower2(size[i]);
   }
-  int num = size[0]*size[1]*size[2];
+  long num = size[0]*size[1]*size[2];
   if (!allocateTextureMap(num)) return;
 
   vrange = vmax - vmin;
@@ -212,8 +212,8 @@ void VolumeTexture::generateChargeTexture(float vmin, float vmax) {
 
 void VolumeTexture::generateHSVTexture(float vmin, float vmax) {
   int x, y, z;
-  int index, addr, addr2, addr3;
-  int daddr;
+  long index, addr, addr2, addr3;
+  long daddr;
   float vscale, vrange;
   unsigned char coltable[3 * 4096];
 
@@ -223,7 +223,7 @@ void VolumeTexture::generateHSVTexture(float vmin, float vmax) {
   for (int i=0; i<3; i++) {
     size[i] = nextpower2(size[i]);
   }
-  int num = size[0]*size[1]*size[2];
+  long num = size[0]*size[1]*size[2];
   if (!allocateTextureMap(num)) return;
 
   // build a fast color lookup table
@@ -273,8 +273,8 @@ void VolumeTexture::generateHSVTexture(float vmin, float vmax) {
 void VolumeTexture::generateColorScaleTexture(float vmin, float vmax, const Scene *scene) {
 
   int x, y, z;
-  int addr, addr2;
-  int daddr;
+  long addr, addr2;
+  long daddr;
   float vscale, vrange;
 
   size[0] = v->xsize;
@@ -283,7 +283,7 @@ void VolumeTexture::generateColorScaleTexture(float vmin, float vmax, const Scen
   for (int i=0; i<3; i++) {
     size[i] = nextpower2(size[i]);
   }
-  int num = size[0]*size[1]*size[2];
+  long num = size[0]*size[1]*size[2];
   if (!allocateTextureMap(num)) return;
 
   vrange = vmax - vmin;
@@ -328,7 +328,7 @@ void VolumeTexture::generateColorScaleTexture(float vmin, float vmax, const Scen
 
 void VolumeTexture::generateContourLineTexture(float densityperline, float linewidth) {
   int x, y, z;
-  int addr, addr2;
+  long addr, addr2;
   float xp, yp, zp;
 
 printf("Contour lines...\n");
@@ -337,7 +337,7 @@ printf("range / densityperline: %f\n", log(v->datamax - v->datamin) / densityper
   size[0] = nextpower2(v->xsize*2);
   size[1] = nextpower2(v->ysize*2);
   size[2] = nextpower2(v->zsize*2);
-  int num = size[0]*size[1]*size[2];
+  long num = size[0]*size[1]*size[2];
   if (!allocateTextureMap(num)) return;
 
   // map volume data scalars to contour line colors

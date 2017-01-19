@@ -8,5 +8,5 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded viewchangerender 1.7 [list source [file join $dir vcr.tcl]]
-package ifneeded viewchangerender_gui 1.7 [list source [file join $dir vcr_gui.tcl]]
+package ifneeded viewchangerender 1.8 [list source [file join $dir vcr.tcl]]
+package ifneeded viewchangerender_gui 1.8 [list source [file join $dir vcr_gui.tcl]]

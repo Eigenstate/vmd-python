@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: Benchmark.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.6 $      $Date: 2010/12/16 04:08:05 $
+ *      $Revision: 1.8 $      $Date: 2016/11/28 03:04:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -77,7 +77,7 @@ VECTORIZEME
   for (j=0; j<N; j++)
     a[j] = b[j];
 
-  *mbsize = (2 * sizeof(double) * N) / (1024.0 * 1024.0);
+  *mbsize = (2L * sizeof(double) * N) / (1024.0 * 1024.0);
 }
 
 void dstream_scale(double * RESTRICT a, const double * RESTRICT b, 
@@ -87,7 +87,7 @@ VECTORIZEME
   for (j=0; j<N; j++)
     a[j] = scalar * b[j];
 
-  *mbsize = (2 * sizeof(double) * N) / (1024.0 * 1024.0);
+  *mbsize = (2L * sizeof(double) * N) / (1024.0 * 1024.0);
 }
 
 void dstream_add(double * RESTRICT a, const double * RESTRICT b, 
@@ -97,7 +97,7 @@ VECTORIZEME
   for (j=0; j<N; j++)
     a[j] = b[j] + c[j];
 
-  *mbsize = (3 * sizeof(double) * N) / (1024.0 * 1024.0);
+  *mbsize = (3L * sizeof(double) * N) / (1024.0 * 1024.0);
 }
 
 void dstream_triad(double * RESTRICT a, const double * RESTRICT b, 
@@ -108,7 +108,7 @@ VECTORIZEME
   for (j=0; j<N; j++)
     a[j] = b[j] + scalar * c[j];
 
-  *mbsize = (3 * sizeof(double) * N) / (1024.0 * 1024.0);
+  *mbsize = (3L * sizeof(double) * N) / (1024.0 * 1024.0);
 }
 
 
@@ -135,7 +135,7 @@ VECTORIZEME
   for (j=0; j<N; j++)
     a[j] = b[j];
 
-  *mbsize = (2 * sizeof(float) * N) / (1024.0 * 1024.0);
+  *mbsize = (2L * sizeof(float) * N) / (1024.0 * 1024.0);
 }
 
 void fstream_scale(float * RESTRICT a, const float * RESTRICT b, 
@@ -145,7 +145,7 @@ VECTORIZEME
   for (j=0; j<N; j++)
     a[j] = scalar * b[j];
 
-  *mbsize = (2 * sizeof(float) * N) / (1024.0 * 1024.0);
+  *mbsize = (2L * sizeof(float) * N) / (1024.0 * 1024.0);
 }
 
 void fstream_add(float * RESTRICT a, const float * RESTRICT b, 
@@ -155,7 +155,7 @@ VECTORIZEME
   for (j=0; j<N; j++)
     a[j] = b[j] + c[j];
 
-  *mbsize = (3 * sizeof(float) * N) / (1024.0 * 1024.0);
+  *mbsize = (3L * sizeof(float) * N) / (1024.0 * 1024.0);
 }
 
 void fstream_triad(float * RESTRICT a, const float * RESTRICT b, 
@@ -166,7 +166,7 @@ VECTORIZEME
   for (j=0; j<N; j++)
     a[j] = b[j] + scalar * c[j];
 
-  *mbsize = (3 * sizeof(float) * N) / (1024.0 * 1024.0);
+  *mbsize = (3L * sizeof(float) * N) / (1024.0 * 1024.0);
 }
 
 

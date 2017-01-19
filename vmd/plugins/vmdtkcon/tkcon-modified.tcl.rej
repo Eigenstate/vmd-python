@@ -1,0 +1,17 @@
+***************
+*** 231,237 ****
+              unalias which what tkcon_pwd 
+  	}
+  	version		2.3
+- 	RCS		{RCS: @(#) $Id: //depot/desrad/main/restricted/vmd/desres/plugins/vmdtkcon/tkcon-modified.tcl#2 $}
+  	HEADURL		{http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/tkcon/tkcon/tkcon.tcl?rev=HEAD}
+  	docs		"http://tkcon.sourceforge.net/"
+  	email		{jeff@hobbs.org}
+--- 231,237 ----
+              unalias which what tkcon_pwd 
+  	}
+  	version		2.3
++ 	RCS		{RCS: @(#) $Id: //depot/desrad/main/restricted/vmd/desres/plugins/vmdtkcon/tkcon-modified.tcl#3 $}
+  	HEADURL		{http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/tkcon/tkcon/tkcon.tcl?rev=HEAD}
+  	docs		"http://tkcon.sourceforge.net/"
+  	email		{jeff@hobbs.org}

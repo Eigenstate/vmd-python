@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: IMDSimThread.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.15 $       $Date: 2010/12/16 04:08:19 $
+ *      $Revision: 1.17 $       $Date: 2016/11/28 03:05:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -96,8 +96,8 @@ void IMDSimThread::process_coordinates(int32 length) {
   if (numcoords < length) { // Need to resize
     delete [] posbuf1;
     delete [] posbuf2;
-    posbuf1 = new float[3*length];
-    posbuf2 = new float[3*length];
+    posbuf1 = new float[3L*length];
+    posbuf2 = new float[3L*length];
     curbuf = posbuf1;
     curpos = posbuf2;  // should I lock?
   }
@@ -137,7 +137,7 @@ void IMDSimThread::process_energies(int32 /* length */) {
 // This should never happen, but I'll handle it in case it does
 void IMDSimThread::process_mdcomm(int32 length) {
   int32 *ind = new int32[length];
-  float *f = new float[3*length];
+  float *f = new float[3L*length];
   
   int errcode = imd_recv_mdcomm(sock, length, ind, f);
 
@@ -151,19 +151,19 @@ void IMDSimThread::process_mdcomm(int32 length) {
 
 void IMDSimThread::get_next_ts(float *pos, IMDEnergies *buf) {
   wkf_mutex_lock(&coordmutex);
-  memcpy(pos, curpos, 3*numcoords*sizeof(float));
+  memcpy(pos, curpos, 3L*numcoords*sizeof(float));
   memcpy(buf, &imdEnergies, sizeof(IMDEnergies));
   new_coords_ready = 0;
   wkf_mutex_unlock(&coordmutex);
   // swap outside of the mutex - yeah baby!
-  if (need2flip) swap4_aligned(pos, 3*numcoords);
+  if (need2flip) swap4_aligned(pos, 3L*numcoords);
 }
 
 void IMDSimThread::send_forces(int num, int *ind, float *forces) {
   // Total data sent will be one int and three floats for each atom 
   if (need2flip) {
     swap4_aligned(ind, num);
-    swap4_aligned(forces, 3*num);
+    swap4_aligned(forces, 3L*num);
   }
 
   wkf_mutex_lock(&sockmutex);   

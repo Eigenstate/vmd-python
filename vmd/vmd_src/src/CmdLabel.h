@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: CmdLabel.h,v $
  *      $Author: johns $        $Locker:  $                $State: Exp $
- *      $Revision: 1.38 $      $Date: 2011/02/01 18:59:11 $
+ *      $Revision: 1.39 $      $Date: 2016/11/28 03:04:58 $
  *
  ***************************************************************************
  * DESCRIPTION:

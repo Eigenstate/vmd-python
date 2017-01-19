@@ -1,6 +1,6 @@
 .SILENT:
 
-AUTOIMDFILES = autoimd.tcl autoimd-settings.tcl autoimd-api.tcl autoimd-gui.tcl pkgIndex.tcl autoimd-template.namd doc/ug.pdf namdrun.tcl
+AUTOIMDFILES = autoimd.tcl autoimd-settings.tcl autoimd-api.tcl autoimd-gui.tcl pkgIndex.tcl autoimd-template.namd namdrun.tcl
 AUTOIMDVERSION = 1.7
 DIR = $(PLUGINDIR)/noarch/tcl/autoimd$(AUTOIMDVERSION)
 

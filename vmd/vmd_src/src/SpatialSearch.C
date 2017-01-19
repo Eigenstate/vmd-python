@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -10,8 +10,8 @@
  * RCS INFORMATION:
  *
  *	$RCSfile: SpatialSearch.C,v $
- *	$Author: akohlmey $	$Locker:  $		$State: Exp $
- *	$Revision: 1.19 $	$Date: 2011/02/03 16:40:08 $
+ *	$Author: johns $	$Locker:  $		$State: Exp $
+ *	$Revision: 1.22 $	$Date: 2016/11/28 03:05:04 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -48,7 +48,7 @@ void find_minmax_all(const float *pos, int n, float *min, float *max) {
   if (n < 1) return;
 
   // initialize min/max to first 'on' atom, and advance the counter.
-  pos += 3*i;
+  pos += 3L*i;
   x1 = x2 = pos[0];
   y1 = y2 = pos[1];
   z1 = z2 = pos[2];
@@ -78,7 +78,7 @@ int find_minmax_selected(int n, const int *flgs, const float *pos,
   float xmin, xmax, ymin, ymax, zmin, zmax;
   for (i=0; i<n; i++) if (flgs[i]) break;
   if (i==n) return FALSE;
-  pos += 3*i;
+  pos += 3L*i;
   xmin=xmax=pos[0];
   ymin=ymax=pos[1];
   zmin=zmax=pos[2];
@@ -96,6 +96,13 @@ int find_minmax_selected(int n, const int *flgs, const float *pos,
     if (ymax<yi) ymax=yi;
     if (zmax<zi) zmax=zi;
   }
+
+  // check for cases where NaN coordinates propagated to min/max bounds
+  if (!(xmax >= xmin && ymax >= ymin && zmax >= zmin)) {
+    msgErr << "find_minmax_selected: NaN coordinates in bounds!" << sendmsg;
+    return FALSE;
+  }
+
   _xmin=xmin;
   _ymin=ymin;
   _zmin=zmin;
@@ -132,7 +139,7 @@ void find_minmax(const float *pos, int n, const int *on,
   }
 
   // initialize min/max to first 'on' atom, and advance the counter.
-  pos += 3*i;
+  pos += 3L*i;
   x1 = x2 = pos[0];
   y1 = y2 = pos[1];
   z1 = z2 = pos[2];
@@ -335,7 +342,7 @@ GridSearchPair *vmd_gridsearch1(const float *pos,int natoms, const int *on,
       int axb, ayb, azb, aindex, num;
 
       // compute box index for new atom
-      const float *loc = pos + 3*i;
+      const float *loc = pos + 3L*i;
       axb = (int)((loc[0] - min[0])*invpairdist);
       ayb = (int)((loc[1] - min[1])*invpairdist);
       azb = (int)((loc[2] - min[2])*invpairdist);
@@ -403,13 +410,13 @@ GridSearchPair *vmd_gridsearch1(const float *pos,int natoms, const int *on,
         int ind1 = tmpbox[i];
         if (!on[ind1]) 
           continue;
-        const float *p1 = pos + 3*ind1;
+        const float *p1 = pos + 3L*ind1;
         int startj = 0;
         if (aindex == *nbr) startj = i+1;
         for (j=startj; (j<numinbox[*nbr]) && (!maxpairsreached); j++) {
           int ind2 = nbrbox[j];
           if (on[ind2]) {
-            const float *p2 = pos + 3*ind2;
+            const float *p2 = pos + 3L*ind2;
             float ds2 = distance2(p1, p2);
 
             // ignore pairs between atoms with nearly identical coords
@@ -548,7 +555,7 @@ GridSearchPair *vmd_gridsearch2(const float *pos,int natoms,
       int axb, ayb, azb, aindex, num;
  
       // compute box index for new atom
-      const float *loc = pos + 3*i;
+      const float *loc = pos + 3L*i;
       axb = (int)((loc[0] - min[0])*invpairdist);
       ayb = (int)((loc[1] - min[1])*invpairdist);
       azb = (int)((loc[2] - min[2])*invpairdist);
@@ -609,7 +616,7 @@ GridSearchPair *vmd_gridsearch2(const float *pos,int natoms,
         const float *p1;
         int ind1, startj;
         ind1 = tmpbox[i];
-        p1 = pos + 3*ind1;
+        p1 = pos + 3L*ind1;
         startj = 0;
         if (aindex == *nbr) startj = i+1;
         for (j=startj; (j<numinbox[*nbr]) && (!maxpairsreached); j++) {
@@ -617,7 +624,7 @@ GridSearchPair *vmd_gridsearch2(const float *pos,int natoms,
           int ind2;
           ind2 = nbrbox[j];
           if ((A[ind1] && B[ind2]) || (A[ind2] && B[ind1])) {
-            p2 = pos + 3*ind2;
+            p2 = pos + 3L*ind2;
             if (distance2(p1,p2) > sqdist) continue;
 
             if (maxpairs > 0) {
@@ -770,7 +777,7 @@ GridSearchPair *vmd_gridsearch3(const float *posA, int natomsA, const int *A,
       int axb, ayb, azb, aindex, num;
 
       // compute box index for new atom
-      const float *loc = posA + 3*i;
+      const float *loc = posA + 3L*i;
       axb = (int)((loc[0] - min[0])*invpairdist);
       ayb = (int)((loc[1] - min[1])*invpairdist);
       azb = (int)((loc[2] - min[2])*invpairdist);
@@ -814,7 +821,7 @@ GridSearchPair *vmd_gridsearch3(const float *posA, int natomsA, const int *A,
       int axb, ayb, azb, aindex, num;
 
       // compute box index for new atom
-      const float *loc = posB + 3*i;
+      const float *loc = posB + 3L*i;
       axb = (int)((loc[0] - min[0])*invpairdist);
       ayb = (int)((loc[1] - min[1])*invpairdist);
       azb = (int)((loc[2] - min[2])*invpairdist);
@@ -882,11 +889,11 @@ GridSearchPair *vmd_gridsearch3(const float *posA, int natomsA, const int *A,
       for (i=0; (i<numinboxA[aindex]) && (!maxpairsreached); i++) {
         const float *p1;
         int ind1 = tmpbox[i];
-        p1 = posA + 3*ind1;
+        p1 = posA + 3L*ind1;
         for (j=0; (j<numinboxB[*nbr]) && (!maxpairsreached); j++) {  
           const float *p2;
           int ind2 = nbrboxB[j];
-          p2 = posB + 3*ind2;
+          p2 = posB + 3L*ind2;
           if (!allow_double_counting && B[ind1] && A[ind2] && ind2<=ind1) continue; //don't double-count bonds XXX
           if (distance2(p1,p2) > sqdist) continue;
 
@@ -1023,7 +1030,7 @@ void find_within(const float *xyz, int *flgs, const int *others,
   float izwidth = 1.0f/zwidth;
   for (i=0; i<num; i++) {
     if (!flgs[i] && !others[i]) continue;
-    pos=xyz+3*i;
+    pos=xyz+3L*i;
     float xi = pos[0];
     float yi = pos[1];
     float zi = pos[2];

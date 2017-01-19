@@ -4,7 +4,7 @@
 
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -15,7 +15,7 @@
  *
  *	$RCSfile: AtomLexer.l,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.52 $	$Date: 2011/03/12 19:27:37 $
+ *	$Revision: 1.53 $	$Date: 2016/11/28 03:04:58 $
  *
  ***************************************************************************
  * DESCRIPTION:

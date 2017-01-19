@@ -8,4 +8,4 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded torsionplot 1.0 "set env(TORPLOTDIR) {$dir}; [list source [file join $dir torsionplot.tcl]]"
+package ifneeded torsionplot 1.1 "set env(TORPLOTDIR) {$dir}; [list source [file join $dir torsionplot.tcl]]"

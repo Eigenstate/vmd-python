@@ -1,4 +1,4 @@
-<!--#set var="TITLE" value="TopoTools Plugin, Version 1.6"-->
+<!--#set var="TITLE" value="TopoTools Plugin, Version 1.7"-->
 <!--#include virtual="/include/header-over.shtml"-->
 
 <!-- CONTENT STARTS HERE -->
@@ -42,10 +42,11 @@
         <li class="goog-toc"><a href="#TOC-delimproper-id1-id2-id3-id4-"><strong>3.30 </strong>delimproper &lt;id1&gt; &lt;id2&gt; &lt;id3&gt; &lt;id4&gt;</a></li>
         <li class="goog-toc"><a href="#TOC-get-dihedral-improper-list"><strong>3.31 </strong>get(dihedral|improper)list</a></li>
         <li class="goog-toc"><a href="#TOC-set-dihedral-improper-list-list-"><strong>3.32 </strong>set(dihedral|improper)list &lt;list&gt;</a></li>
-        <li class="goog-toc"><a href="#TOC-getcrosstermlist"><strong>3.33 </strong>getcrosstermlist</a></li>
-        <li class="goog-toc"><a href="#TOC-setcrosstermlist"><strong>3.34 </strong>setcrosstemlist &lt;list&gt;</a></li>
-        <li class="goog-toc"><a href="#TOC-addcrossterm"><strong>3.35 </strong>addcrossterm &lt;id1&gt; &lt;id2&gt; &lt;id3&gt; &lt;id4&gt; &lt;id5&gt; &lt;id6&gt; &lt;id7&gt; &lt;id8&gt;</a></li>
-        <li class="goog-toc"><a href="#TOC-delcrossterm"><strong>3.36 </strong>delcrossterm &lt;id1&gt; &lt;id2&gt; &lt;id3&gt; &lt;id4&gt; &lt;id5&gt; &lt;id6&gt; &lt;id7&gt; &lt;id8&gt;</a></li>
+        <li class="goog-toc"><a href="#TOC-addcrossterm"><strong>3.33 </strong>addcrossterm &lt;id1&gt; &lt;id2&gt; &lt;id3&gt; &lt;id4&gt; &lt;id5&gt; &lt;id6&gt; &lt;id7&gt; &lt;id8&gt;</a></li>
+        <li class="goog-toc"><a href="#TOC-delcrossterm"><strong>3.34 </strong>delcrossterm &lt;id1&gt; &lt;id2&gt; &lt;id3&gt; &lt;id4&gt; &lt;id5&gt; &lt;id6&gt; &lt;id7&gt; &lt;id8&gt;</a></li>
+        <li class="goog-toc"><a href="#TOC-getcrosstermlist"><strong>3.35 </strong>getcrosstermlist</a></li>
+        <li class="goog-toc"><a href="#TOC-setcrosstermlist"><strong>3.36 </strong>setcrosstemlist &lt;list&gt;</a></li>
+
       </ul>
     </li>
     <li class="goog-toc"><a href="#TOC-File-I-O-Commands"><strong>4 </strong>File I/O Commands</a>
@@ -151,7 +152,7 @@
 </p>
 <h4><a name="TOC-retypebonds"></a>retypebonds</h4>
 <p align="justify">Assign new bond types composed of the atom type strings connected with a '-' character. Bond types are canonicalized so that the atom type with the lower dictionary sort value will be placed on the left and the other on the right.</p>
-<h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-addbond-id1-id2-"></a>addbond &lt;id1&gt; &lt;id2&gt;</h4>
+<h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-addbond-id1-id2-"></a>addbond &lt;id1&gt; &lt;id2&gt; [-bondtype &lt;type&gt;] [-bondorder &lt;order&gt;]</h4>
 <p align="justify">Defines a bond bone between the two specified atoms. This does nothing if one of the two atom indices is outside the selection. You can specify the bond type and order via the optional flags <code>-bondtype</code> or <code>-bondorder</code>.</p>
 <h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-delbond-id1-id2-"></a>delbond &lt;id1&gt; &lt;id2&gt;</h4>
 <p align="justify">Deletes a bond between the two specified atoms. This does nothing if the bond does not exist or one of the two atom indices is outside the selection.</p>
@@ -165,7 +166,7 @@
 <p align="justify">Returns the number of unique angle-, dihedral-, or improper-types.</p>
 <h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-angle-dihedral-improper-typenames"></a>(angle|dihedral|improper)typenames</h4>
 <p align="justify">Returns a list of all unique angles, dihedrals, or impropers. The list has <code style="color:rgb(0, 96, 0)">topo num(angle|dihedral|improper)types</code> entries.</p>
-<h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-clear-angle-dihedral-improper-s"></a>clear(angle|dihedral|improper)s</h4>
+<h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-clear-angle-dihedral-improper-s"></a>clear(angle|dihedral|improper|crossterm)s</h4>
 <p align="justify">Deletes the currently defined angles, dihedrals, impropers, or crossterms.</p>
 <h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-sort-angle-dihedral-improper-s"></a>sort(angle|dihedral|improper)s</h4>
 <p align="justify">Sorts and canonicalizes the list of angles, dihedrals, or impropers. Duplicates are removed and the list is sorted by atom types.</p>
@@ -175,7 +176,7 @@
 <p align="justify">Guess angle or dihedral definitions from the bond topology. An angle is defined by two bonds sharing an atom and a dihedral by two bonds sharing a bond. Types are assigned in the same way as in the corresponging retype command.</p>
 <h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-guessimproper-tolerance-degrees-"></a>guessimpropers [tolerance &lt;degrees&gt;]</h4>
 <p align="justify">Guess improper angles. Are defined for atoms that are bonded to <b>exactly</b> 3 atoms when they form a near flat structure. The <code>tolerance</code> flag can be used as a cutoff for what is to be considered as "flat" and what not.</p>
-<h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-addangle-type-id1-id2-id3-"></a>addangle &lt;type&gt; &lt;id1&gt; &lt;id2&gt; &lt;id3&gt;</h4>
+<h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-addangle-type-id1-id2-id3-"></a>addangle &lt;type&gt; &lt;id1&gt; &lt;id2&gt; &lt;id3&gt; &lt;type&gt;</h4>
 <p align="justify">Defines an angle of type <code>&lt;type&gt;</code> between the three specified atoms. All three atoms have to be contained in the specified atom selection ('all' if none is given) or else the command is ignored. No further checks are being performed on the input.</p>
 <h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-delangle-id1-id2-id3-"></a>delangle &lt;id1&gt; &lt;id2&gt; &lt;id3&gt;</h4>
 <p align="justify">Deletes an angle between the three specified atoms. Does nothing if not all three atom indices are contained within the given selection (default 'all').</p>
@@ -183,51 +184,76 @@
 <p align="justify">Returns a list of defined angles with each entry in the format <code>{type &lt;index 1&gt; &lt;index 2&gt; &lt;index 3&gt;}</code>. The type name may be set to <code>{}</code>, if no angletype has been set. The list is printed unsorted as it is stored in VMD.</p>
 <h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-setanglelist-list-"></a>setanglelist &lt;list&gt;</h4>
 <p align="justify">Resets the angle definitions from a list in a format as returned by <code style="color:rgb(0, 96, 0)">topo getanglelist</code>. This is essentially a shortcut for calling <code style="color:rgb(0, 96, 0)">topo clearbonds</code> and a sequence of <code style="color:rgb(0, 96, 0)">topo addangle</code> commands with some optimization for the case of a selection encompassing all atoms.</p>
-<h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-adddihedral-type-id1-id2-id3-id4-"></a>adddihedral &lt;type&gt; &lt;id1&gt; &lt;id2&gt; &lt;id3&gt; &lt;id4&gt;</h4>
+<h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-adddihedral-type-id1-id2-id3-id4-"></a>adddihedral &lt;id1&gt; &lt;id2&gt; &lt;id3&gt; &lt;id4&gt; &lt;type&gt;</h4>
 <p align="justify">Defines a dihedral of type <code style="color:rgb(0, 96, 0)">&lt;type&gt;</code> between the four specified atoms. All four atoms have to be contained in the specified atom selection ('all' if none is given) or else the command is ignored. No further checks are being performed on the input.</p>
 <h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-deldihedral-idx1-id2-id3-id4-"></a>deldihedral &lt;idx1&gt; &lt;id2&gt; &lt;id3&gt; &lt;id4&gt;</h4>
 <p align="justify">Deletes the dihedral between the four specified atoms. Does nothing if not all four atom indices are contained within the given selection (default 'all').</p>
-<h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-addimproper-type-id1-id2-id3-id4-"></a>addimproper &lt;type&gt; &lt;id1&gt; &lt;id2&gt; &lt;id3&gt; &lt;id4&gt;</h4>
+<h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-addimproper-type-id1-id2-id3-id4-"></a>addimproper &lt;id1&gt; &lt;id2&gt; &lt;id3&gt; &lt;id4&gt; &lt;type&gt;</h4>
 <p align="justify">Defines an improper of type <code style="color:rgb(0, 96, 0)">&lt;type&gt;</code> between the four specified atoms. All four atoms have to be contained in the specified atom selection ('all' if none is given) or else the command is ignored. No further checks are being performed on the input.</p>
 <h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-delimproper-id1-id2-id3-id4-"></a>delimproper &lt;id1&gt; &lt;id2&gt; &lt;id3&gt; &lt;id4&gt;</h4>
 <p align="justify">Deletes the improper between the four specified atoms. Does nothing if not all four atom indices are contained within the given selection (default 'all').</p>
 <h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-get-dihedral-improper-list"></a>get(dihedral|improper)list</h4>
 <p align="justify">Returns a list of defined dihedrals or impropers with each entry in the format <code style="color:rgb(0, 96, 0)">{type &lt;index 1&gt; &lt;index 2&gt; &lt;index 3&gt; &lt;index 4&gt;}</code>. The type name may be set to <code style="color:rgb(0, 96, 0)">{}</code>, if no type has been set. The list is printed unsorted as it is stored in VMD.</p>
 <h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-set-dihedral-improper-list-list-"></a>set(dihedral|improper)list &lt;list&gt;</h4>
-<p align="justify">Resets the dihedral or improper definitions from a list in a format as returned by <code style="color:rgb(0, 96, 0)">topo getdihedrallist </code>or <code style="color:rgb(0, 96, 0)">topo getimproperlist</code>. This is essentially a shortcut notation for clearning and then resetting them individually.</p>
-<h4 style="color:rgb(51,51,51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-getcrosstermlist"></a>getcrosstermlist</h4>
-<p align="justify">Returns a list of defined crossterms with each entry in the format&nbsp;<code style="color:rgb(0,96,0)">{&lt;index 1&gt; &lt;index 2&gt; &lt;index 3&gt; &lt;index 4&gt;&nbsp;</code><span style="color:rgb(0,96,0);font-family:monospace;line-height:1.25;font-size:10pt">&lt;index 5&gt; &lt;index 6&gt; &lt;index 7&gt; &lt;index 8</span><code style="text-align:left;line-height:1.25;font-size:10pt">&gt;}</code><span style="text-align:left;line-height:1.25;font-size:10pt">. </span><span style="text-align:left;line-height:1.25;font-size:10pt">The list is printed unsorted as it is stored in VMD.</span></p>
-<h4 style="color:rgb(51,51,51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-setcrosstermlist"></s>setcrosstermlist &lt;list&gt;</h4>
-<p align="justify">Resets the crossterm definitions from a list in a format as returned by&nbsp;<code style="color:rgb(0,96,0)">topo getcrosstermlist</code>.&nbsp;This is essentially a shortcut notations for clearing and then resetting them individually.</p>
+<p align="justify">Resets the dihedral or improper definitions from a list in a format as returned by <code style="color:rgb(0, 96, 0)">topo getdihedrallist </code>or <code style="color:rgb(0, 96, 0)">topo getimproperlist</code>. This is essentially a shortcut notation for clearing and then resetting them individually.</p>
 <h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-addcrossterm"></a>addcrossterm &lt;id1&gt; &lt;id2&gt; &lt;id3&gt; &lt;id4&gt; &lt;id5&gt; &lt;id6&gt; &lt;id7&gt; &lt;id8&gt;</h4>
 <p align="justify">Defines a crossterm between the eight specified atoms. All eight atoms have to be contained in the specified atom selection ('all' if none is given) or else the command is ignored. No further checks are being performed on the input.</p>
 <h4 style="color:rgb(51, 51, 51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-delcrossterm"></a>delcrossterm  &lt;id1&gt; &lt;id2&gt; &lt;id3&gt; &lt;id4&gt; &lt;id5&gt; &lt;id6&gt; &lt;id7&gt; &lt;id8&gt;</h4>
 <p align="justify">Deletes the crossterm between the eight specified atoms. Does nothing if not all eight atom indices are contained within the given selection (default 'all').</p>
+<h4 style="color:rgb(51,51,51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-getcrosstermlist"></a>getcrosstermlist</h4>
+<p align="justify">Returns a list of defined crossterms with each entry in the format&nbsp;<code style="color:rgb(0,96,0)">{&lt;index 1&gt; &lt;index 2&gt; &lt;index 3&gt; &lt;index 4&gt;&nbsp;</code><span style="color:rgb(0,96,0);font-family:monospace;line-height:1.25;font-size:10pt">&lt;index 5&gt; &lt;index 6&gt; &lt;index 7&gt; &lt;index 8</span><code style="text-align:left;line-height:1.25;font-size:10pt">&gt;}</code><span style="text-align:left;line-height:1.25;font-size:10pt">. </span><span style="text-align:left;line-height:1.25;font-size:10pt">The list is printed unsorted as it is stored in VMD.</span></p>
+<h4 style="color:rgb(51,51,51);margin-top:5px;margin-right:0px;margin-bottom:5px;margin-left:0px"><a name="TOC-setcrosstermlist"></s>setcrosstermlist &lt;list&gt;</h4>
+<p align="justify">Resets the crossterm definitions from a list in a format as returned by&nbsp;<code style="color:rgb(0,96,0)">topo getcrosstermlist</code>.&nbsp;This is essentially a shortcut notations for clearing and then resetting them individually.</p>
 
 <h3><a name="TOC-File-I-O-Commands"></a>File I/O Commands</h3>
 <p align="justify">TopoTools provides a number of file I/O commands that contrast from the molfile plugins in such that they use Tcl scripting to read and write files. This provides additional flexibility and allows to easily pass flags to the reader or writer, that are not available in the molfile plugin API, however, it may also results in reduced reading performance. All of the file I/O commands also use the topo prefix and support the commonly supported optional flags for specifying molecule id and atom selection.</p>
 <h4><a name="TOC-readlammpsdata-file-name-atom-style"></a>readlammpsdata &lt;file name&gt; [&lt;atom style&gt;]</h4>
-<p align="justify">Read in atom coordinates, properties, bond, angle, dihedral and other related topology info from a <a href="http://lammps.sandia.gov" target="_blank" rel="nofollow">LAMMPS</a> data file, i.e. a file suitable for the <code>read_data</code> command. This can be used to check a data file for its validity (e.g. after using <code>restart2data</code>), for manipulations from within VMD, or to generate a .psf file to be used for visualization of <code>.dcd</code> or <code>.xtc</code> format trajectory files in VMD. The 'atom style' is the value given to the <code>atom_style</code> command in the LAMMPS input file (default is 'full'). This subcommand creates a new molecule in VMD and returns its molecule id or -1 in case of failure. The -sel parameter is currently ignored.</p>
+<p align="justify">Read in atom coordinates, properties, bond, angle, dihedral and other related topology info from a <a href="http://lammps.sandia.gov" target="_blank" rel="nofollow">LAMMPS</a> data file, i.e. a file suitable for the <code>read_data</code> command. This can be used to check a data file for its validity (e.g. after using <code>restart2data</code>), for manipulations from within VMD, or to generate a .psf file to be used for visualization of <code>.dcd</code> or <code>.xtc</code> format trajectory files in VMD. The 'atom style' is the value given to the <code>atom_style</code> command in the LAMMPS input file (by default TopoTools will try to infer the atom style from information embedded in the data file as comments; if no such hints are present, it will use 'full'). This subcommand creates a new molecule in VMD and returns its molecule id or -1 in case of failure. The -sel parameter is currently ignored.</p>
 <h4><a name="TOC-writelammpsdata-file-name-atom-styl"></a>writelammpsdata &lt;file name&gt; [&lt;atom style&gt;]</h4>
 <p align="justify">Write out atom coordinates, properties, bond, angle, dihedral and other related topology info stored inside VMD to a <a href="http://lammps.sandia.gov/" target="_blank" rel="nofollow">LAMMPS</a> data file, i.e. a file suitable for the <code>read_data</code> command. This this way VMD can be used to build LAMMPS input with Tcl scripting and convert existing inputs from other MD codes to be used in LAMMPS. For some examples, please see the <a href="https://sites.google.com/site/akohlmey/software/topotools/topotools-tutorial---introduction">TopoTools tutorials</a>. The 'atom style' is the value you want to give to the <code>atom_style</code> command in the LAMMPS input file (default is 'full'). Only data that is present will be written.</p>
 <h4><a name="TOC-readvarxyz-file-name-"></a>readvarxyz &lt;file name&gt;</h4>
 <p align="justify">Read in an xyz-format trajectory file (in xmol style) with a varying number of atoms per frame. This format is normally not supported in VMD and the script circumvents the restriction by automatically adding a sufficient number of dummy particles. Whether an atom is actually present in a given frame or not is flagged by the value of the corresponding <code>user</code> field, which is set to either <code>1.0</code> or <code>-1.0</code>, respectively. For efficiency reasons the atoms are sorted by type, thus atom order and bonding is not preserved. This subcommand creates a new molecule and returns its molecule id or -1, in case of failure.</p>
 <h4><a name="TOC-writevarxyz-file-name-selmod-sel-fi"></a>writevarxyz &lt;file name&gt; [selmod &lt;sel&gt;] [first|last|step &lt;frame]</h4>
 <div>Write out an xyz-format trajectory file with a varying number of atoms per frame. This is the counterpart to the readvarxyz subcommand. The optional selection string defines how atoms for each frame have to be selected. If not given, as selection string of "user &gt; 0" is assumed.</div>
-<h4><a name="TOC-writegmxtop-file-name-"></a>writegmxtop &lt;file name&gt;</h4>
-<p align="justify">Write a "fake" <a href="http://www.gromacs.org" target="_blank" rel="nofollow">gromacs</a> topology file that can be used in combination with a .gro or .pdb file to generate a .tpr file, which is needed for some of the more advanced gromacs analysis tools in order to analyze trajectories that were not generated with gromacs. This file is in <b><u>no way</u></b> suitable to start a simulation.</p>
+<h4><a name="TOC-writegmxtop-file-name-"></a>writegmxtop &lt;file name&gt; [&lt;list of CHARMM parameter files&gt;]</h4>
+<p align="justify">Write a <a href="http://www.gromacs.org" target="_blank" rel="nofollow">gromacs</a>-style topology file that can be used in combination with a .gro or .pdb file to generate a .tpr file with the gromacs <b>grompp</b> tool. Such .tpr files are used to run simulations and for some of the more advanced gromacs analysis tools. If one or more parameter files (in CHARMM format) are provided, the resulting topology file is suitable for running MD simulations using the provided parameters. This allows the preparation of systems with CHARMM tools and to run the simulations with gromacs instead. A paper describing this <i>TopoGromacs</i> functionality is available at <a href="http://dx.doi.org/10.1021/acs.jcim.6b00103" target="_blank" rel="nofollow">doi:10.1021/acs.jcim.6b00103</a>. If the parameter files are omitted, dummy values are included instead so that the generated <b>incomplete</b> topology (and the from it generated .tpr file) are still sufficient to analyze trajectories, since analysis tools do not need force field parameters. This is useful for using gromacs tools to analyse trajectories that were not generated with gromacs and thus no .tpr file exists. Such a topology/.tpr file with <b>dummy</b> parameters is in <b><u>no way</u></b> suitable to start a correct MD simulation, though. Usage example:</p><div class="sites-codeblock sites-codesnippet-block"><code>package require topotools 1.6</code><br /><code># Load the structure into VMD.</code><br /><code>mol new structure.psf</code><br /><code>mol addfile structure.pdb</code><br /><code># Pass along a list of parameters to generate structure.top, suitable for preparing gromacs simulations.</code><br /><code>topo writegmxtop structure.top [list parameterfile1.prm parameterfile2.prm]</code><br /><code># This would be prepared for simulation using grompp to create a tpr file</code><br /><code># gmx grompp -f simulationsetup.mdp -c structure.pdb -p structure.top -o simulation.tpr</code></div><div><br />
+
 <h3><a name="TOC-Utility-Functions"></a>Utility Functions</h3>
 <p align="justify">These are useful and convenient tools written on top of the topotools API. You can access them directly with their <code>::TopoTools::</code> namespace prefix or use <code>namespace import ::TopoTools::&lt;pattern&gt;</code> to import some or all of them (with the pattern '*') into your current namespace.</p>
 <h4><a name="TOC-mergemols-list-of-molecule-ids-"></a>mergemols &lt;list of molecule ids&gt;</h4>
 <p align="justify">Combines multiple separate molecules into one file. This is non-destructive and will create a new molecule. The molecule id of the new molecule is returned, or -1 in case of a failure. Usage example:</p>
-<div class="sites-codeblock sites-codesnippet-block"><code>package require topotools 1.1</code><div><code># load to be merged molecules into VMD</code></div><div><code>set midlist {}
-set mol [mol new part1.psf waitfor all]</code></div><div><code>mol addfile part1.pdb</code></div><div><code>lappend midlist $mol
-set mol [mol new part2.psf waitfor all]</code></div><div><code>mol addfile part2.pdb
-lappend midlist $mol </code></div><div><code> # do the magic</code></div><div><code>set mol [::TopoTools::mergemols $midlist]</code></div><div><code>animate write psf merged.psf $mol </code></div><div><code>animate write pdb merged.pdb $mol
+<div class="sites-codeblock sites-codesnippet-block"><code>package require topotools 1.6</code>
+  <div><code># load to be merged molecules into VMD</code></div>
+  <div><code>set midlist {}</code></div>
+  <div><code>set mol [mol new part1.psf waitfor all]</code></div>
+  <div><code>mol addfile part1.pdb</code></div>
+  <div><code>lappend midlist $mol</code></div>
+  <div><code>set mol [mol new part2.psf waitfor all]</code></div>
+  <div><code>mol addfile part2.pdb $mol</code></div>
+  <div><code>lappend midlist $mol</code></div>
+  <div><code># do the magic</code></div>
+  <div><code>set mol [::TopoTools::mergemols $midlist]</code></div>
+  <div><code>animate write psf merged.psf $mol</code></div>
+  <div><code>animate write pdb merged.pdb $mol</code></div>
+</div>
 
+<h4><a name="TOC-selections2mol-list-of-atom-selecti"></a>selections2mol &lt;list of atom selections&gt;</h4><p align="justify">This is very similar to the previous <code>mergemols</code> command. It combines one or multiple atom selections, which can be taken from different molecules, into one new molecule. This is also non-destructive and will create a new molecule. The molecule id of the new molecule is returned, or -1 in case of a failure. Usage example:</p>
+<div class="sites-codeblock sites-codesnippet-block"><code>package require topotools 1.6</code>
+  <div><code>set sellist {}</code></div>
+  <div><code>set sel [atomselect 0 protein]</code></div>
+  <div><code>lappend sellist $sel</code></div>
+  <div><code>set sel [atomselect 0 protein]</code></div>
+  <div><code>$sel frame 200 </code></div>
+  <div><code>$sel moveby {50.0 50.0 0.0}</code></div>
+  <div><code>lappend sellist $sel</code></div>
+  <div><code>set sel [atomselect 1 "same residue as (within 3.0 of chain L)"]</code></div>
+  <div><code>lappend sellist $sel</code></div>
+  <div><code># do the magic</code></div>
+  <div><code>set mol [::TopoTools::selections2mol $sellist]</code></div>
+  <div><code>animate write psf combinedsel.psf $mol</code></div>
+  <div><code>animate write pdb combinedsel.pdb $mol</code></div>
+</div>
 
-</code></div></div><h4><a name="TOC-selections2mol-list-of-atom-selecti"></a>selections2mol &lt;list of atom selections&gt;</h4><p align="justify">This is very similar to the previous <code>mergemols</code> command. It combines one or multiple atom selections, which can be taken from different molecules, into one new molecule. This is also non-destructive and will create a new molecule. The molecule id of the new molecule is returned, or -1 in case of a failure. Usage example:</p>
-<div class="sites-codeblock sites-codesnippet-block"><code>package require topotools 1.1</code><div><code>set sellist {}</code></div><div><code>set sel [atomselect 0 protein]</code></div><div><code>lappend sellist $sel </code></div><div><code>set sel [atomselect 0 protein]</code></div><div><code>$sel frame 200 </code></div><div><code>$sel moveby {50.0 50.0 0.0}</code></div><div><code>lappend sellist $sel</code></div><div><code>set sel [atomselect 1 "same residue as (within 3.0 of chain L)"]</code></div><div><code>lappend sellist $sel</code></div><div><code># do the magic</code></div><div><code>set mol [::TopoTools::selections2mol $sellist]</code></div><div><code>animate write psf combinedsel.psf $mol</code></div><div><code>animate write pdb combinedsel.pdb $mol</code></div></div>
 <h4><a name="TOC-replicatemol-mol-nx-ny-nz-"></a>replicatemol &lt;mol&gt; &lt;nx&gt; &lt;ny&gt; &lt;nz&gt;</h4>
 <p>Replicate the current unitcell according to integer replicate counts. Usage example:</p>
 <div class="sites-codeblock sites-codesnippet-block"><code>package require topotools 1.5 </code><div><code># load a molecule</code></div><div><code>set mol [mol new pegc12e8-small.xml type hoomd waitfor all]</code></div><div><code># do the magic</code></div><div><code>set newmol [::TopoTools::replicatemol $mol 2 2 1 ]</code></div><div><code>animate write hoomd replicated.xml $newmol</code></div></div>
@@ -237,7 +263,7 @@ lappend midlist $mol </code></div><div><code> # do the magic</code></div><div><c
 </div> 
 
 <h3 ><a name="TOC-Author"></a>Author</h3>
-<p><a href="http://sites.google.com/site/akohlmey/">Axel Kohlmeyer</a>.</p>
+<p><a href="http://sites.google.com/site/akohlmey/">Axel Kohlmeyer</a> with contributions from Josh Vermaas (TopoGromacs, i.e. fully working gromacs topology files for CHARMM style parameter files) and  Konstantin W (replicatemols for non-orthogonal cells) </p>
 
 
 <!--#include virtual="/include/footer-over.shtml"-->

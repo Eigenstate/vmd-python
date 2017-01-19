@@ -3,7 +3,7 @@
 
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -14,7 +14,7 @@
  *
  *	$RCSfile: NanoShaperInterface.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.2 $	$Date: 2015/05/31 22:25:06 $
+ *	$Revision: 1.6 $	$Date: 2016/11/28 03:05:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -39,7 +39,9 @@
 /// structure containing NanoShaper vertex coordinates
 struct NanoShaperCoord {
   float x[3];       ///< floating point xyz coordinates 
-  int operator==(const NanoShaperCoord& c) {return !memcmp(x,c.x,3*sizeof(float));}
+  int operator==(const NanoShaperCoord& c) {
+    return !memcmp(x, c.x, 3L*sizeof(float));
+  }
 };
 
 /// structure containing NanoShaper facet information
@@ -56,9 +58,10 @@ struct NanoShaperFace {
   int component;    ///< which surface is it in?
 
   int operator==(const NanoShaperFace &f) {
-    return (!memcmp(vertex,f.vertex,3*sizeof(float)) &&
-                  surface_type==f.surface_type && anaface==f.anaface &&
-                  component==f.component);}
+    return (!memcmp(vertex, f.vertex, 3L*sizeof(float)) &&
+                    surface_type==f.surface_type && anaface==f.anaface &&
+                    component==f.component);
+  }
 };
 
 /// Manages communication with the NanoShaper surface generation program
@@ -69,12 +72,18 @@ public:
   enum {BAD_RANGE = -2, NO_PORTS = -3, NO_CONNECTION = -4,
 	NO_INITIALIZATION = -5, NANOSHAPER_DIED = -6, COMPUTED = 1};
 
+  enum {NS_SURF_SES = 0,
+        NS_SURF_SKIN = 1, 
+        NS_SURF_BLOBBY = 2,
+        NS_SURF_POCKETS = 3};
+
   /// free memory in the ResizeArrays.
   void clear();
 
   // use file interface instead of sockets
-  int compute_from_file(int surftype, float probe_radius, float gspacing,
-	      int n, int *ids, float *xyzr, int *flgs, int component = 0);
+  int compute_from_file(int surftype, float gspacing,
+                        float probe_radius, float skin_parm, float blob_parm,
+                        int n, int *ids, float *xyzr, int *flgs);
 
   int err;                               ///< was there an error?
   NanoShaperInterface(void) { err = 0; }

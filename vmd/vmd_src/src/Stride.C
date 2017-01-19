@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: Stride.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.34 $       $Date: 2010/12/16 04:08:41 $
+ *      $Revision: 1.37 $       $Date: 2016/11/28 03:05:05 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -53,7 +53,7 @@ static int write_stride_record( DrawMolecule *mol,
     // skip if this atom isn't part of protein
     if (atom->residueType != RESPROTEIN)
       continue;
-    const float *loc=pos + 3*i;
+    const float *loc=pos + 3L*i;
     strncpy(name, (mol->atomNames).name(atom->nameindex), 4);
     name[4]='\0';
     strncpy(resname,(mol->resNames).name(atom->resnameindex),4);  
@@ -64,9 +64,9 @@ static int write_stride_record( DrawMolecule *mol,
       residues.append(prev);
     }
 
-    if (fprintf(inputfile,
-      "ATOM  %5d %-4s %-4s %4d    %8.3f%8.3f%8.3f\n",
-      ++atomcount,name,resname,residues.num()-1,loc[0],loc[1],loc[2]) < 0) {
+    if (fprintf(inputfile, "ATOM  %5d %-4s %-4s %4ld    %8.3f%8.3f%8.3f\n",
+                ++atomcount, name, resname, long(residues.num()-1),
+                loc[0],loc[1],loc[2]) < 0) {
       msgErr << "Error writing line in Stride input file for atom " << i 
              << sendmsg;
       return 1;

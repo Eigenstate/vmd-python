@@ -1,6 +1,6 @@
 //
 // Version info for VMD plugin tree:
-//   $Id: dtrplugin.hxx,v 1.4 2013/07/20 14:37:13 akohlmey Exp $
+//   $Id: dtrplugin.hxx,v 1.5 2016/11/06 19:16:52 johns Exp $
 //
 // Version info for last sync with D. E. Shaw Research:
 //  //depot/desrad/main/sw/libs/molfile/plugins/dtrplugin.hxx#13
@@ -46,6 +46,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef DESRES_WIN32
 #define DESRES_WIN32
 #endif
+#endif
+
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
 #endif
 
 #include <math.h>

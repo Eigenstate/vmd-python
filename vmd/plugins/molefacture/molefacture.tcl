@@ -1,7 +1,7 @@
 #
 # Molefacture -- structure building plugin
 #
-# $Id: molefacture.tcl,v 1.104 2011/03/29 19:56:37 johns Exp $
+# $Id: molefacture.tcl,v 1.105 2016/02/04 19:44:14 johns Exp $
 #
 
 package require psfgen
@@ -11,7 +11,7 @@ package require runsqm
 package require readcharmmtop
 package require utilities
 package require exectool
-package provide molefacture 1.3
+package provide molefacture 1.4
 
 namespace eval ::Molefacture:: {
 

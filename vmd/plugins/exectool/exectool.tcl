@@ -19,7 +19,7 @@
 ##       replaced with the Tcl built-in function ::auto_execok, and should 
 ##       probably be rewritten to take advantage of that.
 ##
-## $Id: exectool.tcl,v 1.46 2007/03/09 21:22:21 kvandivo Exp $
+## $Id: exectool.tcl,v 1.47 2016/10/19 22:03:48 jribeiro Exp $
 ##
 
 ## Tell Tcl that we're a package and any dependencies we may have
@@ -276,12 +276,14 @@ proc ::ExecTool::get_path { mnemonic } {
   } else {
     # If the path list is uninitialized, populate it with the directories
     # in the PATH environment variable
+    set win 0
     if {![info exists pathlist]} {
       if {[info exists env(PATH)]} {
         switch [vmdinfo arch] {
           WIN64 -
           WIN32 {
             set pathlist [split $env(PATH) \;]
+            set win 1
           }
           default {
             set pathlist [split $env(PATH) :]
@@ -293,12 +295,24 @@ proc ::ExecTool::get_path { mnemonic } {
     }
 
     # Search the program in the path list
+    set search 1
+    while {$search == 1} {
     foreach directory $pathlist {
       set tf [file join $directory $mnemonic]
       if {[file executable $tf] && ![file isdirectory $tf]} {
         set execpath $tf
+        set search 0
         break
       }
+    } 
+    # In case of Windows platform, search for the same command appending the .exe
+    # Useful in case of namd2 or if the extension is not defined when Exectool is called. 
+    # Most VMD plugins call namd2, which fails in Windows.
+    if {$search && $win && [file extension $mnemonic] != ".exe"} {
+      append mnemonic ".exe"
+    } else {
+      set search 0
+    }
     }
   }
 

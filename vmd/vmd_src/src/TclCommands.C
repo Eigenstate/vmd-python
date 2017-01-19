@@ -1,9 +1,9 @@
 /***************************************************************************
- *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
- *cr                        University of Illinois                       
- *cr                         All Rights Reserved                        
- *cr                                                                   
+ *cr
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr                        University of Illinois
+ *cr                         All Rights Reserved
+ *cr
  ***************************************************************************/
 
 /***************************************************************************
@@ -11,16 +11,16 @@
  *
  *	$RCSfile: TclCommands.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.163 $	$Date: 2011/06/15 05:17:39 $
+ *	$Revision: 1.166 $	$Date: 2016/11/28 03:05:05 $
  *
  ***************************************************************************
  * DESCRIPTION:
- *   Tcl <--> VMD interface commands used for the analysis and 
+ *   Tcl <--> VMD interface commands used for the analysis and
  * manipulation of structures
  *
  ***************************************************************************/
 
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include "tcl.h"
@@ -60,8 +60,8 @@ static Molecule *find_molecule(Tcl_Interp *interp, MoleculeList *mlist, const ch
       return NULL;
     }
   }
-  // here I have 'molid', so get the given molecule 
-  Molecule *mol = mlist-> mol_from_id(molid);  
+  // here I have 'molid', so get the given molecule
+  Molecule *mol = mlist-> mol_from_id(molid);
   if (!mol) {
     Tcl_AppendResult(interp, "Cannot find molecule ", text, NULL);
   }
@@ -80,8 +80,8 @@ static void remove_tcl_atomsel(ClientData my_data);
 // given the interpreter and attribute string, construct the array
 // mapping from attribute to atomSelParser index
 static int split_tcl_atomsel_info(Tcl_Interp *interp, SymbolTable *parser,
-                                  const char *opts, 
-				  int *num, int **mapping) 
+                                  const char *opts,
+				  int *num, int **mapping)
 {
   *num = 0;
   *mapping = NULL;
@@ -102,7 +102,7 @@ static int split_tcl_atomsel_info(Tcl_Interp *interp, SymbolTable *parser,
     int j = parser->find_attribute(attribs[i]);
 
     if (j == -1) { // the name wasn't found, so complain
-      Tcl_AppendResult(interp, "cannot find attribute '", 
+      Tcl_AppendResult(interp, "cannot find attribute '",
 		       attribs[i], "'", NULL);
       delete [] info_index;
       ckfree((char *)attribs); // free of tcl data
@@ -111,7 +111,7 @@ static int split_tcl_atomsel_info(Tcl_Interp *interp, SymbolTable *parser,
     // make sure this is a KEYWORD or SINGLEWORD
     if (parser->fctns.data(j)->is_a != SymbolTableElement::KEYWORD &&
         parser->fctns.data(j)->is_a != SymbolTableElement::SINGLEWORD) {
-      Tcl_AppendResult(interp, "'", attribs[i], 
+      Tcl_AppendResult(interp, "'", attribs[i],
 		       "' is not a keyword or singleword", NULL);
       delete [] info_index;
       ckfree((char *)attribs); // free of tcl data
@@ -125,7 +125,7 @@ static int split_tcl_atomsel_info(Tcl_Interp *interp, SymbolTable *parser,
   *num = num_attribs;
   return TCL_OK;
 }
-				    
+
 // the Tcl command is "atomselect".  It generates 'local' (with upproc)
 // functions which return information about the AtomSel selection
 // Format is: atomselect <molecule id> <text>
@@ -133,8 +133,8 @@ static int make_tcl_atomsel(ClientData cd, Tcl_Interp *interp, int argc, const c
 {
 
   VMDApp *app = (VMDApp *)cd;
-  MoleculeList *mlist = app->moleculeList; 
-  SymbolTable *atomSelParser = app->atomSelParser; 
+  MoleculeList *mlist = app->moleculeList;
+  SymbolTable *atomSelParser = app->atomSelParser;
 
   if (argc == 4 && !strcmp(argv[1], "macro")) {
     if (atomSelParser->add_custom_singleword(argv[2], argv[3])) {
@@ -171,15 +171,15 @@ static int make_tcl_atomsel(ClientData cd, Tcl_Interp *interp, int argc, const c
     app->commandQueue->runcommand(new CmdDelAtomSelMacro(argv[2]));
     return TCL_OK;
   }
-  
+
   // return a list of all the undeleted selection
   //
-  // XXX since atomselection names are practially always stored in 
+  // XXX since atomselection names are practially always stored in
   // a variable and thus the name itself does not matter, we could
-  // consider to change the original code to generate symbols of 
+  // consider to change the original code to generate symbols of
   // the kind  __atomselect## or even __vmd_atomselect##.
   if (argc == 2 && !strcmp(argv[1], "list")) {
-    char script[] = "info commands {atomselect[0-9]*}"; 
+    char script[] = "info commands {atomselect[0-9]*}";
     return Tcl_Eval(interp, script);
   }
 
@@ -226,16 +226,16 @@ static int make_tcl_atomsel(ClientData cd, Tcl_Interp *interp, int argc, const c
   }
 
   if (!((argc == 3) || (argc == 5 && !strcmp(argv[3], "frame")))) {
-    Tcl_SetResult(interp, 
+    Tcl_SetResult(interp,
       (char *) "usage: atomselect <command> [args...]\n"
       "\nCreating an Atom Selection:\n"
       "  <molId> <selection text> [frame <n>]  -- creates an atom selection function\n"
       "  list                         -- list existing atom selection functions\n"
       "  (type an atomselection function to see a list of commands for it)\n"
-      "\nGetting Info about Keywords:\n"      
+      "\nGetting Info about Keywords:\n"
       "  keywords                     -- keywords for selection's get/set commands\n"
       "  symboltable                  -- list keyword function and return types\n"
-      "\nAtom Selection Text Macros:\n"        
+      "\nAtom Selection Text Macros:\n"
       "  macro <name> <definition>    -- define a new text macro\n"
       "  delmacro <name>              -- delete a text macro definition\n"
       "  macro [<name>]               -- list all (or named) text macros\n",
@@ -246,7 +246,7 @@ static int make_tcl_atomsel(ClientData cd, Tcl_Interp *interp, int argc, const c
   if (argc == 5) { // get the frame number
     int val;
     if (AtomSel::get_frame_value(argv[4], &val) != 0) {
-      Tcl_SetResult(interp, 
+      Tcl_SetResult(interp,
         (char *) "atomselect: bad frame number in input, must be "
 	"'first', 'last', 'now', or a non-negative number",
         TCL_STATIC);
@@ -254,14 +254,14 @@ static int make_tcl_atomsel(ClientData cd, Tcl_Interp *interp, int argc, const c
     }
     frame = val;
   }
-      
+
   // get the molecule id
   Molecule *mol = find_molecule(interp, mlist, argv[1]);
   if (!mol) {
     Tcl_AppendResult(interp, " in atomselect's 'molId'", NULL);
     return TCL_ERROR;
   }
-  // do the selection 
+  // do the selection
   AtomSel *atomSel = new AtomSel(atomSelParser, mol->id());
   atomSel -> which_frame = frame;
   if (atomSel->change(argv[2], mol) == AtomSel::NO_PARSE) {
@@ -278,8 +278,8 @@ static int make_tcl_atomsel(ClientData cd, Tcl_Interp *interp, int argc, const c
   (*num)++;
 
   // make the new proc
-  Tcl_CreateObjCommand(interp, newname, access_tcl_atomsel_obj, 
-		    (ClientData) atomSel, 
+  Tcl_CreateObjCommand(interp, newname, access_tcl_atomsel_obj,
+		    (ClientData) atomSel,
 		    (Tcl_CmdDeleteProc *) remove_tcl_atomsel);
 
   // here I need to change the context ...
@@ -296,13 +296,13 @@ AtomSel *tcl_commands_get_sel(Tcl_Interp *interp, const char *str) {
   if (Tcl_GetCommandInfo(interp, (char *)str, &info) != 1)
     return NULL;
 
-  return (AtomSel *)(info.objClientData); 
+  return (AtomSel *)(info.objClientData);
 }
 
 // improve the speed of 'move' and 'moveby'
 // needs a selection and a matrix
 //  Applies the matrix to the coordinates of the selected atoms
-static int atomselect_move(Tcl_Interp *interp, AtomSel *sel, const char *mattext) { 
+static int atomselect_move(Tcl_Interp *interp, AtomSel *sel, const char *mattext) {
   int molid = sel->molid();
   VMDApp *app = (VMDApp *)Tcl_GetAssocData(interp, (char *)"VMDApp", NULL);
   MoleculeList *mlist = app->moleculeList;
@@ -323,12 +323,12 @@ static int atomselect_move(Tcl_Interp *interp, AtomSel *sel, const char *mattext
   // get the matrix
   Matrix4 mat;
   Tcl_Obj *matobj = Tcl_NewStringObj(mattext, -1);
-  if (tcl_get_matrix("atomselection move:", interp, 
+  if (tcl_get_matrix("atomselection move:", interp,
                      matobj , mat.mat) != TCL_OK) {
-    Tcl_DecrRefCount(matobj); 
+    Tcl_DecrRefCount(matobj);
     return TCL_ERROR;
   }
-  Tcl_DecrRefCount(matobj); 
+  Tcl_DecrRefCount(matobj);
 
   // and apply it to the coordinates
   int err;
@@ -343,7 +343,7 @@ static int atomselect_move(Tcl_Interp *interp, AtomSel *sel, const char *mattext
 
 // and the same for the vector offset
 //  Applies the vector to the coordinates of the selected atoms
-static int atomselect_moveby(Tcl_Interp *interp, AtomSel *sel, const char *vectxt) { 
+static int atomselect_moveby(Tcl_Interp *interp, AtomSel *sel, const char *vectxt) {
   int i;
   int molid = sel->molid();
   VMDApp *app = (VMDApp *)Tcl_GetAssocData(interp, (char *)"VMDApp", NULL);
@@ -376,7 +376,7 @@ static int atomselect_moveby(Tcl_Interp *interp, AtomSel *sel, const char *vectx
   }
   float vect[3];
   for (i=0; i<3; i++) {
-    double tmp; 
+    double tmp;
     if (Tcl_GetDoubleFromObj(interp, vec[i], &tmp) != TCL_OK) {
       Tcl_SetResult(interp, (char *)"atomselect moveby: non-numeric in vector", TCL_STATIC);
       Tcl_DecrRefCount(vecobj); // free translation vector
@@ -388,7 +388,7 @@ static int atomselect_moveby(Tcl_Interp *interp, AtomSel *sel, const char *vectx
   // and apply it to the coordinates
   for (i=sel->firstsel; i<=sel->lastsel; i++) {
     if (sel->on[i]) {
-      vec_add(framepos + 3*i, framepos + 3*i, vect);
+      vec_add(framepos + 3L*i, framepos + 3L*i, vect);
     }
   }
 
@@ -440,7 +440,7 @@ static int atomsel_set(ClientData my_data, Tcl_Interp *interp,
   if (atomSel == NULL) {
     Tcl_SetResult(interp, (char *) "atomselect access without data!", TCL_STATIC);
     return TCL_ERROR;
-  } 
+  }
 
   int i, num_mapping;
   Tcl_Obj **attrs;
@@ -473,14 +473,14 @@ static int atomsel_set(ClientData my_data, Tcl_Interp *interp,
     }
     elems[i] = elem;
   }
-  atomsel_ctxt context(atomSelParser, 
+  atomsel_ctxt context(atomSelParser,
                        app->moleculeList->mol_from_id(atomSel->molid()),
                          atomSel->which_frame, NULL);
 
   // Make list of the atom indices that are on
   int *atomon = new int[atomSel->selected];
   int ind = 0;
-  for (i=atomSel->firstsel; i<=atomSel->lastsel; i++) 
+  for (i=atomSel->firstsel; i<=atomSel->lastsel; i++)
     if (atomSel->on[i])
       atomon[ind++] = i;
 
@@ -582,8 +582,8 @@ static int atomsel_set(ClientData my_data, Tcl_Interp *interp,
     // something like "$sel set {mass beta} {{1 0} {2 1} {3 1} {3 2}}"
     if (num_outerlist != atomSel->selected) {
       char tmpstring[1024];
-      sprintf(tmpstring, 
-          "atomselect: set: %d data items doesn't match %d selected atoms.", 
+      sprintf(tmpstring,
+          "atomselect: set: %d data items doesn't match %d selected atoms.",
           num_outerlist, atomSel->selected);
       Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
       delete [] elems;
@@ -606,8 +606,8 @@ static int atomsel_set(ClientData my_data, Tcl_Interp *interp,
         delete [] objdata;
         delete [] atomon;
         delete [] elems;
-        sprintf(tmpstring, 
-            "atomselect: set: data element %d has %d terms (instead of %d)", 
+        sprintf(tmpstring,
+            "atomselect: set: data element %d has %d terms (instead of %d)",
             i, itemsize, num_mapping);
         Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
         return TCL_ERROR;
@@ -666,7 +666,7 @@ static int atomsel_set(ClientData my_data, Tcl_Interp *interp,
       }
       break;
       }
-    } 
+    }
     delete [] objdata;
   }
   delete [] atomon;
@@ -688,14 +688,14 @@ static int atomsel_set(ClientData my_data, Tcl_Interp *interp,
     }
   }
 
-  // This call to force_recalc is potentially expensive; 
-  // When reps have to be updated, it amounts to about 25% of the 
+  // This call to force_recalc is potentially expensive;
+  // When reps have to be updated, it amounts to about 25% of the
   // time for a 13,000 atom system on a 1.1 GHz Athlon.  It's
   // here so that changing atom values immediately updates the screen.
-  // For better performance, we set dirty bits and do the update only 
+  // For better performance, we set dirty bits and do the update only
   // when the next screen redraw occurs.
   Molecule *mol = app->moleculeList->mol_from_id(atomSel->molid());
-  mol->force_recalc(DrawMolItem::SEL_REGEN | DrawMolItem::COL_REGEN); 
+  mol->force_recalc(DrawMolItem::SEL_REGEN | DrawMolItem::COL_REGEN);
   return TCL_OK;
 }
 
@@ -721,12 +721,12 @@ static int atomsel_set(ClientData my_data, Tcl_Interp *interp,
 //14 uplevel L -- same as 'upproc $argv[1] $argv[0]'
 #define CHECK_MATCH(string,val) if(!strcmp(argv[1],string)){option=val;break;}
 
-int access_tcl_atomsel_obj(ClientData my_data, Tcl_Interp *interp, 
+int access_tcl_atomsel_obj(ClientData my_data, Tcl_Interp *interp,
     int argc, Tcl_Obj * const objv[]) {
 
   if (argc > 1) {
     const char *argv1 = Tcl_GetStringFromObj(objv[1], NULL);
-    if (argc == 4 && !strcmp(argv1, "set")) 
+    if (argc == 4 && !strcmp(argv1, "set"))
       return atomsel_set(my_data, interp, argc, objv);
   }
   const char **argv = new const char *[argc];
@@ -740,17 +740,17 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
 		       int argc, const char *argv[]) {
 
   VMDApp *app = (VMDApp *)Tcl_GetAssocData(interp, (char *)"VMDApp", NULL);
-  AtomSel *atomSel = (AtomSel *)my_data; 
-  MoleculeList *mlist = app->moleculeList; 
+  AtomSel *atomSel = (AtomSel *)my_data;
+  MoleculeList *mlist = app->moleculeList;
   SymbolTable *atomSelParser = app->atomSelParser;
   int i;
- 
+
   if (atomSel == NULL) {
     Tcl_SetResult(interp, (char *) "atomselect access without data!", TCL_STATIC);
     return TCL_ERROR;
   }
   // We don't have a singleword defined yet, so macro is NULL.
-  atomsel_ctxt context(atomSelParser, mlist->mol_from_id(atomSel->molid()), 
+  atomsel_ctxt context(atomSelParser, mlist->mol_from_id(atomSel->molid()),
                atomSel->which_frame, NULL);
 
   int option = -1;
@@ -790,7 +790,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
 		       "\n", NULL);
     }
     // Now list the available options
-    Tcl_AppendResult(interp, 
+    Tcl_AppendResult(interp,
        "usage: <atomselection> <command> [args...]\n"
        "\nCommands for manipulating atomselection metadata:\n",
        "  frame [new frame value]      -- get/set frame\n",
@@ -833,14 +833,14 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
       if (atomSel->on[i]) {
 	sprintf(tmpstring, "%d", i);
 	Tcl_AppendElement(interp, tmpstring);
-      } 
+      }
     }
     return TCL_OK;
   }
   case 2: { // molid
     char tmpstring[64];
     sprintf(tmpstring, "%d", atomSel->molid());
-    Tcl_SetResult(interp, tmpstring, TCL_VOLATILE); 
+    Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
     return TCL_OK;
   }
   case 3: { // text
@@ -882,7 +882,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
     // get the mapping
     int *mapping;
     int num_mapping;
-    if (split_tcl_atomsel_info(interp, atomSelParser,argv[2], &num_mapping, 
+    if (split_tcl_atomsel_info(interp, atomSelParser,argv[2], &num_mapping,
 			       &mapping) != TCL_OK) {
       Tcl_AppendResult(interp, ": in atomsel: get:", NULL);
       return TCL_ERROR;
@@ -898,7 +898,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
         // Set the singleword, in case this is a macro.
         context.singleword = atomSelParser->fctns.name(mapping[0]);
         // get the boolean state
-        int *flgs = new int[atomSel->num_atoms]; 
+        int *flgs = new int[atomSel->num_atoms];
         memcpy(flgs, atomSel->on, atomSel->num_atoms * sizeof(int));
         elem->keyword_single(&context, atomSel->num_atoms, flgs);
         for (int j=atomSel->firstsel; j<=atomSel->lastsel; j++) {
@@ -910,7 +910,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
         switch(elem->returns_a) {
           case (SymbolTableElement::IS_STRING):
             {
-              const char **tmp = new const char *[atomSel->num_atoms]; 
+              const char **tmp = new const char *[atomSel->num_atoms];
               elem->keyword_string(&context, atomSel->num_atoms, tmp, atomSel->on);
               for (int j=atomSel->firstsel; j<=atomSel->lastsel; j++) {
                 if (atomSel->on[j])
@@ -922,7 +922,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
             break;
           case (SymbolTableElement::IS_INT):
             {
-              int *tmp = new int[atomSel->num_atoms]; 
+              int *tmp = new int[atomSel->num_atoms];
               elem->keyword_int(&context, atomSel->num_atoms, tmp, atomSel->on);
               for (int j=atomSel->firstsel; j<=atomSel->lastsel; j++) {
                 if (atomSel->on[j])
@@ -931,10 +931,10 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
               }
               delete [] tmp;
             }
-            break; 
+            break;
           case (SymbolTableElement::IS_FLOAT):
             {
-              double *tmp = new double[atomSel->num_atoms]; 
+              double *tmp = new double[atomSel->num_atoms];
               elem->keyword_double(&context, atomSel->num_atoms, tmp, atomSel->on);
               for (int j=atomSel->firstsel; j<=atomSel->lastsel; j++) {
                 if (atomSel->on[j])
@@ -942,7 +942,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
                                            Tcl_NewDoubleObj(tmp[j]));
               }
               delete [] tmp;
-            } 
+            }
             break;
           default: ;
         }  // switch
@@ -952,7 +952,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
       // requested properties for each atom.
       for (i=0; i<atomSel->selected; i++) {
         Tcl_ListObjAppendElement(interp, result, Tcl_NewListObj(0,NULL));
-      } 
+      }
       // Get the array of sublists for efficient access.
       Tcl_Obj **arr;
       int dum;
@@ -964,13 +964,13 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
           // Set the singleword, in case this is a macro.
           context.singleword = atomSelParser->fctns.name(mapping[i]);
           // get the boolean state
-          int *flgs = new int[atomSel->num_atoms]; 
+          int *flgs = new int[atomSel->num_atoms];
           memcpy(flgs, atomSel->on, atomSel->num_atoms * sizeof(int));
           elem->keyword_single(&context, atomSel->num_atoms, flgs);
-          int k=0; 
+          int k=0;
           for (int j=atomSel->firstsel; j<=atomSel->lastsel; j++) {
             if (atomSel->on[j])
-              Tcl_ListObjAppendElement(interp, arr[k++], 
+              Tcl_ListObjAppendElement(interp, arr[k++],
                                        Tcl_NewIntObj(flgs[j]));
           }
           delete [] flgs;
@@ -978,7 +978,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
           switch(elem->returns_a) {
             case (SymbolTableElement::IS_STRING):
               {
-                const char **tmp = new const char *[atomSel->num_atoms]; 
+                const char **tmp = new const char *[atomSel->num_atoms];
                 elem->keyword_string(&context, atomSel->num_atoms, tmp, atomSel->on);
                 int k=0;
                 for (int j=atomSel->firstsel; j<=atomSel->lastsel; j++) {
@@ -991,7 +991,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
               break;
             case (SymbolTableElement::IS_INT):
               {
-                int *tmp = new int[atomSel->num_atoms]; 
+                int *tmp = new int[atomSel->num_atoms];
                 elem->keyword_int(&context, atomSel->num_atoms, tmp, atomSel->on);
                 int k=0;
                 for (int j=atomSel->firstsel; j<=atomSel->lastsel; j++) {
@@ -1001,10 +1001,10 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
                 }
                 delete [] tmp;
               }
-              break; 
+              break;
             case (SymbolTableElement::IS_FLOAT):
               {
-                double *tmp = new double[atomSel->num_atoms]; 
+                double *tmp = new double[atomSel->num_atoms];
                 elem->keyword_double(&context, atomSel->num_atoms, tmp, atomSel->on);
                 int k=0;
                 for (int j=atomSel->firstsel; j<=atomSel->lastsel; j++) {
@@ -1013,7 +1013,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
                                              Tcl_NewDoubleObj(tmp[j]));
                 }
                 delete [] tmp;
-              } 
+              }
               break;
             default: ;
           }  // switch
@@ -1032,19 +1032,19 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
     return atomselect_moveby(interp, atomSel, argv[2]);
 
   case 8: // lmoveby
-    return Tcl_VarEval(interp, "vmd_atomselect_lmoveby {", argv[0], 
+    return Tcl_VarEval(interp, "vmd_atomselect_lmoveby {", argv[0],
                                (char *)"} {",
-                               argv[2], "}", NULL); 
+                               argv[2], "}", NULL);
 
   case 9: // moveto
-    return Tcl_VarEval(interp, "vmd_atomselect_moveto {", argv[0], 
+    return Tcl_VarEval(interp, "vmd_atomselect_moveto {", argv[0],
                                (char *)"} {",
-                               argv[2], "}", NULL); 
+                               argv[2], "}", NULL);
 
   case 10: // lmoveto
-    return Tcl_VarEval(interp, "vmd_atomselect_lmoveto {", argv[0], 
+    return Tcl_VarEval(interp, "vmd_atomselect_lmoveto {", argv[0],
                                (char *)"} {",
-                               argv[2], "}", NULL); 
+                               argv[2], "}", NULL);
 
   case 11: // move {transformation}
     return atomselect_move(interp, atomSel, argv[2]);
@@ -1076,7 +1076,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
     }
     if (frame < 0 || frame >= app->molecule_numframes(molid)) {
       char tmpstring[1024];
-      sprintf(tmpstring, "atomsel: frame %d out of range for molecule %d", 
+      sprintf(tmpstring, "atomsel: frame %d out of range for molecule %d",
               frame, molid);
       Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
       return TCL_ERROR;
@@ -1094,12 +1094,12 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
     }
     return TCL_OK;
   }
-   
+
   case 24:  // getbonds
   {
     Molecule *mol = mlist->mol_from_id(atomSel->molid());
     if (!mol) {
-      Tcl_AppendResult(interp, "atomsel : getbonds: was molecule deleted", 
+      Tcl_AppendResult(interp, "atomsel : getbonds: was molecule deleted",
         NULL);
       return TCL_ERROR;
     }
@@ -1109,10 +1109,10 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
         Tcl_Obj *bondlist = Tcl_NewListObj(0,NULL);
         const MolAtom *atom = mol->atom(i);
         for (int j=0; j<atom->bonds; j++) {
-          Tcl_ListObjAppendElement(interp, bondlist, 
+          Tcl_ListObjAppendElement(interp, bondlist,
             Tcl_NewIntObj(atom->bondTo[j]));
-        } 
-        Tcl_ListObjAppendElement(interp, result, bondlist); 
+        }
+        Tcl_ListObjAppendElement(interp, result, bondlist);
       }
     }
     Tcl_SetObjResult(interp, result);
@@ -1146,7 +1146,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
     int ii = 0;
     mol->force_recalc(DrawMolItem::MOL_REGEN); // XXX many reps ignore bonds
     for (int i=atomSel->firstsel; i<=atomSel->lastsel; i++) {
-      if (!atomSel->on[i]) 
+      if (!atomSel->on[i])
         continue;
       int numbonds;
       const char **atomids;
@@ -1157,18 +1157,18 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
         return TCL_ERROR;
       }
       if (numbonds > MAXATOMBONDS) {
-        Tcl_AppendResult(interp, 
+        Tcl_AppendResult(interp,
           "atomsel: setbonds: too many bonds in bondlist: ", bondlists[ii],
           "\n", NULL);
         char buf[8];
-        sprintf(buf, "%d", MAXATOMBONDS);
+        sprintf(buf, "%ld", MAXATOMBONDS);
         Tcl_AppendResult(interp, "Maximum of ", buf, " bonds\n", NULL);
         Tcl_Free((char *)atomids);
         Tcl_Free((char *)bondlists);
         return TCL_ERROR;
       }
       MolAtom *atom = mol->atom(i);
-      int k=0; 
+      int k=0;
       for (int j=0; j<numbonds; j++) {
         int id;
         if (Tcl_GetInt(interp, atomids[j], &id) != TCL_OK) {
@@ -1180,18 +1180,18 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
           atom->bondTo[k++] = id;
         } else {
           Tcl_AppendResult(interp,
-            "atomsel: setbonds: warning, ignoring invalid atom id: ",  
+            "atomsel: setbonds: warning, ignoring invalid atom id: ",
             atomids[j], "\n", NULL);
-        } 
+        }
       }
       atom->bonds = k;
       Tcl_Free((char *)atomids);
-      ii++; 
+      ii++;
     }
     Tcl_Free((char *)bondlists);
     return TCL_OK;
-  } 
-  break; 
+  }
+  break;
 
   case 26:  // update
   {
@@ -1223,10 +1223,10 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
         Tcl_Obj *bondlist = Tcl_NewListObj(0,NULL);
         const MolAtom *atom = mol->atom(i);
         for (int j=0; j<atom->bonds; j++) {
-          Tcl_ListObjAppendElement(interp, bondlist, 
+          Tcl_ListObjAppendElement(interp, bondlist,
             Tcl_NewDoubleObj(mol->getbondorder(i, j)));
-        } 
-        Tcl_ListObjAppendElement(interp, result, bondlist); 
+        }
+        Tcl_ListObjAppendElement(interp, result, bondlist);
       }
     }
     Tcl_SetObjResult(interp, result);
@@ -1259,7 +1259,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
     int ii = 0;
     mol->force_recalc(DrawMolItem::MOL_REGEN); // XXX many reps ignore bonds
     for (int i=atomSel->firstsel; i<=atomSel->lastsel; i++) {
-      if (!atomSel->on[i]) 
+      if (!atomSel->on[i])
         continue;
       int numbonds;
       const char **atomids;
@@ -1270,17 +1270,17 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
         return TCL_ERROR;
       }
       if (numbonds > MAXATOMBONDS || numbonds > mol->atom(i)->bonds) {
-        Tcl_AppendResult(interp, 
+        Tcl_AppendResult(interp,
           "atomsel: setbondorders: too many items in bond order list: ", bondlists[ii],
           "\n", NULL);
         char buf[8];
-        sprintf(buf, "%d", MAXATOMBONDS);
+        sprintf(buf, "%ld", MAXATOMBONDS);
         Tcl_AppendResult(interp, "Maximum of ", buf, " bonds\n", NULL);
         Tcl_Free((char *)atomids);
         Tcl_Free((char *)bondlists);
         return TCL_ERROR;
       }
-      int k=0; 
+      int k=0;
       for (int j=0; j<numbonds; j++) {
         double order;
         if (Tcl_GetDouble(interp, atomids[j], &order) != TCL_OK) {
@@ -1291,13 +1291,13 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
         mol->setbondorder(i, k++, (float) order);
       }
       Tcl_Free((char *)atomids);
-      ii++; 
+      ii++;
     }
     Tcl_Free((char *)bondlists);
     return TCL_OK;
   }
   break;
-    
+
   case 29:  // getbondtypes
   {
     Molecule *mol = mlist->mol_from_id(atomSel->molid());
@@ -1311,10 +1311,10 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
         Tcl_Obj *bondlist = Tcl_NewListObj(0,NULL);
         const MolAtom *atom = mol->atom(i);
         for (int j=0; j<atom->bonds; j++) {
-          Tcl_ListObjAppendElement(interp, bondlist, 
+          Tcl_ListObjAppendElement(interp, bondlist,
               Tcl_NewStringObj(mol->bondTypeNames.name(mol->getbondtype(i, j)),-1));
-        } 
-        Tcl_ListObjAppendElement(interp, result, bondlist); 
+        }
+        Tcl_ListObjAppendElement(interp, result, bondlist);
       }
     }
     Tcl_SetObjResult(interp, result);
@@ -1346,7 +1346,7 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
 
     int ii = 0;
     for (int i=atomSel->firstsel; i<=atomSel->lastsel; i++) {
-      if (!atomSel->on[i]) 
+      if (!atomSel->on[i])
         continue;
       int numbonds;
       const char **atomids;
@@ -1357,28 +1357,28 @@ int access_tcl_atomsel(ClientData my_data, Tcl_Interp *interp,
         return TCL_ERROR;
       }
       if (numbonds > MAXATOMBONDS || numbonds > mol->atom(i)->bonds) {
-        Tcl_AppendResult(interp, 
+        Tcl_AppendResult(interp,
           "atomsel: setbondtypes: too many items in bond type list: ", bondlists[ii],
           "\n", NULL);
         char buf[8];
-        sprintf(buf, "%d", MAXATOMBONDS);
+        sprintf(buf, "%ld", MAXATOMBONDS);
         Tcl_AppendResult(interp, "Maximum of ", buf, " bonds\n", NULL);
         Tcl_Free((char *)atomids);
         Tcl_Free((char *)bondlists);
         return TCL_ERROR;
       }
-      int k=0; 
+      int k=0;
       for (int j=0; j<numbonds; j++) {
         int type = mol->bondTypeNames.add_name(atomids[j], 0);
         mol->setbondtype(i, k++, type);
       }
       Tcl_Free((char *)atomids);
-      ii++; 
+      ii++;
     }
     Tcl_Free((char *)bondlists);
     return TCL_OK;
-  } 
-  break; 
+  }
+  break;
   default:
     break;
   }
@@ -1400,11 +1400,11 @@ static void Atomsel_Delete(ClientData cd, Tcl_Interp *) {
 
 int Atomsel_Init(Tcl_Interp *interp) {
   VMDApp *app = (VMDApp *)Tcl_GetAssocData(interp, (char *)"VMDApp", NULL);
- 
+
   Tcl_CreateCommand(interp, (char *) "atomselect", make_tcl_atomsel,
                       (ClientData) app, (Tcl_CmdDeleteProc *) NULL);
 
-  int *num = (int *)malloc(sizeof(int)); 
+  int *num = (int *)malloc(sizeof(int));
   *num = 0;
   Tcl_SetAssocData(interp, (char *)"AtomSel", Atomsel_Delete, num);
   return TCL_OK;
@@ -1422,7 +1422,7 @@ int tcl_vmdcon(ClientData nodata, Tcl_Interp *interp,
 
     int newline, objidx, loglvl;
     CONST char *txt;
-    
+
     newline=1;
     objidx=1;
 
@@ -1485,27 +1485,27 @@ int tcl_vmdcon(ClientData nodata, Tcl_Interp *interp,
         if (strcmp(txt, "-status") == 0) {
             Tcl_Obj *result;
             switch (vmdcon_get_status()) {
-              case VMDCON_UNDEF:   
+              case VMDCON_UNDEF:
                   result = Tcl_NewStringObj("undefined",-1);
                   break;
-                  
-              case VMDCON_NONE:   
+
+              case VMDCON_NONE:
                   result = Tcl_NewStringObj("none",-1);
                   break;
-                  
-              case VMDCON_TEXT:   
+
+              case VMDCON_TEXT:
                   result = Tcl_NewStringObj("text",-1);
                   break;
-                  
-              case VMDCON_WIDGET: 
+
+              case VMDCON_WIDGET:
                   result = Tcl_NewStringObj("widget",-1);
                   break;
-                  
-              default: 
-                  Tcl_AppendResult(interp, 
-                                   "vmdcon: unknown console status", 
+
+              default:
+                  Tcl_AppendResult(interp,
+                                   "vmdcon: unknown console status",
                                    NULL);
-                  return TCL_ERROR; 
+                  return TCL_ERROR;
             }
             Tcl_SetObjResult(interp, result);
             return TCL_OK;
@@ -1533,27 +1533,27 @@ int tcl_vmdcon(ClientData nodata, Tcl_Interp *interp,
             } else {
                 Tcl_Obj *result;
                 switch (vmdcon_get_loglvl()) {
-                  case VMDCON_ALL:   
+                  case VMDCON_ALL:
                       result = Tcl_NewStringObj("all",-1);
                       break;
-                      
-                  case VMDCON_INFO:   
+
+                  case VMDCON_INFO:
                       result = Tcl_NewStringObj("info",-1);
                       break;
-                      
-                  case VMDCON_WARN:   
+
+                  case VMDCON_WARN:
                       result = Tcl_NewStringObj("warn",-1);
                       break;
-                      
-                  case VMDCON_ERROR: 
+
+                  case VMDCON_ERROR:
                       result = Tcl_NewStringObj("err",-1);
                       break;
-                      
-                  default: 
-                      Tcl_AppendResult(interp, 
-                                       "vmdcon: unknown log level.", 
+
+                  default:
+                      Tcl_AppendResult(interp,
+                                       "vmdcon: unknown log level.",
                                        NULL);
-                      return TCL_ERROR; 
+                      return TCL_ERROR;
                 }
                 Tcl_SetObjResult(interp, result);
                 return TCL_OK;
@@ -1562,7 +1562,7 @@ int tcl_vmdcon(ClientData nodata, Tcl_Interp *interp,
 
         // print a help message
         if (strcmp(txt, "-help") == 0) {
-            Tcl_AppendResult(interp, 
+            Tcl_AppendResult(interp,
                              "usage: vmdcon ?-nonewline? ?options? [arguments]\n",
                              "       print data to the VMD console or change console behavior\n\n",
                              "Output options:\n",
@@ -1590,11 +1590,11 @@ int tcl_vmdcon(ClientData nodata, Tcl_Interp *interp,
         // from here on we assume that the intent is to send output
 
         // prepend the final output with "urgency" indicators
-        // XXX: ideally, there would be no vmdcon without any 
-        // loglevel argument, but for the time being we tolerate 
+        // XXX: ideally, there would be no vmdcon without any
+        // loglevel argument, but for the time being we tolerate
         // it and promote it to the highest loglevel.
         loglvl=VMDCON_ALWAYS;
-        
+
         if (strcmp(txt, "-info") == 0) {
             loglvl=VMDCON_INFO;
             vmdcon_append(loglvl, "Info) ", 6);
@@ -1625,17 +1625,17 @@ int tcl_vmdcon(ClientData nodata, Tcl_Interp *interp,
         Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? ?-info|-warn|-err? string");
         return TCL_ERROR;
     }
-    
+
     return TCL_OK;
 }
 
 // we use c bindings, so the subroutines can be
 // exported to c code (plugins!) as well.
-const char *tcl_vmdcon_insert(void *interp, const char *w_path, 
+const char *tcl_vmdcon_insert(void *interp, const char *w_path,
                               const char *mark, const char *text)
 {
     // do: .path.to.text insert <mark> <text> ;  .path.to.text see end
-    JString cmd;         
+    JString cmd;
     cmd  = w_path;
     cmd += " insert ";
     cmd += mark;
@@ -1643,7 +1643,7 @@ const char *tcl_vmdcon_insert(void *interp, const char *w_path,
     cmd += text;
     cmd += "}; ";
     cmd += w_path;
-    cmd += " see end;"; 
+    cmd += " see end;";
 
     if (Tcl_Eval((Tcl_Interp *)interp,(char *)(const char *)cmd) != TCL_OK) {
         return Tcl_GetStringResult((Tcl_Interp *)interp);
@@ -1651,10 +1651,10 @@ const char *tcl_vmdcon_insert(void *interp, const char *w_path,
     return NULL;
 }
 
-void tcl_vmdcon_set_status_var(void *interp, int status) 
+void tcl_vmdcon_set_status_var(void *interp, int status)
 {
     if (interp != NULL) {
-        Tcl_ObjSetVar2((Tcl_Interp *)interp, 
+        Tcl_ObjSetVar2((Tcl_Interp *)interp,
                        Tcl_NewStringObj("vmd_console_status", -1),
                        NULL, Tcl_NewIntObj(status),
                        TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG);

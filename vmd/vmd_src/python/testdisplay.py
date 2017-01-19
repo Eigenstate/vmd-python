@@ -16,7 +16,7 @@
 ############################################################################
 
 import unittest
-from VMD import display 
+from vmd import display
 
 class displayTestCase(unittest.TestCase):
   def setUp(self):

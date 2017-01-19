@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolItemVolume.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.155 $	$Date: 2015/05/03 14:36:14 $
+ *	$Revision: 1.161 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -34,6 +34,8 @@
 #include "VolumetricData.h"
 #include "VMDApp.h"
 #include "WKFUtils.h"
+
+// #define SC15ANIMSPHERESHACK 1
 
 #define MYSGN(a) (((a) > 0) ? 1 : -1)
 
@@ -465,7 +467,7 @@ void DrawMolItem::draw_volume_isosurface_trimesh(const VolumetricData * v,
     cmdColorIndex.putdata(usecolor, cmdList);
 
     // draw surface with per-vertex normals using a vertex array
-    float *c = new float[s.numtriangles * 9];
+    float *c = new float[s.numtriangles * 9L];
     const float *fp = scene->color_value(usecolor);
     int i;
     for (i=0; i<s.numtriangles; i++) { 
@@ -956,7 +958,7 @@ int DrawMolItem::calcseeds_gradient_magnitude(const VolumetricData * v, ResizeAr
 void DrawMolItem::draw_volume_field_lines(int volid, int seedusegrid, int maxseeds, 
                                           float seedval, float deltacell, 
                                           float minlen, float maxlen, 
-                                          int drawtubes, int tuberes, float thickness) {
+                                          int drawstyle, int tuberes, float thickness) {
   const VolumetricData * v = NULL;
   v = mol->get_volume_data(volid);
   int printdonemesg=0;
@@ -966,6 +968,23 @@ void DrawMolItem::draw_volume_field_lines(int volid, int seedusegrid, int maxsee
     return;
   }
 
+#if defined(SC15ANIMSPHERESHACK)
+  // get color mapping min/max/range
+  float vmin=0.0f, vmax=0.0f; 
+  atomColor->get_colorscale_minmax(&vmin, &vmax);
+  if (!vmin && !vmax) {
+    vmin = v->datamin;
+    vmax = v->datamax;
+  }
+
+  float vscale_1=vmax-vmin;
+  if (vscale_1 == 0.0f)
+    vscale_1=1.0f;
+  else
+    vscale_1 = 1.0f / vscale_1;
+  printf("FieldLines) vmin: %g to %g, scale %g, inv: %g\n", vmin, vmax, vmax-vmin, vscale_1);
+#endif
+
   int seedcount = 0;
   int pointcount = 0;
   int totalpointcount = 0;
@@ -973,7 +992,7 @@ void DrawMolItem::draw_volume_field_lines(int volid, int seedusegrid, int maxsee
   ResizeArray<float> seeds;
 
   DispCmdSphereRes cmdSphereRes;
-  if (drawtubes) {
+  if (drawstyle != 0) {
     cmdSphereRes.putdata(tuberes, cmdList);
     append(DMATERIALON); // enable lighting and shading
     thickness *= 0.05f;  // XXX hack until we have a better GUI
@@ -1015,6 +1034,11 @@ void DrawMolItem::draw_volume_field_lines(int volid, int seedusegrid, int maxsee
   float maxgmag = 5;
 
   ResizeArray<float> points;
+#if defined(SC15ANIMSPHERESHACK)
+  ResizeArray<float> colors;
+  float lightred[3] = {1.0f, 0.2f, 0.2f};
+  float lightblue[3] = {0.2f, 0.2f, 1.0f};
+#endif
 
   // For each seed point, integrate in both positive and
   // negative directions for a field line length up to
@@ -1037,6 +1061,9 @@ void DrawMolItem::draw_volume_field_lines(int volid, int seedusegrid, int maxsee
 
       // init the arrays
       points.clear();
+#if defined(SC15ANIMSPHERESHACK)
+      colors.clear();
+#endif
 
       // main integration loop
       pointcount=0;
@@ -1056,9 +1083,12 @@ void DrawMolItem::draw_volume_field_lines(int volid, int seedusegrid, int maxsee
         // Early-exit if we run out of bounds (gradient returned will
         // be a vector of NANs), run into a critical point (zero gradient)
         // or a huge gradient at a source/sink point in the dataset.
+        // Since IEEE FP defines that all tests against NaN should return
+        // false, we invert the the bound tests with so that a comparison
+        // with a gmag of NaN will early-exit the advection loop.
         float gmag = norm(grad);
-        if (gmag < mingmag || gmag > maxgmag)
-          break;
+        if (!(gmag >= mingmag && gmag <= maxgmag))
+           break;
 
         // Draw the current point only after the gradient value
         // has been checked, so we don't end up with out-of-bounds
@@ -1070,6 +1100,16 @@ void DrawMolItem::draw_volume_field_lines(int volid, int seedusegrid, int maxsee
         if (!(iterations & 1)) {
           // Add a vertex for this field line
           points.append3(&pos[0]);
+
+#if defined(SC15ANIMSPHERESHACK)
+          float val, lerpval; 
+          val = v->voxel_value_interpolate_from_coord(pos[0], pos[1], pos[2]);
+          lerpval = (val - vmin) * vscale_1;
+          lerpval = (lerpval > 1.0f) ? 1.0f : lerpval;
+          float lerpcolor[3];
+          vec_lerp(lerpcolor, lightblue, lightred, lerpval);
+          colors.append3(lerpcolor);
+#endif
 
           vec_incr(comsum, pos);
  
@@ -1110,28 +1150,61 @@ void DrawMolItem::draw_volume_field_lines(int volid, int seedusegrid, int maxsee
         }
       }
 
-#if 1
-      if (drawtubes) {
+      // if drawing style is tubes or spheres we enable the alternate
+      // rendering path
+      if (drawstyle != 0) {
         // only draw the field line if it met all selection criteria
         if (drawfieldline) {
           cmdColorIndex.putdata(usecolor, cmdList);
           DispCmdCylinder cmdCyl;
-          DispCmdSphere cmdSphere;
           int maxcylidx = (pointcount - 1) * 3;
           int p;
-          for (p=0; p<maxcylidx; p+=3) {
-            cmdCyl.putdata(&points[p], &points[p+3], thickness,
-                           tuberes, 0, cmdList);
+          if (drawstyle == 1) {
+            for (p=0; p<maxcylidx; p+=3) {
+              cmdCyl.putdata(&points[p], &points[p+3], thickness,
+                             tuberes, 0, cmdList);
+            }
+            maxcylidx++;
           }
-          maxcylidx++;
+
+#if defined(SC15ANIMSPHERESHACK)
+          // XXX workaround for slow-path rendering in some of the 
+          // interactive RT renderers.  This uses memory somewhat
+          // unnecessarily, but it won't trigger slow-path rendering.
+          int maxpointidx=pointcount*3;
+          float *sprads = new float[pointcount];
+          for (p=0; p<pointcount; p++) {
+            sprads[p] = thickness;
+          }
+
+#if defined(SC15ANIMSPHERESHACK)
+          printf("FieldLines) %d points\n", points.num() / 3); 
+          if (colors.num() == points.num()) {
+            // use per-sphere red/blue color map 
+            cmdSphereArray.putdata(&points[0], sprads, &colors[0], pointcount, 12, cmdList);
+          } else {
+#endif
+            const float *spcolrgb = scene->color_value(usecolor);
+            float *spcolors = new float[maxpointidx];
+            for (p=0; p<maxpointidx; p+=3) {
+              vec_copy(spcolors+p, spcolrgb); 
+            }
+            cmdSphereArray.putdata(&points[0], sprads, spcolors, pointcount, 12, cmdList);
+            delete [] spcolors;
+ #if defined(SC15ANIMSPHERESHACK)
+          }
+ #endif
+         delete [] sprads;
+#else
+          DispCmdSphere cmdSphere;
           for (p=0; p<maxcylidx; p+=3) {
             cmdSphere.putdata(&points[p], thickness, cmdList);
           }
-        }
-      } else
 #endif
-      // only draw the field line if it met all selection criteria
-      if (drawfieldline) {
+
+        }
+      } else if (drawfieldline) {
+        // only draw the field line if it met all selection criteria
         cmdLineType.putdata(SOLIDLINE, cmdList);
         cmdLineWidth.putdata((int) thickness, cmdList);
         cmdColorIndex.putdata(usecolor, cmdList);

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_commands.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.14 $       $Date: 2010/12/16 04:08:56 $
+ *      $Revision: 1.15 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -25,8 +25,8 @@
 
 /*
 
-Some distributed versions of VMD are linked against the Python 2.0 
-library.  The following BeOpen license agreement permits us to use the 
+Some distributed versions of VMD are linked against the Python 2.0
+library.  The following BeOpen license agreement permits us to use the
 Python 2.0 libraries in this fashion.  The BeOpen license agreement is in
 no way applicable to the license under which VMD itself is distributed;
 persuant to item 2 below, we merely include a copy of the BeOpen license
@@ -105,24 +105,41 @@ Agreement.
 
 
 // The VMDApp instance will be found in the VMDApp module, under the
-// VMDApp dictionary entry.  Got it?  
+// VMDApp dictionary entry.  Got it?
 
 VMDApp *get_vmdapp() {
+#if PY_MAJOR_VERSION >= 3
+  PyObject *module = PyImport_ImportModule((char *)"builtins");
+#else
   PyObject *module = PyImport_ImportModule((char *)"__builtin__");
+#endif
   if (!module) return NULL;
   PyObject *module_dict = PyModule_GetDict(module);
   if (!module_dict) return NULL;
+#if PY_MAJOR_VERSION >= 3
+  PyObject *c_obj = PyDict_GetItemString(module_dict, "-vmdapp-");
+  if (!c_obj) return NULL;
+  if (PyCapsule_CheckExact(c_obj))
+    return (VMDApp *)PyCapsule_GetPointer(c_obj, "-vmdapp-");
+#else
   PyObject *c_obj = PyDict_GetItemString(module_dict, (char *)"-vmdapp-");
   if (!c_obj) return NULL;
   if (PyCObject_Check(c_obj))
     return (VMDApp *)PyCObject_AsVoidPtr(c_obj);
+#endif
   return NULL;
 }
 
 void set_vmdapp(VMDApp *app) {
+#if PY_MAJOR_VERSION >= 3
+  PyObject *mod = PyImport_ImportModule((char *)"builtins");
+  PyObject *cap = PyCapsule_New(app, "-vmdapp-", NULL);
+  PyObject_SetAttrString(mod, (char *)"-vmdapp-", cap);
+#else
   PyObject *mod = PyImport_ImportModule((char *)"__builtin__");
-  PyObject_SetAttrString(mod, (char *)"-vmdapp-", 
+  PyObject_SetAttrString(mod, (char *)"-vmdapp-",
       PyCObject_FromVoidPtr(app, NULL));
+#endif
   Py_DECREF(mod);
 }
 

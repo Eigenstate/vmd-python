@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: PickModeMolLabel.C,v $
  *      $Author: johns $        $Locker:  $                $State: Exp $
- *      $Revision: 1.43 $      $Date: 2010/12/16 04:08:35 $
+ *      $Revision: 1.45 $      $Date: 2016/11/28 03:05:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -45,7 +45,7 @@ PickModeMolLabel::PickModeMolLabel(const char *nm, int size, VMDApp *vmdapp)
   // save number of elements needed, and allocate storage
   molids = new int[size];
   atmids = new int[size];
-  cells  = new int[3*size];
+  cells  = new int[3L*size];
 
   // indicate we're still at the starting trying to find something
   haveItems = 0;

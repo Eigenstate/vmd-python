@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolecule.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.82 $	$Date: 2014/11/08 06:52:29 $
+ *	$Revision: 1.84 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -105,6 +105,7 @@ public:
   //
   // public utility routines
   //
+  wkf_threadpool_t * cpu_threadpool(void);
 
   /// Query CUDA device pool pointer
   wkf_threadpool_t * cuda_devpool(void);

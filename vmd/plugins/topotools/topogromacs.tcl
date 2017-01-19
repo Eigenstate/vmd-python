@@ -3,26 +3,35 @@
 # manipulating bonds and other topology related properties.
 #
 # Copyright (c) 2009,2010,2011 by Axel Kohlmeyer <akohlmey@gmail.com>
-# $Id: topogromacs.tcl,v 1.11 2014/10/23 01:18:40 johns Exp $
+# $Id: topogromacs.tcl,v 1.13 2016/11/04 05:57:55 johns Exp $
 
 # high level subroutines for supporting gromacs topology files.
 #
-# write a fake gromacs topology format file that can be used in combination
-# with a .gro/.pdb coordinate file for generating .tpr files needed to use
-# Some of the more advanced gromacs analysis tools for simulation data that
-# was not generated with gromacs.
+# by default writegmxtop will write an incomplete gromacs topology
+# format file that can be used in combination with a .gro/.pdb
+# coordinate file for generating .tpr files needed for some analysis
+# tools bundled with gromacs. this can be used to analyze simulation
+# data, that was not generated with gromacs and thus for which
+# no .tpr file exists.
 #
-# IMPORTANT NOTE: this script differs from other topotools script in that
-# it does not check whether fragments are fully contained in the selection.
-# it will output a topology with exactly the same number of atoms as the
-# selection has. in case of partially contained fragments, new molecule types
-# will be created.
+# however, if CHARMM (format) parameter files are provided, a fully
+# functional topology file will be created, that is also capable of
+# running MD simulations. this functionality is written by josh vermaas
+# and documented in the publication at doi:10.1021/acs.jcim.6b00103
+#
+# IMPORTANT NOTE: this script differs from other topotools scripts in
+# that it does not check whether fragments are fully contained in the
+# selection.  it will output a topology with exactly the same number of
+# atoms as the selection has. in case of partially contained fragments,
+# new molecule types will be created.
 #
 # Arguments:
 # filename = name of topology file
 # mol = molecule
 # sel = selection
 proc ::TopoTools::writegmxtop {filename mol sel {flags none}} {
+    variable gmxciteme
+    variable version
 
     if {[catch {open $filename w} fp]} {
         vmdcon -err "writegmxtop: problem opening gromacs topology file: $fp\n"
@@ -31,6 +40,51 @@ proc ::TopoTools::writegmxtop {filename mol sel {flags none}} {
 
     # get a list of fragments, i.e. individual molecules
     set fragmap [lsort -integer -unique [$sel get fragment]]
+
+    # user feedback has indicated we need to test for some
+    # input conditions that will cause GROMACS to complain,
+    # but not TopoGromacs.
+    if { $flags != "" } {
+        if {$gmxciteme} {
+            vmdcon -info "======================"
+            vmdcon -info "Please cite the following publication:"
+            vmdcon -info "J.V. Vermaas et al., TopoGromacs: [...]"
+            vmdcon -info "http://dx.doi.org/10.1021/acs.jcim.6b00103"
+            vmdcon -info "======================\n"
+            set gmxciteme 0
+        }
+
+        # unfortunately, not all fragments represent individual
+        # molecules. we need to check for this, and warn the user
+        set savesegname [$sel get segname]
+        set savechain [$sel get chain]
+        # by making everything the same segment and chain, mol reanalyze
+        # will determine fragments strictly from connectivity.
+        $sel set segname "SEG"
+        $sel set chain A
+        mol reanalyze $mol
+        set flatfragmap [lsort -integer -unique [$sel get fragment]]
+        if { [llength $fragmap] > [llength $flatfragmap] } {
+            vmdcon -err "writegmxtop: inconsistent fragment count in input molecule."
+            vmdcon -info "There are connected components that have different segnames and/or chains, and thus are"
+            vmdcon -info "classified into different fragments. This will cause problems for grompp."
+            vmdcon -info "It is recommended that connected components have a single segname and chain, so that"
+            vmdcon -info "VMD can recognize these connected components as a single molecule."
+            return -1
+        }
+        $sel set segname $savesegname
+        $sel set chain $savechain
+        if { [$sel get name] == [$sel get type] } {
+            vmdcon -err "writegmxtop: atomnames are identical to atomtypes"
+            vmdcon -info "TopoGromacs depends on the atomtypes to be set correctly to correctly map"
+            vmdcon -info "parameters to specific atoms. However, the atomnames are identical to the"
+            vmdcon -info "atomtypes in this molecule, which suggests that the type field was populated"
+            vmdcon -info "by the atomname in a pdb file. Make sure the psf file is loaded before the pdb!"
+            vmdcon -info "If the atomnames are intentionally identical to the atomtypes, rename an atom to"
+            vmdcon -info "avoid this error."
+            return -1
+        }
+    }
     set typemap [lsort -ascii -unique [$sel get type]]
     set selstr [$sel text]
     # defaults for bond/angle/dihedral/improper functional form
@@ -40,8 +94,8 @@ proc ::TopoTools::writegmxtop {filename mol sel {flags none}} {
     set itype 1
     set writepairs 0
     if { $flags == "" } {
-        vmdcon -info "Generating a 'faked' gromacs topology file: $filename"
-        puts $fp "; 'fake' gromacs topology generated from topotools."
+        vmdcon -info "Generating an incomplete gromacs topology file: $filename"
+        puts $fp "; INCOMPLETE gromacs topology generated from topotools."
         puts $fp "; WARNING| the purpose of this topology is to allow using the  |WARNING"
         puts $fp "; WARNING| analysis tools from gromacs for non gromacs data.   |WARNING"
         puts $fp "; WARNING| it cannot be used for a simulation.                 |WARNING"
@@ -61,6 +115,9 @@ proc ::TopoTools::writegmxtop {filename mol sel {flags none}} {
         puts $fp "\n\[ dihedraltypes \]\n; i j k l func coefficients\n  C C C C 1 0.0 3 10.0 ; totally bogus"
     } else {
         vmdcon -info "Generating a real gromacs topology file: $filename"
+        puts $fp "; This gromacs topology generated using topotools, and contains parameter"
+        puts $fp "; information suitable for starting a simulation with gromacs. See "
+        puts $fp "; doi:10.1021/acs.jcim.6b00103 for algorithmic details."
         writecharmmparams $fp $mol $sel [lindex $flags 0]
         set btype 1
         set atype 5
@@ -85,7 +142,13 @@ proc ::TopoTools::writegmxtop {filename mol sel {flags none}} {
                 lappend fragcntr $count
             }
             puts $fp ""
-            set molname "molecule[llength $fragcntr]"
+            set iswater 0
+            if { [$fsel num] == 3 && [lsort -unique [$fsel get resname]] == "TIP3" } {
+                set molname "water[llength $fragcntr]"
+                set iswater 1
+            } else {
+                set molname "molecule[llength $fragcntr]"
+            }
             lappend fraglist $molname
             set count 1
             set nlold $nlist
@@ -131,86 +194,89 @@ proc ::TopoTools::writegmxtop {filename mol sel {flags none}} {
                     incr nr
                 }
             # end of loop over atoms
+            if { $iswater } {
+                puts $fp "\n\[ settles \]\n; i   j funct   length\n1     1 0.09572 0.15139\n\n\[ exclusions \]\n1 2 3\n2 1 3\n3 1 2"
+            } else {
+                if { $writepairs } {
+                    #Need to find the 1-4 pairs. For some dumb reason, grompp doesn't do this for you.
+                    set list [get14pairs $fsel]
+                    if {[llength $list]} {
+                        puts $fp "\n\[ pairs \]\n; ai aj func"
+                        foreach pair $list {
+                            lassign $pair i j
+                            set i [lsearch -sorted -integer $atmmap $i]
+                            set j [lsearch -sorted -integer $atmmap $j]
+                            incr i; incr j
+                            puts $fp "$i $j 1"
+                        }
+                    }
+                }
 
-            if { $writepairs } {
-                #Need to find the 1-4 pairs. For some dumb reason, grompp doesn't do this for you.
-                set list [get14pairs $fsel]
+                set list [bondinfo getbondlist $fsel none]
                 if {[llength $list]} {
-                    puts $fp "\n\[ pairs \]\n; ai aj func"
-                    foreach pair $list {
-                        lassign $pair i j
+                    puts $fp "\n\[ bonds \]\n; i  j  func"
+                    foreach b $list {
+                        lassign $b i j
                         set i [lsearch -sorted -integer $atmmap $i]
                         set j [lsearch -sorted -integer $atmmap $j]
                         incr i; incr j
-                        puts $fp "$i $j 1"
+                        puts $fp "$i $j $btype"
                     }
                 }
-            }
 
-            set list [bondinfo getbondlist $fsel none]
-            if {[llength $list]} {
-                puts $fp "\n\[ bonds \]\n; i  j  func"
-                foreach b $list {
-                    lassign $b i j
-                    set i [lsearch -sorted -integer $atmmap $i]
-                    set j [lsearch -sorted -integer $atmmap $j]
-                    incr i; incr j
-                    puts $fp "$i $j $btype"
+                set list [angleinfo getanglelist $fsel]
+                if {[llength $list] > 0} {
+                    puts $fp "\n\[ angles \]\n; i  j  k  func"
+                    foreach b $list {
+                        lassign $b t i j k
+                        set i [lsearch -sorted -integer $atmmap $i]
+                        set j [lsearch -sorted -integer $atmmap $j]
+                        set k [lsearch -sorted -integer $atmmap $k]
+                        incr i; incr j; incr k
+                        puts $fp "$i $j $k $atype"
+                    }
                 }
-            }
 
-            set list [angleinfo getanglelist $fsel]
-            if {[llength $list] > 0} {
-                puts $fp "\n\[ angles \]\n; i  j  k  func"
-                foreach b $list {
-                    lassign $b t i j k
-                    set i [lsearch -sorted -integer $atmmap $i]
-                    set j [lsearch -sorted -integer $atmmap $j]
-                    set k [lsearch -sorted -integer $atmmap $k]
-                    incr i; incr j; incr k
-                    puts $fp "$i $j $k $atype"
+                set list [dihedralinfo getdihedrallist $fsel]
+                if {[llength $list] > 0} {
+                    puts $fp "\n\[ dihedrals \]\n; i  j  k  l  func"
+                    foreach b $list {
+                        lassign $b t i j k l
+                        set i [lsearch -sorted -integer $atmmap $i]
+                        set j [lsearch -sorted -integer $atmmap $j]
+                        set k [lsearch -sorted -integer $atmmap $k]
+                        set l [lsearch -sorted -integer $atmmap $l]
+                        incr i ; incr j; incr k ; incr l
+                        puts $fp "$i $j $k $l $dtype"
+                    }
                 }
-            }
 
-            set list [dihedralinfo getdihedrallist $fsel]
-            if {[llength $list] > 0} {
-                puts $fp "\n\[ dihedrals \]\n; i  j  k  l  func"
-                foreach b $list {
-                    lassign $b t i j k l
-                    set i [lsearch -sorted -integer $atmmap $i]
-                    set j [lsearch -sorted -integer $atmmap $j]
-                    set k [lsearch -sorted -integer $atmmap $k]
-                    set l [lsearch -sorted -integer $atmmap $l]
-                    incr i ; incr j; incr k ; incr l
-                    puts $fp "$i $j $k $l $dtype"
+                set list [improperinfo getimproperlist $fsel]
+                if {[llength $list] > 0} {
+                    puts $fp "\n\[ dihedrals \]\n; i  j  k  l  func"
+                    foreach b $list {
+                        lassign $b t i j k l
+                        set i [lsearch -sorted -integer $atmmap $i]
+                        set j [lsearch -sorted -integer $atmmap $j]
+                        set k [lsearch -sorted -integer $atmmap $k]
+                        set l [lsearch -sorted -integer $atmmap $l]
+                        incr i ; incr j; incr k ; incr l
+                        puts $fp "$i $j $k $l $itype"
+                    }
                 }
-            }
-
-            set list [improperinfo getimproperlist $fsel]
-            if {[llength $list] > 0} {
-                puts $fp "\n\[ dihedrals \]\n; i  j  k  l  func"
-                foreach b $list {
-                    lassign $b t i j k l
-                    set i [lsearch -sorted -integer $atmmap $i]
-                    set j [lsearch -sorted -integer $atmmap $j]
-                    set k [lsearch -sorted -integer $atmmap $k]
-                    set l [lsearch -sorted -integer $atmmap $l]
-                    incr i ; incr j; incr k ; incr l
-                    puts $fp "$i $j $k $l $itype"
-                }
-            }
-            set list [crossterminfo getcrosstermlist $fsel]
-            if {[llength $list] > 0} {
-                puts $fp "\n\[ cmap \]\n; ai aj ak al am funct"
-                foreach b $list {
-                    lassign $b i j k l x y z m
-                    set i [lsearch -sorted -integer $atmmap $i]
-                    set j [lsearch -sorted -integer $atmmap $j]
-                    set k [lsearch -sorted -integer $atmmap $k]
-                    set l [lsearch -sorted -integer $atmmap $l]
-                    set m [lsearch -sorted -integer $atmmap $m]
-                    incr i ; incr j; incr k ; incr l ; incr m
-                    puts $fp "$i $j $k $l $m 1"
+                set list [crossterminfo getcrosstermlist $fsel]
+                if {[llength $list] > 0} {
+                    puts $fp "\n\[ cmap \]\n; ai aj ak al am funct"
+                    foreach b $list {
+                        lassign $b i j k l x y z m
+                        set i [lsearch -sorted -integer $atmmap $i]
+                        set j [lsearch -sorted -integer $atmmap $j]
+                        set k [lsearch -sorted -integer $atmmap $k]
+                        set l [lsearch -sorted -integer $atmmap $l]
+                        set m [lsearch -sorted -integer $atmmap $m]
+                        incr i ; incr j; incr k ; incr l ; incr m
+                        puts $fp "$i $j $k $l $m 1"
+                    }
                 }
             }
         } else {

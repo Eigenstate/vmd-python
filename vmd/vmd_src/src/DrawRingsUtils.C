@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *  $RCSfile: DrawRingsUtils.C,v $
  *  $Author: johns $  $Locker:  $    $State: Exp $
- *  $Revision: 1.35 $  $Date: 2011/03/16 15:18:05 $
+ *  $Revision: 1.38 $  $Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -110,12 +110,12 @@ float hill_reilly_ring_pucker(SmallRing &ring, float *framepos) {
     if (N==6) {
       //MK do Hill-Reilly for 6-membered rings
       int NP = N-3; // number of puckering parameters
-      float *X = new float[N*3]; // atom co-ordinates
-      float *r = new float[N*3]; // bond vectors
-      float *a = new float[NP*3]; // puckering axes
-      float *q = new float[NP*3]; // normalized puckering vectors
-      float *n = new float[3]; // normal to reference plane
-      float *p = new float[3]; // a flap normal
+      float *X = new float[N*3L]; // atom co-ordinates
+      float *r = new float[N*3L]; // bond vectors
+      float *a = new float[NP*3L]; // puckering axes
+      float *q = new float[NP*3L]; // normalized puckering vectors
+      float *n = new float[3L]; // normal to reference plane
+      float *p = new float[3L]; // a flap normal
       float *theta = new float[NP]; // puckering parameters
       float pucker_sum;
       float max_pucker_sum;
@@ -125,38 +125,38 @@ float hill_reilly_ring_pucker(SmallRing &ring, float *framepos) {
       // load ring co-ordinates
       for (i=0; i<N; i++) {
         curatomid = ring[i];
-        atompos = framepos + 3*curatomid;
-        X[3*i] = atompos[0];
-        X[3*i+1] = atompos[1];
-        X[3*i+2] = atompos[2];
+        atompos = framepos + 3L*curatomid;
+        X[3L*i  ] = atompos[0];
+        X[3L*i+1] = atompos[1];
+        X[3L*i+2] = atompos[2];
       }     
     
       // calculate bond vectors
       for (i=0; i<N; i++) {
         j = (i+1) % N;
-        vec_sub(r+3*i,X+3*j,X+3*i);
+        vec_sub(r+3L*i, X+3L*j, X+3L*i);
       }
     
       // calculate puckering axes, flap normals and puckering vectors
       for (i=0; i<NP; i++) {
-        k = (2*(i+1)) % N;
-        j = (2*i) % N;
-        l = (2*i+1) % N;
-        vec_sub(a+3*i,X+3*k,X+3*j);
-        cross_prod(p,r+3*j,r+3*l);
-        cross_prod(q+3*i,a+3*i,p);
-        vec_normalize(q+3*i);
+        k = (L2*(i+1)) % N;
+        j = (L2*i) % N;
+        l = (L2*i+1) % N;
+        vec_sub(a+3L*i, X+3L*k, X+3L*j);
+        cross_prod(p, r+3L*j, r+3L*l);
+        cross_prod(q+3L*i, a+3L*i, p);
+        vec_normalize(q+3L*i);
       }
     
       // reference normal
-      cross_prod(n,a+3*0,a+3*1);
+      cross_prod(n, a+3L*0, a+3L*1);
       vec_normalize(n);
     
       // calculate the puckering parameters
       pucker_sum = 0.0;
     
       for (i=0; i<NP; i++) {
-        theta[i] = (float(VMD_PI)/2.0f) - acosf(dot_prod(q+3*i, n));
+        theta[i] = (float(VMD_PI)/2.0f) - acosf(dot_prod(q+3L*i, n));
         pucker_sum += theta[i];
       }
     
@@ -191,7 +191,7 @@ float hill_reilly_ring_pucker(SmallRing &ring, float *framepos) {
     
     for (int i=0; i<N; i++) {
       curatomid = ring[i];
-      atompos = framepos + 3*curatomid; // pointer arithmetic is evil :)
+      atompos = framepos + 3L*curatomid; // pointer arithmetic is evil :)
       xring[i] = atompos[0];
       yring[i] = atompos[1];
       zring[i] = atompos[2];
@@ -406,7 +406,7 @@ void cremer_pople_ring_color(SmallRing &ring, float *framepos, float *rgb) {
 
   for (int i=0; i<N; i++) {
     curatomid = ring[i];
-    atompos = framepos + 3*curatomid; // pointer arithmetic is evil :)
+    atompos = framepos + 3L*curatomid; // pointer arithmetic is evil :)
     xring[i] = atompos[0];
     yring[i] = atompos[1];
     zring[i] = atompos[2];

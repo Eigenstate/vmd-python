@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Timestep.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.65 $	$Date: 2012/08/10 14:40:47 $
+ *	$Revision: 1.68 $	$Date: 2016/11/28 03:05:05 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -59,10 +59,10 @@ Timestep::Timestep(int n) {
   for(int i=0; i < TSENERGIES; energy[i++] = 0.0);
   num = n;
 #if defined(TS_MAX_BLOCKIO)
-  pos = (float *) alloc_aligned_ptr(3*num*sizeof(float), 
+  pos = (float *) alloc_aligned_ptr(3L*num*sizeof(float), 
                                     TS_MAX_BLOCKIO, (void**) &pos_ptr);
 #else
-  pos_ptr = new float[3 * num]
+  pos_ptr = new float[3L * num]
   pos=pos_ptr;
 #endif
   vel = NULL;
@@ -86,24 +86,24 @@ Timestep::Timestep(const Timestep& ts) {
 #if defined(TS_MAX_BLOCKIO)
   // If we supprot block-based direct I/O, we must use memory buffers
   // that are padded to a full block size, and  
-  pos = (float *) alloc_aligned_ptr(3*num*sizeof(float), 
+  pos = (float *) alloc_aligned_ptr(3L*num*sizeof(float), 
                                     TS_MAX_BLOCKIO, (void**) &pos_ptr);
 #else
-  pos_ptr = new float[3 * num]
+  pos_ptr = new float[3L * num]
   pos=pos_ptr;
 #endif
-  memcpy(pos, ts.pos, 3 * num * sizeof(float));
+  memcpy(pos, ts.pos, 3L*num*sizeof(float));
 
   if (ts.force) {
-    force = new float[3 * num];
-    memcpy(force, ts.force, 3 * num * sizeof(float));
+    force = new float[3L * num];
+    memcpy(force, ts.force, 3L * num * sizeof(float));
   } else {
     force = NULL;
   }
 
   if (ts.vel) {
-    vel = new float[3 * num];
-    memcpy(vel, ts.vel, 3 * num * sizeof(float));
+    vel = new float[3L * num];
+    memcpy(vel, ts.vel, 3L * num * sizeof(float));
   } else {
     vel = NULL;
   }
@@ -177,7 +177,7 @@ void Timestep::zero_values() {
   if (num <= 0) 
     return;
     
-  memset(pos,0,3*num*sizeof(float));
+  memset(pos, 0, 3L*num*sizeof(float));
    
   for(int i=0; i < TSENERGIES; energy[i++] = 0.0);
   timesteps=0;

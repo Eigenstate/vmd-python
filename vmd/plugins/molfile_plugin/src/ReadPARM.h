@@ -2,8 +2,8 @@
  * RCS INFORMATION:
  *
  *      $RCSfile: ReadPARM.h,v $
- *      $Author: akohlmey $        $Locker:  $                $State: Exp $
- *      $Revision: 1.14 $      $Date: 2013/07/20 14:37:13 $
+ *      $Author: johns $        $Locker:  $                $State: Exp $
+ *      $Revision: 1.15 $      $Date: 2016/11/06 17:54:57 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -184,10 +184,10 @@ FILE *ReadPARM::open_parm_file(const char *name) {
         }
 #else
 	if (compressed) {
-		char pcmd[120];
+		char pcmd[sizeof(cbuf) + 7];
 		popn = 1;
 
-		sprintf(pcmd, "zcat %s", cbuf);
+		sprintf(pcmd, "zcat '%s'", cbuf);
 		if ((fp = popen(pcmd, "r")) == NULL) {
 			perror(pcmd);
                         return NULL;

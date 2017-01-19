@@ -1,7 +1,7 @@
 .SILENT:
 
 VMFILES = chirality.tcl chirality_gui.tcl pkgIndex.tcl
-VMVERSION = 1.1
+VMVERSION = 1.2
 DIR = $(PLUGINDIR)/noarch/tcl/chirality$(VMVERSION)
 
 bins:

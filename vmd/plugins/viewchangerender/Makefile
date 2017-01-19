@@ -1,7 +1,7 @@
 .SILENT:
 
 VMFILES = vcr.tcl vcr_gui.tcl pkgIndex.tcl
-VMVERSION = 1.7
+VMVERSION = 1.8
 DIR = $(PLUGINDIR)/noarch/tcl/viewchangerender$(VMVERSION)
 
 bins:

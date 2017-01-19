@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_imd.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.17 $       $Date: 2011/02/04 17:49:39 $
+ *      $Revision: 1.18 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -30,7 +30,7 @@
 
 // connect(host, port)
 static PyObject *imdconnect(PyObject *self, PyObject *args, PyObject *keywds) {
-  
+
   char *host;
   int port;
 
@@ -54,7 +54,7 @@ static PyObject *imdconnect(PyObject *self, PyObject *args, PyObject *keywds) {
   if (!app->imd_connect(mol->id(), host, port)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Unable to connect to IMD server");
     return NULL;
-  } 
+  }
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -65,7 +65,7 @@ static PyObject *pause(PyObject *self, PyObject *args) {
     return NULL;
   VMDApp *app = get_vmdapp();
   app->imdMgr->togglepause();
-  app->commandQueue->runcommand(new CmdIMDSim(CmdIMDSim::PAUSE_TOGGLE)); 
+  app->commandQueue->runcommand(new CmdIMDSim(CmdIMDSim::PAUSE_TOGGLE));
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -87,8 +87,8 @@ static PyObject *kill(PyObject *self, PyObject *args) {
     return NULL;
   VMDApp *app = get_vmdapp();
   app->imdMgr->kill();
-  app->commandQueue->runcommand(new CmdIMDSim(CmdIMDSim::KILL)); 
-  
+  app->commandQueue->runcommand(new CmdIMDSim(CmdIMDSim::KILL));
+
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -109,12 +109,16 @@ static PyObject *transfer(PyObject *self, PyObject *args, PyObject *keywds) {
     app->commandQueue->runcommand(
       new CmdIMDRate(CmdIMDRate::TRANSFER, rate));
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->imdMgr->get_trans_rate());
+#else
   return PyInt_FromLong(app->imdMgr->get_trans_rate());
+#endif
 }
 
 // keep(rate): rate is optional, return current (new) value
 static PyObject *keep(PyObject *self, PyObject *args, PyObject *keywds) {
-  
+
   int rate = -1;
   static char *kwlist[] = {
     (char *)"rate", NULL
@@ -128,14 +132,18 @@ static PyObject *keep(PyObject *self, PyObject *args, PyObject *keywds) {
     app->commandQueue->runcommand(
       new CmdIMDRate(CmdIMDRate::KEEP, rate));
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->imdMgr->get_keep_rate());
+#else
   return PyInt_FromLong(app->imdMgr->get_keep_rate());
+#endif
 }
 
 
 // copyunitcell(True/False)
 static PyObject *copyunitcell(PyObject *self, PyObject *args) {
 
-  PyObject *boolobj; 
+  PyObject *boolobj;
   if (!PyArg_ParseTuple(args, (char *)"O:imd.copyunitcell", &boolobj))
     return NULL;
 
@@ -153,7 +161,7 @@ static PyObject *copyunitcell(PyObject *self, PyObject *args) {
 static PyObject *imdconnected(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, (char *)"")) return NULL;
   VMDApp *app = get_vmdapp();
-  return Py_BuildValue( "O", 
+  return Py_BuildValue( "O",
       app->imdMgr->connected() ? Py_True : Py_False );
 }
 
@@ -162,9 +170,9 @@ static PyMethodDef methods[] = {
     (char *)"connected() -- True/False" },
   {(char *)"connect", (PyCFunction)imdconnect, METH_VARARGS | METH_KEYWORDS,
     (char *)"connect(host, port) -- establish IMD connection simulation on host:port"},
-  {(char *)"pause", (vmdPyMethod)pause, METH_VARARGS, 
+  {(char *)"pause", (vmdPyMethod)pause, METH_VARARGS,
     (char *)"pause() -- pause a running IMD simulation"},
-  {(char *)"detach", (vmdPyMethod)detach, METH_VARARGS, 
+  {(char *)"detach", (vmdPyMethod)detach, METH_VARARGS,
     (char *)"detach() -- detach from a running IMD simulation"},
   {(char *)"kill", (vmdPyMethod)kill, METH_VARARGS,
     (char *)"kill() -- halt a running IMD simulation (also detaches)"},
@@ -174,7 +182,7 @@ static PyMethodDef methods[] = {
     (char *)"keep(rate = -1) -- set/get how often timesteps are saved "},
   {(char *)"copyunitcell", (PyCFunction)copyunitcell, METH_VARARGS,
     (char *)"copyunitcell(True/False) -- copy unitcell information from previous frame"},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
 #else
@@ -185,7 +193,23 @@ static PyMethodDef methods[] = {
 };
 #endif
 
-void initimd() {
-  (void) Py_InitModule((char *)"imd", methods);
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef imddef = {
+    PyModuleDef_HEAD_INIT,
+    "imd",
+    NULL,
+    -1,
+    methods,
+    NULL, NULL, NULL, NULL
+};
+#endif
+
+PyObject* initimd() {
+#if PY_MAJOR_VERSION >= 3
+    PyObject *module = PyModule_Create(&imddef);
+#else
+    PyObject *module = Py_InitModule((char *)"imd", methods);
+#endif
+    return module;
 }
 

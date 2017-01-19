@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,12 +11,12 @@
  *
  *      $RCSfile: main.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.15 $       $Date: 2009/05/18 05:56:20 $
+ *      $Revision: 1.16 $       $Date: 2016/11/28 05:01:54 $
  *
  ***************************************************************************/
 
 /*
- * A general main for testing plugins.  
+ * A general main for testing plugins.
  * Compile using: gcc main.c plugin.c -I../../include -o plugintest
  * Replace plugin.c with the plugin file you want to test.
  * Usage: plugintest <filetype> <file> [<filetype> <file>]
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     cfiletype = argv[3];
     cfilename = argv[4];
   }
-  
+
   vmdplugin_init();
   vmdplugin_register(NULL, register_cb);
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   if (!splugin->open_file_read) {
     fprintf(stdout, "FAILED: No open_file_read found in structure plugin.\n");
     return 1;
-  } 
+  }
   handle = splugin->open_file_read(sfilename, sfiletype, &natoms);
   if (!handle) {
     fprintf(stderr, "FAILED: open_file_read returned NULL in structure plugin.\n");
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
       int nbonds, *from, *to, *bondtype, nbondtypes;
       float *bondorder;
       char **bondtypename;
-      if ((rc = splugin->read_bonds(handle, &nbonds, &from, &to, 
+      if ((rc = splugin->read_bonds(handle, &nbonds, &from, &to,
 				   &bondorder, &bondtype, &nbondtypes, &bondtypename))) {
         fprintf(stderr, "FAILED: read_bonds returned %d\n", rc);
       } else {
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* Close plugin(s) */
-  cplugin->close_file_read(chandle); 
+  cplugin->close_file_read(chandle);
 
   vmdplugin_fini();
   printf("Tests finished.\n");

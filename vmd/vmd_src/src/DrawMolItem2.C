@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolItem2.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.35 $	$Date: 2015/05/03 15:30:05 $
+ *	$Revision: 1.37 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -35,11 +35,11 @@
 //   with the right colors, etc.
 #define PUSH_QUEUE(atomid) {						\
   if (atomid < 0) {							\
-    memmove(CA, CA+1, 3*sizeof(float *)); CA[3] = NULL;			\
-    memmove(indicies, indicies+1, 3*sizeof(int)); indicies[3] = -1;	\
+    memmove(CA, CA+1, 3L*sizeof(float *)); CA[3] = NULL;		\
+    memmove(indicies, indicies+1, 3L*sizeof(int)); indicies[3] = -1;	\
   } else {								\
-    memmove(CA, CA+1, 3*sizeof(float *)); CA[3] = framepos+3*atomid;	\
-    memmove(indicies, indicies+1, 3*sizeof(int)); indicies[3] = atomid;	\
+    memmove(CA, CA+1, 3L*sizeof(float *)); CA[3] = framepos+3L*atomid;	\
+    memmove(indicies, indicies+1, 3L*sizeof(int)); indicies[3] = atomid;\
   }                                        			        \
   /* check if I need to draw a bond */					\
   if (CA[1] && CA[2] && atomSel->on[indicies[1]] && atomSel->on[indicies[2]]) {	\
@@ -263,10 +263,10 @@ void DrawMolItem::draw_dot_surface(float *framepos, float srad, int sres, int me
     for (int j=0; j<cl.num; j++) {
       const int id = cl.idlist[j];
       const MolAtom *atom = mol->atom(id);
-      const float *pos = framepos + 3*id;
+      const float *pos = framepos + 3L*id;
       float radius = aradius[id] + probe_radius;
       for (int points=0; points < num_dots; points++) {
-        const float *d = dots + 3*points;
+        const float *d = dots + 3L*points;
         flgs[points] = 1;
         float xyz[3];
         vec_scale(xyz, radius, d);
@@ -276,7 +276,7 @@ void DrawMolItem::draw_dot_surface(float *framepos, float srad, int sres, int me
           int b = atom->bondTo[nbr];
           const MolAtom *atom2 = mol->atom(b);
           float r = aradius[b] + probe_radius;
-          if (distance2(xyz, framepos + 3*b) < r*r) {
+          if (distance2(xyz, framepos + 3L*b) < r*r) {
             flgs[points] = 0;
             break;
           }
@@ -285,7 +285,7 @@ void DrawMolItem::draw_dot_surface(float *framepos, float srad, int sres, int me
             int b2 = atom2->bondTo[nbr2];
             if (b2 == id) continue; // don't eliminate myself!
             float r2 = aradius[b2] + probe_radius;
-            if (distance2(xyz, framepos + 3*b2) < r2*r2) {
+            if (distance2(xyz, framepos + 3L*b2) < r2*r2) {
               flgs[points] = 0;
               break;
             }
@@ -340,18 +340,18 @@ void DrawMolItem::draw_dot_surface(float *framepos, float srad, int sres, int me
         for (a=0; a < num_dots; a++) {
           if (flgs[a]) {
             // if this point is turned on
-            xyz[0][0] = pos[0] + radius * dots[3*a + 0];
-            xyz[0][1] = pos[1] + radius * dots[3*a + 1];
-            xyz[0][2] = pos[2] + radius * dots[3*a + 2];
+            xyz[0][0] = pos[0] + radius * dots[3L*a + 0];
+            xyz[0][1] = pos[1] + radius * dots[3L*a + 1];
+            xyz[0][2] = pos[2] + radius * dots[3L*a + 2];
             
             // go through the matching connections
-            while (offset < num_edges && edges[2*offset] == a) {
+            while (offset < num_edges && edges[2L*offset] == a) {
               // is the neighbor turned on?
-              b = edges[2*offset + 1];
+              b = edges[2L*offset + 1];
               if (flgs[b]) {
-                xyz[1][0] = pos[0] + radius * dots[3*b + 0];
-                xyz[1][1] = pos[1] + radius * dots[3*b + 1];
-                xyz[1][2] = pos[2] + radius * dots[3*b + 2];
+                xyz[1][0] = pos[0] + radius * dots[3L*b + 0];
+                xyz[1][1] = pos[1] + radius * dots[3L*b + 1];
+                xyz[1][2] = pos[2] + radius * dots[3L*b + 2];
                 verts.append3(&xyz[0][0]);
                 verts.append3(&xyz[1][0]);
               }
@@ -359,7 +359,7 @@ void DrawMolItem::draw_dot_surface(float *framepos, float srad, int sres, int me
             }
           } else {
             // just go through the connection until the next number
-            while (offset < num_edges && edges[2*offset] == a) {
+            while (offset < num_edges && edges[2L*offset] == a) {
               offset++;
             }
           }

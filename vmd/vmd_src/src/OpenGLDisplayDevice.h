@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: OpenGLDisplayDevice.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.53 $	$Date: 2014/11/08 06:52:29 $
+ *	$Revision: 1.54 $	$Date: 2016/11/28 03:05:02 $
  *
  ***************************************************************************
  * DESCRIPTION:

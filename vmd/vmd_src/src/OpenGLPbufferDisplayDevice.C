@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: OpenGLPbufferDisplayDevice.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.9 $	$Date: 2014/12/29 02:33:17 $
+ *	$Revision: 1.22 $	$Date: 2016/11/30 06:35:29 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -25,13 +25,17 @@
 #include <stdlib.h>
 #include <math.h>
 #include <GL/gl.h>
+
+#if defined(VMDGLXPBUFFER)
 #include <GL/glx.h>
 #include <X11/Xlib.h>
+#endif
 
 #include "OpenGLPbufferDisplayDevice.h"
 #include "Inform.h"
 #include "utilities.h"
 #include "config.h"   // VMD version strings etc
+#include "VMDApp.h"
 
 // Request a Pbuffer just larger than standard Ultra-HD "4K" resolution
 #define DEF_PBUFFER_XRES 4096
@@ -60,13 +64,19 @@ static const char *glCacheNameStr[OPENGL_CACHE_MODES] =
 { "Off",
   "On" };
 
+
+//
+// GLX-related static helper functions
+//
+#if defined(VMDGLXPBUFFER)
+
 // determine if all of the ARB multisample extension routines are available
+// when using GLX APIs
 #if defined(GL_ARB_multisample) && defined(GLX_SAMPLES_ARB) && defined(GLX_SAMPLE_BUFFERS_ARB)
 #define USEARBMULTISAMPLE 1
 #endif
 
-////////////////////////// static helper functions.
-static GLXFBConfig * vmd_get_fbconfig(glxpbufferdata *glxsrv, int *stereo, int *msamp, int *numsamples) {
+static GLXFBConfig * vmd_get_glx_fbconfig(glxpbufferdata *glxsrv, int *stereo, int *msamp, int *numsamples) {
   // we want double-buffered RGB with a Z buffer (possibly with stereo)
   int ns, dsize;
   int simplegraphics = 0;
@@ -318,12 +328,189 @@ static GLXFBConfig * vmd_get_fbconfig(glxpbufferdata *glxsrv, int *stereo, int *
   return fbc;
 }
 
+#endif
+
+
+//
+// EGL-related static helper functions
+//
+#if defined(VMDEGLPBUFFER)
+
+// determine if all of the ARB multisample extension routines are available
+// when using EGL APIs
+#if defined(GL_ARB_multisample)
+#define USEARBMULTISAMPLE 1
+#endif
+
+static int vmd_get_egl_fbconfig(eglpbufferdata *eglsrv, int *stereo, int *msamp, int *numsamples) {
+  // we want double-buffered RGB with a Z buffer (possibly with stereo)
+  int ns, dsize;
+  int simplegraphics = 0;
+  // XXX standard EGL doesn't support stereo visuals at present,
+  // int disablestereo = 0;
+  int fbc = 0;
+  int nfbc = 0;
+
+  *numsamples = 0;
+  *msamp = FALSE; 
+  *stereo = FALSE;
+
+  if (getenv("VMDSIMPLEGRAPHICS")) {
+    simplegraphics = 1;
+  }
+
+  // XXX standard EGL doesn't support stereo visuals at present,
+  // if (getenv("VMDDISABLESTEREO")) {
+  //   disablestereo = 1;
+  // } 
+
+  // check for user-override of maximum antialiasing sample count
+  int maxaasamples=4;
+  const char *maxaasamplestr = getenv("VMDMAXAASAMPLES");
+  if (maxaasamplestr) {
+    int aatmp;
+    if (sscanf(maxaasamplestr, "%d", &aatmp) == 1) {
+      if (aatmp >= 0) {
+        maxaasamples=aatmp;
+        msgInfo << "User-requested OpenGL antialiasing sample depth: " 
+                << maxaasamples << sendmsg;
+
+        if (maxaasamples < 2) {
+          maxaasamples=1; 
+          msgInfo << "OpenGL antialiasing disabled by user override."
+                  << sendmsg;
+        }
+      } else {
+        msgErr << "Ignoring user-requested OpenGL antialiasing sample depth: " 
+               << aatmp << sendmsg;
+      }
+    } else {
+      msgErr << "Unable to parse override of OpenGL antialiasing" << sendmsg;
+      msgErr << "sample depth: '" << maxaasamplestr << "'" << sendmsg;
+    }
+  }
+
+
+  // loop over a big range of depth buffer sizes, starting with biggest 
+  // and working our way down from there.
+  for (dsize=32; dsize >= 16; dsize-=4) { 
+    //
+    // XXX standard EGL doesn't support stereo visuals at present,
+    // so the tsts we would normally do for stereo are omitted here
+    //
+
+// Try the OpenGL ARB multisample extension if available
+#if defined(USEARBMULTISAMPLE) 
+    if (!simplegraphics && (!fbc && nfbc < 1)) {
+      // Non-Stereo, multisample antialising, stencil buffer
+      for (ns=maxaasamples; ns>1; ns--) {
+        int conf[]  = {EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+                       EGL_DEPTH_SIZE, dsize, 
+                       EGL_STENCIL_SIZE, 1, 
+                       EGL_SAMPLE_BUFFERS, 1, 
+                       EGL_SAMPLES, ns, 
+                       EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8,
+                       EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT, EGL_NONE };
+
+        if (eglChooseConfig(eglsrv->dpy, conf, &eglsrv->conf, 1, &nfbc) == EGL_TRUE) {
+          if (nfbc > 0) {
+            fbc=1; // flag that we got a config
+            *numsamples = ns;
+            *msamp = TRUE;
+            *stereo = FALSE; // XXX EGL doesn't support stereo at present
+            break; // exit loop if we got a good visual
+          } 
+        }
+      }
+    }
+#endif
+
+    //
+    // XXX standard EGL doesn't support stereo visuals at present,
+    // so the tsts we would normally do for stereo are omitted here
+    //
+  } // end of loop over a wide range of depth buffer sizes
+
+  // Ideally we should fall back to accumulation buffer based antialiasing
+  // here, but not currently implemented.  At this point no multisample
+  // antialiasing mode is available.
+
+  //
+  // XXX standard EGL doesn't support stereo visuals at present,
+  // so the tests we would normally do for stereo are omitted here
+  //
+
+  // This mode gives up on trying to get stereo, and goes back to trying
+  // to get a high quality non-stereo visual.
+  if (!simplegraphics && (!fbc && nfbc < 1)) {
+    int conf[]  = {EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+                   EGL_DEPTH_SIZE, 16, 
+                   EGL_STENCIL_SIZE, 1, 
+                   EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8,
+                   EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT, EGL_NONE };
+
+    if (eglChooseConfig(eglsrv->dpy, conf, &eglsrv->conf, 1, &nfbc) == EGL_TRUE) {
+      if (nfbc > 0) {
+        fbc=1; // flag that we got a config
+        ns = 0; // no multisample antialiasing
+        *numsamples = ns;
+        *msamp = FALSE; 
+        *stereo = FALSE; // XXX EGL doesn't support stereo at present
+      } 
+    }
+  }
+  
+  // check if we have a TrueColor visual.
+  if (!fbc && nfbc < 1) {
+    // still no TrueColor.  Try again, with a very basic request ...
+    // This is a catch all, we're desperate for any truecolor
+    // visual by this point.  We've given up hoping for 24-bit
+    // color or stereo by this time.
+    int conf[]  = {EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+                   EGL_DEPTH_SIZE, 16, 
+                   EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8,
+                   EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT, EGL_NONE };
+
+    if (eglChooseConfig(eglsrv->dpy, conf, &eglsrv->conf, 1, &nfbc) == EGL_TRUE) {
+      if (nfbc > 0) {
+        fbc=1; // flag that we got a config
+        ns = 0; // no multisample antialiasing
+        *numsamples = ns;
+        *msamp = FALSE; 
+        *stereo = FALSE; // XXX EGL doesn't support stereo at present
+      } 
+    }
+  }
+
+  if (!fbc && nfbc < 1) {
+    // complete failure
+    ns = 0; // no multisample antialiasing
+    *numsamples = ns;
+    *msamp = FALSE; 
+    *stereo = FALSE; // XXX EGL doesn't support stereo at present
+  }
+
+  // return false if the config count is less than one
+  if (nfbc < 1)
+    return 0;
+
+  return 1;
+}
+
+#endif
+
+
+
+
+
+
+
+
 
 /////////////////////////  constructor and destructor  
 
 OpenGLPbufferDisplayDevice::OpenGLPbufferDisplayDevice()
 : OpenGLRenderer((char *) "VMD " VMDVERSION " OpenGL Display") {
-
   // set up data possible before opening window
   stereoNames = glStereoNameStr;
   stereoModes = OPENGL_STEREO_MODES;
@@ -334,19 +521,45 @@ OpenGLPbufferDisplayDevice::OpenGLPbufferDisplayDevice()
   cacheNames = glCacheNameStr;
   cacheModes = OPENGL_CACHE_MODES;
 
+#if defined(VMDEGLPBUFFER)
+  memset(&eglsrv, 0, sizeof(eglsrv));
+#endif
+#if defined(VMDGLXPBUFFER)
   memset(&glxsrv, 0, sizeof(glxsrv));
   glxsrv.dpy = NULL;
   glxsrv.dpyScreen = 0;
+#endif
+
   have_window = FALSE;
   screenX = screenY = 0;
 }
+
 
 int OpenGLPbufferDisplayDevice::init(int argc, char **argv, VMDApp *app, int *size, int *loc) {
   vmdapp = app; // save VMDApp handle for use by drag-and-drop handlers
                 // and GPU memory management routines
 
-  // open the window
-  glxsrv.windowID = open_window(name, size, loc, argc, argv);
+  // Try and create a pbuffer using GLX first, and if that doesn't work or
+  // the code is compiled with EGL only, then we fall back to EGL.
+
+#if defined(VMDGLXPBUFFER)
+  int haveglxwin = 0;
+  haveglxwin = glx_open_window(name, size, loc, argc, argv);
+  if (haveglxwin)
+    msgInfo << "Created GLX OpenGL Pbuffer for off-screen rendering" << sendmsg;
+#endif
+
+#if defined(VMDEGLPBUFFER)
+  int haveeglwin = 0;
+#if defined(VMDGLXPBUFFER) 
+  if (!haveglxwin)
+#endif
+    haveeglwin = egl_open_window(name, size, loc, argc, argv);
+
+  if (haveeglwin)
+    msgInfo << "Created EGL OpenGL Pbuffer for off-screen rendering" << sendmsg;
+#endif
+
   if (!have_window) return FALSE;
 
   // set flags for the capabilities of this display
@@ -388,10 +601,17 @@ int OpenGLPbufferDisplayDevice::init(int argc, char **argv, VMDApp *app, int *si
 OpenGLPbufferDisplayDevice::~OpenGLPbufferDisplayDevice(void) {
   if (have_window) {
     free_opengl_ctx(); // free display lists, textures, etc
- 
+
     // close and delete windows, contexts, and display connections
-    glXDestroyContext(glxsrv.dpy, glxsrv.cx);
-    XCloseDisplay(glxsrv.dpy);
+#if defined(VMDEGLPBUFFER)
+#endif
+#if defined(VMDGLXPBUFFER)
+    if (glxsrv.cx) {
+      glXDestroyContext(glxsrv.dpy, glxsrv.cx);
+      XCloseDisplay(glxsrv.dpy);
+    }
+#endif
+
   }
 }
 
@@ -399,10 +619,167 @@ OpenGLPbufferDisplayDevice::~OpenGLPbufferDisplayDevice(void) {
 /////////////////////////  protected nonvirtual routines  
 
 
+#if defined(VMDEGLPBUFFER)
+
 // create a new window and set it's characteristics
-Window OpenGLPbufferDisplayDevice::open_window(char *nm, int *size, int *loc,
-					int argc, char** argv
-) {
+int OpenGLPbufferDisplayDevice::egl_open_window(char *nm, int *size, int *loc,
+                                                int argc, char** argv) {
+  // Clear display before we try and attach
+  eglsrv.dpy = EGL_NO_DISPLAY;
+  eglsrv.numdevices = 0;
+  eglsrv.devindex = 0;
+
+#if defined(EGL_EXT_platform_base) && (EGL_EGLEXT_VERSION >= 20160000)
+  // 
+  // enumerate all GPUs and bind to the one that matches our MPI node rank
+  // 
+
+  // load the function pointers for the device,platform extensions            
+  PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT;
+  PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT;
+  eglQueryDevicesEXT = (PFNEGLQUERYDEVICESEXTPROC) eglGetProcAddress("eglQueryDevicesEXT");     
+  eglGetPlatformDisplayEXT = (PFNEGLGETPLATFORMDISPLAYEXTPROC) eglGetProcAddress("eglGetPlatformDisplayEXT");     
+
+  // try and bind to a non-default display if we have all required fctn ptrs
+  if (eglQueryDevicesEXT != NULL && eglGetPlatformDisplayEXT != NULL) {
+    static const int MAX_DEVICES = 16;
+    EGLDeviceEXT devicelist[MAX_DEVICES];
+    eglQueryDevicesEXT(MAX_DEVICES, devicelist, &eglsrv.numdevices);
+
+    // compute EGL device index to use via round-robin assignment
+    eglsrv.devindex = vmdapp->noderank % eglsrv.numdevices;
+    eglsrv.dpy = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, devicelist[eglsrv.devindex], 0);
+  }
+#endif
+
+  // emit console message with node rank and bound EGL device
+  if (eglsrv.dpy != EGL_NO_DISPLAY) {
+    printf("Info) EGL: node[%d] bound to display[%d], %d %s total\n", 
+            vmdapp->noderank, eglsrv.devindex, eglsrv.numdevices, 
+            (eglsrv.numdevices == 1) ? "display" : "displays");
+  } else {
+    // use default display
+    eglsrv.dpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  
+    if (eglsrv.dpy != EGL_NO_DISPLAY)
+      msgInfo << "EGL context bound to default display." << sendmsg;
+  }
+
+  // if we still have no display, we have no choice but to abort
+  if (eglsrv.dpy == EGL_NO_DISPLAY) {
+    msgErr << "Exiting due to EGL Pbuffer creation failure." << sendmsg;
+    return 0; 
+  }
+
+  EGLint eglmaj, eglmin;
+  if (eglInitialize(eglsrv.dpy, &eglmaj, &eglmin) == EGL_FALSE) {
+    msgErr << "Exiting due to EGL initialization failure." << sendmsg;
+    return 0; 
+  } 
+  msgInfo << "EGL version " << eglmaj << "." << eglmin << sendmsg;
+
+  int fbc = vmd_get_egl_fbconfig(&eglsrv, &ext->hasstereo, &ext->hasmultisample, &ext->nummultisamples);
+  if (!fbc) {
+    msgErr << "Exiting due to EGL config failure." << sendmsg;
+    return 0; 
+  }
+
+  EGLint vid;
+  if (eglGetConfigAttrib(eglsrv.dpy, eglsrv.conf, EGL_NATIVE_VISUAL_ID, &vid) == EGL_FALSE) {
+    msgErr << "Exiting due to eglGetConfigAttrib() failure." << sendmsg;
+    return 0; 
+  }
+
+  // bind to OpenGL API since some implementations don't do this by default
+  if (eglBindAPI(EGL_OPENGL_API) == EGL_FALSE) {
+    msgErr << "Exiting due to EGL OpenGL binding failure." << sendmsg;
+    return 0; 
+  }
+
+  eglsrv.ctx = eglCreateContext(eglsrv.dpy, eglsrv.conf, EGL_NO_CONTEXT, NULL);
+
+  static const EGLint pbuffer_attribs[] = {
+    EGL_WIDTH, DEF_PBUFFER_XRES,
+    EGL_HEIGHT, DEF_PBUFFER_YRES,
+    EGL_NONE,
+  };
+
+  // set maximum allowable rendered image size for the Pbuffer
+  // that was actually allocated, which may be smaller than we hoped...
+  PbufferMaxXsz = DEF_PBUFFER_XRES;
+  PbufferMaxYsz = DEF_PBUFFER_YRES;
+
+  msgInfo << "OpenGL Pbuffer size: " 
+          << PbufferMaxXsz << "x"
+          << PbufferMaxYsz << sendmsg;
+
+  // set default image size to incoming values, when possible.
+  xSize = size[0];
+  ySize = size[1];
+  if (xSize < 0 || xSize > PbufferMaxXsz || 
+      ySize < 0 || ySize > PbufferMaxYsz) {
+    msgWarn << "Ignored out-of-range OpenGL Pbuffer image dimension request: " 
+            << xSize << "x" << ySize 
+            << " (max: " 
+            << PbufferMaxXsz << "x" << PbufferMaxYsz << ")" << sendmsg;
+    xSize = PbufferMaxXsz;
+    ySize = PbufferMaxYsz;
+  }
+
+  eglsrv.surf = eglCreatePbufferSurface(eglsrv.dpy, eglsrv.conf, pbuffer_attribs);
+  eglMakeCurrent(eglsrv.dpy, eglsrv.surf, eglsrv.surf, eglsrv.ctx);
+
+  EGLint Context_RendererType=0;
+  eglQueryContext(eglsrv.dpy, eglsrv.ctx, EGL_CONTEXT_CLIENT_TYPE, &Context_RendererType);
+
+#if 0
+  const char *glstring="uninitialized";
+  char buf[1024];
+  switch (Context_RendererType) {
+    case    EGL_OPENGL_API: glstring = "OpenGL"; break;
+    case EGL_OPENGL_ES_API: glstring = "OpenGL ES"; break;
+    case    EGL_OPENVG_API: glstring = "OpenVG???"; break;
+    default:
+      sprintf(buf, "Unknown API: %x", Context_RendererType);
+      glstring=buf;
+      break;
+  }
+  msgInfo << "EGL_CONTEXT_CLIENT_TYPE: %s\n", glstring);
+#endif
+
+  // If we have acquired a multisample buffer with GLX, we
+  // still need to test to see if we can actually use it.
+  if (ext->hasmultisample) {
+    int msampeext = 0;
+
+    // check for ARB multisampling
+    if (ext->vmdQueryExtension("GL_ARB_multisample")) {
+      msampeext = 1;
+    }
+
+    if (!msampeext) {
+      ext->hasmultisample = FALSE;
+      ext->nummultisamples = 0;
+    }
+  }
+
+  // (9) configure the rendering properly
+  setup_initial_opengl_state();  // setup initial OpenGL state
+
+  // normal return: window was successfully created
+  have_window = TRUE;
+
+  return 1; // return success
+}
+#endif
+
+
+
+#if defined(VMDGLXPBUFFER)
+
+// create a new window and set it's characteristics
+int OpenGLPbufferDisplayDevice::glx_open_window(char *nm, int *size, int *loc,
+                                                int argc, char** argv) {
   char *dispname;
   if ((dispname = getenv("VMDGDISPLAY")) == NULL)
     dispname = getenv("DISPLAY");
@@ -412,9 +789,8 @@ Window OpenGLPbufferDisplayDevice::open_window(char *nm, int *size, int *loc,
     if (dispname != NULL) {
       msgErr << "Failed to open display: " << dispname << sendmsg;
     }
-    return (Window)0; 
+    return 0; 
   }
-
 
   //
   // Check for "Composite" extension and any others that might cause
@@ -451,7 +827,7 @@ Window OpenGLPbufferDisplayDevice::open_window(char *nm, int *size, int *loc,
     msgErr << "The X server does not support the OpenGL GLX extension." 
            << "   Exiting ..." << sendmsg;
     XCloseDisplay(glxsrv.dpy);
-    return (Window)0;
+    return 0;
   }
 
   ext->hasstereo = TRUE;         // stereo on until we find out otherwise.
@@ -460,10 +836,10 @@ Window OpenGLPbufferDisplayDevice::open_window(char *nm, int *size, int *loc,
 
   // Find the best matching OpenGL framebuffer config for our purposes
   GLXFBConfig *fbc;
-  fbc = vmd_get_fbconfig(&glxsrv, &ext->hasstereo, &ext->hasmultisample, &ext->nummultisamples);
+  fbc = vmd_get_glx_fbconfig(&glxsrv, &ext->hasstereo, &ext->hasmultisample, &ext->nummultisamples);
   if (fbc == NULL) {
     msgErr << "No OpenGL Pbuffer configurations available" << sendmsg;
-    return (Window)0;
+    return 0;
   }
 
   // Create the OpenGL Pbuffer and associated GLX context
@@ -479,7 +855,7 @@ Window OpenGLPbufferDisplayDevice::open_window(char *nm, int *size, int *loc,
     msgErr << "The X server is not capable of displaying double-buffered," << sendmsg;
     msgErr << "RGB images with a Z buffer.   Exiting ..." << sendmsg;
     XCloseDisplay(glxsrv.dpy);
-    return (Window)0;
+    return 0;
   }
 
   // set maximum allowable rendered image size for the Pbuffer
@@ -532,9 +908,13 @@ Window OpenGLPbufferDisplayDevice::open_window(char *nm, int *size, int *loc,
   // normal return: window was successfully created
   have_window = TRUE;
 
-  // return window id
-  return PBuffer;
+  // set window id
+  glxsrv.windowID = PBuffer;
+
+  return 1; // return success
 }
+#endif
+
 
 /////////////////////////  public virtual routines  
 
@@ -542,13 +922,13 @@ Window OpenGLPbufferDisplayDevice::open_window(char *nm, int *size, int *loc,
 // virtual routines for preparing to draw, drawing, and finishing drawing
 //
 void OpenGLPbufferDisplayDevice::do_resize_window(int w, int h) {
-  if ((w > 0) && (w <= PbufferMaxXsz)) {
+  if ((w > 0) && (w <= ((int) PbufferMaxXsz))) {
     xSize = w;
   } else {
     msgWarn << "Ignored out-of-range OpenGL Pbuffer X dimension request: " 
             << w << " (max: " << PbufferMaxXsz << ")" << sendmsg;
   }
-  if ((h > 0) && (h <= PbufferMaxYsz)) {
+  if ((h > 0) && (h <= ((int) PbufferMaxYsz))) {
     ySize = h;
   } else {
     msgWarn << "Ignored out-of-range OpenGL Pbuffer Y dimension request: " 
@@ -615,8 +995,25 @@ void OpenGLPbufferDisplayDevice::update(int do_update) {
                 // synchronization is done implicitly by glXSwapBuffers.
   }
 
-  if(do_update)
+#if defined(VMDEGLPBUFFER)
+#if 1
+  if (do_update)
+    eglSwapBuffers(eglsrv.dpy, eglsrv.surf);
+#else
+  EGLBoolean eglrc = EGL_TRUE;
+  if (do_update)
+    eglrc = eglSwapBuffers(eglsrv.dpy, eglsrv.surf);
+
+  if (eglrc != EGL_TRUE) {
+    printf("eglSwapBuffers(): EGLrc: %d\n", eglrc);
+  }
+#endif
+#endif
+
+#if defined(VMDGLXPBUFFER)
+  if (do_update)
     glXSwapBuffers(glxsrv.dpy, glxsrv.windowID);
+#endif
 
   glDrawBuffer(GL_BACK);
 }

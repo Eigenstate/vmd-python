@@ -1,6 +1,6 @@
 
 from vmdcallbacks import *
-import mouse
+from vmd import mouse
 
 def hotkey(s):
   if s == 'r':

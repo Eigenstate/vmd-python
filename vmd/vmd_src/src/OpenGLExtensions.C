@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: OpenGLExtensions.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.75 $	$Date: 2015/05/14 04:59:39 $
+ *	$Revision: 1.80 $	$Date: 2016/11/28 03:05:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -29,7 +29,7 @@
 #include "utilities.h"
 #include "vmddlopen.h"
 
-#if !defined(_MSC_VER) && !(defined(__APPLE__) && !defined (VMDMESA))
+#if !defined(_MSC_VER) && !(defined(__APPLE__) && !defined (VMDMESA)) && !defined(VMDEGLPBUFFER)
 #include <GL/glx.h>     // needed for glxGetProcAddress() prototype
 #endif
 
@@ -177,11 +177,42 @@ VMDGLXextFuncPtr OpenGLExtensions::vmdGetProcAddress(const char * procname) {
 #else
 
 // XXX this is a workaround for a crash on early 64-bit NVidia drivers
+#if defined(VMDEGLPBUFFER)
+#if 0
+  // When using EGL with full OpenGL we might have to use dlopen() to find our 
+  // OpenGL API entry points if eglGetProcAddress doesn't work out.
+  if (gllibraryhandle == NULL) {
+    // Path to GL on Linux. 
+    static const char * glLibPath = "/usr/lib64/libGL.so";
+    gllibraryhandle = vmddlopen(glLibPath);
+  }
+
+  if (gllibraryhandle != NULL) {
+    VMDGLXextFuncPtr fctn;
+    fctn = (VMDGLXextFuncPtr) vmddlsym(gllibraryhandle, procname);
+#if 0
+    printf("proc: '%s' ptr: %p\n", procname, fctn);
+#endif
+    return fctn;
+  }
+#else
+  // If we were using OpenGL ES we would use the EGL routine directly
+  {
+    VMDGLXextFuncPtr fctn;
+    fctn = (VMDGLXextFuncPtr) eglGetProcAddress((const char *) procname);
+#if 0
+    printf("proc: '%s' ptr: %p\n", procname, fctn);
+#endif
+    return fctn;
+  }
+#endif
+#else
 #if defined(GLX_ARB_get_proc_address)
   // NOTE: GLX returns a context-independent function pointer that
   //       can be called anywhere, no special handling is required.
   //       This method is used on Linux
   return glXGetProcAddressARB((const GLubyte *) procname);
+#endif
 #endif
 
 #endif

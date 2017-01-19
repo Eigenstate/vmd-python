@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: Measure.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.143 $       $Date: 2015/05/04 04:15:27 $
+ *      $Revision: 1.145 $       $Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -93,7 +93,7 @@ int measure_move(const AtomSel *sel, float *framepos, const Matrix4 &mat) {
         pos += 3;
       }
     } else {
-      pos += sel->firstsel*3;
+      pos += sel->firstsel*3L;
       for (i=sel->firstsel; i<=sel->lastsel; i++) {
         if (sel->on[i]) {
           float x = pos[0]*m[0] + pos[1]*m[4] + pos[2]*m[8] + dx;
@@ -107,7 +107,7 @@ int measure_move(const AtomSel *sel, float *framepos, const Matrix4 &mat) {
       }
     }
   } else {
-    pos += sel->firstsel*3;
+    pos += sel->firstsel*3L;
     for (i=sel->firstsel; i<=sel->lastsel; i++) {
       if (sel->on[i]) {
         mat.multpoint3d(pos, pos);
@@ -169,9 +169,9 @@ int measure_center(const AtomSel *sel, const float *framepos,
     if (sel->on[i]) {
       float tw = weight[j];
       w += tw;
-      x += tw * framepos[3*i  ];
-      y += tw * framepos[3*i+1];
-      z += tw * framepos[3*i+2];
+      x += tw * framepos[3L*i  ];
+      y += tw * framepos[3L*i+1];
+      z += tw * framepos[3L*i+2];
       j++;
     }
   }
@@ -215,17 +215,17 @@ int measure_minmax(int num, const int *on, const float *framepos,
   i=firstsel;
   if (radii == NULL) {
     // calculate bounding box of atom centers
-    minx = maxx = framepos[i*3  ];
-    miny = maxy = framepos[i*3+1];
-    minz = maxz = framepos[i*3+2];
+    minx = maxx = framepos[i*3L  ];
+    miny = maxy = framepos[i*3L+1];
+    minz = maxz = framepos[i*3L+2];
   } else {
     // calculate bounding box for atoms /w given radii 
-    minx = framepos[i*3  ] - radii[i];
-    maxx = framepos[i*3  ] + radii[i];
-    miny = framepos[i*3+1] - radii[i];
-    maxy = framepos[i*3+1] + radii[i];
-    minz = framepos[i*3+2] - radii[i];
-    maxz = framepos[i*3+2] + radii[i];
+    minx = framepos[i*3L  ] - radii[i];
+    maxx = framepos[i*3L  ] + radii[i];
+    miny = framepos[i*3L+1] - radii[i];
+    maxy = framepos[i*3L+1] + radii[i];
+    minz = framepos[i*3L+2] - radii[i];
+    maxz = framepos[i*3L+2] + radii[i];
   }
 
   // continue looping from there until we finish
@@ -237,7 +237,7 @@ int measure_minmax(int num, const int *on, const float *framepos,
 #else
     for (i++; i<=lastsel; i++) {
       if (on[i]) {
-        int ind = i * 3;
+        long ind = i * 3L;
         float tmpx = framepos[ind  ];
         if (tmpx < minx) minx = tmpx; 
         if (tmpx > maxx) maxx = tmpx;
@@ -256,7 +256,7 @@ int measure_minmax(int num, const int *on, const float *framepos,
     // calculate bounding box for atoms /w given radii 
     for (i++; i<=lastsel; i++) {
       if (on[i]) {
-        int ind = i * 3;
+        long ind = i * 3L;
         float mintmpx = framepos[ind  ] - radii[i];
         float maxtmpx = framepos[ind  ] + radii[i];
         if (mintmpx < minx) minx = mintmpx;
@@ -304,25 +304,25 @@ extern int measure_avpos(const AtomSel *sel, MoleculeList *mlist,
       end >= maxframes || step <= 0)
     return MEASURE_ERR_BADFRAMERANGE;
 
-  int i;
-  for (i=0; i<(3*sel->selected); i++)
+  long i;
+  for (i=0; i<(3L*sel->selected); i++)
     avpos[i] = 0.0f;
 
-  int frame, avcount, j;
+  long frame, avcount, j;
   for (avcount=0,frame=start; frame<=end; avcount++,frame+=step) {
     const float *framepos = (mymol->get_frame(frame))->pos;
     for (j=0,i=sel->firstsel; i<=sel->lastsel; i++) {
       if (sel->on[i]) {
-        avpos[j*3    ] += framepos[i*3    ];
-        avpos[j*3 + 1] += framepos[i*3 + 1];
-        avpos[j*3 + 2] += framepos[i*3 + 2];
+        avpos[j*3L    ] += framepos[i*3L    ];
+        avpos[j*3L + 1] += framepos[i*3L + 1];
+        avpos[j*3L + 2] += framepos[i*3L + 2];
         j++;
       }
     } 
   }
 
   float avinv = 1.0f / (float) avcount;
-  for (j=0; j<(3*sel->selected); j++) {
+  for (j=0; j<(3L*sel->selected); j++) {
     avpos[j] *= avinv;
   } 
 
@@ -448,7 +448,7 @@ extern int measure_rmsf(const AtomSel *sel, MoleculeList *mlist,
     rmsf[i] = 0.0f;
 
   int rc; 
-  float *avpos = new float[3*sel->selected];
+  float *avpos = new float[3L*sel->selected];
   rc = measure_avpos(sel, mlist, start, end, step, avpos);
 
   if (rc != MEASURE_NOERR) {
@@ -462,7 +462,7 @@ extern int measure_rmsf(const AtomSel *sel, MoleculeList *mlist,
     const float *framepos = (mymol->get_frame(frame))->pos;
     for (j=0,i=sel->firstsel; i<=sel->lastsel; i++) {
       if (sel->on[i]) {
-        rmsf[j] += distance2(&avpos[3*j], &framepos[3*i]);
+        rmsf[j] += distance2(&avpos[3L*j], &framepos[3L*i]);
         j++;
       }
     }
@@ -505,7 +505,7 @@ int measure_rgyr(const AtomSel *sel, MoleculeList *mlist, const float *weight,
     if (sel->on[i]) {
       float w = weight[j];
       total_w += w;
-      sum += w * distance2(framepos + 3*i, com);
+      sum += w * distance2(framepos + 3L*i, com);
       j++;
     } 
   }
@@ -577,7 +577,7 @@ int measure_rmsd(const AtomSel *sel1, const AtomSel *sel2,
     }
 
     // sum the calculated rmsd and weight values
-    rmsdsum += tmp_w * distance2(framepos1 + 3*sel1ind, framepos2 + 3*sel2ind);
+    rmsdsum += tmp_w * distance2(framepos1 + 3L*sel1ind, framepos2 + 3L*sel2ind);
     wsum += tmp_w;
 
     // and advance to the next atom pair
@@ -815,7 +815,7 @@ int measure_fit(const AtomSel *sel1, const AtomSel *sel2, const float *x,
     Matrix4 tmp;
     tmp.translate(-comx[0], -comx[1], -comx[2]);
     tmp.translate(comy[0], comy[1], comy[2]);
-    memcpy(mat->mat, tmp.mat, 16*sizeof(float));
+    memcpy(mat->mat, tmp.mat, 16L*sizeof(float));
     return MEASURE_NOERR;
   }
   case 3:
@@ -858,10 +858,10 @@ int measure_fit(const AtomSel *sel1, const AtomSel *sel2, const float *x,
     }
 
     if (sel1->selected == 2) {
-      *mat = myfit2(x+3*pts[0],y+3*pts[2], comx, comy);
+      *mat = myfit2(x+3L*pts[0], y+3L*pts[2], comx, comy);
       ret_val = 0;
     } else {
-      *mat = myfit3(x+3*pts[0],x+3*pts[1],y+3*pts[2],y+3*pts[3],comx,comy);
+      *mat = myfit3(x+3L*pts[0], x+3L*pts[1], y+3L*pts[2], y+3L*pts[3], comx, comy);
       ret_val = 0;
     }  
     if (ret_val != 0) {
@@ -881,11 +881,11 @@ int measure_fit(const AtomSel *sel1, const AtomSel *sel2, const float *x,
   if (!opt || strcmp(opt, "oldvmd")) {
     int i, k;
     float *v1, *v2;
-    v1 = new float[3*num];
-    v2 = new float[3*num];
+    v1 = new float[3L*num];
+    v2 = new float[3L*num];
     for (k=0, i=sel1->firstsel; i<=sel1->lastsel; i++) {
       if (sel1->on[i]) {
-        int ind = 3 * i;
+        long ind = 3L * i;
         v1[k++] = x[ind    ];
         v1[k++] = x[ind + 1];
         v1[k++] = x[ind + 2];
@@ -893,7 +893,7 @@ int measure_fit(const AtomSel *sel1, const AtomSel *sel2, const float *x,
     }
     for (k=0, i=sel2->firstsel; i<=sel2->lastsel; i++) {
       if (sel2->on[i]) {
-        int ind = 3 * i;
+        long ind = 3L * i;
         v2[k++] = y[ind    ];
         v2[k++] = y[ind + 1];
         v2[k++] = y[ind + 2];
@@ -903,11 +903,11 @@ int measure_fit(const AtomSel *sel1, const AtomSel *sel2, const float *x,
     // reorder the sel2 atoms according to the order parameter
     if (order != NULL) {
       int i; 
-      float *tmp = new float[3*num];
-      memcpy(tmp, v2, 3*num*sizeof(float));
+      float *tmp = new float[3L*num];
+      memcpy(tmp, v2, 3L*num*sizeof(float));
       for (i=0; i<num; i++) {
-        int ind = 3 * i;
-        int idx = 3 * order[i]; // order indices are 0-based
+        long ind = 3L * i;
+        long idx = 3L * order[i]; // order indices are 0-based
         v2[ind    ] = tmp[idx    ];
         v2[ind + 1] = tmp[idx + 1];
         v2[ind + 2] = tmp[idx + 2];
@@ -929,8 +929,8 @@ int measure_fit(const AtomSel *sel1, const AtomSel *sel2, const float *x,
     // row 3, and a post-translation stored in column 3.
     float pre[3], post[3];
     for (i=0; i<3; i++) {
-      post[i] = tmp[4*i+3];
-      tmp[4*i+3] = 0;
+      post[i] = tmp[4L*i+3];
+      tmp[4L*i+3] = 0;
     }
     for (i=0; i<3; i++) {
       pre[i] = tmp[12+i];
@@ -940,7 +940,7 @@ int measure_fit(const AtomSel *sel1, const AtomSel *sel2, const float *x,
     result.translate(pre);
     result.multmatrix(Matrix4(tmp));
     result.translate(post);
-    memcpy(mat->mat, result.mat, 16*sizeof(float));
+    memcpy(mat->mat, result.mat, 16L*sizeof(float));
     return 0;
   }
 
@@ -969,13 +969,13 @@ int measure_fit(const AtomSel *sel1, const AtomSel *sel2, const float *x,
 
 	// found both, so get data
         
-	tmp += weight[k] * (y[3*ny+i] - comy[i]) * (x[3*nx+j] - comx[j]) /
+	tmp += weight[k] * (y[3L*ny+i] - comy[i]) * (x[3L*nx+j] - comx[j]) /
 	  scale;
 	nx++;
 	ny++;
         k++;
       }
-      R.mat[4*i+j] = tmp;
+      R.mat[4L*i+j] = tmp;
     }
   }
 
@@ -983,7 +983,7 @@ int measure_fit(const AtomSel *sel1, const AtomSel *sel2, const float *x,
   Matrix4 Rt;
   for (i=0; i<3; i++) {
     for (j=0; j<3; j++) {
-      Rt.mat[4*i+j] = R.mat[4*j+i];
+      Rt.mat[4L*i+j] = R.mat[4L*j+i];
     }
   }
   Matrix4 RtR(R);
@@ -995,7 +995,7 @@ int measure_fit(const AtomSel *sel1, const AtomSel *sel2, const float *x,
   float tmpmat[4][4];
   for (i=0; i<4; i++)
     for (j=0; j<4; j++)
-      tmpmat[i][j]=RtR.mat[4*i+j];
+      tmpmat[i][j]=RtR.mat[4L*i+j];
 
   if(jacobi(tmpmat,evalue,evector) != 0) return MEASURE_ERR_NONZEROJACOBI;
   // transposition the evector matrix to put the vectors in rows
@@ -1043,7 +1043,7 @@ int measure_fit(const AtomSel *sel1, const AtomSel *sel2, const float *x,
   Matrix4 U;
   for (i=0; i<3; i++) {
     for (j=0; j<3; j++) {
-      float *tmp = &(U.mat[4*j+i]);
+      float *tmp = &(U.mat[4L*j+i]);
       *tmp = 0;
       for (int k=0; k<3; k++) {
 	*tmp += b[k][i] * a[k][j];
@@ -1070,7 +1070,7 @@ int measure_fit(const AtomSel *sel1, const AtomSel *sel2, const float *x,
   //  U.multmatrix(com);
   ty.multmatrix(U);
   ty.multmatrix(tx);
-  memcpy(mat->mat, ty.mat, 16*sizeof(float));
+  memcpy(mat->mat, ty.mat, 16L*sizeof(float));
   return MEASURE_NOERR;
 }
 
@@ -1136,16 +1136,16 @@ extern int measure_sasa(const AtomSel *sel, const float *framepos,
   vmd_srandom(38572111);
 
   // All the spheres use the same random points.  
-  float *spherepts = new float[3*npts];
+  float *spherepts = new float[3L*npts];
   for (i=0; i<npts; i++) {
     float u1 = (float) vmd_random();
     float u2 = (float) vmd_random();
     float z = 2.0f*u1*RAND_MAX_INV -1.0f;
     float phi = (float) (2.0f*VMD_PI*u2*RAND_MAX_INV);
     float R = sqrtf(1.0f-z*z);
-    spherepts[3*i  ] = R*cosf(phi);
-    spherepts[3*i+1] = R*sinf(phi);
-    spherepts[3*i+2] = z;
+    spherepts[3L*i  ] = R*cosf(phi);
+    spherepts[3L*i+1] = R*sinf(phi);
+    spherepts[3L*i+2] = z;
   }
 
   const float prefac = (float) (4 * VMD_PI / npts);
@@ -1155,19 +1155,19 @@ extern int measure_sasa(const AtomSel *sel, const float *framepos,
     if (sel->on[i]) {
       // only atoms in restrictsel contribute
       if (restrictsel && !restrictsel->on[i]) continue;
-      const float *loc = framepos+3*i;
+      const float *loc = framepos+3L*i;
       float rad = radius[i]+srad;
       float surfpos[3];
       int surfpts = npts;
       const ResizeArray<int> &nbrs = pairlist[i];
       for (int j=0; j<npts; j++) {
-        surfpos[0] = loc[0] + rad*spherepts[3*j  ];
-        surfpos[1] = loc[1] + rad*spherepts[3*j+1];
-        surfpos[2] = loc[2] + rad*spherepts[3*j+2];
+        surfpos[0] = loc[0] + rad*spherepts[3L*j  ];
+        surfpos[1] = loc[1] + rad*spherepts[3L*j+1];
+        surfpos[2] = loc[2] + rad*spherepts[3L*j+2];
         int on = 1;
         for (int k=0; k<nbrs.num(); k++) {
           int ind = nbrs[k];
-          const float *nbrloc = framepos+3*ind;
+          const float *nbrloc = framepos+3L*ind;
           float radsq = radius[ind]+srad; radsq *= radsq;
           float dx = surfpos[0]-nbrloc[0];
           float dy = surfpos[1]-nbrloc[1];
@@ -1304,19 +1304,19 @@ printf("measure_sasalist: failed to get radii!!!\n");
       // compute area for each atom based on its pairlist
       for (i=sel->firstsel; i<=sel->lastsel; i++) {
         if (sel->on[i]) {
-          const float *loc = framepos+3*i;
+          const float *loc = framepos+3L*i;
           float rad = radius[i]+srad;
           float surfpos[3];
           int surfpts = npts;
           const ResizeArray<int> &nbrs = pairlist[i];
           for (int j=0; j<npts; j++) {
-            surfpos[0] = loc[0] + rad*spherepts[3*j  ];
-            surfpos[1] = loc[1] + rad*spherepts[3*j+1];
-            surfpos[2] = loc[2] + rad*spherepts[3*j+2];
+            surfpos[0] = loc[0] + rad*spherepts[3L*j  ];
+            surfpos[1] = loc[1] + rad*spherepts[3L*j+1];
+            surfpos[2] = loc[2] + rad*spherepts[3L*j+2];
             int on = 1;
             for (int k=0; k<nbrs.num(); k++) {
               int ind = nbrs[k];
-              const float *nbrloc = framepos+3*ind;
+              const float *nbrloc = framepos+3L*ind;
               float radsq = radius[ind]+srad; radsq *= radsq;
               float dx = surfpos[0]-nbrloc[0];
               float dy = surfpos[1]-nbrloc[1];
@@ -1377,16 +1377,16 @@ printf("sasaprocs: %d\n", numprocs);
   vmd_srandom(38572111);
 
   // All the spheres use the same random points.  
-  float *spherepts = new float[3*npts];
+  float *spherepts = new float[3L*npts];
   for (i=0; i<npts; i++) {
     float u1 = (float) vmd_random();
     float u2 = (float) vmd_random();
     float z = 2.0f*u1*RAND_MAX_INV -1.0f;
     float phi = (float) (2.0f*VMD_PI*u2*RAND_MAX_INV);
     float R = sqrtf(1.0f-z*z);
-    spherepts[3*i  ] = R*cosf(phi);
-    spherepts[3*i+1] = R*sinf(phi);
-    spherepts[3*i+2] = z;
+    spherepts[3L*i  ] = R*cosf(phi);
+    spherepts[3L*i+1] = R*sinf(phi);
+    spherepts[3L*i+2] = z;
   }
 
   sasathreadparms parms;
@@ -1491,16 +1491,16 @@ printf("measure_sasalist: failed to get radii!!!\n");
     vmd_srandom(38572111);
 
     // All the spheres use the same random points.  
-    float *spherepts = new float[3*npts];
+    float *spherepts = new float[3L*npts];
     for (i=0; i<npts; i++) {
       float u1 = (float) vmd_random();
       float u2 = (float) vmd_random();
       float z = 2.0f*u1*RAND_MAX_INV -1.0f;
       float phi = (float) (2.0f*VMD_PI*u2*RAND_MAX_INV);
       float R = sqrtf(1.0f-z*z);
-      spherepts[3*i  ] = R*cosf(phi);
-      spherepts[3*i+1] = R*sinf(phi);
-      spherepts[3*i+2] = z;
+      spherepts[3L*i  ] = R*cosf(phi);
+      spherepts[3L*i+1] = R*sinf(phi);
+      spherepts[3L*i+2] = z;
     }
 
     const float prefac = (float) (4 * VMD_PI / npts);
@@ -1508,19 +1508,19 @@ printf("measure_sasalist: failed to get radii!!!\n");
     // compute area for each atom based on its pairlist
     for (i=sel->firstsel; i<=sel->lastsel; i++) {
       if (sel->on[i]) {
-        const float *loc = framepos+3*i;
+        const float *loc = framepos+3L*i;
         float rad = radius[i]+srad;
         float surfpos[3];
         int surfpts = npts;
         const ResizeArray<int> &nbrs = pairlist[i];
         for (int j=0; j<npts; j++) {
-          surfpos[0] = loc[0] + rad*spherepts[3*j  ];
-          surfpos[1] = loc[1] + rad*spherepts[3*j+1];
-          surfpos[2] = loc[2] + rad*spherepts[3*j+2];
+          surfpos[0] = loc[0] + rad*spherepts[3L*j  ];
+          surfpos[1] = loc[1] + rad*spherepts[3L*j+1];
+          surfpos[2] = loc[2] + rad*spherepts[3L*j+2];
           int on = 1;
           for (int k=0; k<nbrs.num(); k++) {
             int ind = nbrs[k];
-            const float *nbrloc = framepos+3*ind;
+            const float *nbrloc = framepos+3L*ind;
             float radsq = radius[ind]+srad; radsq *= radsq;
             float dx = surfpos[0]-nbrloc[0];
             float dy = surfpos[1]-nbrloc[1];
@@ -1648,7 +1648,7 @@ extern "C" void * measure_gofr_orth(void *voidparms) {
 
     for (j=0; j<count_i; ++j) {
       // calculate distance and add to histogram
-      dist = min_dist_with_pbc(&olist[i*3], &ilist[j*3], boxby2);
+      dist = min_dist_with_pbc(&olist[i*3L], &ilist[j*3L], boxby2);
       idx = (int) (dist * deltascale);
       if ((idx >= 0) && (idx < count_h)) 
         ++hlist[idx];
@@ -1756,8 +1756,8 @@ int measure_gofr(AtomSel *sel1, AtomSel *sel2, MoleculeList *mlist,
   // pre-allocate coordinate buffers of the max size we'll
   // ever need, so we don't have to reallocate if/when atom
   // selections are updated on-the-fly
-  float *sel1coords = new float[3*sel1->num_atoms];
-  float *sel2coords = new float[3*sel2->num_atoms];
+  float *sel1coords = new float[3L*sel1->num_atoms];
+  float *sel2coords = new float[3L*sel2->num_atoms];
 
   // setup status message timer
   wkfmsgtimer *msgt = wkf_msg_timer_create(5);
@@ -1841,7 +1841,7 @@ int measure_gofr(AtomSel *sel1, AtomSel *sel2, MoleculeList *mlist,
     const float *framepos = ts1->pos;
     for (i=0, j=0; i<sel1->num_atoms; ++i) {
       if (sel1->on[i]) {
-        int a = i*3;
+        long a = i*3L;
         sel1coords[j    ] = framepos[a    ];
         sel1coords[j + 1] = framepos[a + 1];
         sel1coords[j + 2] = framepos[a + 2];
@@ -1851,7 +1851,7 @@ int measure_gofr(AtomSel *sel1, AtomSel *sel2, MoleculeList *mlist,
     framepos = ts2->pos;
     for (i=0, j=0; i<sel2->num_atoms; ++i) {
       if (sel2->on[i]) {
-        int a = i*3;
+        long a = i*3L;
         sel2coords[j    ] = framepos[a    ];
         sel2coords[j + 1] = framepos[a + 1];
         sel2coords[j + 2] = framepos[a + 2];
@@ -2145,7 +2145,7 @@ int normal_atom_coord(Molecule *mol, int a, float *pos) {
   Timestep *now;
 
   int cell[3];
-  memset(cell, 0, 3*sizeof(int));
+  memset(cell, 0, 3L*sizeof(int));
 
   // get the molecule pointer, and get the coords for the current timestep
   int ret_val = check_mol(mol, a);
@@ -2153,7 +2153,7 @@ int normal_atom_coord(Molecule *mol, int a, float *pos) {
     return ret_val;
 
   if ((now = mol->current())) {
-    memcpy((void *)pos, (void *)(now->pos + 3*a), 3*sizeof(float));
+    memcpy((void *)pos, (void *)(now->pos + 3L*a), 3L*sizeof(float));
     
     // Apply periodic image transformation before returning
     Matrix4 mat;
@@ -2402,12 +2402,12 @@ static void center_of_mass(AtomSel *sel, MoleculeList *mlist, float *rcom) {
   // get atom coordinates
   const float *pos = sel->coordinates(mlist);
 
-  memset(rcom, 0, 3*sizeof(float));
+  memset(rcom, 0, 3L*sizeof(float));
 
   // center of mass
   for (i=sel->firstsel; i<=sel->lastsel; i++) {
     if (sel->on[i]) {
-      int ind = i * 3;
+      long ind = i * 3L;
 
       m = mass[i];
 
@@ -2445,7 +2445,7 @@ extern int measure_inertia(AtomSel *sel, MoleculeList *mlist, const float *coor,
 
   // need to put 3x3 inertia tensor into 4x4 matrix for jacobi eigensolver
   // itensor = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 1}};
-  memset(itensor, 0, 16*sizeof(float));
+  memset(itensor, 0, 16L*sizeof(float));
   itensor[3][3] = 1.0;
 
   // compute center of mass
@@ -2464,15 +2464,15 @@ extern int measure_inertia(AtomSel *sel, MoleculeList *mlist, const float *coor,
       // position relative to COM
       if (coor) {
         // use user provided coordinates
-        x = coor[j*3    ] - rcom[0];
-        y = coor[j*3 + 1] - rcom[1];
-        z = coor[j*3 + 2] - rcom[2];
+        x = coor[j*3L    ] - rcom[0];
+        y = coor[j*3L + 1] - rcom[1];
+        z = coor[j*3L + 2] - rcom[2];
         j++;
       } else {
         // use coordinates from selection
-        x = pos[i*3    ] - rcom[0];
-        y = pos[i*3 + 1] - rcom[1];
-        z = pos[i*3 + 2] - rcom[2];
+        x = pos[i*3L    ] - rcom[0];
+        y = pos[i*3L + 1] - rcom[1];
+        z = pos[i*3L + 2] - rcom[2];
       }
 
       m = mass[i];

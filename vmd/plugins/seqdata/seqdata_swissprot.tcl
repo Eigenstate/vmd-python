@@ -6,7 +6,7 @@
 #cr
 ############################################################################
 #
-# $Id: seqdata_swissprot.tcl,v 1.4 2013/04/15 17:36:41 johns Exp $
+# $Id: seqdata_swissprot.tcl,v 1.5 2015/07/23 20:14:01 johns Exp $
 #
 
 # This file provides functions for obtaining information about Swiss Prot sequences.
@@ -159,8 +159,16 @@ namespace eval ::SeqData::SwissProt {
                         
                         # Parse out the code and domain of life.
                         set code [string range $line 0 [expr $i-1]]
-                        set domain [string index $line 6]
-                        set taxonomyNode [string trim [string range $line 8 13]]
+                        #set domain [string index $line 6]
+                        #set taxonomyNode [string trim [string range $line 8 13]]
+                        # patch from Jonathan Lai to adapt multiseq so it
+                        # correctly parses the updated speclist.txt metadata
+                        # from the Uniprot/Swissprot servers.  The new format
+                        # increased the integer field width to accomodate
+                        # larger counts
+                        set elements [regexp -all -inline {\S+} $line]
+                        set domain [lindex $elements 0]
+                        set taxonomyNode [string trimright [lindex $elements 2] ":"]
                         
                         # Add the code to the map
                         set swissProtIndex($code,domain) $domain

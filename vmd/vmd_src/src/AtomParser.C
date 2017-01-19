@@ -2,7 +2,7 @@
 # line 2 "AtomParser.y"
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -13,7 +13,7 @@
  *
  *	$RCSfile: AtomParser.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.26 $	$Date: 2012/09/28 21:01:12 $
+ *	$Revision: 1.27 $	$Date: 2016/11/28 03:04:58 $
  *
  ***************************************************************************
  * DESCRIPTION:

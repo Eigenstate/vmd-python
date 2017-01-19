@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: BaseMolecule.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.140 $	$Date: 2015/04/12 07:24:50 $
+ *	$Revision: 1.144 $	$Date: 2016/11/28 03:04:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -255,8 +255,7 @@ private:
   void clean_up_connection(IntStackHandle, int, int, int *);
   void find_connected_atoms_in_resid(IntStackHandle, int, int, 
      int, int, int *);
-  void find_and_mark(int, int, int,
-     int *, int *);
+  void find_and_mark(IntStackHandle, int, int, int, int *, int *);
   int make_uniq_resids(int *flgs); ///< give each residue a uniq resid
 
   /// Stage 2 of structure building.
@@ -369,11 +368,12 @@ public:
   void find_unique_bonds_from_timestep() { need_find_bonds = 2; }
 
   /// add a new atom; return it's index.
-  int add_atom(const char *name, const char *type, int atomicnumber, 
-               const char *resname, int resid,
-	       const char *chainid, const char *segname,
-	       const char *insertion = (char *) " ", 
-               const char *altloc = "");
+  int add_atoms(int natoms, 
+                const char *name, const char *type, int atomicnumber, 
+                const char *resname, int resid,
+	        const char *chainid, const char *segname,
+	        const char *insertion = (char *) " ", 
+                const char *altloc = "");
 
   /// add a new bond from a to b; return total number of bonds added so far.
   int add_bond(int, int, float, int, int = ATOMNORMAL);
@@ -487,7 +487,7 @@ public:
   /// add volumetric data to a molecule
   void add_volume_data(const char *name, const float *o, 
     const float *xa, const float *ya, const float *za, int x, int y, int z,
-    float *voldata); 
+    float *voldata, float *gradient=NULL, float *variance=NULL); 
 
   void add_volume_data(const char *name, const double *o, 
     const double *xa, const double *ya, const double *za, int x, int y, int z,

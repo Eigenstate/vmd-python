@@ -1,1 +1,1 @@
-Build version: 1.9.3a3
+Build version: 1.9.3

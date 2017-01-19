@@ -1,0 +1,240 @@
+Revised interface
+-----------------
+
+delete                      # deletes this nlenergy instance (to free memory)
+
+# coordinate wrapping for periodic boundaries is performed
+# internally for correct energy computation,
+# but coordinate input and output is unwrapped
+
+get coord                   # return list of all atom coords {{x0 y0 z0} ...}
+get coord <atom>            # return list of one atom coordinate {x y z}
+
+set coord {{x0 y0 z0} ...}  # set all atom coords, list must be length N
+set coord <atom> {x y z}    # set one atom coordinate
+
+get atom                    # {{index m q name type residue resname} ... }
+get atom <index>
+get atom <index> index
+get atom <index> mass
+get atom <index> charge
+get atom <index> name
+get atom <index> type
+get atom <index> residue
+get atom <index> resname
+
+set atom <index> {<m> <q> <name> <type> <residue> <resname>}
+set atom <index> mass <m>
+set atom <index> charge <q>
+set atom <index> name <name>
+set atom <index> type <type>
+set atom <index> residue <residue>
+set atom <index> resname <resname>
+
+get bond                    # list all bond pairs
+get bond <atom>             # list bonds involving atom
+get bond <atom1> <atom2>    # list this bond if defined
+get bond residue <resid>   [-self|-all|-join]
+     # return list of bonds having atoms of specified residue number
+get bond resname <resname> [-self|-all|-join]
+     # return list of bonds having atoms of specified resname
+get bond type <type1> <type2>   # return list of bonds of specified type
+
+get angle
+get angle <atom>
+get angle <atom1> <atom2> <atom3>  # return angle if defined
+get angle residue <resid>   [-self|-all|-join]
+     # return list of angles having atoms of specified residue number
+get angle resname <resname> [-self|-all|-join]
+     # return list of angles having atoms of specified resname
+get angle type <type1> <type2> <type3>
+
+get dihed
+get dihed <atom>
+get dihed <atom1> <atom2>       # return list of diheds centered at pair
+get dihed <atom1> <atom2> <atom3> <atom4>  # return dihed if defined
+get dihed residue <resid>   [-self|-all|-join]
+     # return list of diheds having atoms of specified residue number
+get dihed resname <resname> [-self|-all|-join]
+     # return list of diheds having atoms of specified resname
+get dihed type <type1> <type2> <type3> <type4>
+
+get impr
+get impr <atom>
+get impr <atom1> <atom2> <atom3> <atom4>   # return impr if defined
+get impr residue <resid>   [-self|-all|-join]
+     # return list of imprs having atoms of specified residue number
+get impr resname <resname> [-self|-all|-join]
+     # return list of imprs having atoms of specified resname
+get impr type <type1> <type2> <type3> <type4>
+
+add bond <atom1> <atom2>
+add angle <atom1> <atom2> <atom3>
+add dihed <atom1> <atom2> <atom3> <atom4>
+add impr <atom1> <atom2> <atom3> <atom4>
+
+remove bond <atom1> <atom2>
+remove angle <atom1> <atom2> <atom3>
+remove dihed <atom1> <atom2> <atom3> <atom4>
+remove impr <atom1> <atom2> <atom3> <atom4>
+
+read xplor <file>
+read charmm <file>
+read psf <file>
+read pdb <file>        # for coordinates
+read namdbin <file>    # read NAMD binary file for coordinates
+
+write xplor <file>     # writing is lower priority
+write charmm <file>
+write topology <file>  # is this CHARMM topology file?
+write pdb <file>       # save coordinates using ATOM records
+write namdbin <file>   # write NAMD binary file of coordinates
+
+# list all:  {t emin rmin emin14 rmin14} ...
+# list for one type:  t emin rmin emin14 rmin14
+get atomprm
+get atomprm <type>
+get atomrpm <type> emin
+get atomprm <type> rmin
+get atomrpm <type> emin14
+get atomprm <type> rmin14
+
+set atomprm <type> {<emin> <rmin> <emin14> <rmin14>}
+set atomprm <type> emin <emin>
+set atomprm <type> rmin <rmin>
+set atomprm <type> emin14 <emin14>
+set atomprm <type> rmin14 <rmin14>
+
+# list all:  {t t k r0} ...
+# list for one type:  t t k r0
+get bondprm
+get bondprm <type1> <type2>
+get bondprm <type1> <type2> k
+get bondprm <type1> <type2> r0
+
+set bondprm <type1> <type2> {<k> <r0>}
+set bondprm <type1> <type2> k <k>
+set bondprm <type1> <type2> r0 <r0>
+
+# list all:  {t t t ktheta theta0 kub rub} ...
+# list for one type:  t t t ktheta theta0 kub rub
+get angleprm
+get angleprm <type1> <type2> <type3>
+get angleprm <type1> <type2> <type3> ktheta
+get angleprm <type1> <type2> <type3> theta0
+get angleprm <type1> <type2> <type3> kub
+get angleprm <type1> <type2> <type3> rub
+
+set angleprm <type1> <type2> <type3> {<k> <thets0> <kub> <rub>}
+set angleprm <type1> <type2> <type3> ktheta <ktheta>
+set angleprm <type1> <type2> <type3> theta0 <theta0>
+set angleprm <type1> <type2> <type3> kub <kub>
+set angleprm <type1> <type2> <type3> rub <rub>
+
+# list all:  {t t t t nterms {kdihed phi0 n} ...} ...
+# list for one type:  t t t t nterms {kdihed phi0 n} ...
+# list for one term:  kdihed phi0 n
+get dihedprm
+get dihedprm <type1> <type2> <type3> <type4>
+get dihedprm <type1> <type2> <type3> <type4> term  # returns number of terms
+get dihedprm <type1> <type2> <type3> <type4> term <index>
+get dihedprm <type1> <type2> <type3> <type4> term <index> kdihed
+get dihedprm <type1> <type2> <type3> <type4> term <index> phi0
+get dihedprm <type1> <type2> <type3> <type4> term <index> n
+
+# when setting all terms, the list length must match the number of terms
+set dihedprm <type1> <type2> <type3> <type4> {{<k> <phi0> <n>} ...}
+set dihedprm <type1> <type2> <type3> <type4> term <index> {<k> <phi0> <n>}
+set dihedprm <type1> <type2> <type3> <type4> term <index> kdihed <kdihed>
+set dihedprm <type1> <type2> <type3> <type4> term <index> phi0 <phi0>
+set dihedprm <type1> <type2> <type3> <type4> term <index> n <n>
+
+# list all:  {t t t t kimpr psi0} ...
+# list for one type:  t t t t kimpr psi0
+get imprprm
+get imprprm <type1> <type2> <type3> <type4>
+get imprprm <type1> <type2> <type3> <type4> kimpr
+get imprprm <type1> <type2> <type3> <type4> psi0
+
+set imprprm <type1> <type2> <type3> <type4> {<k> <psi0>}
+set imprprm <type1> <type2> <type3> <type4> kimpr <kimpr>
+set imprprm <type1> <type2> <type3> <type4> psi0 <psi0>
+
+# list all:  {t t emin rmin emin14 rmin14} ...
+# list for one type:  t t emin rmin emin14 rmin14
+get vdwpairprm
+get vdwpairprm <type1> <type2>
+get vdwpairprm <type1> <type2> emin
+get vdwpairprm <type1> <type2> rmin
+get vdwpairprm <type1> <type2> emin14
+get vdwpairprm <type1> <type2> rmin14
+
+set vdwpairprm <type1> <type2> {<emin> <rmin> <emin14> <rmin14>}
+set vdwpairprm <type1> <type2> emin <emin>
+set vdwpairprm <type1> <type2> rmin <rmin>
+set vdwpairprm <type1> <type2> emin14 <emin14>
+set vdwpairprm <type1> <type2> rmin14 <rmin14>
+
+missing atomprm
+missing bondprm
+missing angleprm
+missing dihedprm
+missing imprprm
+
+add atomprm <type> { <emin> <rmin> <emin14> <rmin12> }
+add bondprm <t1> <t2> { <k>, <r0> }
+add angleprm <t1> <t2> <t3> { <ktheta> <theta0> <kub> <rub> }
+add dihedprm <t1> <t2> <t3> <t4> { <nterms> { <kdihed> <phi0> <n> } ... }
+add imprprm <t1> <t2> <t3> <t4> { <kimpr> <psi0> }
+add vdwpairprm <t1> <t2> { <emin> <rmin> <emin14> <rmin12> }
+
+remove atomprm <type>
+remove bondprm <type1> <type2>
+remove angleprm <type1> <type2> <type3>
+remove dihedprm <type1> <type2> <type3> <type4>
+remove imprprm <type1> <type2> <type3> <type4>
+remove vdwpairprm <type1> <type2>
+
+get nonbprm cutoff
+get nonbprm switching
+get nonbprm switchdist
+get nonbprm exclude
+get nonbprm dielectric
+get nonbprm 1-4scaling
+get nonbprm fulldirect
+get nonbprm fulldirectvdw
+
+set nonbprm cutoff <r0>             # defaults to 12 A
+set nonbprm switching <boolean>     # "on" (default) or "off"
+set nonbprm switchdist <r1>         # defaults to 10 A
+set nonbprm exclude <exclpolicy>    # "none" "1-2" "1-3" "1-4" "scaled1-4"
+set nonbprm dielectric <epsilon>    # defaults to 1
+set nonbprm 1-4scaling <s>          # defaults to 1
+set nonbprm fulldirect <boolean>    # (for elec) "off" (default) or "on"
+set nonbprm fulldirectvdw <boolean> # (for vdw)  "off" (default) or "on"
+
+get cellbasis                 # returns {{x0 y0 z0} {x1 y1 z1} {x2 y2 z2}}
+set cellbasis {x0 y0 z0} {x1 y1 z1} {x2 y2 z2}  # initialized from vmd
+
+energy  # total potential energy, units kcal/mol
+
+energy [+|-]bond <bondlist> [+|-]angle <anglelist> \
+       [+|-]dihed <dihedlist> [+|-]impr <imprlist> \
+       [+|-]elec <atomlist> [<atomlist2>]          \
+       [+|-]vdw <atomlist> [<atomlist2>]
+  # '+' is the default
+  # '-' means to include those bonds/angles/etc. not listed
+  #   (this means that multiple use of 'bond'/etc. are additive)
+  # 'nonb' can be used to mean both elec & vdw
+  # the two atomlists for elec/vdw/nonb must be disjoint and gives
+  #   interaction energies between the two sets (so '-' here is an error)
+  # multiple instances of elec/vdw/nonb treats the single atomlist case
+  #   as belonging to the first atomlist, in the even that there is a
+  #   case with two atomlists specified.  An error occurs in the event
+  #   that the two sets are not disjoint resulting from the union over
+  #   all <atomlist> and from the union over all <atomlist2>.
+
+force  # has same selection syntax as 'energy', units kcal/mol/A
+  # returns a list of atom indices (including only those atoms that
+  #   requested via the evaluation function) followed by a list of
+  #   the corresponding x y z forces

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DispCmds.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.107 $	$Date: 2015/05/03 04:28:04 $
+ *	$Revision: 1.109 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -96,9 +96,9 @@ struct DispCmdSphereArray {
     char *rawptr = (char *)this;
     centers = (float *) (rawptr + sizeof(DispCmdSphereArray));
     radii   = (float *) (rawptr + sizeof(DispCmdSphereArray) +
-                         sizeof(float) * numspheres * 3);
+                         sizeof(float) * numspheres * 3L);
     colors  = (float *) (rawptr + sizeof(DispCmdSphereArray) +
-                         sizeof(float) * numspheres * 3 +
+                         sizeof(float) * numspheres * 3L +
                          sizeof(float) * numspheres);
   }
 
@@ -123,7 +123,7 @@ struct DispCmdPointArray {
     char *rawptr = (char *)this;
     centers = (float *) (rawptr + sizeof(DispCmdPointArray));
     colors  = (float *) (rawptr + sizeof(DispCmdPointArray) +
-                         sizeof(float) * numpoints * 3);
+                         sizeof(float) * numpoints * 3L);
   }
   float size;
   int numpoints;
@@ -144,9 +144,9 @@ struct DispCmdLitPointArray {
     char *rawptr = (char *)this;
     centers = (float *) (rawptr + sizeof(DispCmdLitPointArray));
     normals = (float *) (rawptr + sizeof(DispCmdLitPointArray) + 
-                         sizeof(float) * numpoints * 3);
+                         sizeof(float) * numpoints * 3L);
     colors  = (float *) (rawptr + sizeof(DispCmdLitPointArray) +
-                         sizeof(float) * numpoints * 6);
+                         sizeof(float) * numpoints * 6L);
   }
 
   float size;
@@ -263,39 +263,39 @@ struct DispCmdTriMesh {
   /// int * f     : facet vertex index array
   inline void getpointers(float *& cnv, int *& f) const {
     cnv = (float *)(((char *)this) + sizeof(DispCmdTriMesh));
-    f = (int *)(cnv + 10*numverts);
+    f = (int *)(cnv + 10L*numverts);
   }
 
   /// retrieve pointers to data following DispCmd in the display list
   /// float *cnv : arrays of colors, normals, vertices
   inline void getpointers(float *& c, float *&n, float *&v) const {
     c = (float *)(((char *)this) + sizeof(DispCmdTriMesh));
-    n = c + 3 * numverts;
-    v = n + 3 * numverts;
+    n = c + 3L * numverts;
+    v = n + 3L * numverts;
   }
 
   inline void getpointers(unsigned char *& c, float *&n, float *&v) const {
     c = (unsigned char *)(((char *)this) + sizeof(DispCmdTriMesh));
-    n = (float *) (c + numverts * 4 * sizeof(unsigned char));
-    v = n + 3 * numverts;
+    n = (float *) (c + numverts * 4L * sizeof(unsigned char));
+    v = n + 3L * numverts;
   }
 
   inline void getpointers(unsigned char *& c, char *&n, float *&v) const {
     c = (unsigned char *)(((char *)this) + sizeof(DispCmdTriMesh));
-    v = (float *) (c + numverts * 4 * sizeof(unsigned char));
-    n = (char *) (v + 3 * numverts);
+    v = (float *) (c + numverts * 4L * sizeof(unsigned char));
+    n = (char *) (v + 3L * numverts);
   }
 
   /// retrieve pointers to data following DispCmd in the display list
   /// float *nv : arrays of normals, vertices
   inline void getpointers(float *&n, float *&v) const {
     n = (float *)(((char *)this) + sizeof(DispCmdTriMesh));
-    v = n + 3 * numverts;
+    v = n + 3L * numverts;
   }
 
   inline void getpointers(char *&n, float *&v) const {
     v = (float *)(((char *)this) + sizeof(DispCmdTriMesh));
-    n = (char *) (v + 3 * numverts);
+    n = (char *) (v + 3L * numverts);
   }
 
   int pervertexcolors;   ///< mesh contains per-vertex colors
@@ -332,11 +332,11 @@ struct DispCmdTriStrips {
   
     f= (int *)             (rawptr +
                             sizeof(DispCmdTriStrips) +
-                            sizeof(float) * numverts * 10);
+                            sizeof(float) * numverts * 10L);
   
     vertsperstrip= (int *) (rawptr +
                             sizeof(DispCmdTriStrips) +
-                            sizeof(float) * numverts * 10 +
+                            sizeof(float) * numverts * 10L +
                             sizeof(int)   * numstripverts);
   }
 
@@ -362,7 +362,7 @@ struct DispCmdWireMesh {
     ) const {
     char *rawptr = (char *)this;
     cnv=(float *) (rawptr + sizeof(DispCmdWireMesh)); 
-    l=(int *) (rawptr + sizeof(DispCmdWireMesh) + sizeof(float) * numverts * 10);
+    l=(int *) (rawptr + sizeof(DispCmdWireMesh) + sizeof(float) * numverts * 10L);
   }
 
   int numverts;         ///< number of vertices in mesh
@@ -505,7 +505,7 @@ struct DispCmdPickPointArray {
     }
 
     tags = (int *) (rawptr + sizeof(DispCmdPickPointArray) + 
-                    3 * sizeof(float) * numpicks);
+                    3L * sizeof(float) * numpicks);
   }
 
   int numpicks;

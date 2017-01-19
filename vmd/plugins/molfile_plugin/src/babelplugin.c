@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: babelplugin.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.47 $       $Date: 2009/04/29 15:45:27 $
+ *      $Revision: 1.49 $       $Date: 2016/11/28 05:01:53 $
  *
  ***************************************************************************/
 
@@ -623,7 +623,7 @@ VMDPLUGIN_API int VMDPLUGIN_init() {
     plugins[i].prettyname = babel16filetypenames[i];      /* name of plugin */
     plugins[i].author = "Justin Gullingsrud, John Stone"; /* author */
     plugins[i].majorv = 1;                                /* major version */
-    plugins[i].minorv = 12;                               /* minor version */
+    plugins[i].minorv = 13;                               /* minor version */
     plugins[i].is_reentrant = VMDPLUGIN_THREADUNSAFE;     /* is not reentrant */
     plugins[i].filename_extension = babel16filetypes[i];  /* file extension */
     plugins[i].open_file_read = open_babel_read;
@@ -646,7 +646,7 @@ VMDPLUGIN_API int VMDPLUGIN_init() {
     plugins[i].prettyname = openbabel11filetypenames[i];  /* name of plugin */
     plugins[i].author = "Justin Gullingsrud, John Stone"; /* author */
     plugins[i].majorv = 2;                                /* major version */
-    plugins[i].minorv = 11;                               /* minor version */
+    plugins[i].minorv = 12;                               /* minor version */
     plugins[i].is_reentrant = VMDPLUGIN_THREADUNSAFE;     /* is not reentrant */
     plugins[i].filename_extension = openbabel11filetypes[i];  /* file extension */
     plugins[i].open_file_read = open_babel_read;

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: parmplugin.C,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.33 $       $Date: 2009/04/29 15:45:32 $
+ *      $Revision: 1.35 $       $Date: 2016/11/28 05:01:54 $
  *
  ***************************************************************************/
 
@@ -128,7 +128,7 @@ VMDPLUGIN_API int VMDPLUGIN_init(void) {
   plugin.prettyname = "AMBER Parm";
   plugin.author = "Justin Gullingsrud, John Stone";
   plugin.majorv = 4;
-  plugin.minorv = 3;
+  plugin.minorv = 4;
   plugin.is_reentrant = VMDPLUGIN_THREADSAFE;
   plugin.filename_extension = "parm";
   plugin.open_file_read = open_parm_read;

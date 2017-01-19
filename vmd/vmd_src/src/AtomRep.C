@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: AtomRep.C,v $
  *      $Author: johns $        $Locker:  $                $State: Exp $
- *      $Revision: 1.130 $      $Date: 2015/05/31 22:25:05 $
+ *      $Revision: 1.132 $      $Date: 2016/11/28 03:04:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -294,12 +294,14 @@ const AtomRepParamStruct AtomRepInfo[AtomRep::TOTAL] = {
 
 #ifdef VMDNANOSHAPER
   // NanoShaper surface
-  { "NanoShaper", 4, {
-    {  AtomRep::LINETHICKNESS, 0}, // all atoms
-    {  AtomRep::BONDRES, 0},       // wireframe
-    {  AtomRep::SPHERERAD, 1.4f }, // probe radius
-    {  AtomRep::SPHERERES, 0.5f }, // grid spacing
-    UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED, UNUSED,
+  { "NanoShaper", 6, {
+    {  AtomRep::LINETHICKNESS, 0},  // surface type
+    {  AtomRep::BONDRES, 0},        // wireframe
+    {  AtomRep::GRIDSPACING, 0.5f}, // lattice grid spacing 
+    {  AtomRep::SPHERERAD, 1.40f }, // probe radius
+    {  AtomRep::SPHERERES, 0.45f }, // skin parm
+    {  AtomRep::BONDRAD,    0.5f }, // blob parm
+    UNUSED, UNUSED, UNUSED, UNUSED, UNUSED,
     UNUSED, UNUSED, UNUSED }
   },
 #endif

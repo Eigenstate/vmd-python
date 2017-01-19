@@ -1,5 +1,5 @@
 #
-# $Id: fftk_BuildPar.tcl,v 1.13 2015/05/14 21:43:35 mayne Exp $
+# $Id: fftk_BuildPar.tcl,v 1.18 2016/10/20 16:15:00 mayne Exp $
 #
 
 #======================================================
@@ -9,6 +9,9 @@
 #    This tool can also write an initialized (zero-filled) parameter file
 # -- Assign VDW/LJ parameters from analogy; includes a "parameter explorer"
 # -- Update existing parameter files based on results from ffTK optimizations
+# -- Analyze input from the CGenFF Program webserver (https://cgenff.paramchem.org/) to
+#    construct a PSF/PDB file pair and provide a non-zero starting point for charges and
+#    bonded parameters
 #======================================================
 namespace eval ::ForceFieldToolKit::BuildPar {
 
@@ -511,17 +514,18 @@ proc ::ForceFieldToolKit::BuildPar::buildUpdatedParFile {} {
 }
 #======================================================
 proc ::ForceFieldToolKit::BuildPar::analyzeCGenFF {} {
-    # construct molecule using CGenFF input and parse out parameter information
-    # parameter information is split into existing pars and analogy pars
+    # Construct molecule using CGenFF input and parse out parameter information
+    # Parameter information is split into existing pars and analogy pars
 
     # PASSED:  nothing
     # RETURNS: molid of the loaded molecule
 
-    # NOTE: we will not concern ourselves with the GUI, leaving that to a GUI proc
+    # NOTE: we will not concern ourselves with the GUI here, leaving that to a GUI proc
 
     # We have to to this manually because:
     # - CGenFF output tends to mangle resnames in topology definition (we should file a bug report / feature request)
     # - PSFGen doesn't read MOL2 files (that i'm aware of; conversion is potentially trivial but annoying)
+    # - CGenFF Program output potentially changes atom names; atom match is performed on order (i.e., index)
 
     # load any required packages
     package require topotools
@@ -541,53 +545,80 @@ proc ::ForceFieldToolKit::BuildPar::analyzeCGenFF {} {
     # load molecule
     set molid [mol new $cgenffMol waitfor all]
 
+    # since we are changing the atom names below, the "name" coloring method gets mangled
+    # go ahead and switch to color by element
+    mol modcolor 0 $molid Element
+
     # set molecule-level data
     set sel [atomselect $molid "all"]
     $sel set resname $cgenffResname
     $sel set chain   $cgenffChain
     $sel set segname $cgenffSegment
-
-    # prepare to read the stream file
-    # nameArr maps atom name to atom index for convenience when parsing topology entries
-    array unset nameArr; array set nameArr {}
-    foreach ele [$sel get {name index}] {
-        lassign $ele name index
-        set nameArr($name) $index
-    }
-    $sel delete
     topo clearbonds
+
+    # process the CGenFf Program data
     set infile [open $cgenffStr r]
 
     # handle the topology section of the stream file
     # only supports ATOM, BOND, IMPR sections
     # note: charge penalty is stored in beta
+    set atomIndex_read 0 ; # key to map the entry to the loaded mol2 structure
     while { ![eof $infile] } {
         set inline [string trim [gets $infile]]
 
         switch [lindex $inline 0] {
             {END} { break }
             {ATOM} {
-                set sel [atomselect $molid "name [lindex $inline 1]"]
+                set sel [atomselect $molid "index $atomIndex_read"]
+                #set sel [atomselect $molid "name [lindex $inline 1]"]
+                $sel set name   [lindex $inline 1]
                 $sel set type   [lindex $inline 2]
                 $sel set charge [lindex $inline 3]
                 $sel set beta   [lindex $inline 5]
                 $sel delete
+                incr atomIndex_read
             }
             {BOND} {
-                lassign $inline key a1 a2
-                topo addbond $nameArr($a1) $nameArr($a2)
+                set atomNameList [lrange $inline 1 2]
+                #puts "atomNameList: $atomNameList"; flush stdout
+                #lassign $inline key a1 a2
+
+                set atomIndexString ""
+                foreach atomName $atomNameList {
+                    set sel [atomselect $molid "name $atomName"]
+                    set atomIndexString [concat $atomIndexString [$sel get index]]
+                    $sel delete
+                }
+
+                #topo addbond $nameArr($a1) $nameArr($a2)
+                #puts "attempting: topo addbond $atomIndexString"; flush stdout
+                eval topo addbond $atomIndexString
+                unset atomIndexString
             }
             {IMPR} {
-                lassign $inline key a1 a2 a3 a4
-                topo addimproper $nameArr($a1) $nameArr($a2) $nameArr($a3) $nameArr($a4)
+                set atomNameList [lrange $inline 1 4]
+                #puts "atomNameList: $atomNameList"; flush stdout
+                #lassign $inline key a1 a2 a3 a4
+
+                set atomIndexString ""
+                foreach atomName $atomNameList {
+                    set sel [atomselect $molid "name $atomName"]
+                    set atomIndexString [concat $atomIndexString [$sel get index]]
+                    $sel delete
+                }
+
+                #topo addimproper $nameArr($a1) $nameArr($a2) $nameArr($a3) $nameArr($a4)
+                #puts "attemping: topo addimproper $atomIndexString"; flush stdout
+                eval topo addimproper $atomIndexString
+                unset atomIndexString
             }
         }
     }
+    
     topo guessangles -molid $molid
     topo guessdihedrals -molid $molid
     topo guessatom element mass
     mol reanalyze $molid
-    array unset nameArr
 
     # Handle the parameter section of the stream file
     # Only currently supports bonds, angles, dihedrals, impropers

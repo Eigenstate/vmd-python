@@ -1,43 +1,62 @@
 # vmd-python
 Installable VMD as a python module
+*NEW* Support for Python 3!!!
 
 ![CI status](https://anaconda.org/rbetz/vmd-python/badges/build.svg)
 ![Downloads](https://anaconda.org/rbetz/vmd-python/badges/downloads.svg)
 
 ## Features
-All features of VMD from the current CVS tree, plus some 
+All features of VMD from the current CVS tree, plus some
 optional plugins not included in binary distributions:
 
-    * Read and write formal charges to MAE files
-    * DMS plugin for DESRES molecular file format
-    * HOOMD plugin
-    * It doesn't crash when you import it
-    * Doesn't care which numpy you compile against
+* Read and write formal charges to MAE files
+* DMS plugin for DESRES molecular file format
+* HOOMD plugin
+* It doesn't crash when you import it
+* Doesn't care which numpy you compile against
+* Support for Python 2 or Python 3
 
-The following python modules:
+### Included modules
+The following sub-modules are part of VMD. The import system
+makes more sense now, so standard importing like `from vmd import atomsel`
+will work correctly.
 
-    * animate
-    * axes
-    * atomsel (atom selection language)
-    * color
-    * display
-    * evaltcl (run all your old scripts)
-    * graphics
-    * imd
-    * label
-    * material
-    * molecule (read and write all kinds of molecules)
-    * molrep
-    * render
-    * trans
-    * vmdnumpy (very very useful!)
-    * vmd
-    * VMD meta-module (different from vmd. yeah...)
+Some of these modules don't make much sense without the graphical display
+window. I don't currently distribute a VMD binary with Python built in,
+but you can look at my build scripts and compile your own, or use the
+available ones from the official developers.
+
+The following python modules are part of vmd-python. Some of these
+are currently not documented on the website (indicated with \*).
+
+* animate
+* axes
+* atomsel (atom selection language)
+* color
+* display
+* evaltcl (run all your old scripts)
+* graphics
+* imd
+* label
+* material
+* measure\*
+* molecule (read and write all kinds of molecules)
+* molrep
+* mouse\* (of limited utility in the command line...)
+* render
+* trans
+* topology\*
+* vmdmenu\*
+* vmdnumpy (very very useful!)
+
+There are also some object oriented classes that provide a higher-level
+interface to the sub-modules above. Note these are case sensitive!!
+
+* Label
+* Material
+* Molecule
 
 ## Usage
-To use: `import vmd`.
-Then you can import the modules you want.
-
 Please refer to the [documentation](http://www.ks.uiuc.edu/Research/vmd/current/ug/node160.html)
 for description of all functions. Also note that the built in help() command in Python
 may sometimes give you more up-to-date information than the website.

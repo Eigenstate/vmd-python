@@ -1,7 +1,7 @@
 /*
  * Modified Hershey Roman font rendering code.
  *
- * $Id: Hershey.C,v 1.19 2013/05/09 17:26:25 johns Exp $
+ * $Id: Hershey.C,v 1.20 2015/12/03 18:03:14 johns Exp $
  */
 
 //
@@ -94,7 +94,7 @@
 #include <windows.h>
 #endif
 
-#if defined(VMDOPENGL) || defined(VMDOPENGLPBUFFER)
+#if defined(VMDOPENGL) || defined(VMDOPENGLPBUFFER) || defined(VMDEGLPBUFFER)
 #if defined(__APPLE__) && !defined (VMDMESA)
 #include <OpenGL/gl.h>
 #else
@@ -273,7 +273,7 @@ inline float h2float(char c) { return VMD_DEFAULT_FONT_SCALE * (c-'R'); }
 //  hersheyDrawLetter() interprets the instructions from the array
 //  for that letter and renders the letter with line segments.
 void hersheyDrawLetterOpenGL(unsigned char ch, int drawendpoints) {
-#if defined(VMDOPENGL) || defined(VMDOPENGLPBUFFER)
+#if defined(VMDOPENGL) || defined(VMDOPENGLPBUFFER) || defined(VMDEGLPBUFFER)
   // note: we map same set of glyphs twice here (using modulo operator)
   const char *cp = hersheyFontData[ch % 128];
   float lm = h2float(cp[0]);

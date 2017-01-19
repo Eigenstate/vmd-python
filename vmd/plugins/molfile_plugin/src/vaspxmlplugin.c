@@ -3,7 +3,7 @@
  *
  *      $RCSfile: vaspxmlplugin.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.8 $       $Date: 2014/10/10 14:41:02 $
+ *      $Revision: 1.9 $       $Date: 2016/11/06 17:43:13 $
  *
  ***************************************************************************/
 
@@ -73,7 +73,7 @@ static void *open_vaspxml_read(const char *filename, const char *filetype, int *
        /* Extract title line */
        char *begin = strstr(lineptr, ">") + 1;
        char *end = strstr(lineptr, "</i>");
-       if (end) end = '\0';
+       if (end) *end = '\0';
        if (begin) data->titleline = strdup(begin);
 
     } else if (strstr(lineptr, "atominfo") != NULL && data->numatoms == 0) {

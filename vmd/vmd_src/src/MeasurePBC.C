@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: MeasurePBC.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.15 $       $Date: 2015/05/04 05:21:21 $
+ *      $Revision: 1.17 $       $Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -294,7 +294,7 @@ int measure_pbc_neighbors(MoleculeList *mlist, AtomSel *sel, int molid,
   float corecell[9];
   float diag[3];
   float origin[3];
-  memset(origin, 0, 3*sizeof(float));
+  memset(origin, 0, 3L*sizeof(float));
   Matrix4 M_norm;
 
   if (box) {
@@ -390,7 +390,7 @@ int measure_pbc_neighbors(MoleculeList *mlist, AtomSel *sel, int molid,
     int idx, k;
     // Loop over all atoms
     for (idx=0; idx<ts->num; idx++) { 
-      coor = coords+3*idx;
+      coor = coords+3L*idx;
 
       // Apply the inverse alignment transformation
       // to the current test point.
@@ -458,7 +458,7 @@ int measure_pbc_neighbors(MoleculeList *mlist, AtomSel *sel, int molid,
     int idx, k;
     // Loop over all atoms
     for (idx=0; idx<ts->num; idx++) { 
-      coor = coords+3*idx;
+      coor = coords+3L*idx;
 
       // Apply the PBC --> orthonormal unitcell transformation
       // to the current test point.
@@ -515,7 +515,7 @@ int measure_pbc_neighbors(MoleculeList *mlist, AtomSel *sel, int molid,
     for (i=0; i < ts->num; i++) { 
       // Apply the PBC --> orthonormal unitcell transformation
       // to the current test point.
-      M_coretransform.multpoint3d(coords+3*i, orthcoor);
+      M_coretransform.multpoint3d(coords+3L*i, orthcoor);
 
       // Determine in which cell we are.
       int cellindex[3];    
@@ -542,7 +542,7 @@ int measure_pbc_neighbors(MoleculeList *mlist, AtomSel *sel, int molid,
 
       // Create wrapped copies of the atom:
       // x, y, z planes
-      coor = coords+3*i;
+      coor = coords+3L*i;
       for (u=0; u<3; u++) {
         if (cellindex[u] && cutoff[u]) {
           M[u].multpoint3d(coor, wrapcoor);
@@ -593,7 +593,7 @@ int measure_pbc_neighbors(MoleculeList *mlist, AtomSel *sel, int molid,
   // within cutoff of the original selection:
   if (sel) {
     int numext = sel->selected+indexmap_array->num();
-    float *extcoords = new float[3*numext];
+    float *extcoords = new float[3L*numext];
     int   *indexmap  = new int[numext];
     int   *others    = new int[numext];
     memset(others, 0, numext);
@@ -608,16 +608,16 @@ int measure_pbc_neighbors(MoleculeList *mlist, AtomSel *sel, int molid,
     j=0;
     for (i=0; i < sel->num_atoms; i++) { 
       if (!sel->on[i]) continue; //atom is not selected
-      extcoords[3*j]   = coords[3*i];
-      extcoords[3*j+1] = coords[3*i+1];
-      extcoords[3*j+2] = coords[3*i+2];
+      extcoords[3L*j]   = coords[3L*i];
+      extcoords[3L*j+1] = coords[3L*i+1];
+      extcoords[3L*j+2] = coords[3L*i+2];
       indexmap[j] = i;
       others[j++] = 1;
     }
     for (i=0; i<indexmap_array->num(); i++) {
-      extcoords[3*j]   = (*extcoord_array)[3*i];
-      extcoords[3*j+1] = (*extcoord_array)[3*i+1];
-      extcoords[3*j+2] = (*extcoord_array)[3*i+2];
+      extcoords[3L*j]   = (*extcoord_array)[3L*i];
+      extcoords[3L*j+1] = (*extcoord_array)[3L*i+1];
+      extcoords[3L*j+2] = (*extcoord_array)[3L*i+2];
       indexmap[j] = (*indexmap_array)[i];
       others[j++] = 0;
     }
@@ -637,7 +637,7 @@ int measure_pbc_neighbors(MoleculeList *mlist, AtomSel *sel, int molid,
     for (i=sel->selected; i<numext; i++) {
       if (!flgs[i]) continue;
 
-      extcoord_array->append3(&extcoords[3*i]);
+      extcoord_array->append3(&extcoords[3L*i]);
       indexmap_array->append(indexmap[i]);
     }
 
@@ -690,13 +690,13 @@ int compute_pbcminmax(MoleculeList *mlist, int molid, int frame,
     for (j=-0.5; j<1.f; j+=1.f) {
       for (k=-0.5; k<1.f; k+=1.f) {
         // Apply the translation of the origin
-        vec_copy(node+3*n, center);
-        vec_scaled_add(node+3*n, i, &cell[0]);
-        vec_scaled_add(node+3*n, j, &cell[3]);
-        vec_scaled_add(node+3*n, k, &cell[6]);
+        vec_copy(node+3L*n, center);
+        vec_scaled_add(node+3L*n, i, &cell[0]);
+        vec_scaled_add(node+3L*n, j, &cell[3]);
+        vec_scaled_add(node+3L*n, k, &cell[6]);
 
         // Apply global alignment transformation
-        transform->multpoint3d(node+3*n, node+3*n);
+        transform->multpoint3d(node+3L*n, node+3L*n);
         n++;
       }
     }
@@ -704,12 +704,12 @@ int compute_pbcminmax(MoleculeList *mlist, int molid, int frame,
 
   // Find minmax coordinates of all corners
   for (n=0; n<8; n++) {
-    if (!n || node[3*n  ]<min[0])  min[0] = node[3*n];
-    if (!n || node[3*n+1]<min[1])  min[1] = node[3*n+1];
-    if (!n || node[3*n+2]<min[2])  min[2] = node[3*n+2];
-    if (!n || node[3*n  ]>max[0])  max[0] = node[3*n];
-    if (!n || node[3*n+1]>max[1])  max[1] = node[3*n+1];
-    if (!n || node[3*n+2]>max[2])  max[2] = node[3*n+2];
+    if (!n || node[3L*n  ]<min[0])  min[0] = node[3L*n];
+    if (!n || node[3L*n+1]<min[1])  min[1] = node[3L*n+1];
+    if (!n || node[3L*n+2]<min[2])  min[2] = node[3L*n+2];
+    if (!n || node[3L*n  ]>max[0])  max[0] = node[3L*n];
+    if (!n || node[3L*n+1]>max[1])  max[1] = node[3L*n+1];
+    if (!n || node[3L*n+2]>max[2])  max[2] = node[3L*n+2];
   }
 
   return MEASURE_NOERR;

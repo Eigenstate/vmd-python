@@ -35,7 +35,7 @@ static PyObject* topo_get_bond(PyObject *self, PyObject *args, PyObject *kwds) {
 				PyObject* bondpair;
 				switch (types) {
 					case 1: //Types only.
-					
+
 					//mol->bondTypeNames.name(mol->getbondtype(i, j))
 					bondpair = Py_BuildValue("iis", i, atom->bondTo[j], mol->bondTypeNames.name(mol->getbondtype(i, j)));
 					break;
@@ -178,7 +178,7 @@ static PyObject* topo_add_bond(PyObject *self, PyObject *args, PyObject *kwds) {
     }
     mol->set_dataset_flag(BaseMolecule::BONDS);
     mol->set_dataset_flag(BaseMolecule::BONDORDERS);
-    
+
     return Py_BuildValue("i", mol->add_bond_dupcheck(i, j, order, type));
 }
 static char* addangle_doc = (char *)
@@ -306,7 +306,7 @@ static PyObject* topo_del_bond(PyObject *self, PyObject *args, PyObject *kwds) {
 		}
 		for (tmp = 0; tmp < atomj->bonds && i != atomj->bondTo[tmp]; tmp++);
 		atomj->bondTo[tmp] = atomj->bondTo[--atomj->bonds];
-		
+
 		return Py_BuildValue("i", 1);
 	}
 	return Py_BuildValue("i", 0);
@@ -576,9 +576,25 @@ static PyMethodDef Methods[] = {
   {(char *)"delallangles", (PyCFunction)topo_del_all_angles, METH_VARARGS | METH_KEYWORDS, del_all_angle_doc},
   {(char *)"delalldihedrals", (PyCFunction)topo_del_all_dihed, METH_VARARGS | METH_KEYWORDS, del_all_dihed_doc},
   {(char *)"delallimpropers", (PyCFunction)topo_del_all_impropers, METH_VARARGS | METH_KEYWORDS, del_all_improper_doc},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
-void inittopology() {
-  (void)Py_InitModule((char *)"topology", Methods);
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef topologydef = {
+    PyModuleDef_HEAD_INIT,
+    "topology",
+    NULL,
+    -1,
+    Methods,
+    NULL, NULL, NULL, NULL
+};
+#endif
+
+PyObject* inittopology() {
+#if PY_MAJOR_VERSION >= 3
+  PyObject *module = PyModule_Create(&topologydef);
+#else
+  PyObject *module = Py_InitModule((char *)"topology", Methods);
+#endif
+  return module;
 }

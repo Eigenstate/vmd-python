@@ -1,6 +1,7 @@
 /***************************************************************************
+
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -65,7 +66,7 @@ static PyObject *registermenu(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"func argument must be callable");
     return NULL;
   }
-  if (!menupath) 
+  if (!menupath)
     menupath = name;
   VMDApp *app = get_vmdapp();
   VMDTkinterMenu *menu = new VMDTkinterMenu(name, NULL, app);
@@ -87,12 +88,28 @@ static PyMethodDef methods[] = {
     (char *)"register(name, func, menupath) -- func returns Tk() instance"},
   {(char *)"show", (vmdPyMethod)show, METH_VARARGS,
     (char *)"show(name, onoff) -- show/hide registered window"},
-  {(char *)"location", (vmdPyMethod)location, METH_VARARGS, 
+  {(char *)"location", (vmdPyMethod)location, METH_VARARGS,
     (char *)"location(name, (x, y)) -- set menu location"},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
-void initvmdmenu() {
-  (void) Py_InitModule((char *)"vmdmenu", methods);
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef menudef = {
+    PyModuleDef_HEAD_INIT,
+    "vmdmenu",
+    NULL,
+    -1,
+    methods,
+    NULL, NULL, NULL, NULL
+};
+#endif
+
+PyObject* initvmdmenu() {
+#if PY_MAJOR_VERSION >= 3
+    PyObject *module = PyModule_Create(&menudef);
+#else
+    PyObject *module = Py_InitModule((char *)"vmdmenu", methods);
+#endif
+    return module;
 }
 

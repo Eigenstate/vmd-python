@@ -1,5 +1,5 @@
 #
-# $Id: fftk_SharedFcns.tcl,v 1.14 2015/05/08 15:49:18 mayne Exp $
+# $Id: fftk_SharedFcns.tcl,v 1.15 2015/11/03 19:59:01 mayne Exp $
 #
 
 namespace eval ::ForceFieldToolKit::SharedFcns {
@@ -622,9 +622,10 @@ proc ::ForceFieldToolKit::SharedFcns::ParView::addParObject {args} {
     variable objList
     
     # argument flags
-    # -indList = list of ints
+    # -indList = list of inds
     # -frame = now|end|<integer>
     # -type = atom|bond|angle|dihedral|improper
+    # -molid = molecule id
 
     # set default arguments
     set frame 0

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -10,8 +10,8 @@
  * RCS INFORMATION:
  *
  *	$RCSfile: TclVolMap.C,v $
- *	$Author: saam $	$Locker:  $		$State: Exp $
- *	$Revision: 1.115 $	$Date: 2011/03/05 21:32:15 $
+ *	$Author: johns $	$Locker:  $		$State: Exp $
+ *	$Revision: 1.117 $	$Date: 2016/11/28 03:05:05 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -253,7 +253,7 @@ static int vmd_volmap_ils(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Int
         bailout = true;	break;
       }
 
-      probe_coords = new float[3*nprobecoor];
+      probe_coords = new float[3L*nprobecoor];
 
       for (i=0; i<nprobecoor; i++) {
         Tcl_Obj **coorObj;
@@ -273,7 +273,7 @@ static int vmd_volmap_ils(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Int
             Tcl_AppendResult(interp, " volmap ils: non-numeric in probecoor", NULL);
             bailout = true;	break;
           }
-          probe_coords[3*i+j] = (float)tmp;
+          probe_coords[3L*i+j] = (float)tmp;
         }
       }
       arg++;
@@ -474,12 +474,12 @@ static int vmd_volmap_ils(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Int
           probe_vdweps  = new float[num_probe_atoms];
         }
         probe_charge  = new float[num_probe_atoms];
-        probe_coords  = new float[3*num_probe_atoms];
+        probe_coords  = new float[3L*num_probe_atoms];
         const float *coords = probesel->coordinates(app->moleculeList);
         int i, j=0;
         for (i=0; i<probesel->num_atoms; i++) {
           if (probesel->on[i]) {
-            vec_copy(&probe_coords[3*j], &coords[3*i]);
+            vec_copy(&probe_coords[3L*j], &coords[3L*i]);
 
             if (!nprobevdw) {
               probe_vdweps[j]  = -fabsf(occupancy[i]);
@@ -659,7 +659,7 @@ static int vmd_volmap_ils(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Int
       for (j=0; j<probesel->num_atoms; j++) { 
         if (!probesel->on[j]) continue; //atom is not selected
 
-	vec_copy(&coor[3*j], &conformers[i*3*num_probe_atoms+3*k]);
+	vec_copy(&coor[3L*j], &conformers[i*3L*num_probe_atoms+3L*k]);
 	k++;
       }
     }

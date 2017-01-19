@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolItemOrbital.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.47 $	$Date: 2014/08/20 16:59:35 $
+ *	$Revision: 1.49 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -48,7 +48,7 @@ void DrawMolItem::draw_orbital(int density, int wavefnctype, int wavefncspin,
     return; 
 
   // only recalculate the orbital grid if necessary
-  int regenorbital=0;
+  int regenorbital=1;
   if (density != orbgridisdensity ||
       wavefnctype != waveftype ||
       wavefncspin != wavefspin ||

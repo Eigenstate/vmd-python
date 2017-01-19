@@ -1,5 +1,5 @@
 #
-# $Id: fftk_GenZMatrix.tcl,v 1.13 2013/05/17 19:53:49 mayne Exp $
+# $Id: fftk_GenZMatrix.tcl,v 1.14 2015/12/31 05:05:13 gumbart Exp $
 #
 #======================================================
 namespace eval ::ForceFieldToolKit::GenZMatrix:: {
@@ -111,7 +111,7 @@ proc ::ForceFieldToolKit::GenZMatrix::sanityCheck {} {
     if { $qmProc <= 0 || $qmProc != [expr int($qmProc)] } { lappend errorList "Number of processors must be a positive integer." }
     # qmMem (memory)
     if { $qmMem eq "" } { lappend errorList "No memory was specified." }
-    if { $qmMem <= 0 || $qmMem != [expr int($qmMem)]} { lappend errorList "Memory must be a postive integer." }
+    if { $qmMem <= 0 || $qmMem != [expr int($qmMem)]} { lappend errorList "Memory must be a positive integer." }
     # qmCharge (charge)
     if { $qmCharge eq "" } { lappend errorList "No charge was specified." }
     if { $qmCharge != [expr int($qmCharge)] } { lappend errorList "Charge must be an integer." }

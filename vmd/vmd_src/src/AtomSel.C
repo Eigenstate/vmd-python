@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: AtomSel.C,v $
  *      $Author: johns $        $Locker:  $                $State: Exp $
- *      $Revision: 1.169 $      $Date: 2014/11/03 18:53:39 $
+ *      $Revision: 1.171 $      $Date: 2016/11/28 03:04:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -1118,7 +1118,7 @@ static int atomsel_xpos(void *v, int num, double *data, int *flgs) {
   }
   for (i=0; i<num; i++) {					      
     if (flgs[i]) {							      
-      data[i] = ts->pos[3*i + 0];					      
+      data[i] = ts->pos[3L*i     ];					      
     }								              
   }									      
   return 1;								     
@@ -1136,7 +1136,7 @@ static int atomsel_ypos(void *v, int num, double *data, int *flgs) {
   }
   for (i=0; i<num; i++) {					      
     if (flgs[i]) {							      
-      data[i] = ts->pos[3*i + 1];					      
+      data[i] = ts->pos[3L*i + 1L];					      
     }								              
   }									      
   return 1;								     
@@ -1154,7 +1154,7 @@ static int atomsel_zpos(void *v, int num, double *data, int *flgs) {
   }
   for (i=0; i<num; i++) {					      
     if (flgs[i]) {							      
-      data[i] = ts->pos[3*i + 2];					      
+      data[i] = ts->pos[3L*i + 2L];					      
     }								              
   }									      
   return 1;								     
@@ -1172,7 +1172,7 @@ static int atomsel_ufx(void *v, int num, double *data, int *flgs) {
   }
   for (i=0; i<num; i++) {					      
     if (flgs[i]) {							      
-      data[i] = ts->force[3*i + 0];					      
+      data[i] = ts->force[3L*i     ];
     }								              
   }									      
   return 1;								     
@@ -1190,7 +1190,7 @@ static int atomsel_ufy(void *v, int num, double *data, int *flgs) {
   }
   for (i=0; i<num; i++) {					      
     if (flgs[i]) {							      
-      data[i] = ts->force[3*i + 1];					      
+      data[i] = ts->force[3L*i + 1L];
     }								              
   }									      
   return 1;								     
@@ -1208,7 +1208,7 @@ static int atomsel_ufz(void *v, int num, double *data, int *flgs) {
   }
   for (i=0; i<num; i++) {					      
     if (flgs[i]) {							      
-      data[i] = ts->force[3*i + 2];					      
+      data[i] = ts->force[3L*i + 2L];
     }								              
   }									      
   return 1;								     
@@ -1227,7 +1227,7 @@ static int atomsel_##name(void *v, int num, double *data, int *flgs) {  \
   }                                                    \
   for (i=0; i<num; i++) {	                       \
     if (flgs[i]) {		                       \
-      data[i] = ts->vel[3*i + (offset)];               \
+      data[i] = ts->vel[3L*i + (offset)];              \
     }                                                  \
   }                                                    \
   return 1;                                            \
@@ -1272,7 +1272,7 @@ static int atomsel_phi(void *v, int num, double *data, int *flgs) {
       }
     }
     if (cprev >= 0 && CA >= 0 && C >= 0) 
-      data[i] = dihedral(r+3*cprev, r+3*N, r+3*CA, r+3*C);
+      data[i] = dihedral(r+3L*cprev, r+3L*N, r+3L*CA, r+3L*C);
     else
       data[i] = 0.0; 
   }
@@ -1314,7 +1314,7 @@ static int atomsel_psi(void *v, int num, double *data, int *flgs) {
       }
     }
     if (nextn >= 0 && N >= 0 && CA >= 0) 
-      data[i] = dihedral(r+3*N, r+3*CA, r+3*C, r+3*nextn);
+      data[i] = dihedral(r+3L*N, r+3L*CA, r+3L*C, r+3L*nextn);
     else
       data[i] = 0.0; 
   }
@@ -1357,11 +1357,11 @@ static int atomsel_set_phi(void *v, int num, double *data, int *flgs) {
       if (cprev < 0 || N < 0 || CA < 0 || C < 0) continue;
       if (!flgs[CA]) continue;
       float CApos[3], Npos[3], axis[3];
-      vec_copy(CApos, r+3*CA);
-      vec_copy(Npos, r+3*N);
+      vec_copy(CApos, r+3L*CA);
+      vec_copy(Npos, r+3L*N);
       vec_sub(axis, Npos, CApos);
       vec_normalize(axis); 
-      double oldphi = dihedral(r+3*cprev, Npos, CApos, r+3*C);
+      double oldphi = dihedral(r+3L*cprev, Npos, CApos, r+3L*C);
       // Select the N-terminal part of the fragment, which includes all
       // residues up to the current one, plus N and NH of the curent one.
       // I'm just going to create a new atom selection for now.
@@ -1384,7 +1384,7 @@ static int atomsel_set_phi(void *v, int num, double *data, int *flgs) {
         
       for (int j=0; j<num; j++) {
         if (nterm->on[j]) {
-          float *pos = r+3*j;
+          float *pos = r+3L*j;
           vec_sub(pos, pos, CApos);
           mat.multpoint3d(pos, pos);
           vec_add(pos, pos, CApos); 
@@ -1420,11 +1420,11 @@ static int atomsel_set_psi(void *v, int num, double *data, int *flgs) {
       if (nextn < 0 || N < 0 || CA < 0 || C < 0) continue;
       if (!flgs[CA]) continue;
       float CApos[3], Cpos[3], axis[3];
-      vec_copy(CApos, r+3*CA);
-      vec_copy(Cpos, r+3*C);
+      vec_copy(CApos, r+3L*CA);
+      vec_copy(Cpos, r+3L*C);
       vec_sub(axis, Cpos, CApos);
       vec_normalize(axis);
-      double oldpsi = dihedral(r+3*N, CApos, Cpos, r+3*nextn);
+      double oldpsi = dihedral(r+3L*N, CApos, Cpos, r+3L*nextn);
 
       AtomSel *cterm = new AtomSel(table, atom_sel_mol->id());
       char buf[100];
@@ -1445,7 +1445,7 @@ static int atomsel_set_psi(void *v, int num, double *data, int *flgs) {
 
       for (int j=0; j<num; j++) {
         if (cterm->on[j]) {
-          float *pos = r+3*j;
+          float *pos = r+3L*j;
           vec_sub(pos, pos, CApos);
           mat.multpoint3d(pos, pos);
           vec_add(pos, pos, CApos);
@@ -1466,7 +1466,7 @@ static int fctn(void *v, int num, double *data, int *flgs)		      \
   if (!ts) return 0;                                                          \
   for (int i=num-1; i>=0; i--) {					      \
     if (flgs[i]) {							      \
-      ts->pos[3*i + offset] = (float) data[i];				      \
+      ts->pos[3L*i + offset] = (float) data[i];				      \
     }								              \
   }									      \
   return 1;								      \
@@ -1485,12 +1485,12 @@ static int fctn(void *v, int num, double *data, int *flgs)		      \
   Timestep *ts = selframe(atom_sel_mol, which_frame);                         \
   if (!ts) return 0;                                                          \
   if (!ts->force) {                                                           \
-    ts->force = new float[3*num];                                             \
-    memset(ts->force, 0, 3*num*sizeof(float));                                \
+    ts->force = new float[3L*num];                                            \
+    memset(ts->force, 0, 3L*num*sizeof(float));                               \
   }                                                                           \
   for (int i=num-1; i>=0; i--) {					      \
     if (flgs[i]) {							      \
-      ts->force[3*i + offset] = (float) data[i];                              \
+      ts->force[3L*i + offset] = (float) data[i];                             \
     }								              \
   }									      \
   return 1;								      \
@@ -1507,13 +1507,13 @@ static int fctn(void *v, int num, double *data, int *flgs)		      \
   int which_frame = ((atomsel_ctxt *)v)->which_frame;                                 \
   Timestep *ts = selframe(atom_sel_mol, which_frame);                         \
   if (!ts) return 0;                                                          \
-  if (!ts->vel) {                                                           \
-    ts->vel= new float[3*num];                                             \
-    memset(ts->vel, 0, 3*num*sizeof(float));                                \
+  if (!ts->vel) {                                                             \
+    ts->vel= new float[3L*num];                                               \
+    memset(ts->vel, 0, 3L*num*sizeof(float));                                 \
   }                                                                           \
   for (int i=num-1; i>=0; i--) {					      \
     if (flgs[i]) {							      \
-      ts->vel[3*i + offset] = (float) data[i];                              \
+      ts->vel[3L*i + offset] = (float) data[i];                               \
     }								              \
   }									      \
   return 1;								      \
@@ -1947,7 +1947,7 @@ static int atomsel_volume_array(void *v, int num, double *data, int *flgs, int a
   }
   for (i=0; i<num; i++) {					      
     if (flgs[i]) 							      
-      data[i] = voldata->voxel_value_from_coord(ts->pos[3*i], ts->pos[3*i+1], ts->pos[3*i+2]);	        
+      data[i] = voldata->voxel_value_from_coord(ts->pos[3L*i], ts->pos[3L*i+1], ts->pos[3L*i+2]);	        
   }									      
   return 1;								     
 }
@@ -1967,7 +1967,7 @@ static int atomsel_interp_volume_array(void *v, int num, double *data, int *flgs
   }
   for (i=0; i<num; i++) {					      
     if (flgs[i]) 							      
-      data[i] = voldata->voxel_value_interpolate_from_coord(ts->pos[3*i], ts->pos[3*i+1], ts->pos[3*i+2]);	        
+      data[i] = voldata->voxel_value_interpolate_from_coord(ts->pos[3L*i], ts->pos[3L*i+1], ts->pos[3L*i+2]);	        
   }									      
   return 1;								     
 }
@@ -1987,7 +1987,7 @@ static int atomsel_gridindex_array(void *v, int num, double *data, int *flgs, in
   }
   for (i=0; i<num; i++) {					      
     if (flgs[i]) 							      
-      data[i] = voldata->voxel_index_from_coord(ts->pos[3*i], ts->pos[3*i+1], ts->pos[3*i+2]);	        
+      data[i] = voldata->voxel_index_from_coord(ts->pos[3L*i], ts->pos[3L*i+1], ts->pos[3L*i+2]);	        
   }									      
   return 1;								     
 }

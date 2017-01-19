@@ -92,7 +92,7 @@ proc avg_maps {sel maps refs mask mask_res mask_cutoff avg} {
           exec phenix.maps "maps$i.params"
           file copy -force "mapinput_map_coeffs.mtz"  "mapinput_map_coeffs$j.mtz"
           set avgmapsdat [open "average_maps$i.dat" "a+"]
-          puts $avgmapsdat "mapinput_2mFo-DFc_map$j.mtz"
+          puts $avgmapsdat "mapinput_map_coeffs$j.mtz"
           close $avgmapsdat
         }
         $sel frame last

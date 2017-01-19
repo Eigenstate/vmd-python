@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: graspplugin.C,v $
  *      $Author: johns $       $:  $             $State: Exp $
- *      $Revision: 1.21 $       $Date: 2009/04/29 15:45:30 $
+ *      $Revision: 1.23 $       $Date: 2016/11/28 05:01:54 $
  *
  ***************************************************************************/
 
@@ -99,7 +99,7 @@ void Get_Property_Values(GRASSP *grassp, float *properties, float *colores, int 
 
   ///ojo aqui le quite el  !
   if ((grassp->flag)!=POTENTIALS) {
-    if (index >=0 && index <= 4) 
+    if (index <= 4)
       printf("graspplugin) No data available for '%s' option\n", name[index]);
     else 
       printf("graspplugin) out of range property, flag: %d index: %d\n", grassp->flag, index);
@@ -500,7 +500,7 @@ VMDPLUGIN_API int VMDPLUGIN_init(void) {
   plugin.prettyname = "GRASP";
   plugin.author = "Justin Gullingsrud, John Stone";
   plugin.majorv = 0;
-  plugin.minorv = 7;
+  plugin.minorv = 8;
   plugin.is_reentrant = VMDPLUGIN_THREADSAFE;
   plugin.filename_extension = "srf,SRF,grasp";
   plugin.open_file_read = open_file_read;

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: FileRenderer.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.176 $	$Date: 2015/05/04 06:24:18 $
+ *	$Revision: 1.178 $	$Date: 2016/11/28 03:05:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -133,9 +133,9 @@ int FileRenderer::do_activate_adv_light(int n, int turnon) {
 
 void FileRenderer::do_use_colors() {
   for (int i=0; i<MAXCOLORS; i++) {
-    matData[i][0] = colorData[3*i  ];
-    matData[i][1] = colorData[3*i+1];
-    matData[i][2] = colorData[3*i+2];
+    matData[i][0] = colorData[3L*i  ];
+    matData[i][1] = colorData[3L*i+1];
+    matData[i][2] = colorData[3L*i+2];
   }
 }
 
@@ -326,9 +326,9 @@ void FileRenderer::render(const VMDDisplayList *cmdList) {
 
   for (i=0; i<VMD_MAX_CLIP_PLANE; i++) {
     clip_mode[i] = cmdList->clipplanes[i].mode;
-    memcpy(&clip_center[i][0], &cmdList->clipplanes[i].center, 3*sizeof(float));
-    memcpy(&clip_normal[i][0], &cmdList->clipplanes[i].normal, 3*sizeof(float));
-    memcpy(&clip_color[i][0],  &cmdList->clipplanes[i].color,  3*sizeof(float));
+    memcpy(&clip_center[i][0], &cmdList->clipplanes[i].center, 3L*sizeof(float));
+    memcpy(&clip_normal[i][0], &cmdList->clipplanes[i].normal, 3L*sizeof(float));
+    memcpy(&clip_color[i][0],  &cmdList->clipplanes[i].color,  3L*sizeof(float));
   }
   start_clipgroup();
 
@@ -388,7 +388,7 @@ for (int pbcimage = 0; pbcimage < nimages; pbcimage++) {
 
     case DLINE:    // plot a line
       // don't draw degenerate lines of zero length
-      if (memcmp(cmdptr, cmdptr+3*sizeof(float), 3*sizeof(float))) {
+      if (memcmp(cmdptr, cmdptr+3L*sizeof(float), 3L*sizeof(float))) {
 	line((float *)cmdptr, ((float *)cmdptr) + 3);
       }
       break;
@@ -412,7 +412,7 @@ for (int pbcimage = 0; pbcimage < nimages; pbcimage++) {
       break; 
 
     case DCYLINDER: // plot a cylinder
-      if (memcmp(cmdptr, cmdptr+3*sizeof(float), 3*sizeof(float))) {
+      if (memcmp(cmdptr, cmdptr+3L*sizeof(float), 3L*sizeof(float))) {
 	cylinder((float *)cmdptr, ((float *)cmdptr) + 3, ((float *)cmdptr)[6],
 		 ((int) ((float *) cmdptr)[8]));
       }
@@ -421,7 +421,7 @@ for (int pbcimage = 0; pbcimage < nimages; pbcimage++) {
     case DCONE:      // plot a cone  
       {
       DispCmdCone *cmd = (DispCmdCone *)cmdptr;
-      if (memcmp(cmd->pos1, cmd->pos2, 3*sizeof(float))) 
+      if (memcmp(cmd->pos1, cmd->pos2, 3L*sizeof(float))) 
 	cone_trunc(cmd->pos1, cmd->pos2, cmd->radius, cmd->radius2, cmd->res);
       }
       break;
@@ -596,11 +596,11 @@ for (int pbcimage = 0; pbcimage < nimages; pbcimage++) {
         cmd->getpointers(crds, indices);
         if (cmd->allselected) {
           for (i=0; i<cmd->numpicks; i++) {
-            pick_point(crds + i*3, i);
+            pick_point(crds + i*3L, i);
           }
         } else {
           for (i=0; i<cmd->numpicks; i++) {
-            pick_point(crds + i*3, indices[i]); 
+            pick_point(crds + i*3L, indices[i]); 
           }
         }
       }
@@ -892,12 +892,12 @@ void FileRenderer::cone_trunc(float *base, float *apex, float radius, float radi
 	}
 
 	// Copy the old values
-	memcpy(norm1, norm0, 3*sizeof(float));
-	memcpy(vert2, vert1, 3*sizeof(float));
-	memcpy(face1, face0, 3*sizeof(float));
+	memcpy(norm1, norm0, 3L*sizeof(float));
+	memcpy(vert2, vert1, 3L*sizeof(float));
+	memcpy(face1, face0, 3L*sizeof(float));
       }
-      memcpy(vert1, vert0, 3*sizeof(float));
-      memcpy(edge1, edge0, 3*sizeof(float));
+      memcpy(vert1, vert0, 3L*sizeof(float));
+      memcpy(edge1, edge0, 3L*sizeof(float));
   
       theta += incTheta;
     }
@@ -932,18 +932,18 @@ void FileRenderer::cylinder(float *base, float *apex, float radius, int filled) 
   incTheta = (float) VMD_TWOPI / numsides;
   theta = 0.0;
 
-  const int stripsz = (2*numsides) * 6;
+  const int stripsz = (2L*numsides) * 6L;
   float *stripnv = new float[stripsz];
   memset(stripnv, 0, sizeof(float) * stripsz);
 
   const int capsz = numsides+1;
-  float *lcapnv = new float[capsz*6];
-  memset(lcapnv, 0, sizeof(float)*capsz*6);
+  float *lcapnv = new float[capsz*6L];
+  memset(lcapnv, 0, sizeof(float)*capsz*6L);
   vec_copy(&lcapnv[0], negaxis);
   vec_copy(&lcapnv[3], apex);
 
-  float *tcapnv = new float[capsz*6];
-  memset(tcapnv, 0, sizeof(float)*capsz*6);
+  float *tcapnv = new float[capsz*6L];
+  memset(tcapnv, 0, sizeof(float)*capsz*6L);
   vec_copy(&tcapnv[0], axis);
   vec_copy(&tcapnv[3], base);
 
@@ -960,22 +960,22 @@ void FileRenderer::cylinder(float *base, float *apex, float radius, int filled) 
     float lvert[3], tvert[3];
     vec_add(lvert, apex, offset);
     vec_add(tvert, base, offset);
-    vec_copy(&stripnv[((2*h)*6)+9], lvert); 
-    vec_copy(&stripnv[((2*h)*6)+3], tvert); 
-    vec_copy(&lcapnv[((1+h)*6)+3], lvert); 
-    vec_copy(&tcapnv[((1+h)*6)+3], tvert); 
+    vec_copy(&stripnv[((2L*h)*6L)+9L], lvert); 
+    vec_copy(&stripnv[((2L*h)*6L)+3L], tvert); 
+    vec_copy(&lcapnv[((1L+h)*6L)+3L], lvert); 
+    vec_copy(&tcapnv[((1L+h)*6L)+3L], tvert); 
 
     // new normals
     vec_normalize(offset);
-    vec_copy(&stripnv[((2*h)*6)  ], offset);
-    vec_copy(&stripnv[((2*h)*6)+6], offset);
-    vec_copy(&lcapnv[((1+h)*6)], negaxis);
-    vec_copy(&tcapnv[((1+h)*6)], axis);
+    vec_copy(&stripnv[((2L*h)*6L)  ], offset);
+    vec_copy(&stripnv[((2L*h)*6L)+6], offset);
+    vec_copy(&lcapnv[((1+h)*6L)], negaxis);
+    vec_copy(&tcapnv[((1+h)*6L)], axis);
 
     theta += incTheta;
   }
 
-  const int vertsperstrip = (numsides + 1)*2;
+  const int vertsperstrip = (numsides + 1)*2L;
   int *stripfaces = new int[vertsperstrip];
   memset(stripfaces, 0, sizeof(float) * vertsperstrip);
   for (h=0; h < vertsperstrip-2; h++) {
@@ -984,7 +984,7 @@ void FileRenderer::cylinder(float *base, float *apex, float radius, int filled) 
   stripfaces[h  ] = 0; // wraparound to start
   stripfaces[h+1] = 1; // wraparound to start
 
-  tristrip_singlecolor(2*numsides, &stripnv[0],
+  tristrip_singlecolor(2L*numsides, &stripnv[0],
                        1, &colorIndex, &vertsperstrip, &stripfaces[0]);
   delete [] stripfaces;
 
@@ -1058,7 +1058,7 @@ void FileRenderer::line_array(int num, float thickness, float *points) {
   float *v = points;
   for (int i=0; i<num; i++) {
     // don't draw degenerate lines of zero length
-    if (memcmp(v, v+3, 3*sizeof(float))) {
+    if (memcmp(v, v+3, 3L*sizeof(float))) {
       line(v, v+3);
     }
     v += 6;
@@ -1070,7 +1070,7 @@ void FileRenderer::polyline_array(int num, float thickness, float *points) {
   float *v = points;
   for (int i=0; i<num-1; i++) {
     // don't draw degenerate lines of zero length
-    if (memcmp(v, v+3, 3*sizeof(float))) {
+    if (memcmp(v, v+3, 3L*sizeof(float))) {
       line(v, v+3);
     }
     v += 3;
@@ -1122,7 +1122,7 @@ void FileRenderer::sphere(float * xyzr) {
     // remove old cached copy
     if (sph_verts && sph_nverts) free(sph_verts);
 
-    newverts = (float *) malloc(sizeof(float) * 36);
+    newverts = (float *) malloc(sizeof(float) * 36L);
     nverts = 12;
     ntris = 4;
 
@@ -1153,7 +1153,7 @@ void FileRenderer::sphere(float * xyzr) {
 
       // allocate memory for the next iteration: we will need
       // four times the current number of vertices
-      newverts = (float *) malloc(sizeof(float) * 12 * nverts);
+      newverts = (float *) malloc(sizeof(float) * 12L * nverts);
       if (!newverts) {
         // memory error
         sph_iter = -1;
@@ -1183,21 +1183,21 @@ void FileRenderer::sphere(float * xyzr) {
         vec_normalize(c);
 
         // build triangles
-        memcpy(&newverts[ni     ], &oldverts[pi], sizeof(float) * 3);
-        memcpy(&newverts[ni + 3 ], b, sizeof(float) * 3);
-        memcpy(&newverts[ni + 6 ], a, sizeof(float) * 3);
+        memcpy(&newverts[ni     ], &oldverts[pi], sizeof(float) * 3L);
+        memcpy(&newverts[ni + 3 ], b, sizeof(float) * 3L);
+        memcpy(&newverts[ni + 6 ], a, sizeof(float) * 3L);
 
-        memcpy(&newverts[ni + 9 ], b, sizeof(float) * 3);
-        memcpy(&newverts[ni + 12], &oldverts[pi + 3], sizeof(float) * 3);
-        memcpy(&newverts[ni + 15], c, sizeof(float) * 3);
+        memcpy(&newverts[ni + 9 ], b, sizeof(float) * 3L);
+        memcpy(&newverts[ni + 12], &oldverts[pi + 3], sizeof(float) * 3L);
+        memcpy(&newverts[ni + 15], c, sizeof(float) * 3L);
 
-        memcpy(&newverts[ni + 18], a, sizeof(float) * 3);
-        memcpy(&newverts[ni + 21], b, sizeof(float) * 3);
-        memcpy(&newverts[ni + 24], c, sizeof(float) * 3);
+        memcpy(&newverts[ni + 18], a, sizeof(float) * 3L);
+        memcpy(&newverts[ni + 21], b, sizeof(float) * 3L);
+        memcpy(&newverts[ni + 24], c, sizeof(float) * 3L);
 
-        memcpy(&newverts[ni + 27], a, sizeof(float) * 3);
-        memcpy(&newverts[ni + 30], c, sizeof(float) * 3);
-        memcpy(&newverts[ni + 33], &oldverts[pi + 6], sizeof(float) * 3);
+        memcpy(&newverts[ni + 27], a, sizeof(float) * 3L);
+        memcpy(&newverts[ni + 30], c, sizeof(float) * 3L);
+        memcpy(&newverts[ni + 33], &oldverts[pi + 6], sizeof(float) * 3L);
 
         pi += 9;
         ni += 36;

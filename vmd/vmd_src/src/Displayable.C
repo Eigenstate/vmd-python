@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Displayable.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.114 $	$Date: 2014/12/05 21:53:42 $
+ *	$Revision: 1.116 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -132,7 +132,7 @@ Displayable::Displayable(Displayable *pops)  : scene(pops->scene) {
 // does all the creation work after variables have been initialized
 void Displayable::do_create() {
 
-  children = (Displayable **)vmd_alloc(16*sizeof(Displayable*));
+  children = (Displayable **)vmd_alloc(16L*sizeof(Displayable*));
   num_children = 0;
   max_children = 16;
 
@@ -219,7 +219,7 @@ void Displayable::add_child(Displayable *d) {
   // append child to list of children
   children[num_children++] = d;
   if (num_children == max_children) {
-    void *tmp = vmd_alloc(max_children*2*sizeof(Displayable*));
+    void *tmp = vmd_alloc(max_children*2L*sizeof(Displayable*));
     memcpy(tmp,children,max_children*sizeof(Displayable*));
     vmd_dealloc(children);
     children = (Displayable **)tmp;

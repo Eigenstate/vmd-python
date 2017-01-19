@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: AtomRep.h,v $
  *      $Author: johns $        $Locker:  $                $State: Exp $
- *      $Revision: 1.71 $      $Date: 2015/05/29 15:49:25 $
+ *      $Revision: 1.72 $      $Date: 2016/11/28 03:04:58 $
  *
  ***************************************************************************
  * DESCRIPTION:

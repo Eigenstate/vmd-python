@@ -1,9 +1,9 @@
 /***************************************************************************
- *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
- *cr                        University of Illinois                       
- *cr                         All Rights Reserved                        
- *cr                                                                   
+ *cr
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr                        University of Illinois
+ *cr                         All Rights Reserved
+ *cr
  ***************************************************************************/
 
 /***************************************************************************
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: vmd.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.95 $	$Date: 2014/12/11 03:05:56 $
+ *	$Revision: 1.98 $	$Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -109,7 +109,7 @@ static const char *vmd_initialize_tcl(const char *argv0) {
     }
   }
 
-  Tcl_FindExecutable(buffer); 
+  Tcl_FindExecutable(buffer);
   return buffer;
 #else
   if (argv0) {
@@ -145,9 +145,9 @@ void * (*vmd_realloc)(void *, size_t);
 void * vmd_resize_alloc(void *ptr, size_t oldsize, size_t newsize) {
   void *newptr=NULL;
 
-  if (ptr == NULL) { 
+  if (ptr == NULL) {
     newptr = vmd_alloc(newsize);
-    return newptr; 
+    return newptr;
   }
 
   if (vmd_realloc != NULL) {
@@ -182,14 +182,14 @@ extern void VMDupdateFltk() {
  enumerates for different initial status variables, such as the type of
  display to use at startup
  ***************************************************************************/
-  
+
 // display types at startup
 // For a complete case we should have:
 //   FLTK on? (or Tk? or MFC?)
 //   GL or OpenGL? (or other??)
 //   use the CAVE?
 // and be smart about choosing the GL/OpenGL CAVE options, etc.
-enum DisplayTypes { 
+enum DisplayTypes {
   DISPLAY_WIN,         // standard display in a window.
   DISPLAY_WINOGL,      // use OpenGL, if a valid option
   DISPLAY_OGLPBUFFER,  // use OpenGL off-screen rendering, if a valid option
@@ -202,7 +202,7 @@ enum DisplayTypes {
 };
 
 static const char *displayTypeNames[NUM_DISPLAY_TYPES] = {
-  "WIN",  "OPENGL", "OPENGLPBUFFER", 
+  "WIN",  "OPENGL", "OPENGLPBUFFER",
   "CAVE", "TEXT", "CAVEFORMS", "FREEVR", "FREEVRFORMS"
 };
 
@@ -212,8 +212,8 @@ static const char *displayTypeNames[NUM_DISPLAY_TYPES] = {
 #define DISPLAY_USES_GUI(d) (DISPLAY_USES_WINDOW(d) || (d) == DISPLAY_CAVEFORMS || (d) == DISPLAY_FREEVRFORMS)
 
 // how to show the title
-enum TitleTypes { 
-  TITLE_OFF, TITLE_ON, NUM_TITLE_TYPES 
+enum TitleTypes {
+  TITLE_OFF, TITLE_ON, NUM_TITLE_TYPES
 };
 
 static const char *titleTypeNames[NUM_TITLE_TYPES] = {
@@ -221,8 +221,8 @@ static const char *titleTypeNames[NUM_TITLE_TYPES] = {
 };
 
 // display options set at startup time
-static int   showTitle      = INIT_DEFTITLE;   
-static int   which_display  = INIT_DEFDISPLAY;     
+static int   showTitle      = INIT_DEFTITLE;
+static int   which_display  = INIT_DEFDISPLAY;
 static float displayHeight  = INIT_DEFHEIGHT;
 static float displayDist    = INIT_DEFDIST;
 static int   displaySize[2] = { -1, -1 };
@@ -232,7 +232,7 @@ static int   displayLoc[2]  = { -1, -1 };
 static const char *startupFileStr;
 static const char *beginCmdFile;
 
-// Change the text interpreter to Python before processing commands. 
+// Change the text interpreter to Python before processing commands.
 // (affects the "-e" file, not the .vmdrc or other files.
 static int cmdFileUsesPython;
 
@@ -249,7 +249,7 @@ static ResizeArray<const char *>initFilenames;
 static ResizeArray<const char *>initFiletypes;
 
 // Miscellaneous stuff
-static int eofexit  = 0;       
+static int eofexit  = 0;
 static int just_print_help = 0;
 static ResizeArray<char *>customArgv;
 
@@ -291,8 +291,8 @@ int VMDinitialize(int *argc, char ***argv, int mpienabled) {
 
 #ifdef VMDTCL
   // register signal handler
-  tclhandler = Tcl_AsyncCreate(VMDTclAsyncProc, (ClientData)NULL); 
-  signal(SIGINT, (sighandler_t) VMDTclSigHandler);  
+  tclhandler = Tcl_AsyncCreate(VMDTclAsyncProc, (ClientData)NULL);
+  signal(SIGINT, (sighandler_t) VMDTclSigHandler);
 #endif
 
   // Let people know who we are.
@@ -303,18 +303,55 @@ int VMDinitialize(int *argc, char ***argv, int mpienabled) {
   // standalone startup messages and instead we use the special MPI-specific
   // node scan startup messages only.
   if (!mpienabled) {
-#if defined(VMDTHREADS) 
+#if defined(VMDTHREADS)
     int vmdnumcpus = wkf_thread_numprocessors();
-    msgInfo << "Multithreading available, " << vmdnumcpus 
-            << ((vmdnumcpus > 1) ? " CPUs" : " CPU") <<  " detected." 
+    msgInfo << "Multithreading available, " << vmdnumcpus
+            << ((vmdnumcpus > 1) ? " CPUs" : " CPU") <<  " detected."
             << sendmsg;
+
+    wkf_cpu_caps_t cpucaps;
+    if (!wkf_cpu_capability_flags(&cpucaps)) {
+      msgInfo << "  CPU features: ";
+      if (cpucaps.flags & CPU_SSE2)
+        msgInfo << "SSE2 ";
+      if (cpucaps.flags & CPU_AVX)
+        msgInfo << "AVX ";
+      if (cpucaps.flags & CPU_AVX2)
+        msgInfo << "AVX2 ";
+      if (cpucaps.flags & CPU_FMA)
+        msgInfo << "FMA ";
+
+      if (cpucaps.flags & CPU_KNL) {
+        msgInfo << "KNL:AVX-512F+CD+ER+PF ";
+      } else {
+        if (cpucaps.flags & CPU_AVX512F)
+          msgInfo << "AVX512F ";
+        if (cpucaps.flags & CPU_AVX512CD)
+          msgInfo << "AVX512CD ";
+        if (cpucaps.flags & CPU_AVX512ER)
+          msgInfo << "AVX512ER ";
+        if (cpucaps.flags & CPU_AVX512PF)
+          msgInfo << "AVX512PF ";
+      }
+      msgInfo << sendmsg;
+    }
 #endif
 
     long vmdcorefree = vmd_get_avail_physmem_mb();
     if (vmdcorefree >= 0) {
       long vmdcorepcnt = vmd_get_avail_physmem_percent();
-      msgInfo << "Free system memory: " << vmdcorefree 
-              << "MB (" << vmdcorepcnt << "%)" << sendmsg;
+
+      // on systems with large physical memory (tens of GB) we
+      // report gigabytes of memory rather than megabytes
+      if (vmdcorefree > 8000) {
+        vmdcorefree += 512; // round up to nearest GB
+        vmdcorefree /= 1024;
+        msgInfo << "Free system memory: " << vmdcorefree
+                << "GB (" << vmdcorepcnt << "%)" << sendmsg;
+      } else {
+        msgInfo << "Free system memory: " << vmdcorefree
+                << "MB (" << vmdcorepcnt << "%)" << sendmsg;
+      }
     }
   }
 
@@ -322,7 +359,7 @@ int VMDinitialize(int *argc, char ***argv, int mpienabled) {
   // Initialize customArgv with just argv0 to avoid problems with
   // Tcl extension.
   customArgv.append((char *)argv0);
-  VMDGetOptions(*argc, *argv, mpienabled); 
+  VMDGetOptions(*argc, *argv, mpienabled);
 
 #if (!defined(__APPLE__) && !defined(_MSC_VER)) && (defined(VMDOPENGL) || defined(VMDFLTK))
   // If we're using X-windows, we autodetect if the DISPLAY environment
@@ -339,7 +376,7 @@ int VMDinitialize(int *argc, char ***argv, int mpienabled) {
   // we default to a widget mode console, unless text mode is requested.
   // we don't have an tcl interpreter registered yet, so it is set to NULL.
   // flushing pending messages to the screen, is only in text mode possible.
-  if ((which_display == DISPLAY_TEXT) || (which_display == DISPLAY_OGLPBUFFER) 
+  if ((which_display == DISPLAY_TEXT) || (which_display == DISPLAY_OGLPBUFFER)
        || just_print_help) {
     vmdcon_use_text(NULL);
     vmdcon_purge();
@@ -355,7 +392,7 @@ int VMDinitialize(int *argc, char ***argv, int mpienabled) {
     // This must be done before any FLTK windows are shown for the first time.
     if (!Fl::visual(FL_DOUBLE | FL_RGB8)) {
       if (!Fl::visual(FL_RGB8)) {
-        Fl::visual(FL_RGB); 
+        Fl::visual(FL_RGB);
       }
     }
 
@@ -371,15 +408,15 @@ int VMDinitialize(int *argc, char ***argv, int mpienabled) {
 
   // Quit now if the user just wanted a list of command line options.
   if (just_print_help) {
-    vmd_sleep(10);  // This is here so that the user can see the message 
+    vmd_sleep(10);  // This is here so that the user can see the message
                     // before the terminal/shell exits...
     return 0;
   }
 
-  // Set up default allocators; these may be overridden by cave or freevr. 
+  // Set up default allocators; these may be overridden by cave or freevr.
   vmd_alloc   = malloc;  // system malloc() in the default case
   vmd_dealloc = free;    // system free() in the default case
-  vmd_realloc = realloc; // system realloc(), set to NULL when not available 
+  vmd_realloc = realloc; // system realloc(), set to NULL when not available
 
   // check for a CAVE display
   if (DISPLAY_USES_CAVE(which_display)) {
@@ -388,8 +425,8 @@ int VMDinitialize(int *argc, char ***argv, int mpienabled) {
     int megs = 2048;
     if (getenv("VMDCAVEMEM") != NULL) {
       megs = atoi(getenv("VMDCAVEMEM"));
-    } 
-    msgInfo << "Attempting to get " << megs << 
+    }
+    msgInfo << "Attempting to get " << megs <<
             "MB of CAVE Shared Memory" << sendmsg;
     grab_CAVE_memory(megs);
 
@@ -401,7 +438,7 @@ int VMDinitialize(int *argc, char ***argv, int mpienabled) {
     vmd_realloc = NULL; // no realloc() functionality is available presently
 #else
     msgErr << "Not compiled with the CAVE options set." << sendmsg;
-    which_display = DISPLAY_WIN;    
+    which_display = DISPLAY_WIN;
 #endif
   }
 
@@ -411,8 +448,8 @@ int VMDinitialize(int *argc, char ***argv, int mpienabled) {
     int megs = 2048;
     if (getenv("VMDFREEVRMEM") != NULL) {
       megs = atoi(getenv("VMDFREEVRMEM"));
-    } 
-    msgInfo << "Attempting to get " << megs << 
+    }
+    msgInfo << "Attempting to get " << megs <<
             "MB of FreeVR Shared Memory" << sendmsg;
     grab_FreeVR_memory(megs); // have to do this *before* vrConfigure() if
                               // we want more than the default shared mem.
@@ -424,7 +461,7 @@ int VMDinitialize(int *argc, char ***argv, int mpienabled) {
     vmd_realloc = NULL; // no realloc() functionality is available presently
 #else
     msgErr << "Not compiled with the FREEVR options set." << sendmsg;
-    which_display = DISPLAY_WIN;    
+    which_display = DISPLAY_WIN;
 #endif
   }
 
@@ -490,7 +527,7 @@ static void VMDGetOptions(int argc, char **argv, int mpienabled) {
 
   //
   // VMDDISPLAYDEVICE: which display device to use by default
-  // 
+  //
   if((envtxt = getenv("VMDDISPLAYDEVICE"))) {
     for(int i=0; i < NUM_DISPLAY_TYPES; i++) {
       if(!strupcmp(envtxt, displayTypeNames[i])) {
@@ -500,9 +537,9 @@ static void VMDGetOptions(int argc, char **argv, int mpienabled) {
     }
   }
 
-  // 
+  //
   // VMDTITLE: whether to enable the title screen
-  //  
+  //
   if((envtxt = getenv("VMDTITLE"))) {
     for(int i=0; i < NUM_TITLE_TYPES; i++) {
       if(!strupcmp(envtxt, titleTypeNames[i])) {
@@ -522,9 +559,9 @@ static void VMDGetOptions(int argc, char **argv, int mpienabled) {
   // VMDSCRDIST: distance to the screen
   //
   if((envtxt = getenv("VMDSCRDIST")))
-    displayDist = (float) atof(envtxt); 
+    displayDist = (float) atof(envtxt);
 
-  // 
+  //
   // VMDSCRPOS: graphics window location
   //
   if((envtxt = getenv("VMDSCRPOS"))) {
@@ -537,13 +574,13 @@ static void VMDGetOptions(int argc, char **argv, int mpienabled) {
       displayLoc[0] = atoi(dispArgv[0]);
       displayLoc[1] = atoi(dispArgv[1]);
     } else {
-      msgErr << "Illegal VMDSCRPOS environment variable setting '" 
+      msgErr << "Illegal VMDSCRPOS environment variable setting '"
              << envtxt << "'." << sendmsg;
     }
     if(dispStr)  delete [] dispStr;
   }
 
-  // 
+  //
   // VMDSCRSIZE: graphics window size
   //
   if((envtxt = getenv("VMDSCRSIZE"))) {
@@ -554,15 +591,15 @@ static void VMDGetOptions(int argc, char **argv, int mpienabled) {
                 && dispArgc == 2) {
       displaySize[0] = atoi(dispArgv[0]);
       displaySize[1] = atoi(dispArgv[1]);
- 
+
       // force users to do something that makes sense
-      if (displaySize[0] < 100) 
+      if (displaySize[0] < 100)
         displaySize[0] = 100; // minimum sane width
-      if (displaySize[1] < 100) 
+      if (displaySize[1] < 100)
         displaySize[1] = 100; // minimum sane height
 
     } else {
-      msgErr << "Illegal VMDSCRSIZE environment variable setting '" 
+      msgErr << "Illegal VMDSCRSIZE environment variable setting '"
              << envtxt << "'." << sendmsg;
     }
     if(dispStr)  delete [] dispStr;
@@ -621,23 +658,23 @@ static void VMDGetOptions(int argc, char **argv, int mpienabled) {
     } else if (!strupcmp(argv[ev], "-dispdev")) {  // startup Display
       ev++;
       if (argc > ev) {
-        if (!strupcmp(argv[ev], "cave")) {  
+        if (!strupcmp(argv[ev], "cave")) {
           which_display = DISPLAY_CAVE;        // use the CAVE
-        } else if (!strupcmp(argv[ev], "win")) {       
+        } else if (!strupcmp(argv[ev], "win")) {
           which_display = DISPLAY_WIN;         // use OpenGL, the default
-        } else if (!strupcmp(argv[ev], "opengl")) {  
+        } else if (!strupcmp(argv[ev], "opengl")) {
           which_display = DISPLAY_WINOGL;      // use OpenGL if available
-        } else if (!strupcmp(argv[ev], "openglpbuffer")) {  
+        } else if (!strupcmp(argv[ev], "openglpbuffer")) {
           which_display = DISPLAY_OGLPBUFFER;  // use OpenGLPbuffer if available
         } else if (!strupcmp(argv[ev], "text")) {
-          which_display = DISPLAY_TEXT;        // use text console only 
+          which_display = DISPLAY_TEXT;        // use text console only
         } else if (!strupcmp(argv[ev], "caveforms")) {
           which_display = DISPLAY_CAVEFORMS;   // use CAVE+Forms
         } else if (!strupcmp(argv[ev], "freevr")) {
           which_display = DISPLAY_FREEVR;      // use FreeVR
         } else if (!strupcmp(argv[ev], "freevrforms")) {
           which_display = DISPLAY_FREEVRFORMS; // use FreeVR+Forms
-        } else if (!strupcmp(argv[ev], "none")) {      
+        } else if (!strupcmp(argv[ev], "none")) {
           which_display = DISPLAY_TEXT;        // use text console only
         } else {
           msgErr << "-dispdev options are 'win' 'opengl' (default), 'openglpbuffer', 'cave', 'caveforms', 'freevr', 'freevrforms', or 'text | none'" << sendmsg;
@@ -672,10 +709,10 @@ static void VMDGetOptions(int argc, char **argv, int mpienabled) {
       just_print_help = 1;
     } else if (!strupcmp(argv[ev], "-eofexit")) {  // exit on EOF
       eofexit = 1;
-    } else if (!strupcmp(argv[ev], "-node")) { 
+    } else if (!strupcmp(argv[ev], "-node")) {
       // start VMD process on a cluster node, next parm is node ID..
       ev++; // skip node ID parm
-    } else if (!strupcmp(argv[ev], "-webhelper")) { 
+    } else if (!strupcmp(argv[ev], "-webhelper")) {
       // Unix startup script doesn't run VMD in the background, so that
       // web browsers won't delete files out from under us until it really
       // exits.  We don't do anything special inside VMD itself presently
@@ -683,7 +720,7 @@ static void VMDGetOptions(int argc, char **argv, int mpienabled) {
     } else if (!strupcmp(argv[ev], "-python")) {
       cmdFileUsesPython = 1;
     } else if (!strupcmp(argv[ev], "-args")) {
-      // pass the rest of the command line arguments, and only those, 
+      // pass the rest of the command line arguments, and only those,
       // to the embedded text interpreters.
       while (++ev < argc)
         customArgv.append(argv[ev]);
@@ -700,7 +737,7 @@ static void VMDGetOptions(int argc, char **argv, int mpienabled) {
             // in MPI startup before we got to this loop...
 #endif
     } else {
-      // any other argument is treated either as a filename or as a 
+      // any other argument is treated either as a filename or as a
       // filetype/filename pair of the form -filetype filename.
       const char *filename, *filetype;
       if (argv[ev][0] == '-') {
@@ -713,7 +750,7 @@ static void VMDGetOptions(int argc, char **argv, int mpienabled) {
           msgErr << "filetype argument '" << argv[ev] << "' needs a filename."
             << sendmsg;
           ev++;  // because we skip past the ev++ at the bottom of the loop.
-          continue; 
+          continue;
         }
       } else {
         // Given just a filename.  The filetype will have to be guessed.
@@ -783,8 +820,8 @@ static int parseMaterialDefs(const char *path, VMDApp *app) {
     int readcount;
 
     memset(vals, 0, sizeof(vals));
-    readcount=sscanf(buf, "%s %f %f %f %f %f %f %f %f %f", 
-                     name, vals, vals+1, vals+2, vals+3, vals+4, 
+    readcount=sscanf(buf, "%s %f %f %f %f %f %f %f %f %f",
+                     name, vals, vals+1, vals+2, vals+3, vals+4,
                      vals+5, vals+6, vals+7, vals+8);
     if ((readcount < 7) || (readcount > 10))
       continue; // skip bad material
@@ -856,8 +893,8 @@ static int parseAtomselMacros(const char *path, VMDApp *app) {
 // Read scripts in scripts/vmd
 void VMDreadInit(VMDApp *app) {
   char path[4096];
-  
-  const char *vmddir = getenv("VMDDIR"); 
+
+  const char *vmddir = getenv("VMDDIR");
   if (vmddir == NULL) {
     msgErr << "VMDDIR undefined, startup failure likely." << sendmsg;
 #if defined(_MSC_VER)
@@ -865,7 +902,7 @@ void VMDreadInit(VMDApp *app) {
 #else
     vmddir = "/usr/local/lib/vmd";
 #endif
-  } 
+  }
   sprintf(path, "%s/scripts/vmd/colordefs.dat", vmddir);
   if (!parseColorDefs(path, app)) {
     msgErr << "Parsing color definitions failed." << sendmsg;
@@ -902,11 +939,13 @@ void VMDreadStartup(VMDApp *app) {
   app->display_set_screen_height(displayHeight);
   app->display_set_screen_distance(displayDist);
   app->set_eofexit(eofexit);
-  if (showTitle == TITLE_ON && (which_display != DISPLAY_TEXT) && 
+  if (showTitle == TITLE_ON && (which_display != DISPLAY_TEXT) &&
       (which_display != DISPLAY_OGLPBUFFER)) {
     app->display_titlescreen();
   }
 
+// Look for and read in .vmdrc only if standalone executable
+#ifndef VMD_SHARED
   if((envtxt = getenv("VMDDIR")) != NULL)
     DataPath = stringdup(envtxt);
   else
@@ -955,7 +994,7 @@ void VMDreadStartup(VMDApp *app) {
   //
   // execute any commands needed at start
   //
-  
+
   // read in molecules requested via command-line switches
   FileSpec spec;
   spec.waitfor = -1; // wait for all files to load before proceeding
@@ -971,7 +1010,7 @@ void VMDreadStartup(VMDApp *app) {
     if (!filetype) {
       filetype = app->guess_filetype(filename);
       if (!filetype) {
-        // assume pdb 
+        // assume pdb
         msgErr << "Unable to determine file type for file '"
           << filename << "'.  Assuming pdb." << sendmsg;
         filetype = "pdb";
@@ -992,25 +1031,26 @@ void VMDreadStartup(VMDApp *app) {
   if(found) {
     app->logfile_read(namebuf);
   }
+#endif
 
   // Load the extension packages here, _after_ reading the .vmdrc file,
   // so that the search path for extensions can be customized.
   app->commandQueue->runcommand(
-    new TclEvalEvent("vmd_load_extension_packages"));   
-  
+    new TclEvalEvent("vmd_load_extension_packages"));
+
   // Switch to Python if requested, before reading beginCmdFile
   if (cmdFileUsesPython) {
     if (!app->textinterp_change("python")) {
       // bail out since Python scripts won't be readable by Tcl.
-      msgErr << "Skipping startup script because Python could not be started." 
+      msgErr << "Skipping startup script because Python could not be started."
              << sendmsg;
       return;
     }
   }
   // after reading in startup file and loading any molecule, the file
-  // specified by the -e option is set up to be executed.  
+  // specified by the -e option is set up to be executed.
   if(beginCmdFile) {
     app->logfile_read(beginCmdFile);
-  } 
+  }
 }
 

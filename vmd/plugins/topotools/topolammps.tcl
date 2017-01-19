@@ -3,7 +3,7 @@
 # manipulating bonds other topology related properties.
 #
 # Copyright (c) 2009,2010,2011,2012 by Axel Kohlmeyer <akohlmey@gmail.com>
-# $Id: topolammps.tcl,v 1.42 2014/08/19 16:45:04 johns Exp $
+# $Id: topolammps.tcl,v 1.44 2016/11/04 05:57:55 johns Exp $
 
 # high level subroutines for LAMMPS support.
 #
@@ -27,15 +27,6 @@ proc ::TopoTools::readlammpsdata {filename style {flags none}} {
     if {$lammps(atoms) < 1} {
         vmdcon -err "readlammpsdata: failed to parse lammps data header. abort."
         return -1
-    }
-
-    # check for atom_style flag
-    if {![string equal unknown $lammps(style)]} {
-        if {![string equal $style $lammps(style)]} {
-            vmdcon -warn "readlammpsdata: requested atom style $style is different from"
-            vmdcon -warn "readlammpsdata: style $lammps(style) encoded into data file header."
-            vmdcon -warn "readlammpsdata: this may not work. continuing anyway..."
-        }
     }
 
     # create an empty molecule and timestep
@@ -90,6 +81,28 @@ proc ::TopoTools::readlammpsdata {filename style {flags none}} {
     while {[gets $fp line] >= 0} {
         incr lineno
         if {[regexp {^\s*Atoms} $line ]} {
+            # use atom style indicated by CGCMM header or use style hint comment.
+            set stylehint $lammps(style)
+            regexp {^\s*Atoms\s+#\s*([a-z]+)} $line x stylehint
+            # for requested atom style 'auto' use the hint value instead
+            if {[string equal $style auto]} { set style $stylehint }
+            if {[string equal $style unknown]} {
+                vmdcon -warn "readlammpsdata: automatic atom style detection requested,"
+                vmdcon -warn "readlammpsdata: but no atom style hints in data file."
+                vmdcon -warn "readlammpsdata: assuming atom style 'full' instead."
+                set style {full}
+            }
+            # check for atom style consistency
+            if {![string equal unknown $stylehint] && ![string equal $style $stylehint]} {
+                vmdcon -warn "readlammpsdata: requested atom style '$style' is different from"
+                vmdcon -warn "readlammpsdata: style hint '$stylehint' encoded into data file."
+                vmdcon -warn "readlammpsdata: this may not work. Continuing with '$style'"
+            }
+            # if atom style is supported
+            if { ![regexp {^(atomic|bond|angle|molecular|charge|full|sphere)} $style] } {
+                vmdcon -err "readlammpsdata: unsupported atom style '$style'"
+                return -1
+            }
             set lineno [readlammpsatoms $fp $sel $style $lammps(cgcmm) $boxdim $lineno]
             if {$lineno < 0} {
                 vmdcon -err "readlammpsdata: error reading Atoms section."
@@ -155,7 +168,7 @@ proc ::TopoTools::readlammpsdata {filename style {flags none}} {
         } elseif {[regexp {^\s*(Pair Coeffs)} $line ]} {
             set lineno [skiplammpslines $fp $lammps(atomtypes) $lineno]
         } elseif {[regexp {^\s*(PairIJ Coeffs)} $line ]} {
-            set skip [expr {$lammps(atomtypes)*($lammps(atomtypes)-1)}]
+            set skip [expr {$lammps(atomtypes)*($lammps(atomtypes)+1)/2}]
             set lineno [skiplammpslines $fp $skip $lineno]
         } elseif {[regexp {^\s*(Bond Coeffs)} $line ]} {
             set lineno [skiplammpslines $fp $lammps(bondtypes) $lineno]
@@ -232,8 +245,8 @@ proc ::TopoTools::readlammpsheader {fp} {
     array set lammps {
         atoms 0 atomtypes 0 bonds 0 bondtypes 0 angles 0 angletypes 0
         dihedrals 0 dihedraltypes 0 impropers 0 impropertypes 0 xtrabond 0
-        xlo 0 xhi 0 ylo 0 yhi 0 zlo 0 zhi 0 xy {} xz {} yz {}
-        lineno 0 cgcmm 0 triclinic 0 style unknown
+        xlo -0.5 xhi 0.5 ylo -0.5 yhi 0.5 zlo -0.5 zhi 0.5 xy {} xz {} yz {}
+        lineno 0 cgcmm 0 triclinic 0 style unknown typemass 1
     }
     set x {}
 
@@ -246,8 +259,8 @@ proc ::TopoTools::readlammpsheader {fp} {
         set lammps(cgcmm) 1
         vmdcon -info "detected CGCMM style file. will try to parse additional data."
         if {[string match "*atom_style*" $line]} {
-            if { [regexp {^.*atom_style\s+(atomic|dpd|bond|angle|molecular|charge|full|hybrid)\s*.*}  $line x lammps(style) ] } {
-                vmdcon -info "probable atom_style: $lammps(style)"
+            if { [regexp {^.*atom_style\s+(atomic|bond|angle|molecular|charge|full|sphere)\s*.*}  $line x lammps(style) ] } {
+                vmdcon -info "Probable atom_style: $lammps(style)"
             }
         }
     }
@@ -292,6 +305,7 @@ proc ::TopoTools::readlammpsheader {fp} {
 
 # parse atom section
 proc ::TopoTools::readlammpsatoms {fp sel style cgcmm boxdata lineno} {
+    global M_PI
     set numatoms [$sel num]
     set atomdata {}
     set boxx 0.0
@@ -341,8 +355,7 @@ proc ::TopoTools::readlammpsatoms {fp sel style cgcmm boxdata lineno} {
             incr curatoms
             switch $style { # XXX: use regexp based parser to detect wrong formats.
 
-                atomic    -
-                dpd {
+                atomic {
                     if {[llength $line] >= 8} {
                         lassign $line atomid       atomtype        x y z xi yi zi
                     } else {
@@ -362,10 +375,22 @@ proc ::TopoTools::readlammpsatoms {fp sel style cgcmm boxdata lineno} {
 
                 charge {
                     if {[llength $line] >= 9} {
-                        lassign $line atomid       atomtype charge x y z xi yi zi
+                        lassign $line atomid atomtype charge x y z xi yi zi
                     } else {
-                        lassign $line atomid       atomtype charge x y z
+                        lassign $line atomid atomtype charge x y z
                     }
+                }
+
+                sphere {
+                    if {[llength $line] >= 10} {
+                        lassign $line atomid atomtype radius mass x y z xi yi zi
+                    } else {
+                        lassign $line atomid atomtype radius mass x y z
+                    }
+                    # sphere has diameter and density instead of radius and mass
+                    # convert them accordingly
+                    set radius [expr {0.5*$radius}]
+                    set mass [expr {4.0/3.0*$M_PI*$radius*$radius*$radius*$mass}]
                 }
 
                 full {
@@ -374,11 +399,6 @@ proc ::TopoTools::readlammpsatoms {fp sel style cgcmm boxdata lineno} {
                     } else {
                         lassign $line atomid resid atomtype charge x y z
                     }
-                }
-
-                hybrid {
-                     # with hybrid style we cannot detect image flags.
-                        lassign $line atomid       atomtype        x y z
                 }
 
                 default   {
@@ -677,7 +697,7 @@ proc ::TopoTools::writelammpsdata {mol filename style sel {flags none}} {
         atoms 0 atomtypes 0 bonds 0 bondtypes 0 angles 0 angletypes 0
         dihedrals 0 dihedraltypes 0 impropers 0 impropertypes 0 xtrabond 0
         xlo 0 xhi 0 ylo 0 yhi 0 zlo 0 zhi 0 xy 0 xz 0 yz 0 triclinic 0
-        style unknown
+        style unknown typemass 1
     }
 
     # gather available system information
@@ -697,8 +717,19 @@ proc ::TopoTools::writelammpsdata {mol filename style sel {flags none}} {
     # for the selected atom style
     switch $style {
         atomic -
-        charge -
-        dpd {
+        charge {
+            set lammps(bonds) 0
+            set lammps(angles) 0
+            set lammps(dihedrals) 0
+            set lammps(impropers) 0
+            set lammps(bondtypes) 0
+            set lammps(angletypes) 0
+            set lammps(dihedraltypes) 0
+            set lammps(impropertypes) 0
+        }
+
+        sphere {
+            set lammps(typemass) 0
             set lammps(bonds) 0
             set lammps(angles) 0
             set lammps(dihedrals) 0
@@ -727,7 +758,6 @@ proc ::TopoTools::writelammpsdata {mol filename style sel {flags none}} {
 
         molecular -
         full -
-        hybrid -
         default { ; # print all sections
         }
     }
@@ -816,8 +846,9 @@ proc ::TopoTools::writelammpsdata {mol filename style sel {flags none}} {
     if {$lammps(impropers) > 0} {
         writelammpscoeffhint $fp $sel impropers
     }
-
-    writelammpsmasses $fp $sel
+    if {$lammps(typemass) > 0} {
+        writelammpsmasses $fp $sel
+    }
     writelammpsatoms $fp $sel $style
     set atomidmap  [$sel list]
     if {$lammps(bonds) > 0} {
@@ -897,44 +928,53 @@ proc ::TopoTools::writelammpsmasses {fp sel} {
 
 # write atoms section
 proc ::TopoTools::writelammpsatoms {fp sel style} {
+    global M_PI
 
     vmdcon -info "writing LAMMPS Atoms section in style '$style'."
 
-    puts $fp " Atoms\n"
+    puts $fp " Atoms # $style\n"
     set typemap [lsort -unique -ascii [$sel get type]]
     set resmap  [lsort -unique -integer [$sel get resid]]
     set atomid 0
-    foreach adat [$sel get {type resid charge x y z resname}] {
-        lassign $adat type resid charge x y z resname
+    foreach adat [$sel get {type resid charge x y z resname mass radius}] {
+        lassign $adat type resid charge x y z resname mass radius
         set atomtype [lsearch -sorted -ascii $typemap $type]
         set resid    [lsearch -sorted -integer $resmap $resid]
         incr atomid
         incr atomtype
         incr resid
         switch $style {
-            atomic -
-            dpd       {
+            atomic {
                 puts $fp [format "%d %d %.6f %.6f %.6f \# %s" \
                               $atomid        $atomtype  $x $y $z $type]
             }
+
             bond  -
             angle -
             molecular {
                 puts $fp [format "%d %d %d %.6f %.6f %.6f \# %s %s" \
                               $atomid $resid $atomtype  $x $y $z $type $resname]
             }
+
             charge    {
                 puts $fp [format "%d %d %.6f %.6f %.6f %.6f \# %s" \
                               $atomid $atomtype $charge $x $y $z $type]
             }
+
+            sphere {
+                # sphere has diameter and density instead of radius and mass
+                # convert them accordingly
+                set mass [expr {$mass/(4.0/3.0*$M_PI*$radius*$radius*$radius)}]
+                set radius [expr {2.0*$radius}]
+                puts $fp [format "%d %d %.6f %.6f %.6f %.6f %.6f \# %s" \
+                              $atomid $atomtype $radius $mass $x $y $z $type]
+            }
+
             full      {
                 puts $fp [format "%d %d %d %.6f %.6f %.6f %.6f \# %s %s" \
                               $atomid $resid $atomtype $charge $x $y $z $type $resname]
             }
-            hybrid      {
-                puts $fp [format "%d %d %.6f %.6f %.6f %d %.6f \# %s %s" \
-                              $atomid $atomtype $x $y $z $resid $charge $type $resname]
-            }
+
             default   {
                 # ignore this unsupported style
                 # XXX: add a way to flag an error. actually the test for
@@ -1048,17 +1088,17 @@ proc ::TopoTools::writelammpsimpropers {fp sel atomidmap} {
 proc ::TopoTools::checklammpsstyle {style} {
     switch $style {
 
+        auto -
         atomic -
-        dpd   -
         bond  -
         angle -
         molecular -
         charge -
+        sphere -
         full {
             return 0
         }
 
-        hybrid -
         default {
             return 1
         }

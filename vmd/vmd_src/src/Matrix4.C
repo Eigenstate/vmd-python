@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Matrix4.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.54 $	$Date: 2012/10/18 15:58:29 $
+ *	$Revision: 1.55 $	$Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:

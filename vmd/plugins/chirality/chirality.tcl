@@ -14,7 +14,7 @@
 # - implement "I'm feeling lucky" feature
 # - restrain chiral centers that we're not messing with during AutoIMD
 
-package provide chirality 1.2
+package provide chirality 1.3
 if [info exists tk_version] {
   package require autoimd
 }
@@ -399,8 +399,10 @@ proc ::chirality::find_chiral_centers {seltext molid} {
       }
 
       foreach atomnames $atomnamesList {
-        set selatom0 [atomselect $molid "($seltext) and resname $resnamesList and name [lindex $atomnames 1] $altlocSelector"]
-        set selatomH [atomselect $molid "($seltext) and resname $resnamesList and name [lindex $atomnames 0] $altlocSelector"]
+        # the parenthesis (resname.....) ensures that the atomselection is selecting the residue named $resnamesList
+        # and atom named [lindex $atomnames 1] from the main selection $seltext
+        set selatom0 [atomselect $molid "($seltext) and (resname $resnamesList and name [lindex $atomnames 1] $altlocSelector)"]
+        set selatomH [atomselect $molid "($seltext) and (resname $resnamesList and name [lindex $atomnames 0] $altlocSelector)"]
 		
 		if {[$selatomH num] > 0} {
 			set hasH 1
@@ -432,10 +434,14 @@ proc ::chirality::find_chiral_centers {seltext molid} {
 					set bondedNameListPos [lsearch -exact $bondedNameList $name]
 					if {$bondedNameListPos != -1} {
 						lappend atomidH [lindex $bondedIndexList $bondedNameListPos]
+            # make sure that the lists containing more than one hydrogen defined, end up showing only one hydrogen
+            # in the GUI 
+            if {[llength [lindex $atomnames 0] ] > 1} {
+               lset atomnames 0 $name
+            }
 					}
 				}
 			}
-			
 			foreach name [lindex $atomnames 2] {
 				set bondedNameListPos [lsearch -exact $bondedNameList $name]
 				if {$bondedNameListPos != -1} {
@@ -471,7 +477,7 @@ proc ::chirality::find_chiral_centers {seltext molid} {
           continue
         }
 		
-	set selatom1 [atomselect $molid "index $atomid1"]
+ 	set selatom1 [atomselect $molid "index $atomid1"]
         set selatom2 [atomselect $molid "index $atomid2"]
         set selatom3 [atomselect $molid "index $atomid3"]
 
@@ -496,7 +502,7 @@ proc ::chirality::find_chiral_centers {seltext molid} {
         # XXX - need to eliminate the checks above for index 
         #       lengths and implement a similar check after residue
         #       pruning to report an accurate warning. Clean up!
-        if {0} {
+        if {1} {
           set residuesList {}
           lappend residuesList [$selatom0 get residue]
           lappend residuesList [$selatom1 get residue]
@@ -857,18 +863,21 @@ proc ::chirality::chirality_list { args } {
   } else {
     set gui 0
   }
-
+  # initialize returnList
+  set returnList ""
   foreach i $selectedErrors {
     set thisResidue [lindex $chiralResiduesList $i]
     set names [lindex $chiralNamesList $i]
     set action [lindex $chiralActionsList $i]
     set moved [lindex $chiralMovedList $i]
-    if $gui {
-      lappend returnList [chirality_residue_info $thisResidue $molid list]
-      lappend returnList $names
-      lappend returnList $action
-      lappend returnList $moved
-    } else {
+    # populate returnList list to be return not only to the gui, but also to the 
+    # command line
+    lappend returnList [chirality_residue_info $thisResidue $molid list]
+    lappend returnList $names
+    lappend returnList $action
+    lappend returnList $moved
+    if !$gui {
+  
       puts "chirality) Chirality error $i (action = $action; moved = $moved):"
       puts "  [chirality_residue_info $thisResidue $molid string]"
       puts "  Atom names: $names"
@@ -876,10 +885,10 @@ proc ::chirality::chirality_list { args } {
     incr i
   }
 
-  if {$gui && [info exists returnList]} {
-    return $returnList
-  }
-  return
+ # if {$gui && [info exists returnList]} {
+  #  return $returnList
+  #}
+  return $returnList
 
 }
 

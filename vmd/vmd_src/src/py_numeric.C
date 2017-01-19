@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,13 +11,14 @@
  *
  *      $RCSfile: py_numeric.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.20 $       $Date: 2011/03/05 04:57:37 $
+ *      $Revision: 1.21 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
  *  Python interface to the Python Numeric module.
  ***************************************************************************/
 
+//#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include "py_commands.h"
 #include "numpy/ndarrayobject.h"
 
@@ -28,19 +29,19 @@
 // make python happier
 extern "C" {
 
-/* 
+/*
  * Note: changes to the timestep method now return an N x 3 array
  * rather than flat 3N arrays.  This may break older plugins like IED
  * if they are not kept up-to-date with VMD.
- */ 
-static char timestep_doc[] = 
+ */
+static char timestep_doc[] =
   "timestep(molid = -1, frame = -1) -> NumPy (N x 3) float32 array\n"
   "Returns zero-copy reference to atom coordinates.  molid defaults to\n"
   "top molecule; frame defaults to current frame.  Array has shape\n"
   "N x 3 where N is the number of atoms in the molecule.";
 static PyObject *timestep(PyObject *self, PyObject *args, PyObject *kwds) {
   int molid = -1;  // default : top
-  int frame = -1;  // default : current frame 
+  int frame = -1;  // default : current frame
   static char *kwlist[] = { (char *)"molid", (char *)"frame", NULL };
   if (!PyArg_ParseTupleAndKeywords(args, kwds, (char *)"|ii", kwlist,
         &molid, &frame))
@@ -53,7 +54,7 @@ static PyObject *timestep(PyObject *self, PyObject *args, PyObject *kwds) {
   return PyArray_Return(result);
 }
 
-static char velocities_doc[] = 
+static char velocities_doc[] =
   "velocities(molid = -1, frame = -1) -> NumPy (N x 3) float32 array\n"
   "Returns zero-copy reference to atom velocities.  molid defaults to\n"
   "top molecule; frame defaults to current frame.  Array has shape\n"
@@ -61,7 +62,7 @@ static char velocities_doc[] =
   "holds no velocities, None is returned.";
 static PyObject *velocities(PyObject *self, PyObject *args, PyObject *kwds) {
   int molid = -1;  // default : top
-  int frame = -1;  // default : current frame 
+  int frame = -1;  // default : current frame
   static char *kwlist[] = { (char *)"molid", (char *)"frame", NULL };
   if (!PyArg_ParseTupleAndKeywords(args, kwds, (char *)"|ii", kwlist,
         &molid, &frame))
@@ -77,7 +78,7 @@ static PyObject *velocities(PyObject *self, PyObject *args, PyObject *kwds) {
       2, dims, NPY_FLOAT, (char *)ts->vel);
   return PyArray_Return(result);
 }
- 
+
 // Return an array of ints representing flags for on/off atoms in an atom
 // selection.
 // atomselect(molid, frame, selection) -> array
@@ -117,11 +118,34 @@ static PyMethodDef Methods[] = {
   {(char *)"positions", (PyCFunction)timestep, METH_VARARGS | METH_KEYWORDS, timestep_doc},
   {(char *)"velocities", (PyCFunction)velocities, METH_VARARGS | METH_KEYWORDS, velocities_doc},
   {(char *)"atomselect", atomselect, METH_VARARGS, (char *)"Create atom selection flags"},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
-void initvmdnumpy() {
-  (void)Py_InitModule((char *)"vmdnumpy", Methods);
-  import_array();
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef vmdnumpydef = {
+    PyModuleDef_HEAD_INIT,
+    "vmdnumpy",
+    NULL,
+    -1,
+    Methods,
+    NULL, NULL, NULL, NULL
+};
+#endif
+
+PyObject* initvmdnumpy() {
+#if PY_MAJOR_VERSION >= 3
+  if (_import_array() < 0) {
+    PyErr_SetString(PyExc_ValueError, "vmdnumpy module not available.");
+    return NULL;
+  }
+  PyObject *module = PyModule_Create(&vmdnumpydef);
+#else
+  if (_import_array() < 0) {
+    PyErr_SetString(PyExc_ValueError, "vmdnumpy module not available.");
+    return NULL;
+  }
+    PyObject *module = Py_InitModule((char *)"vmdnumpy", Methods);
+#endif
+    return module;
 }
 

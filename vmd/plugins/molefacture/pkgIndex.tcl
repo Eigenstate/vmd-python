@@ -8,4 +8,4 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded molefacture 1.3 "set env(MOLEFACTUREDIR) [list $dir] ; source [list [file join $dir molefacture.tcl]]"
+package ifneeded molefacture 1.4 "set env(MOLEFACTUREDIR) [list $dir] ; source [list [file join $dir molefacture.tcl]]"

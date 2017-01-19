@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: PSDisplayDevice.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.112 $       $Date: 2012/03/01 16:50:59 $
+ *      $Revision: 1.113 $       $Date: 2016/11/28 03:05:02 $
  *
  ***************************************************************************
  * DESCRIPTION:

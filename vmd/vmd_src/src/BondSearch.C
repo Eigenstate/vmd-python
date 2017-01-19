@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: BondSearch.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.71 $	$Date: 2013/01/30 21:01:20 $
+ *	$Revision: 1.75 $	$Date: 2016/11/28 03:04:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -49,6 +49,12 @@ GridSearchPairlist *vmd_gridsearch_bonds(const float *pos, const float *radii,
 #else
   find_minmax_all(pos, natoms, min, max);
 #endif
+
+  // check for NaN coordinates propagating to the bounding box result
+  if (!(max[0] >= min[0] && max[1] >= min[1] && max[2] >= min[2])) {
+    msgErr << "vmd_gridsearch_bonds: NaN coordinates in bounds, aborting!" << sendmsg;
+    return NULL;
+  }
 
   // do sanity checks and complain if we've got bogus atom coordinates,
   // we shouldn't ever have density higher than 0.1 atom/A^3, but we'll
@@ -106,7 +112,7 @@ GridSearchPairlist *vmd_gridsearch_bonds(const float *pos, const float *radii,
     int axb, ayb, azb, aindex, num;
 
     // compute box index for new atom
-    const float *loc = pos + 3*i;
+    const float *loc = pos + 3L*i;
     axb = (int)((loc[0] - min[0])*invpairdist);
     ayb = (int)((loc[1] - min[1])*invpairdist);
     azb = (int)((loc[2] - min[2])*invpairdist);
@@ -311,14 +317,14 @@ extern "C" void * bondsearchthread(void *voidparms) {
 
       for (i=0; (i<anbox) && (paircount < maxpairs); i++) {
         int ind1 = tmpbox[i];
-        const float *p1 = pos + 3*ind1;
+        const float *p1 = pos + 3L*ind1;
 
         // skip over self and already-tested atoms
         int startj = (self) ? i+1 : 0;
 
         for (j=startj; (j<nbox) && (paircount < maxpairs); j++) {
           int ind2 = nbrbox[j];
-          const float *p2 = pos + 3*ind2;
+          const float *p2 = pos + 3L*ind2;
           float dx = p1[0] - p2[0];
           float dy = p1[1] - p2[1];
           float dz = p1[2] - p2[2];
@@ -405,7 +411,7 @@ int vmd_bond_search(BaseMolecule *mol, const Timestep *ts,
   //     for any real structure someone would load, but well below N^2
   GridSearchPairlist *pairlist = vmd_gridsearch_bonds(pos, 
                                                  (cutoff < 0) ? radius : NULL,
-                                                 natoms, dist, natoms * 27);
+                                                 natoms, dist, natoms * 27L);
 
   // Go through the pairlist adding validated bonds freeing nodes as we go. 
   GridSearchPairlist *p, *tmp; 
@@ -413,8 +419,8 @@ int vmd_bond_search(BaseMolecule *mol, const Timestep *ts,
     int numpairs = p->pairlist->num() / 2;
     
     for (i=0; i<numpairs; i++) {
-      int ind1 = (*p->pairlist)[i*2  ]; 
-      int ind2 = (*p->pairlist)[i*2+1];
+      int ind1 = (*p->pairlist)[i*2L  ]; 
+      int ind2 = (*p->pairlist)[i*2L+1];
 
       MolAtom *atom1 = mol->atom(ind1);
       MolAtom *atom2 = mol->atom(ind2);

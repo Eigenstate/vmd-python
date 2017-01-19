@@ -9,4 +9,4 @@
 # full path name of this file's directory.
 
 package ifneeded psfcheck 0 [list load [file join $dir psfcheck.so]]
-package ifneeded autopsf 1.5  "source [list [file join $dir autopsf.tcl]] ; set env(AUTOPSFDIR) [list $dir]"                    
+package ifneeded autopsf 1.6  "source [list [file join $dir autopsf.tcl]] ; set env(AUTOPSFDIR) [list $dir]"                    

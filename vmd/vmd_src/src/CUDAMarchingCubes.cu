@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,7 +10,7 @@
  *
  *      $RCSfile: CUDAMarchingCubes.cu,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.27 $       $Date: 2013/02/06 21:27:45 $
+ *      $Revision: 1.30 $       $Date: 2016/11/28 03:04:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -96,9 +96,23 @@ inline __host__ __device__ float dot(float3 a, float3 b) {
   return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+// fma() for float and float3
+inline __host__ __device__ float3 fmaf3(float x, float3 y, float3 z) {
+  return make_float3(fmaf(x, y.x, z.x), 
+                     fmaf(x, y.y, z.y), 
+                     fmaf(x, y.z, z.z));
+}
+
+
 // lerp()
 inline __device__ __host__ float3 lerp(float3 a, float3 b, float t) {
+#if 0
+  return fmaf3(t, b, fmaf3(-t, a, a));
+#elif 1
   return a + t*(b-a);
+#else
+  return (1-t)*a + t*b;
+#endif
 }
 
 // length()
@@ -302,13 +316,13 @@ __global__ void
 compactVoxels(unsigned int * RESTRICT compactedVoxelArray, 
               const uint2 * RESTRICT voxelOccupied, 
               unsigned int lastVoxel, unsigned int numVoxels, 
-              unsigned int numVoxelsp1) {
-    unsigned int blockId = (blockIdx.y * gridDim.x) + blockIdx.x;
-    unsigned int i = (blockId * blockDim.x) + threadIdx.x;
+              unsigned int numVoxelsm1) {
+  unsigned int blockId = (blockIdx.y * gridDim.x) + blockIdx.x;
+  unsigned int i = (blockId * blockDim.x) + threadIdx.x;
 
-    if ((i < numVoxels) && ((i < numVoxelsp1) ? voxelOccupied[i].y < voxelOccupied[i+1].y : lastVoxel)) {
-      compactedVoxelArray[ voxelOccupied[i].y ] = i;
-    }
+  if ((i < numVoxels) && ((i < numVoxelsm1) ? voxelOccupied[i].y < voxelOccupied[i+1].y : lastVoxel)) {
+    compactedVoxelArray[ voxelOccupied[i].y ] = i;
+  }
 }
 
 
@@ -775,7 +789,7 @@ void CUDAMarchingCubes::computeIsosurfaceVerts(float3* vertOut, unsigned int max
     }
 
     // compact voxel index array
-    compactVoxels<<<grid, threads>>>(d_compVoxelArray, d_voxelVerts, lastElement.y, numVoxels, numVoxels + 1);
+    compactVoxels<<<grid, threads>>>(d_compVoxelArray, d_voxelVerts, lastElement.y, numVoxels, numVoxels - 1);
 
     dim3 grid2((unsigned int) (ceil(float(activeVoxels) / (float) NTHREADS)), 1, 1);
     while(grid2.x > 65535) {

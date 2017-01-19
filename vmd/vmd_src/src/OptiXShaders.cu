@@ -9,9 +9,9 @@
 /***************************************************************************
 * RCS INFORMATION:
 *
-*      $RCSfile: OptiXRenderer.C
+*      $RCSfile: OptiXShaders.cu,v $
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.101 $         $Date: 2015/05/28 23:07:22 $
+*      $Revision: 1.141 $         $Date: 2016/11/04 06:12:40 $
 *
 ***************************************************************************
 * DESCRIPTION:
@@ -29,6 +29,23 @@
 *   Ultrascale Visualization, pp. 6:1-6:8, 2013.
 *   http://dx.doi.org/10.1145/2535571.2535595
 *
+*  "Atomic Detail Visualization of Photosynthetic Membranes with
+*   GPU-Accelerated Ray Tracing"
+*   John E. Stone, Melih Sener, Kirby L. Vandivort, Angela Barragan,
+*   Abhishek Singharoy, Ivan Teo, João V. Ribeiro, Barry Isralewitz,
+*   Bo Liu, Boon Chong Goh, James C. Phillips, Craig MacGregor-Chatwin,
+*   Matthew P. Johnson, Lena F. Kourkoutis, C. Neil Hunter, and Klaus Schulten
+*   J. Parallel Computing, 55:17-27, 2016.
+*   http://dx.doi.org/10.1016/j.parco.2015.10.015
+*
+*  "Immersive Molecular Visualization with Omnidirectional
+*   Stereoscopic Ray Tracing and Remote Rendering"
+*   John E. Stone, William R. Sherman, and Klaus Schulten.
+*   High Performance Data Analysis and Visualization Workshop,
+*   2016 IEEE International Parallel and Distributed Processing
+*   Symposium Workshops (IPDPSW), pp. 1048-1057, 2016.
+*   http://dx.doi.org/10.1109/IPDPSW.2016.121
+*
 * Major parts of this code are derived from Tachyon:
 *   "An Efficient Library for Parallel Ray Tracing and Animation"
 *   John E. Stone.  Master's Thesis, University of Missouri-Rolla,
@@ -45,6 +62,8 @@
 #include <optixu/optixu_matrix_namespace.h>
 #include <optixu/optixu_aabb_namespace.h>
 #include "OptiXShaders.h"
+
+// #define SC15ANIMSPHERESHACK 1
 
 // Runtime-based RT output coloring
 //#define ORT_TIME_COLORING 1
@@ -139,6 +158,11 @@ rtDeclareVariable(float, scene_epsilon, , );
 // max ray recursion depth...
 rtDeclareVariable(int, max_depth, , );
 
+// XXX global interpolation coordinate for experimental  animated 
+// representations that loop over some fixed sequence of motion 
+// over the domain [0:1].
+rtDeclareVariable(float, anim_interp, , );
+
 // shadow rendering mode
 rtDeclareVariable(int, shadows_enabled, , );
 rtDeclareVariable(int, aa_samples, , );
@@ -147,6 +171,7 @@ rtDeclareVariable(int, aa_samples, , );
 rtDeclareVariable(int, ao_samples, , );
 rtDeclareVariable(float, ao_ambient, , );
 rtDeclareVariable(float, ao_direct, , );
+rtDeclareVariable(float, ao_maxdist, , ); ///< max AO occluder distance...
 
 // background color and/or background gradient
 rtDeclareVariable(float3, scene_bg_color, , );
@@ -156,6 +181,14 @@ rtDeclareVariable(float3, scene_gradient, , );
 rtDeclareVariable(float, scene_gradient_topval, , );
 rtDeclareVariable(float, scene_gradient_botval, , );
 rtDeclareVariable(float, scene_gradient_invrange, , );
+
+// VR HMD fade+clipping plane/sphere
+rtDeclareVariable(int, clipview_mode, , );
+rtDeclareVariable(float, clipview_start, , );
+rtDeclareVariable(float, clipview_end, , );
+
+// VR HMD headlight
+rtDeclareVariable(int, headlight_mode, , );
 
 // fog state
 rtDeclareVariable(int, fog_mode, , );
@@ -207,11 +240,13 @@ rtDeclareVariable(PerRayData_radiance, prd_radiance, rtPayload, );
 rtDeclareVariable(PerRayData_radiance, prd, rtPayload, );
 rtDeclareVariable(PerRayData_shadow, prd_shadow, rtPayload, );
 
-// list of directional lights
+// list of directional and positional lights
 #if defined(VMDOPTIX_LIGHTUSEROBJS)
-rtDeclareVariable(DirectionalLightList, light_list, , );
+rtDeclareVariable(DirectionalLightList, dir_light_list, , );
+rtDeclareVariable(PositionalLightList, pos_light_list, , );
 #else
-rtBuffer<DirectionalLight> lights;
+rtBuffer<DirectionalLight> dir_lights;
+rtBuffer<DirectionalLight> pos_lights;
 #endif
 
 
@@ -255,7 +290,7 @@ RT_PROGRAM void miss_solid_bg() {
 RT_PROGRAM void miss_gradient_bg_sky_sphere() {
   float IdotG = dot(ray.direction, scene_gradient);
   float val = (IdotG - scene_gradient_botval) * scene_gradient_invrange;
-  val = clamp(val, 0.0f, 1.0f);
+  val = __saturatef(val);
   float3 col = val * scene_bg_color_grad_top + 
                (1.0f - val) * scene_bg_color_grad_bot; 
   prd_radiance.result = col;
@@ -269,7 +304,7 @@ RT_PROGRAM void miss_gradient_bg_sky_sphere() {
 RT_PROGRAM void miss_gradient_bg_sky_plane() {
   float IdotG = dot(ray.origin, scene_gradient);
   float val = (IdotG - scene_gradient_botval) * scene_gradient_invrange;
-  val = clamp(val, 0.0f, 1.0f);
+  val = __saturatef(val);
   float3 col = val * scene_bg_color_grad_top + 
                (1.0f - val) * scene_bg_color_grad_bot; 
   prd_radiance.result = col;
@@ -399,6 +434,64 @@ void jitter_sphere3f(unsigned int &pval, float3 &dir) {
 
 
 //
+// Device functions for clipping rays by geometric primitives
+// 
+
+// fade_start: onset of fading 
+//   fade_end: fully transparent, begin clipping of geometry
+__device__ void sphere_fade_and_clip(const float3 &hit_point, 
+                                     const float3 &cam_pos,
+                                     float fade_start, float fade_end,
+                                     float &alpha) {
+  float camdist = length(hit_point - cam_pos);
+
+  // we can omit the distance test since alpha modulation value is clamped
+  // if (1 || camdist < fade_start) {
+    float fade_len = fade_start - fade_end;
+    alpha *= __saturatef((camdist - fade_start) / fade_len);
+  // }
+}
+
+
+__device__ void ray_sphere_clip_interval(const optix::Ray &ray, float3 center,
+                                         float rad, float2 &tinterval) {
+  float3 V = center - ray.origin;
+  float b = dot(V, ray.direction);
+  float disc = b*b + rad*rad - dot(V, V);
+
+  // if the discriminant is positive, the ray hits...
+  if (disc > 0.0f) {
+    disc = sqrtf(disc);
+    tinterval.x = b-disc;
+    tinterval.y = b+disc;
+  } else {
+    tinterval.x = -RT_DEFAULT_MAX; 
+    tinterval.y =  RT_DEFAULT_MAX; 
+  }
+}
+
+
+__device__ void clip_ray_by_plane(optix::Ray &ray, const float4 plane) {
+  float3 n = make_float3(plane);                                              
+  float dt = dot(ray.direction, n);                                            
+  float t = (-plane.w - dot(n, ray.origin))/dt;                                 
+  if(t > ray.tmin && t < ray.tmax) {                                          
+    if (dt <= 0) {                                                              
+      ray.tmax = t;                                                             
+    } else {                                                                    
+      ray.tmin = t;                                                             
+    }                                                                           
+  } else {                                                                      
+    // ray interval lies completely on one side of the plane.  Test one point.
+    float3 p = ray.origin + ray.tmin * ray.direction;                         
+    if (dot(make_float4(p, 1.0f), plane) < 0) {
+      ray.tmin = ray.tmax = RT_DEFAULT_MAX; // cull geometry
+    }                                                                         
+  }                                                                             
+}               
+
+
+//
 // Clear the accumulation buffer to zeros
 //
 RT_PROGRAM void clear_accumulation_buffer() {
@@ -480,7 +573,7 @@ accumulate_time_coloring(float3 &col, clock_t t0) {
   // overwrite the red channel with fraction of the max allowable runtime,
   // clamped to the range 0-1, in the case of excessively long traces
   float pixel_time = (t1 - t0) * ORT_TIME_NORMALIZATION;
-  col.x = clamp(pixel_time, 0.0f, 1.0f);
+  col.x = __saturatef(pixel_time);
 
 #if defined(ORT_TIME_COMBINE_MAX)
   // return the slowest (max) time, but average the colors
@@ -508,52 +601,257 @@ static int __inline__ __device__ subframe_count() {
 
 
 //
-// Camera ray generation code for planetarium dome display
-// Generates a fisheye style frame with ~180 degree FoV
-// 
-// template<int STEREO_ON>
-// static __device__ __inline__
-// void vmd_camera_dome_general() {
-RT_PROGRAM void vmd_camera_dome_master() {
+// CUDA device function for computing the new ray origin
+// and ray direction, given the radius of the circle of confusion disc,
+// and an orthonormal basis for each ray.
+//
+static __device__ __inline__
+void dof_ray(const float3 &ray_origin_orig, float3 &ray_origin, 
+             const float3 &ray_direction_orig, float3 &ray_direction,
+             unsigned int &randseed, const float3 &up, const float3 &right) {
+  float3 focuspoint = ray_origin_orig + ray_direction_orig * cam_dof_focal_dist;
+  float2 dofjxy;
+  jitter_disc2f(randseed, dofjxy, cam_dof_aperture_rad);
+  ray_origin = ray_origin_orig + dofjxy.x*right + dofjxy.y*up;
+  ray_direction = normalize(focuspoint - ray_origin);
+}
+
+
+//
+// 360-degree stereoscopic cubemap image format for use with
+// Oculus, Google Cardboard, and similar VR headsets
+//
+template<int STEREO_ON, int DOF_ON> 
+static __device__ __inline__ 
+void vmd_camera_cubemap_general() {
 #if defined(ORT_TIME_COLORING)
   clock_t t0 = clock(); // start per-pixel RT timer
 #endif
 
+  // compute which cubemap face we're drawing by the X index.
+  uint facesz = launch_dim.y; // square cube faces, equal to image height
+  uint face = (launch_index.x / facesz) % 6;
+  uint2 face_idx = make_uint2(launch_index.x % facesz, launch_index.y);
+
+  // For the OTOY ORBX viewer, Oculus VR software, and some of the 
+  // related apps, the cubemap image is stored with the X axis oriented
+  // such that when viewed as a 2-D image, they are all mirror images.
+  // The mirrored left-right orientation used here corresponds to what is
+  // seen standing outside the cube, whereas the ray tracer shoots
+  // rays from the inside, so we flip the X-axis pixel storage order.
+  // The top face of the cubemap has both the left-right and top-bottom
+  // orientation flipped also.
+  // Set per-face orthonormal basis for camera
+  float3 face_U, face_V, face_W;
+  switch (face) {
+    case 0: // back face
+      face_U =  cam_U;
+      face_V =  cam_V;
+      face_W = -cam_W;
+      break;
+
+    case 1: // front face
+      face_U =  -cam_U;
+      face_V =  cam_V;
+      face_W =  cam_W;
+      break;
+
+    case 2: // top face
+      face_U = -cam_W;
+      face_V =  cam_U;
+      face_W =  cam_V;
+      break;
+
+    case 3: // bottom face
+      face_U = -cam_W;
+      face_V = -cam_U;
+      face_W = -cam_V;
+      break;
+
+    case 4: // left face
+      face_U = -cam_W;
+      face_V =  cam_V;
+      face_W = -cam_U;
+      break;
+
+    case 5: // right face
+      face_U =  cam_W;
+      face_V =  cam_V;
+      face_W =  cam_U;
+      break;
+  }
+
+  // Stereoscopic rendering is provided by rendering in a side-by-side
+  // format with the left eye image into the left half of a double-wide
+  // framebuffer, and the right eye into the right half.  The subsequent 
+  // OpenGL drawing code can trivially unpack and draw the two images 
+  // into an efficient cubemap texture.
+  uint viewport_sz_x, viewport_idx_x;
+  float eyeshift;
+  if (STEREO_ON) {
+    // render into a double-wide framebuffer when stereo is enabled
+    viewport_sz_x = launch_dim.x >> 1;
+    if (launch_index.x >= viewport_sz_x) {
+      // right image
+      viewport_idx_x = launch_index.x - viewport_sz_x;
+      eyeshift =  0.5f * cam_stereo_eyesep;
+    } else {
+      // left image
+      viewport_idx_x = launch_index.x;
+      eyeshift = -0.5f * cam_stereo_eyesep;
+    }
+  } else {
+    // render into a normal size framebuffer if stereo is not enabled
+    viewport_sz_x = launch_dim.x;
+    viewport_idx_x = launch_index.x;
+    eyeshift = 0.0f;
+  }
+
+  // 
+  // general primary ray calculations, locked to 90-degree FoV per face...
+  //
+  float facescale = 1.0f / facesz;
+  float2 d = make_float2(face_idx.x, face_idx.y) * facescale * 2.f - 1.0f; // center of pixel in image plane
+
+  unsigned int randseed = tea<4>(launch_dim.x*(launch_index.y)+viewport_idx_x, subframe_count());
+
+  float3 col = make_float3(0.0f);
+  for (int s=0; s<aa_samples; s++) {
+    float2 jxy;  
+    jitter_offset2f(randseed, jxy);
+    jxy = jxy * facescale * 2.f + d;
+    float3 ray_direction = normalize(jxy.x*face_U + jxy.y*face_V + face_W);
+
+    float3 ray_origin = cam_pos;
+    if (STEREO_ON) {
+      ray_origin += eyeshift * cross(ray_direction, cam_V);
+    }
+
+    // compute new ray origin and ray direction
+    if (DOF_ON) {
+      dof_ray(ray_origin, ray_origin, ray_direction, ray_direction,
+              randseed, face_V, face_U);
+    }
+
+    // trace the new ray...
+    PerRayData_radiance prd;
+    prd.importance = 1.f;
+    prd.depth = 0;
+    optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+    rtTrace(root_object, ray, prd);
+    col += prd.result; 
+  }
+
+#if defined(ORT_TIME_COLORING)
+  accumulate_time_coloring(col, t0);
+#else
+  accumulate_color(col);
+#endif
+}
+
+RT_PROGRAM void vmd_camera_cubemap() {
+  vmd_camera_cubemap_general<0, 0>();
+}
+
+RT_PROGRAM void vmd_camera_cubemap_dof() {
+  vmd_camera_cubemap_general<0, 1>();
+}
+
+RT_PROGRAM void vmd_camera_cubemap_stereo() {
+  vmd_camera_cubemap_general<1, 0>();
+}
+
+RT_PROGRAM void vmd_camera_cubemap_stereo_dof() {
+  vmd_camera_cubemap_general<1, 1>();
+}
+
+
+//
+// Camera ray generation code for planetarium dome display
+// Generates a fisheye style frame with ~180 degree FoV
+// 
+template<int STEREO_ON, int DOF_ON>
+static __device__ __inline__
+void vmd_camera_dome_general() {
+#if defined(ORT_TIME_COLORING)
+  clock_t t0 = clock(); // start per-pixel RT timer
+#endif
+
+  // Stereoscopic rendering is provided by rendering in an over/under
+  // format with the right eye image into the top half of a double-high 
+  // framebuffer, and the left eye into the lower half.  The subsequent 
+  // OpenGL drawing code can trivially unpack and draw the two images 
+  // with simple pointer offset arithmetic.
+  uint viewport_sz_y, viewport_idx_y;
+  float eyeshift;
+  if (STEREO_ON) {
+    // render into a double-high framebuffer when stereo is enabled
+    viewport_sz_y = launch_dim.y >> 1;
+    if (launch_index.y >= viewport_sz_y) {
+      // right image
+      viewport_idx_y = launch_index.y - viewport_sz_y;
+      eyeshift =  0.5f * cam_stereo_eyesep;
+    } else {
+      // left image
+      viewport_idx_y = launch_index.y;
+      eyeshift = -0.5f * cam_stereo_eyesep;
+    }
+  } else {
+    // render into a normal size framebuffer if stereo is not enabled
+    viewport_sz_y = launch_dim.y;
+    viewport_idx_y = launch_index.y;
+    eyeshift = 0.0f;
+  }
+
   float fov = 180.0f * cam_zoom;             // dome FoV in degrees 
   float rmax = 0.5 * fov * (M_PIf / 180.0f); // half FoV in radians
-  float2 viewport_sz = make_float2(launch_dim.x, launch_dim.y);
+  float2 viewport_sz = make_float2(launch_dim.x, viewport_sz_y);
   float2 radperpix = (M_PIf / 180.0f) * fov / viewport_sz;
   float2 viewport_mid = viewport_sz * 0.5f;
 
   unsigned int randseed = tea<4>(launch_dim.x*(launch_index.y)+launch_index.x, subframe_count());
 
   float3 col = make_float3(0.0f);
-
   for (int s=0; s<aa_samples; s++) {
     float2 jxy;  
     jitter_offset2f(randseed, jxy);
 
-    float2 viewport_idx = make_float2(launch_index.x, launch_index.y) + jxy;
+    float2 viewport_idx = make_float2(launch_index.x, viewport_idx_y) + jxy;
     float2 rd = (viewport_idx - viewport_mid) * radperpix;
     float rangle = hypotf(rd.x, rd.y); 
 
     // pixels outside the dome are set to black
     if (rangle < rmax) {
       float3 ray_direction;
+      float3 ray_origin = cam_pos;
 
       // handle center of dome where azimuth is undefined
       if (rangle == 0) {
         ray_direction = normalize(cam_W);
       } else {
-        float rsin = sinf(rangle) / rangle;
-        ray_direction = normalize(cam_U*rsin*rd.x + cam_V*rsin*rd.y + cam_W*cos(rangle));
+        float rasin, racos;
+        sincosf(rangle, &rasin, &racos);
+        float rsin = rasin / rangle;
+        ray_direction = normalize(cam_U*rsin*rd.x + cam_V*rsin*rd.y + cam_W*racos);
+
+        if (STEREO_ON) {
+          ray_origin += eyeshift * cross(ray_direction, cam_V);
+        }
+
+        if (DOF_ON) {
+          float rcos = racos / rangle;
+          float3 ray_right = normalize(cam_U*rcos*rd.x + cam_V*rcos*rd.y + cam_W* rasin);
+          float3 ray_up = cross(ray_direction, ray_right);
+          dof_ray(ray_origin, ray_origin, ray_direction, ray_direction,
+                  randseed, ray_up, ray_right);
+        }
       }
 
       // trace the new ray...
       PerRayData_radiance prd;
       prd.importance = 1.f;
       prd.depth = 0;
-      optix::Ray ray = optix::make_Ray(cam_pos, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+      optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
       rtTrace(root_object, ray, prd);
       col += prd.result;
     }
@@ -566,15 +864,21 @@ RT_PROGRAM void vmd_camera_dome_master() {
 #endif
 }
 
-#if 0
 RT_PROGRAM void vmd_camera_dome_master() {
-  vmd_camera_dome_general<0>();
+  vmd_camera_dome_general<0, 0>();
+}
+
+RT_PROGRAM void vmd_camera_dome_master_dof() {
+  vmd_camera_dome_general<0, 1>();
 }
 
 RT_PROGRAM void vmd_camera_dome_master_stereo() {
-  vmd_camera_dome_general<1>();
+  vmd_camera_dome_general<1, 0>();
 }
-#endif
+
+RT_PROGRAM void vmd_camera_dome_master_stereo_dof() {
+  vmd_camera_dome_general<1, 1>();
+}
 
 
 //
@@ -583,27 +887,53 @@ RT_PROGRAM void vmd_camera_dome_master_stereo() {
 // for use a texture map for a sphere, e.g. for 
 // immersive VR HMDs, other spheremap-based projections.
 // 
-// template<int STEREO_ON>
-// static __device__ __inline__
-// void vmd_camera_equirectangular_general() {
-RT_PROGRAM void vmd_camera_equirectangular() {
+template<int STEREO_ON, int DOF_ON>
+static __device__ __inline__
+void vmd_camera_equirectangular_general() {
 #if defined(ORT_TIME_COLORING)
   clock_t t0 = clock(); // start per-pixel RT timer
 #endif
 
-  float2 viewport_sz = make_float2(launch_dim.x, launch_dim.y);
+  // The Samsung GearVR OTOY ORBX players have the left eye image on top, 
+  // and the right eye image on the bottom.
+  // Stereoscopic rendering is provided by rendering in an over/under
+  // format with the left eye image into the top half of a double-high 
+  // framebuffer, and the right eye into the lower half.  The subsequent 
+  // OpenGL drawing code can trivially unpack and draw the two images 
+  // with simple pointer offset arithmetic.
+  uint viewport_sz_y, viewport_idx_y;
+  float eyeshift;
+  if (STEREO_ON) {
+    // render into a double-high framebuffer when stereo is enabled
+    viewport_sz_y = launch_dim.y >> 1;
+    if (launch_index.y >= viewport_sz_y) {
+      // left image
+      viewport_idx_y = launch_index.y - viewport_sz_y;
+      eyeshift = -0.5f * cam_stereo_eyesep;
+    } else {
+      // right image
+      viewport_idx_y = launch_index.y;
+      eyeshift =  0.5f * cam_stereo_eyesep;
+    }
+  } else {
+    // render into a normal size framebuffer if stereo is not enabled
+    viewport_sz_y = launch_dim.y;
+    viewport_idx_y = launch_index.y;
+    eyeshift = 0.0f;
+  }
+
+  float2 viewport_sz = make_float2(launch_dim.x, viewport_sz_y);
   float2 radperpix = M_PIf / viewport_sz * make_float2(2.0f, 1.0f);
   float2 viewport_mid = viewport_sz * 0.5f;
 
   unsigned int randseed = tea<4>(launch_dim.x*(launch_index.y)+launch_index.x, subframe_count());
 
   float3 col = make_float3(0.0f);
-
   for (int s=0; s<aa_samples; s++) {
     float2 jxy;  
     jitter_offset2f(randseed, jxy);
 
-    float2 viewport_idx = make_float2(launch_index.x, launch_index.y) + jxy;
+    float2 viewport_idx = make_float2(launch_index.x, viewport_idx_y) + jxy;
     float2 rangle = (viewport_idx - viewport_mid) * radperpix;
 
     float sin_ax, cos_ax, sin_ay, cos_ay;
@@ -612,11 +942,24 @@ RT_PROGRAM void vmd_camera_equirectangular() {
 
     float3 ray_direction = normalize(cos_ay * (cos_ax * cam_W + sin_ax * cam_U) + sin_ay * cam_V);
 
+    float3 ray_origin = cam_pos;
+    if (STEREO_ON) {
+      ray_origin += eyeshift * cross(ray_direction, cam_V);
+    }
+
+    // compute new ray origin and ray direction
+    if (DOF_ON) {
+      float3 ray_right = normalize(cos_ay * (-sin_ax * cam_W - cos_ax * cam_U) + sin_ay * cam_V);
+      float3 ray_up = cross(ray_direction, ray_right);
+      dof_ray(ray_origin, ray_origin, ray_direction, ray_direction,
+              randseed, ray_up, ray_right);
+    }
+
     // trace the new ray...
     PerRayData_radiance prd;
     prd.importance = 1.f;
     prd.depth = 0;
-    optix::Ray ray = optix::make_Ray(cam_pos, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+    optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
     rtTrace(root_object, ray, prd);
     col += prd.result;
   }
@@ -628,15 +971,148 @@ RT_PROGRAM void vmd_camera_equirectangular() {
 #endif
 }
 
-#if 0
 RT_PROGRAM void vmd_camera_equirectangular() {
-  vmd_camera_equirectangular_general<0>();
+  vmd_camera_equirectangular_general<0, 0>();
+}
+
+RT_PROGRAM void vmd_camera_equirectangular_dof() {
+  vmd_camera_equirectangular_general<0, 1>();
 }
 
 RT_PROGRAM void vmd_camera_equirectangular_stereo() {
-  vmd_camera_equirectangular_general<1>();
+  vmd_camera_equirectangular_general<1, 0>();
 }
+
+RT_PROGRAM void vmd_camera_equirectangular_stereo_dof() {
+  vmd_camera_equirectangular_general<1, 1>();
+}
+
+
+//
+// Templated Oculus Rift perspective camera ray generation code
+//
+template<int STEREO_ON, int DOF_ON> 
+static __device__ __inline__ 
+void vmd_camera_oculus_rift_general() {
+#if defined(ORT_TIME_COLORING)
+  clock_t t0 = clock(); // start per-pixel RT timer
 #endif
+
+  // Stereoscopic rendering is provided by rendering in a side-by-side
+  // format with the left eye image in the left half of a double-wide
+  // framebuffer, and the right eye in the right half.  The subsequent 
+  // OpenGL drawing code can trivially unpack and draw the two images 
+  // with simple pointer offset arithmetic.
+  uint viewport_sz_x, viewport_idx_x;
+  float eyeshift;
+  if (STEREO_ON) {
+    // render into a double-wide framebuffer when stereo is enabled
+    viewport_sz_x = launch_dim.x >> 1;
+    if (launch_index.x >= viewport_sz_x) {
+      // right image
+      viewport_idx_x = launch_index.x - viewport_sz_x;
+      eyeshift =  0.5f * cam_stereo_eyesep;
+    } else {
+      // left image
+      viewport_idx_x = launch_index.x;
+      eyeshift = -0.5f * cam_stereo_eyesep;
+    }
+  } else {
+    // render into a normal size framebuffer if stereo is not enabled
+    viewport_sz_x = launch_dim.x;
+    viewport_idx_x = launch_index.x;
+    eyeshift = 0.0f;
+  }
+
+  // 
+  // general primary ray calculations
+  //
+  float2 aspect = make_float2(float(viewport_sz_x) / float(launch_dim.y), 1.0f) * cam_zoom;
+  float2 viewportscale = 1.0f / make_float2(viewport_sz_x, launch_dim.y);
+  float2 d = make_float2(viewport_idx_x, launch_index.y) * viewportscale * aspect * 2.f - aspect; // center of pixel in image plane
+
+
+  // Compute barrel distortion required to correct for the pincushion inherent
+  // in the plano-convex optics in the Oculus Rift, Google Cardboard, etc.
+  // Barrel distortion involves computing distance of the pixel from the 
+  // center of the eye viewport, and then scaling this distance by a factor
+  // based on the original distance: 
+  //   rnew = 0.24 * r^4 + 0.22 * r^2 + 1.0
+  // Since we are only using even powers of r, we can use efficient 
+  // squared distances everywhere.
+  // The current implementation doesn't discard rays that would have fallen
+  // outside of the original viewport FoV like most OpenGL implementations do.
+  // The current implementation computes the distortion for the initial ray 
+  // but doesn't apply these same corrections to antialiasing jitter, to
+  // depth-of-field jitter, etc, so this leaves something to be desired if
+  // we want best quality, but this raygen code is really intended for 
+  // interactive display on an Oculus Rift or Google Cardboard type viewer,
+  // so I err on the side of simplicity/speed for now. 
+  float2 cp = make_float2(viewport_sz_x >> 1, launch_dim.y >> 1) * viewportscale * aspect * 2.f - aspect;;
+  float2 dr = d - cp;
+  float r2 = dr.x*dr.x + dr.y*dr.y;
+  float r = 0.24f*r2*r2 + 0.22f*r2 + 1.0f;
+  d = r * dr; 
+
+  int subframecount = subframe_count();
+  unsigned int randseed = tea<4>(launch_dim.x*(launch_index.y)+viewport_idx_x, subframecount);
+
+  float3 eyepos = cam_pos;
+  if (STEREO_ON) {
+    eyepos += eyeshift * cam_U;
+  } 
+
+  float3 ray_origin = eyepos;
+  float3 col = make_float3(0.0f);
+  for (int s=0; s<aa_samples; s++) {
+    float2 jxy;  
+    jitter_offset2f(randseed, jxy);
+
+    // don't jitter the first sample, since when using an HMD we often run
+    // with only one sample per pixel unless the user wants higher fidelity
+    jxy *= (subframecount > 0 || s > 0);
+
+    jxy = jxy * viewportscale * aspect * 2.f + d;
+    float3 ray_direction = normalize(jxy.x*cam_U + jxy.y*cam_V + cam_W);
+ 
+    // compute new ray origin and ray direction
+    if (DOF_ON) {
+      dof_ray(eyepos, ray_origin, ray_direction, ray_direction,
+              randseed, cam_V, cam_U);
+    }
+
+    // trace the new ray...
+    PerRayData_radiance prd;
+    prd.importance = 1.f;
+    prd.depth = 0;
+    optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+    rtTrace(root_object, ray, prd);
+    col += prd.result; 
+  }
+
+#if defined(ORT_TIME_COLORING)
+  accumulate_time_coloring(col, t0);
+#else
+  accumulate_color(col);
+#endif
+}
+
+RT_PROGRAM void vmd_camera_oculus_rift() {
+  vmd_camera_oculus_rift_general<0, 0>();
+}
+
+RT_PROGRAM void vmd_camera_oculus_rift_dof() {
+  vmd_camera_oculus_rift_general<0, 1>();
+}
+
+RT_PROGRAM void vmd_camera_oculus_rift_stereo() {
+  vmd_camera_oculus_rift_general<1, 0>();
+}
+
+RT_PROGRAM void vmd_camera_oculus_rift_stereo_dof() {
+  vmd_camera_oculus_rift_general<1, 1>();
+}
+
 
 
 //
@@ -684,28 +1160,35 @@ void vmd_camera_perspective_general() {
 
   unsigned int randseed = tea<4>(launch_dim.x*(viewport_idx_y)+launch_index.x, subframe_count());
 
+#if defined(SC15ANIMSPHERESHACK)
+  int subframecount = subframe_count();
+#endif
   float3 col = make_float3(0.0f);
-  float3 newcampos = eyepos;
+  float3 ray_origin = eyepos;
   for (int s=0; s<aa_samples; s++) {
     float2 jxy;  
     jitter_offset2f(randseed, jxy);
+
+#if defined(SC15ANIMSPHERESHACK)
+    // don't jitter the first sample, since when using an HMD we often run
+    // with only one sample per pixel unless the user wants higher fidelity
+    jxy *= (subframecount > 0 || s > 0);
+#endif
+
     jxy = jxy * viewportscale * aspect * 2.f + d;
     float3 ray_direction = normalize(jxy.x*cam_U + jxy.y*cam_V + cam_W);
 
     // compute new ray origin and ray direction
     if (DOF_ON) {
-      float3 focuspoint = eyepos + ray_direction * cam_dof_focal_dist;
-      float2 dofjxy;
-      jitter_disc2f(randseed, dofjxy, cam_dof_aperture_rad);
-      newcampos = eyepos + dofjxy.x*cam_U + dofjxy.y*cam_V;
-      ray_direction = normalize(focuspoint - newcampos);
+      dof_ray(eyepos, ray_origin, ray_direction, ray_direction,
+              randseed, cam_V, cam_U);
     }
 
     // trace the new ray...
     PerRayData_radiance prd;
     prd.importance = 1.f;
     prd.depth = 0;
-    optix::Ray ray = optix::make_Ray(newcampos, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+    optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
     rtTrace(root_object, ray, prd);
     col += prd.result; 
   }
@@ -738,7 +1221,7 @@ RT_PROGRAM void vmd_camera_perspective_stereo_dof() {
 //
 // Templated orthographic camera ray generation code
 //
-template<int STEREO_ON> 
+template<int STEREO_ON, int DOF_ON> 
 static __device__ __inline__ 
 void vmd_camera_orthographic_general() {
 #if defined(ORT_TIME_COLORING)
@@ -752,7 +1235,7 @@ void vmd_camera_orthographic_general() {
   // with simple pointer offset arithmetic.
   float3 eyepos;
   uint viewport_sz_y, viewport_idx_y;
-  float3 ray_direction;
+  float3 view_direction;
   if (STEREO_ON) {
     // render into a double-high framebuffer when stereo is enabled
     viewport_sz_y = launch_dim.y >> 1;
@@ -765,13 +1248,13 @@ void vmd_camera_orthographic_general() {
       viewport_idx_y = launch_index.y;
       eyepos = cam_pos - cam_U * cam_stereo_eyesep * 0.5f;
     }
-    ray_direction = normalize(cam_pos-eyepos + normalize(cam_W) * cam_stereo_convergence_dist);
+    view_direction = normalize(cam_pos-eyepos + normalize(cam_W) * cam_stereo_convergence_dist);
   } else {
     // render into a normal size framebuffer if stereo is not enabled
     viewport_sz_y = launch_dim.y;
     viewport_idx_y = launch_index.y;
     eyepos = cam_pos;
-    ray_direction = normalize(cam_W);
+    view_direction = normalize(cam_W);
   }
 
   // 
@@ -785,11 +1268,18 @@ void vmd_camera_orthographic_general() {
   unsigned int randseed = tea<4>(launch_dim.x*(viewport_idx_y)+launch_index.x, subframe_count());
 
   float3 col = make_float3(0.0f);
+  float3 ray_direction = view_direction;
   for (int s=0; s<aa_samples; s++) {
     float2 jxy;  
     jitter_offset2f(randseed, jxy);
     jxy = jxy * viewportscale * aspect * 2.f + d;
     float3 ray_origin = eyepos + jxy.x*cam_U + jxy.y*cam_V;
+
+    // compute new ray origin and ray direction
+    if (DOF_ON) {
+      dof_ray(ray_origin, ray_origin, view_direction, ray_direction,
+              randseed, cam_V, cam_U);
+    }
 
     // trace the new ray...
     PerRayData_radiance prd;
@@ -808,13 +1298,20 @@ void vmd_camera_orthographic_general() {
 }
 
 RT_PROGRAM void vmd_camera_orthographic() {
-  vmd_camera_orthographic_general<0>();
+  vmd_camera_orthographic_general<0, 0>();
+}
+
+RT_PROGRAM void vmd_camera_orthographic_dof() {
+  vmd_camera_orthographic_general<0, 1>();
 }
 
 RT_PROGRAM void vmd_camera_orthographic_stereo() {
-  vmd_camera_orthographic_general<1>();
+  vmd_camera_orthographic_general<1, 0>();
 }
 
+RT_PROGRAM void vmd_camera_orthographic_stereo_dof() {
+  vmd_camera_orthographic_general<1, 1>();
+}
 
 
 //
@@ -885,7 +1382,7 @@ static __device__ float fog_coord(float3 hit_point) {
       break;
   }
 
-  return clamp(f, 0.0f, 1.0f);
+  return __saturatef(f);
 }
 
 
@@ -951,9 +1448,11 @@ static __device__ float3 shade_ambient_occlusion(float3 hit, float3 N, float aoi
     } else
 #endif
 #if defined(ORT_USE_RAY_STEP) 
-    ambray = make_Ray(hit + ORT_RAY_STEP, dir, shadow_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+    ambray = make_Ray(hit + ORT_RAY_STEP, dir, shadow_ray_type, scene_epsilon, ao_maxdist);
+//    ambray = make_Ray(hit + ORT_RAY_STEP, dir, shadow_ray_type, scene_epsilon, RT_DEFAULT_MAX);
 #else
-    ambray = make_Ray(hit, dir, shadow_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+    ambray = make_Ray(hit, dir, shadow_ray_type, scene_epsilon, ao_maxdist);
+//    ambray = make_Ray(hit, dir, shadow_ray_type, scene_epsilon, RT_DEFAULT_MAX);
 #endif
 
     shadow_prd.attenuation = make_float3(1.0f);
@@ -962,6 +1461,62 @@ static __device__ float3 shade_ambient_occlusion(float3 hit, float3 N, float aoi
   } 
 
   return inten * lightscale;
+}
+
+
+template<int SHADOWS_ON>       /// scene-wide shading property
+static __device__ __inline__ void shade_light(float3 &result,
+                                              float3 &hit_point, 
+                                              float3 &N, float3 &L, 
+                                              float p_Kd, 
+                                              float p_Ks,
+                                              float p_phong_exp,
+                                              float3 &col, 
+                                              float3 &phongcol,
+                                              float shadow_tmax) {
+  float inten = dot(N, L);
+
+  // cast shadow ray
+  float3 light_attenuation = make_float3(static_cast<float>(inten > 0.0f));
+  if (SHADOWS_ON && shadows_enabled && inten > 0.0f) {
+    PerRayData_shadow shadow_prd;
+    shadow_prd.attenuation = make_float3(1.0f);
+
+    Ray shadow_ray;
+#ifdef USE_REVERSE_SHADOW_RAYS
+    if (shadows_enabled == RT_SHADOWS_ON_REVERSE) {
+      // reverse any-hit ray traversal direction for increased perf
+      // XXX We currently hard-code REVERSE_RAY_LENGTH in such a way that
+      //     it works well for scenes that fall within the VMD view volume,
+      //     given the relationship between the model and camera coordinate
+      //     systems, but this would be best computed by the diagonal of the 
+      //     AABB for the full scene, and then scaled into camera coordinates.
+      //     The REVERSE_RAY_STEP size is computed to avoid self intersection 
+      //     with the surface we're shading.
+      float tmax = REVERSE_RAY_LENGTH - REVERSE_RAY_STEP;
+      shadow_ray = make_Ray(hit_point + L * REVERSE_RAY_LENGTH, -L, shadow_ray_type, 0, fminf(tmax, shadow_tmax)); 
+    } 
+    else
+#endif
+    shadow_ray = make_Ray(hit_point + ORT_RAY_STEP, L, shadow_ray_type, scene_epsilon, shadow_tmax);
+
+    rtTrace(root_shadower, shadow_ray, shadow_prd);
+    light_attenuation = shadow_prd.attenuation;
+  }
+
+  // If not completely shadowed, light the hit point.
+  // When shadows are disabled, the light can't possibly be attenuated.
+  if (!SHADOWS_ON || fmaxf(light_attenuation) > 0.0f) {
+    result += col * p_Kd * inten * light_attenuation;
+
+    // add specular hightlight using Blinn's halfway vector approach
+    float3 H = normalize(L - ray.direction);
+    float nDh = dot(N, H);
+    if (nDh > 0) {
+      float power = powf(nDh, p_phong_exp);
+      phongcol += make_float3(p_Ks) * power * light_attenuation;
+    }
+  }
 }
 
 
@@ -987,7 +1542,9 @@ static __device__ float3 shade_ambient_occlusion(float3 hit, float3 N, float aoi
 // The macros that generate the full set of 64 possible shader variants
 // are at the very end of this source file.
 //
-template<int FOG_ON,           /// scene-wide shading property
+template<int CLIP_VIEW_ON,     /// scene-wide shading property
+         int HEADLIGHT_ON,     /// scene-wide shading property
+         int FOG_ON,           /// scene-wide shading property
          int SHADOWS_ON,       /// scene-wide shading property
          int AO_ON,            /// scene-wide shading property
          int OUTLINE_ON,       /// material-specific shading property
@@ -1015,58 +1572,46 @@ static __device__ void shader_template(float3 p_obj_color, float3 N,
 
   // compute lighting from directional lights
 #if defined(VMDOPTIX_LIGHTUSEROBJS)
-  unsigned int num_lights = light_list.num_lights;
-  for (int i = 0; i < num_lights; ++i) {
-    float3 L = light_list.dirs[i];
+  unsigned int num_dir_lights = dir_light_list.num_lights;
+  for (int i = 0; i < num_dir_lights; ++i) {
+    float3 L = dir_light_list.dirs[i];
 #else
-  unsigned int num_lights = lights.size();
-  for (int i = 0; i < num_lights; ++i) {
-    DirectionalLight light = lights[i];
+  unsigned int num_dir_lights = dir_lights.size();
+  for (int i = 0; i < num_dir_lights; ++i) {
+    DirectionalLight light = dir_lights[i];
     float3 L = light.dir;
 #endif
-    float inten = dot(N, L);
+    shade_light<SHADOWS_ON>(result, hit_point, N, L, p_Kd, p_Ks, p_phong_exp, 
+                            col, phongcol, RT_DEFAULT_MAX);
+  }
 
-    // cast shadow ray
-    float3 light_attenuation = make_float3(static_cast<float>(inten > 0.0f));
-    if (SHADOWS_ON && shadows_enabled && inten > 0.0f) {
-      PerRayData_shadow shadow_prd;
-      shadow_prd.attenuation = make_float3(1.0f);
-
-      Ray shadow_ray;
-#ifdef USE_REVERSE_SHADOW_RAYS
-      if (shadows_enabled == RT_SHADOWS_ON_REVERSE) {
-        // reverse any-hit ray traversal direction for increased perf
-        // XXX We currently hard-code REVERSE_RAY_LENGTH in such a way that
-        //     it works well for scenes that fall within the VMD view volume,
-        //     given the relationship between the model and camera coordinate
-        //     systems, but this would be best computed by the diagonal of the 
-        //     AABB for the full scene, and then scaled into camera coordinates.
-        //     The REVERSE_RAY_STEP size is computed to avoid self intersection 
-        //     with the surface we're shading.
-        float tmax = REVERSE_RAY_LENGTH - REVERSE_RAY_STEP;
-        shadow_ray = make_Ray(hit_point + L * REVERSE_RAY_LENGTH, -L, shadow_ray_type, 0, tmax); 
-      } 
-      else
+#if 0
+  // compute lighting from positional lights
+#if defined(VMDOPTIX_LIGHTUSEROBJS)
+  unsigned int num_pos_lights = pos_light_list.num_lights;
+  for (int i = 0; i < num_pos_lights; ++i) {
+    float3 L = pos_light_list.posns[i];
+#else
+  unsigned int num_pos_lights = pos_lights.size();
+  for (int i = 0; i < num_pos_lights; ++i) {
+    PositionalLight light = pos_lights[i];
+    float3 L = light.pos - hit_point;
 #endif
-      shadow_ray = make_Ray(hit_point + ORT_RAY_STEP, L, shadow_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+    float shadow_tmax = length(L); // compute positional light shadow tmax
+    L = normalize(L);
+    shade_light<SHADOWS_ON>(result, hit_point, N, L, p_Kd, p_Ks, p_phong_exp, 
+                            col, phongcol, shadow_tmax);
+  }
+#endif
 
-      rtTrace(root_shadower, shadow_ray, shadow_prd);
-      light_attenuation = shadow_prd.attenuation;
-    }
-
-    // If not completely shadowed, light the hit point.
-    // When shadows are disabled, the light can't possibly be attenuated.
-    if (!SHADOWS_ON || fmaxf(light_attenuation) > 0.0f) {
-      result += col * p_Kd * inten * light_attenuation;
-
-      // add specular hightlight using Blinn's halfway vector approach
-      float3 H = normalize(L - ray.direction);
-      float nDh = dot(N, H);
-      if (nDh > 0) {
-        float power = powf(nDh, p_phong_exp);
-        phongcol += make_float3(p_Ks) * power * light_attenuation;
-      }
-    }
+  // add point light for camera headlight need for Oculus Rift HMDs,
+  // equirectangular panorama images, and planetarium dome master images
+  if (HEADLIGHT_ON && (headlight_mode != 0)) {
+    float3 L = cam_pos - hit_point;
+    float shadow_tmax = length(L); // compute positional light shadow tmax
+    L = normalize(L);
+    shade_light<SHADOWS_ON>(result, hit_point, N, L, p_Kd, p_Ks, p_phong_exp, 
+                            col, phongcol, shadow_tmax);
   }
 
   // add ambient occlusion diffuse lighting, if enabled
@@ -1081,7 +1626,7 @@ static __device__ void shader_template(float3 p_obj_color, float3 N,
     edgefactor *= edgefactor;
     edgefactor = 1.0f - edgefactor;
     edgefactor = 1.0f - powf(edgefactor, (1.0f - p_outlinewidth) * 32.0f);
-    float outlinefactor = (1.0f - p_outline) + (edgefactor * p_outline);
+    float outlinefactor = __saturatef((1.0f - p_outline) + (edgefactor * p_outline));
     result *= outlinefactor;
   }
 
@@ -1110,7 +1655,32 @@ static __device__ void shader_template(float3 p_obj_color, float3 N,
 
   // spawn transmission rays if necessary
   float alpha = p_opacity;
-  if (TRANSMISSION_ON && alpha < 0.999f ) {
+
+#if 1
+  if (CLIP_VIEW_ON && (clipview_mode == 2))
+    sphere_fade_and_clip(hit_point, cam_pos, 
+                         clipview_start, clipview_end, alpha);
+#else
+  if (CLIP_VIEW_ON && (clipview_mode == 2)) {
+    // draft implementation of a smooth "fade-out-and-clip sphere"  
+    float fade_start = 1.00f; // onset of fading 
+    float fade_end   = 0.20f; // fully transparent
+    float camdist = length(hit_point - cam_pos);
+
+    // XXX we can omit the distance test since alpha modulation value is clamped
+    // if (1 || camdist < fade_start) {
+      float fade_len = fade_start - fade_end;
+      alpha *= __saturatef((camdist - fade_start) / fade_len);
+    // }
+  }
+#endif
+
+  // TRANSMISSION_ON: handles transparent surface shading, test is only
+  // performed when the VMD geometry has a known-transparent material
+  // CLIP_VIEW_ON: forces check of alpha value for all geom as per transparent 
+  // material, since all geometry may become tranparent with the 
+  // fade+clip sphere active
+  if ((TRANSMISSION_ON || CLIP_VIEW_ON) && alpha < 0.999f ) {
     // Emulate Tachyon/Raster3D's angle-dependent surface opacity if enabled
     if (p_transmode) {
       alpha = 1.0f + cosf(3.1415926f * (1.0f-alpha) * dot(N, ray.direction));
@@ -1182,6 +1752,32 @@ RT_PROGRAM void any_hit_transmission() {
 }
 
 
+// Any hit program required for shadow filtering when an 
+// HMD/camera fade-and-clip is active, through both 
+// solid and transparent materials
+RT_PROGRAM void any_hit_clip_sphere() {
+
+  // compute hit point for use in evaluating fade/clip effect
+  float3 hit_point = ray.origin + t_hit * ray.direction;
+
+  // compute additional attenuation from clipping sphere if enabled
+  float clipalpha = 1.0f;
+  if (clipview_mode == 2) {
+    sphere_fade_and_clip(hit_point, cam_pos, clipview_start, clipview_end, 
+                         clipalpha);
+  }
+
+  // use a VERY simple shadow filtering scheme based on opacity
+  prd_shadow.attenuation = make_float3(1.0f - (clipalpha * opacity));
+
+  // check to see if we've hit 100% shadow or not
+  if (fmaxf(prd_shadow.attenuation) < 0.001f )
+    rtTerminateRay();
+  else
+    rtIgnoreIntersection();
+}
+
+
 // normal calc routine needed only to simplify the macro to produce the
 // complete combinatorial expansion of template-specialized 
 // closest hit radiance functions 
@@ -1196,9 +1792,9 @@ static __inline__ __device__ float3 calc_ffworld_normal() {
 // intended for shader debugging and comparison with the original
 // Tachyon full_shade() code.
 RT_PROGRAM void closest_hit_radiance_general() {
-  shader_template<1, 1, 1, 1, 1, 1>(obj_color, calc_ffworld_normal(), 
-                                    Ka, Kd, Ks, phong_exp, Krefl, opacity,
-                                    outline, outlinewidth, transmode);
+  shader_template<0, 0, 1, 1, 1, 1, 1, 1>(obj_color, calc_ffworld_normal(), 
+                                          Ka, Kd, Ks, phong_exp, Krefl, opacity,
+                                          outline, outlinewidth, transmode);
 }
 
 
@@ -1481,6 +2077,34 @@ RT_PROGRAM void sphere_array_bounds(int primIdx, float result[6]) {
 // Color-per-sphere sphere array 
 //
 RT_PROGRAM void sphere_array_color_intersect(int primIdx) {
+#if defined(SC15ANIMSPHERESHACK)
+  if (anim_interp >= 0.0f) {
+#if 0
+    // XXX hack to allow animation of field lines particle advection 
+    // scene for prototype of SC15 demo
+    if (primIdx != int(anim_interp * 60.0f)) {
+      return; // no intersection, pretend it's not there...
+    }
+#elif 0
+    // XXX hack to allow animation of field lines particle advection 
+    // scene for prototype of SC15 demo
+    if ((primIdx + int(anim_interp * 60.0f)) % 60) {
+      return; // no intersection, pretend it's not there...
+    }
+#else
+    // XXX hack to allow animation of field lines particle advection 
+    // scene for prototype of SC15 demo
+    float scal = 80.0f;
+    float ub = anim_interp * scal;
+    float lb = ub - 1.0f;
+    float wrapidx = fmodf(1.0f * primIdx, scal);
+    if (wrapidx >= ub || wrapidx <= lb) {
+      return; // no intersection, pretend it's not there...
+    }
+#endif
+  }
+#endif
+
   float3 center = sphere_color_buffer[primIdx].center;
   float radius = sphere_color_buffer[primIdx].radius;
 
@@ -1746,7 +2370,12 @@ RT_PROGRAM void trimesh_v3f_bounds(int primIdx, float result[6]) {
 // shading features, which are then linked to the OptiX scene graph 
 // material nodes.
 //
+#if defined(ORT_USE_TEMPLATE_SHADERS)
 
+#define CLIP_VIEW_on      1
+#define CLIP_VIEW_off     0
+#define HEADLIGHT_on      1
+#define HEADLIGHT_off     0
 #define FOG_on            1
 #define FOG_off           0
 #define SHADOWS_on        1
@@ -1760,11 +2389,13 @@ RT_PROGRAM void trimesh_v3f_bounds(int primIdx, float result[6]) {
 #define TRANS_on          1
 #define TRANS_off         0
 
-#define DEFINE_CLOSEST_HIT( mfog, mshad, mao, moutl, mrefl, mtrans )     \
+#define DEFINE_CLOSEST_HIT( mclipview, mhlight, mfog, mshad, mao, moutl, mrefl, mtrans ) \
   RT_PROGRAM void                                                        \
-  closest_hit_radiance_FOG_##mfog##_SHADOWS_##mshad##_AO_##mao##_OUTLINE_##moutl##_REFL_##mrefl##_TRANS_##mtrans() { \
+  closest_hit_radiance_CLIP_VIEW_##mclipview##_HEADLIGHT_##mhlight##_FOG_##mfog##_SHADOWS_##mshad##_AO_##mao##_OUTLINE_##moutl##_REFL_##mrefl##_TRANS_##mtrans() { \
                                                                          \
-    shader_template<FOG_##mfog,                                          \
+    shader_template<CLIP_VIEW_##mclipview,                               \
+                    HEADLIGHT_##mhlight,                                 \
+                    FOG_##mfog,                                          \
                     SHADOWS_##mshad,                                     \
                     AO_##mao,                                            \
                     OUTLINE_##moutl,                                     \
@@ -1777,109 +2408,427 @@ RT_PROGRAM void trimesh_v3f_bounds(int primIdx, float result[6]) {
 
 
 //
-// Generate all of the 2^6 parameter combinations as 
+// Generate all of the 2^8 parameter combinations as 
 // template-specialized shaders...
 //
-DEFINE_CLOSEST_HIT(  on,  on,  on,  on,  on,  on )
-DEFINE_CLOSEST_HIT(  on,  on,  on,  on,  on, off )
 
-DEFINE_CLOSEST_HIT(  on,  on,  on,  on, off,  on )
-DEFINE_CLOSEST_HIT(  on,  on,  on,  on, off, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on,  on,  on,  on, off )
 
-DEFINE_CLOSEST_HIT(  on,  on,  on, off,  on,  on )
-DEFINE_CLOSEST_HIT(  on,  on,  on, off,  on, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on,  on,  on, off, off )
 
-DEFINE_CLOSEST_HIT(  on,  on,  on, off, off,  on )
-DEFINE_CLOSEST_HIT(  on,  on,  on, off, off, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on,  on, off,  on, off )
 
-DEFINE_CLOSEST_HIT(  on,  on, off,  on,  on,  on )
-DEFINE_CLOSEST_HIT(  on,  on, off,  on,  on, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on,  on, off, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on,  on, off, off, off )
 
-DEFINE_CLOSEST_HIT(  on,  on, off,  on, off,  on )
-DEFINE_CLOSEST_HIT(  on,  on, off,  on, off, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on, off,  on,  on, off )
 
-DEFINE_CLOSEST_HIT(  on,  on, off, off,  on,  on )
-DEFINE_CLOSEST_HIT(  on,  on, off, off,  on, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on, off,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on, off,  on, off, off )
 
-DEFINE_CLOSEST_HIT(  on,  on, off, off, off,  on )
-DEFINE_CLOSEST_HIT(  on,  on, off, off, off, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on, off, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on, off, off,  on, off )
 
-
-DEFINE_CLOSEST_HIT(  on, off,  on,  on,  on,  on )
-DEFINE_CLOSEST_HIT(  on, off,  on,  on,  on, off )
-
-DEFINE_CLOSEST_HIT(  on, off,  on,  on, off,  on )
-DEFINE_CLOSEST_HIT(  on, off,  on,  on, off, off )
-
-DEFINE_CLOSEST_HIT(  on, off,  on, off,  on,  on )
-DEFINE_CLOSEST_HIT(  on, off,  on, off,  on, off )
-
-DEFINE_CLOSEST_HIT(  on, off,  on, off, off,  on )
-DEFINE_CLOSEST_HIT(  on, off,  on, off, off, off )
-
-DEFINE_CLOSEST_HIT(  on, off, off,  on,  on,  on )
-DEFINE_CLOSEST_HIT(  on, off, off,  on,  on, off )
-
-DEFINE_CLOSEST_HIT(  on, off, off,  on, off,  on )
-DEFINE_CLOSEST_HIT(  on, off, off,  on, off, off )
-
-DEFINE_CLOSEST_HIT(  on, off, off, off,  on,  on )
-DEFINE_CLOSEST_HIT(  on, off, off, off,  on, off )
-
-DEFINE_CLOSEST_HIT(  on, off, off, off, off,  on )
-DEFINE_CLOSEST_HIT(  on, off, off, off, off, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on, off, off, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on,  on, off, off, off, off )
 
 
+DEFINE_CLOSEST_HIT(  on,  on,  on, off,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off,  on,  on,  on, off )
 
-DEFINE_CLOSEST_HIT( off,  on,  on,  on,  on,  on )
-DEFINE_CLOSEST_HIT( off,  on,  on,  on,  on, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off,  on,  on, off, off )
 
-DEFINE_CLOSEST_HIT( off,  on,  on,  on, off,  on )
-DEFINE_CLOSEST_HIT( off,  on,  on,  on, off, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off,  on, off,  on, off )
 
-DEFINE_CLOSEST_HIT( off,  on,  on, off,  on,  on )
-DEFINE_CLOSEST_HIT( off,  on,  on, off,  on, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off,  on, off, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off,  on, off, off, off )
 
-DEFINE_CLOSEST_HIT( off,  on,  on, off, off,  on )
-DEFINE_CLOSEST_HIT( off,  on,  on, off, off, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off, off,  on,  on, off )
 
-DEFINE_CLOSEST_HIT( off,  on, off,  on,  on,  on )
-DEFINE_CLOSEST_HIT( off,  on, off,  on,  on, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off, off,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off, off,  on, off, off )
 
-DEFINE_CLOSEST_HIT( off,  on, off,  on, off,  on )
-DEFINE_CLOSEST_HIT( off,  on, off,  on, off, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off, off, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off, off, off,  on, off )
 
-DEFINE_CLOSEST_HIT( off,  on, off, off,  on,  on )
-DEFINE_CLOSEST_HIT( off,  on, off, off,  on, off )
-
-DEFINE_CLOSEST_HIT( off,  on, off, off, off,  on )
-DEFINE_CLOSEST_HIT( off,  on, off, off, off, off )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off, off, off, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on,  on, off, off, off, off, off )
 
 
-DEFINE_CLOSEST_HIT( off, off,  on,  on,  on,  on )
-DEFINE_CLOSEST_HIT( off, off,  on,  on,  on, off )
 
-DEFINE_CLOSEST_HIT( off, off,  on,  on, off,  on )
-DEFINE_CLOSEST_HIT( off, off,  on,  on, off, off )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on,  on,  on,  on, off )
 
-DEFINE_CLOSEST_HIT( off, off,  on, off,  on,  on )
-DEFINE_CLOSEST_HIT( off, off,  on, off,  on, off )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on,  on,  on, off, off )
 
-DEFINE_CLOSEST_HIT( off, off,  on, off, off,  on )
-DEFINE_CLOSEST_HIT( off, off,  on, off, off, off )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on,  on, off,  on, off )
 
-DEFINE_CLOSEST_HIT( off, off, off,  on,  on,  on )
-DEFINE_CLOSEST_HIT( off, off, off,  on,  on, off )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on,  on, off, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on,  on, off, off, off )
 
-DEFINE_CLOSEST_HIT( off, off, off,  on, off,  on )
-DEFINE_CLOSEST_HIT( off, off, off,  on, off, off )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on, off,  on,  on, off )
 
-DEFINE_CLOSEST_HIT( off, off, off, off,  on,  on )
-DEFINE_CLOSEST_HIT( off, off, off, off,  on, off )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on, off,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on, off,  on, off, off )
 
-DEFINE_CLOSEST_HIT( off, off, off, off, off,  on )
-DEFINE_CLOSEST_HIT( off, off, off, off, off, off )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on, off, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on, off, off,  on, off )
 
+DEFINE_CLOSEST_HIT(  on,  on, off,  on, off, off, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off,  on, off, off, off, off )
+
+
+DEFINE_CLOSEST_HIT(  on,  on, off, off,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off, off,  on,  on,  on, off )
+
+DEFINE_CLOSEST_HIT(  on,  on, off, off,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off, off,  on,  on, off, off )
+
+DEFINE_CLOSEST_HIT(  on,  on, off, off,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off, off,  on, off,  on, off )
+
+DEFINE_CLOSEST_HIT(  on,  on, off, off,  on, off, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off, off,  on, off, off, off )
+
+DEFINE_CLOSEST_HIT(  on,  on, off, off, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off, off, off,  on,  on, off )
+
+DEFINE_CLOSEST_HIT(  on,  on, off, off, off,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off, off, off,  on, off, off )
+
+DEFINE_CLOSEST_HIT(  on,  on, off, off, off, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off, off, off, off,  on, off )
+
+DEFINE_CLOSEST_HIT(  on,  on, off, off, off, off, off,  on )
+DEFINE_CLOSEST_HIT(  on,  on, off, off, off, off, off, off )
+
+//
+// block of 64 pgms
+//
+
+DEFINE_CLOSEST_HIT(  on, off,  on,  on,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on,  on,  on,  on,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on,  on,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on,  on,  on,  on, off, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on,  on,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on,  on,  on, off,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on,  on,  on, off, off,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on,  on,  on, off, off, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on,  on, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on,  on, off,  on,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on,  on, off,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on,  on, off,  on, off, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on,  on, off, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on,  on, off, off,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on,  on, off, off, off,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on,  on, off, off, off, off )
+
+
+DEFINE_CLOSEST_HIT(  on, off,  on, off,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on, off,  on,  on,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on, off,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on, off,  on,  on, off, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on, off,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on, off,  on, off,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on, off,  on, off, off,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on, off,  on, off, off, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on, off, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on, off, off,  on,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on, off, off,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on, off, off,  on, off, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on, off, off, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on, off, off, off,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off,  on, off, off, off, off,  on )
+DEFINE_CLOSEST_HIT(  on, off,  on, off, off, off, off, off )
+
+
+
+DEFINE_CLOSEST_HIT(  on, off, off,  on,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off, off,  on,  on,  on,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off,  on,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on, off, off,  on,  on,  on, off, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off,  on,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off, off,  on,  on, off,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off,  on,  on, off, off,  on )
+DEFINE_CLOSEST_HIT(  on, off, off,  on,  on, off, off, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off,  on, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off, off,  on, off,  on,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off,  on, off,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on, off, off,  on, off,  on, off, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off,  on, off, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off, off,  on, off, off,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off,  on, off, off, off,  on )
+DEFINE_CLOSEST_HIT(  on, off, off,  on, off, off, off, off )
+
+
+DEFINE_CLOSEST_HIT(  on, off, off, off,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off, off, off,  on,  on,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off, off,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on, off, off, off,  on,  on, off, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off, off,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off, off, off,  on, off,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off, off,  on, off, off,  on )
+DEFINE_CLOSEST_HIT(  on, off, off, off,  on, off, off, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off, off, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off, off, off, off,  on,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off, off, off,  on, off,  on )
+DEFINE_CLOSEST_HIT(  on, off, off, off, off,  on, off, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off, off, off, off,  on,  on )
+DEFINE_CLOSEST_HIT(  on, off, off, off, off, off,  on, off )
+
+DEFINE_CLOSEST_HIT(  on, off, off, off, off, off, off,  on )
+DEFINE_CLOSEST_HIT(  on, off, off, off, off, off, off, off )
+
+///
+/// Mid-way point (128 pgms)
+///
+
+DEFINE_CLOSEST_HIT( off,  on,  on,  on,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on,  on,  on,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on,  on,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on,  on,  on,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on,  on,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on,  on,  on, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on,  on,  on, off, off,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on,  on,  on, off, off, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on,  on, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on,  on, off,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on,  on, off,  on, off,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on,  on, off,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on,  on, off, off,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on,  on, off, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on,  on, off, off, off,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on,  on, off, off, off, off )
+
+
+DEFINE_CLOSEST_HIT( off,  on,  on, off,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on, off,  on,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on, off,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on, off,  on,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on, off,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on, off,  on, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on, off,  on, off, off,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on, off,  on, off, off, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on, off, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on, off, off,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on, off, off,  on, off,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on, off, off,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on, off, off, off,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on, off, off, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on,  on, off, off, off, off,  on )
+DEFINE_CLOSEST_HIT( off,  on,  on, off, off, off, off, off )
+
+
+
+DEFINE_CLOSEST_HIT( off,  on, off,  on,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on, off,  on,  on,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off,  on,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT( off,  on, off,  on,  on,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off,  on,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on, off,  on,  on, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off,  on,  on, off, off,  on )
+DEFINE_CLOSEST_HIT( off,  on, off,  on,  on, off, off, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off,  on, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on, off,  on, off,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off,  on, off,  on, off,  on )
+DEFINE_CLOSEST_HIT( off,  on, off,  on, off,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off,  on, off, off,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on, off,  on, off, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off,  on, off, off, off,  on )
+DEFINE_CLOSEST_HIT( off,  on, off,  on, off, off, off, off )
+
+
+DEFINE_CLOSEST_HIT( off,  on, off, off,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on, off, off,  on,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off, off,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT( off,  on, off, off,  on,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off, off,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on, off, off,  on, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off, off,  on, off, off,  on )
+DEFINE_CLOSEST_HIT( off,  on, off, off,  on, off, off, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off, off, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on, off, off, off,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off, off, off,  on, off,  on )
+DEFINE_CLOSEST_HIT( off,  on, off, off, off,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off, off, off, off,  on,  on )
+DEFINE_CLOSEST_HIT( off,  on, off, off, off, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off,  on, off, off, off, off, off,  on )
+DEFINE_CLOSEST_HIT( off,  on, off, off, off, off, off, off )
+
+//
+// block of 64 pgms
+//
+
+DEFINE_CLOSEST_HIT( off, off,  on,  on,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off, off,  on,  on,  on,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on,  on,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT( off, off,  on,  on,  on,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on,  on,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT( off, off,  on,  on,  on, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on,  on,  on, off, off,  on )
+DEFINE_CLOSEST_HIT( off, off,  on,  on,  on, off, off, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on,  on, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off, off,  on,  on, off,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on,  on, off,  on, off,  on )
+DEFINE_CLOSEST_HIT( off, off,  on,  on, off,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on,  on, off, off,  on,  on )
+DEFINE_CLOSEST_HIT( off, off,  on,  on, off, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on,  on, off, off, off,  on )
+DEFINE_CLOSEST_HIT( off, off,  on,  on, off, off, off, off )
+
+
+DEFINE_CLOSEST_HIT( off, off,  on, off,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off, off,  on, off,  on,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on, off,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT( off, off,  on, off,  on,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on, off,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT( off, off,  on, off,  on, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on, off,  on, off, off,  on )
+DEFINE_CLOSEST_HIT( off, off,  on, off,  on, off, off, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on, off, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off, off,  on, off, off,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on, off, off,  on, off,  on )
+DEFINE_CLOSEST_HIT( off, off,  on, off, off,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on, off, off, off,  on,  on )
+DEFINE_CLOSEST_HIT( off, off,  on, off, off, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off,  on, off, off, off, off,  on )
+DEFINE_CLOSEST_HIT( off, off,  on, off, off, off, off, off )
+
+
+
+DEFINE_CLOSEST_HIT( off, off, off,  on,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off, off, off,  on,  on,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off, off,  on,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT( off, off, off,  on,  on,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off, off, off,  on,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT( off, off, off,  on,  on, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off, off,  on,  on, off, off,  on )
+DEFINE_CLOSEST_HIT( off, off, off,  on,  on, off, off, off )
+
+DEFINE_CLOSEST_HIT( off, off, off,  on, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off, off, off,  on, off,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off, off,  on, off,  on, off,  on )
+DEFINE_CLOSEST_HIT( off, off, off,  on, off,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off, off, off,  on, off, off,  on,  on )
+DEFINE_CLOSEST_HIT( off, off, off,  on, off, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off, off,  on, off, off, off,  on )
+DEFINE_CLOSEST_HIT( off, off, off,  on, off, off, off, off )
+
+
+DEFINE_CLOSEST_HIT( off, off, off, off,  on,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off, off, off, off,  on,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off, off, off,  on,  on, off,  on )
+DEFINE_CLOSEST_HIT( off, off, off, off,  on,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off, off, off, off,  on, off,  on,  on )
+DEFINE_CLOSEST_HIT( off, off, off, off,  on, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off, off, off,  on, off, off,  on )
+DEFINE_CLOSEST_HIT( off, off, off, off,  on, off, off, off )
+
+DEFINE_CLOSEST_HIT( off, off, off, off, off,  on,  on,  on )
+DEFINE_CLOSEST_HIT( off, off, off, off, off,  on,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off, off, off, off,  on, off,  on )
+DEFINE_CLOSEST_HIT( off, off, off, off, off,  on, off, off )
+
+DEFINE_CLOSEST_HIT( off, off, off, off, off, off,  on,  on )
+DEFINE_CLOSEST_HIT( off, off, off, off, off, off,  on, off )
+
+DEFINE_CLOSEST_HIT( off, off, off, off, off, off, off,  on )
+DEFINE_CLOSEST_HIT( off, off, off, off, off, off, off, off )
+
+
+#undef CLIP_VIEW_on
+#undef CLIP_VIEW_off
+#undef HEADLIGHT_on
+#undef HEADLIGHT_off
 #undef FOG_on
 #undef FOG_off
 #undef SHADOWS_on
@@ -1894,6 +2843,6 @@ DEFINE_CLOSEST_HIT( off, off, off, off, off, off )
 #undef TRANS_off          
 #undef DEFINE_CLOSEST_HIT
 
-
+#endif // ORT_USE_TEMPLATE_SHADERS
 
 

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: parm7plugin.C,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.30 $       $Date: 2009/04/29 15:45:32 $
+ *      $Revision: 1.34 $       $Date: 2016/11/28 05:01:54 $
  *
  ***************************************************************************/
 
@@ -154,7 +154,7 @@ VMDPLUGIN_API int VMDPLUGIN_init(){
   plugin.prettyname = "AMBER7 Parm";
   plugin.author = "Brian Bennion, Justin Gullingsrud, John Stone";
   plugin.majorv = 0;
-  plugin.minorv = 13;
+  plugin.minorv = 15;
   plugin.is_reentrant = VMDPLUGIN_THREADUNSAFE;
   plugin.filename_extension = "prmtop,parm7";
   plugin.open_file_read = open_parm7_read;

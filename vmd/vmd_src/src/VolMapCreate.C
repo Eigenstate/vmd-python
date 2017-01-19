@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,7 +10,7 @@
  *
  *      $RCSfile: VolMapCreate.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.120 $      $Date: 2012/07/24 15:20:30 $
+ *      $Revision: 1.122 $      $Date: 2016/11/28 03:05:06 $
  *
  ***************************************************************************/
 
@@ -83,7 +83,7 @@ VolMapCreate::VolMapCreate(VMDApp *the_app, AtomSel *the_sel, float resolution) 
   char dataname[1];
   strcpy(dataname, ""); // null-terminated empty string
   float zerovec[3];
-  memset(zerovec, 0, 3*sizeof(float));
+  memset(zerovec, 0, 3L*sizeof(float));
   volmap = new VolumetricData(dataname, zerovec,
 			      zerovec, zerovec, zerovec, 0, 0, 0, NULL);
   user_minmax = false;
@@ -492,9 +492,9 @@ int VolMapCreateMask::compute_frame (int frame, float *voldata) {
   for (i=sel->firstsel; i<=sel->lastsel; i++) { 
     if (!sel->on[i]) continue; //atom is not selected
 
-    gx = (int) ((coords[3*i  ] - min_coords[0])/delta);
-    gy = (int) ((coords[3*i+1] - min_coords[1])/delta);
-    gz = (int) ((coords[3*i+2] - min_coords[2])/delta);
+    gx = (int) ((coords[3L*i  ] - min_coords[0])/delta);
+    gy = (int) ((coords[3L*i+1] - min_coords[1])/delta);
+    gz = (int) ((coords[3L*i+2] - min_coords[2])/delta);
       
     int steps = (int)(atomradius/delta)+1;
     int iz, iy, ix;
@@ -502,9 +502,9 @@ int VolMapCreateMask::compute_frame (int frame, float *voldata) {
     for (iy=MAX(gy-steps,0); iy<=MIN(gy+steps,GRIDSIZEY-1); iy++)
     for (ix=MAX(gx-steps,0); ix<=MIN(gx+steps,GRIDSIZEX-1); ix++) {
       int n = ix + iy*GRIDSIZEX + iz*GRIDSIZEY*GRIDSIZEX;
-      float dx = float(coords[3*i  ] - volmap->origin[0] - ix*delta);
-      float dy = float(coords[3*i+1] - volmap->origin[1] - iy*delta);
-      float dz = float(coords[3*i+2] - volmap->origin[2] - iz*delta);
+      float dx = float(coords[3L*i  ] - volmap->origin[0] - ix*delta);
+      float dy = float(coords[3L*i+1] - volmap->origin[1] - iy*delta);
+      float dz = float(coords[3L*i+2] - volmap->origin[2] - iz*delta);
       float dist2 = dx*dx+dy*dy+dz*dz;
       if (dist2 <= atomradius*atomradius) voldata[n] = 1.f;
     }
@@ -577,9 +577,9 @@ int VolMapCreateDensity::compute_frame (int frame, float *voldata) {
   for (i=sel->firstsel; i<=sel->lastsel; i++) { 
     if (!sel->on[i]) continue; //atom is not selected
 
-    gx = (int) ((coords[3*i  ] - min_coords[0])/delta);
-    gy = (int) ((coords[3*i+1] - min_coords[1])/delta);
-    gz = (int) ((coords[3*i+2] - min_coords[2])/delta);
+    gx = (int) ((coords[3L*i  ] - min_coords[0])/delta);
+    gy = (int) ((coords[3L*i+1] - min_coords[1])/delta);
+    gz = (int) ((coords[3L*i+2] - min_coords[2])/delta);
       
     float scaled_radius = 0.5f*radius_scale*radius[i];
     float exp_factor = 1.0f/(2.0f*scaled_radius*scaled_radius);
@@ -591,9 +591,9 @@ int VolMapCreateDensity::compute_frame (int frame, float *voldata) {
     for (iy=MAX(gy-steps,0); iy<=MIN(gy+steps,GRIDSIZEY-1); iy++)
     for (ix=MAX(gx-steps,0); ix<=MIN(gx+steps,GRIDSIZEX-1); ix++) {
       int n = ix + iy*GRIDSIZEX + iz*GRIDSIZEY*GRIDSIZEX;
-      float dx = float(coords[3*i  ] - volmap->origin[0] - ix*delta);
-      float dy = float(coords[3*i+1] - volmap->origin[1] - iy*delta);
-      float dz = float(coords[3*i+2] - volmap->origin[2] - iz*delta);
+      float dx = float(coords[3L*i  ] - volmap->origin[0] - ix*delta);
+      float dy = float(coords[3L*i+1] - volmap->origin[1] - iy*delta);
+      float dz = float(coords[3L*i+2] - volmap->origin[2] - iz*delta);
       float dist2 = dx*dx+dy*dy+dz*dz;
       voldata[n] += norm * expf(-dist2*exp_factor);
       // Uncomment the following line for a much faster implementation
@@ -656,9 +656,9 @@ int VolMapCreateInterp::compute_frame (int frame, float *voldata) {
     if (!sel->on[i]) continue; //atom is not selected
 
     // Find position of the atom within the map ("fractional indices")
-    fgx = float(coords[3*i  ] - volmap->origin[0])/delta;
-    fgy = float(coords[3*i+1] - volmap->origin[1])/delta;
-    fgz = float(coords[3*i+2] - volmap->origin[2])/delta;
+    fgx = float(coords[3L*i  ] - volmap->origin[0])/delta;
+    fgy = float(coords[3L*i+1] - volmap->origin[1])/delta;
+    fgz = float(coords[3L*i+2] - volmap->origin[2])/delta;
 
     // Find nearest voxel with lowest indices
     gx = (int) fgx;
@@ -764,11 +764,11 @@ int VolMapCreateOccupancy::compute_frame(int frame, float *voldata) {
     for (i=sel->firstsel; i<=sel->lastsel; i++) { 
       if (!sel->on[i]) continue; //atom is not selected
 
-      gx = (int) ((coords[3*i  ] - min_coords[0])/delta);
+      gx = (int) ((coords[3L*i  ] - min_coords[0])/delta);
       if (gx<0 || gx>=GRIDSIZEX) continue;
-      gy = (int) ((coords[3*i+1] - min_coords[1])/delta);
+      gy = (int) ((coords[3L*i+1] - min_coords[1])/delta);
       if (gy<0 || gy>=GRIDSIZEY) continue;
-      gz = (int) ((coords[3*i+2] - min_coords[2])/delta);
+      gz = (int) ((coords[3L*i+2] - min_coords[2])/delta);
       if (gz<0 || gz>=GRIDSIZEZ) continue;
 
       voldata[gx+GRIDSIZEX*gy+GRIDSIZEX*GRIDSIZEY*gz] = 1.f; 
@@ -784,9 +784,9 @@ int VolMapCreateOccupancy::compute_frame(int frame, float *voldata) {
     for (i=sel->firstsel; i<=sel->lastsel; i++) { 
       if (!sel->on[i]) continue; //atom is not selected
 
-      gx = (int) ((coords[3*i  ] - min_coords[0])/delta);
-      gy = (int) ((coords[3*i+1] - min_coords[1])/delta);
-      gz = (int) ((coords[3*i+2] - min_coords[2])/delta);
+      gx = (int) ((coords[3L*i  ] - min_coords[0])/delta);
+      gy = (int) ((coords[3L*i+1] - min_coords[1])/delta);
+      gz = (int) ((coords[3L*i+2] - min_coords[2])/delta);
       
       int steps = (int)(radius[i]/delta)+1;
       int iz, iy, ix;
@@ -794,9 +794,9 @@ int VolMapCreateOccupancy::compute_frame(int frame, float *voldata) {
       for (iy=MAX(gy-steps,0); iy<=MIN(gy+steps,GRIDSIZEY-1); iy++)
       for (ix=MAX(gx-steps,0); ix<=MIN(gx+steps,GRIDSIZEX-1); ix++) {
         int n = ix + iy*GRIDSIZEX + iz*GRIDSIZEY*GRIDSIZEX;
-        float dx = float(coords[3*i  ] - volmap->origin[0] - ix*delta);
-        float dy = float(coords[3*i+1] - volmap->origin[1] - iy*delta);
-        float dz = float(coords[3*i+2] - volmap->origin[2] - iz*delta);
+        float dx = float(coords[3L*i  ] - volmap->origin[0] - ix*delta);
+        float dy = float(coords[3L*i+1] - volmap->origin[1] - iy*delta);
+        float dz = float(coords[3L*i+2] - volmap->origin[2] - iz*delta);
         float dist2 = dx*dx+dy*dy+dz*dz;
         if (dist2 <= radius[i]*radius[i]) voldata[n] = 1.f;
       }
@@ -852,12 +852,12 @@ int VolMapCreateDistance::compute_frame(int frame, float *voldata) {
   // 1. Create a fake "molecule" containing all of the grid points
   //    this is quite memory intensive but _MUCH_ faster doing it point-by point!
   
-  float *gridpos = new float[3*gridsize]; 
+  float *gridpos = new float[3L*gridsize]; 
   int *gridon = new int[gridsize]; 
   for (n=0; n<gridsize; n++) {
-    gridpos[3*n  ] = float((n%GRIDSIZEX)*delta + volmap->origin[0]); //position of grid cell's center
-    gridpos[3*n+1] = float(((n/GRIDSIZEX)%GRIDSIZEY)*delta + volmap->origin[1]);
-    gridpos[3*n+2] = float((n/(GRIDSIZEX*GRIDSIZEY))*delta + volmap->origin[2]); 
+    gridpos[3L*n  ] = float((n%GRIDSIZEX)*delta + volmap->origin[0]); //position of grid cell's center
+    gridpos[3L*n+1] = float(((n/GRIDSIZEX)%GRIDSIZEY)*delta + volmap->origin[1]);
+    gridpos[3L*n+2] = float((n/(GRIDSIZEX*GRIDSIZEY))*delta + volmap->origin[2]); 
     gridon[n] = 1;
   }
 
@@ -887,9 +887,9 @@ int VolMapCreateDistance::compute_frame(int frame, float *voldata) {
     if ((mindist = voldata[n]) == 0.f) continue;
     i = p->ind2;
     r = radius[i];
-    dx = gridpos[3*n  ] - coords[3*i];
-    dy = gridpos[3*n+1] - coords[3*i+1];
-    dz = gridpos[3*n+2] - coords[3*i+2];
+    dx = gridpos[3L*n  ] - coords[3L*i];
+    dy = gridpos[3L*n+1] - coords[3L*i+1];
+    dz = gridpos[3L*n+2] - coords[3L*i+2];
     
     // 3. At each grid point, store the _smallest_ recorded distance
     //    to a nearby atomic surface
@@ -962,13 +962,13 @@ int VolMapCreateCoulombPotential::compute_frame(int frame, float *voldata) {
 
   // copy selected atom coordinates and charges to a contiguous memory
   // buffer and translate them to the starting corner of the map.
-  float *xyzq = (float *) malloc(sel->selected * 4 * sizeof(float));
+  float *xyzq = (float *) malloc(sel->selected * 4L * sizeof(float));
   float *curatom = xyzq;
   for (i=sel->firstsel; i<=sel->lastsel; i++) { 
     if (sel->on[i]) {
-      curatom[0] = coords[3*i  ] - min_coords[0];
-      curatom[1] = coords[3*i+1] - min_coords[1];
-      curatom[2] = coords[3*i+2] - min_coords[2];
+      curatom[0] = coords[3L*i  ] - min_coords[0];
+      curatom[1] = coords[3L*i+1] - min_coords[1];
+      curatom[2] = coords[3L*i+2] - min_coords[2];
       curatom[3] = charge[i] * float(POT_CONV);
       curatom += 4;
     }
@@ -1037,13 +1037,13 @@ int VolMapCreateCoulombPotentialMSM::compute_frame(int frame, float *voldata) {
 
   // copy selected atom coordinates and charges to a contiguous memory
   // buffer and translate them to the starting corner of the map.
-  float *xyzq = (float *) malloc(sel->selected * 4 * sizeof(float));
+  float *xyzq = (float *) malloc(sel->selected * 4L * sizeof(float));
   float *curatom = xyzq;
   for (i=sel->firstsel; i<=sel->lastsel; i++) { 
     if (sel->on[i]) {
-      curatom[0] = coords[3*i  ] - min_coords[0];
-      curatom[1] = coords[3*i+1] - min_coords[1];
-      curatom[2] = coords[3*i+2] - min_coords[2];
+      curatom[0] = coords[3L*i  ] - min_coords[0];
+      curatom[1] = coords[3L*i+1] - min_coords[1];
+      curatom[2] = coords[3L*i+2] - min_coords[2];
       curatom[3] = charge[i] * float(POT_CONV);
       curatom += 4;
     }

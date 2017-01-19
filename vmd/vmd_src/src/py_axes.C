@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_axes.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.11 $       $Date: 2010/12/16 04:08:56 $
+ *      $Revision: 1.12 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -28,8 +28,12 @@ static PyObject *get_location(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, (char *)":axes.get_location"))
     return NULL;
 
-  VMDApp *app = get_vmdapp(); 
+  VMDApp *app = get_vmdapp();
+#if PY_MAJOR_VERSION >= 3
+  return PyUnicode_FromString(app->axes->loc_description(app->axes->location()));
+#else
   return PyString_FromString(app->axes->loc_description(app->axes->location()));
+#endif
 }
 
 // set_location(locale)
@@ -46,15 +50,33 @@ static PyObject *set_location(PyObject *self, PyObject *args) {
   PyErr_SetString(PyExc_ValueError, (char *)"Invalid axes location");
   return NULL;
 }
-  
+
 static PyMethodDef methods[] = {
   {(char *)"get_location", (vmdPyMethod)get_location, METH_VARARGS},
   {(char *)"set_location", (vmdPyMethod)set_location, METH_VARARGS},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
-void initaxes() {
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef axesdef = {
+    PyModuleDef_HEAD_INIT,
+    "axes",
+    NULL,
+    -1,
+    methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+#endif
+
+PyObject* initaxes(void) {
+#if PY_MAJOR_VERSION >= 3
+  PyObject *m = PyModule_Create(&axesdef);
+#else
   PyObject *m = Py_InitModule((char *)"axes", methods);
+#endif
   VMDApp *app = get_vmdapp();
   PyModule_AddStringConstant(m, (char *)"OFF", (char *)app->axes->loc_description(0));
   PyModule_AddStringConstant(m, (char *)"ORIGIN", (char *)app->axes->loc_description(1));
@@ -62,4 +84,6 @@ void initaxes() {
   PyModule_AddStringConstant(m, (char *)"LOWERRIGHT", (char *)app->axes->loc_description(3));
   PyModule_AddStringConstant(m, (char *)"UPPERLEFT", (char *)app->axes->loc_description(4));
   PyModule_AddStringConstant(m, (char *)"UPPERRIGHT", (char *)app->axes->loc_description(5));
+
+  return m;
 }

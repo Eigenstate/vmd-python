@@ -104,8 +104,8 @@ def _cnfmerge(cnfs):
         for c in _flatten(cnfs):
             try:
                 cnf.update(c)
-            except (AttributeError, TypeError), msg:
-                print "_cnfmerge: fallback due to:", msg
+            except (AttributeError, TypeError) as e:
+                print("_cnfmerge: fallback due to %s:", e)
                 for k, v in c.items():
                     cnf[k] = v
         return cnf
@@ -178,7 +178,7 @@ def _tkerror(err):
 
 def _exit(code='0'):
     """Internal function. Calling it will throw the exception SystemExit."""
-    raise SystemExit, code
+    raise SystemExit(code)
 
 _varnum = 0
 class Variable:
@@ -193,7 +193,7 @@ class Variable:
             master = _default_root
         self._master = master
         self._tk = master.tk
-        self._name = 'PY_VAR' + `_varnum`
+        self._name = "PY_VAR" + repr(_varnum)
         _varnum = _varnum + 1
         self.set(self._default)
     def __del__(self):
@@ -1018,7 +1018,7 @@ class Misc:
         be executed. An optional function SUBST can
         be given which will be executed before FUNC."""
         f = CallWrapper(func, subst, self).__call__
-        name = `id(f)`
+        name = repr(id(f))
         try:
             func = func.im_func
         except AttributeError:
@@ -1338,8 +1338,8 @@ class CallWrapper:
             if self.subst:
                 args = apply(self.subst, args)
             return apply(self.func, args)
-        except SystemExit, msg:
-            raise SystemExit, msg
+        except SystemExit as e:
+            raise SystemExit(e)
         except:
             self.widget._report_exception()
 
@@ -1542,18 +1542,18 @@ class Tk(Misc, Wm):
         # Version sanity checks
         tk_version = self.tk.getvar('tk_version')
         if tk_version != _tkinter.TK_VERSION:
-            raise RuntimeError, \
+            raise RuntimeError(
             "tk.h version (%s) doesn't match libtk.a version (%s)" \
-            % (_tkinter.TK_VERSION, tk_version)
+            % (_tkinter.TK_VERSION, tk_version))
         tcl_version = self.tk.getvar('tcl_version')
         if tcl_version != _tkinter.TCL_VERSION:
-            raise RuntimeError, \
+            raise RuntimeError(
             "tcl.h version (%s) doesn't match libtcl.a version (%s)" \
-            % (_tkinter.TCL_VERSION, tcl_version)
+            % (_tkinter.TCL_VERSION, tcl_version))
         if TkVersion < 4.0:
-            raise RuntimeError, \
+            raise RuntimeError(
             "Tk 4.0 or higher is required; found Tk %s" \
-            % str(TkVersion)
+            % str(TkVersion))
         self.tk.createcommand('tkerror', _tkerror)
         self.tk.createcommand('exit', _exit)
         self.readprofile(baseName, className)
@@ -1581,7 +1581,7 @@ class Tk(Misc, Wm):
         base_tcl = os.path.join(home, '.%s.tcl' % baseName)
         base_py = os.path.join(home, '.%s.py' % baseName)
         dir = {'self': self}
-        exec 'from Tkinter import *' in dir
+        exec("from Tkinter import *" in dir)
         if os.path.isfile(class_tcl):
             self.tk.call('source', class_tcl)
         if os.path.isfile(class_py):
@@ -1779,7 +1779,7 @@ class BaseWidget(Misc):
             name = cnf['name']
             del cnf['name']
         if not name:
-            name = `id(self)`
+            name = repr(id(self))
         self._name = name
         if master._w=='.':
             self._w = '.' + name
@@ -1893,9 +1893,9 @@ def AtSelLast():
     return 'sel.last'
 def At(x, y=None):
     if y is None:
-        return '@' + `x`
+        return '@' + repr(x)
     else:
-        return '@' + `x` + ',' + `y`
+        return '@' + repr(x) + ',' + repr(y)
 
 class Canvas(Widget):
     """Canvas widget to display graphical elements like lines or text."""
@@ -2957,7 +2957,7 @@ class OptionMenu(Menubutton):
         if kwargs.has_key('command'):
             del kwargs['command']
         if kwargs:
-            raise TclError, 'unknown option -'+kwargs.keys()[0]
+            raise TclError('unknown option -'+kwargs.keys()[0])
         menu.add_command(label=value,
                  command=_setit(variable, value, callback))
         for v in values:
@@ -2983,11 +2983,11 @@ class Image:
         if not master:
             master = _default_root
             if not master:
-                raise RuntimeError, 'Too early to create image'
+                raise RuntimeError('Too early to create image')
         self.tk = master.tk
         if not name:
             Image._last_id += 1
-            name = "pyimage" +`Image._last_id` # tk itself would use image<x>
+            name = "pyimage" + repr(Image._last_id) # tk itself would use image<x>
             # The following is needed for systems where id(x)
             # can return a negative number, such as Linux/m68k:
             if name[0] == '-': name = '_' + name[1:]

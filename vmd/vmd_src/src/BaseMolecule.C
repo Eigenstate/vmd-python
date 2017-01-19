@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: BaseMolecule.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.252 $	$Date: 2015/05/03 23:34:02 $
+ *	$Revision: 1.266 $	$Date: 2016/11/28 03:54:26 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -25,6 +25,7 @@
  ***************************************************************************/
 
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include "Inform.h"
@@ -121,8 +122,7 @@ BaseMolecule::~BaseMolecule(void) {
 
 // initialize the atom list ... should be called before adding any atoms
 int BaseMolecule::init_atoms(int n) {
-
-  if(n <= 0) {
+  if (n <= 0) {
     msgErr << "BaseMolecule: init_atoms called with invalid number of atoms: "
            << n << sendmsg;
     return FALSE;
@@ -137,7 +137,7 @@ int BaseMolecule::init_atoms(int n) {
     // first call to init_atoms
     nAtoms = n; // only place where nAtoms is set!
     atomList = new MolAtom[nAtoms];
-    memset(atomList, 0, nAtoms*sizeof(MolAtom));
+    memset(atomList, 0, long(nAtoms)*sizeof(MolAtom));
 
     // initialize NULL extra data field, which is returned when
     // querying a non-existent field with extra*.data("fielddoesntexist")
@@ -153,14 +153,14 @@ int BaseMolecule::init_atoms(int n) {
     for (i=0; i<extraflt.num(); i++) {
       void *data = extraflt.data(i);
       if (data != NULL) 
-        memset(data, 0, nAtoms*sizeof(float));
+        memset(data, 0, long(nAtoms)*sizeof(float));
     }
 
     // initialize "default" extra integer data fields.
     for (i=0; i<extraint.num(); i++) {
       void *data = extraint.data(i);
       if (data != NULL)
-        memset(data, 0, nAtoms*sizeof(int));
+        memset(data, 0, long(nAtoms)*sizeof(int));
     }
     return TRUE;
   }
@@ -173,24 +173,30 @@ int BaseMolecule::init_atoms(int n) {
 }
 
 // add a new atom; return it's index, or (-1) if error.
-int BaseMolecule::add_atom(const char *name, const char *atomtype, 
-    int atomicnumber, const char *resname, int resid, 
-    const char *chain, const char *segname, 
-    const char *insertion, const char *altloc) {
-  int nameindex, typeindex;
-  int resnameindex, segnameindex, altlocindex, chainindex;
+int BaseMolecule::add_atoms(int addatomcount,
+      const char *name, const char *atomtype, 
+      int atomicnumber, const char *resname, int resid, 
+      const char *chain, const char *segname, 
+      const char *insertion, const char *altloc) {
+  if (addatomcount < 1) {
+    msgErr << "BaseMolecule: Cannot add negative atom count!" << sendmsg;
+    return -1;
+  }
+
+  int newtotalcount = cur_atom + addatomcount;
+  if (newtotalcount > nAtoms) {
+    msgErr << "BaseMolecule: Cannot add more atoms to molecule!" << sendmsg;
+    return -1;
+  }
 
   if (!atomList || cur_atom >= nAtoms) {
     msgErr << "BaseMolecule: Cannot add new atom; currently " << nAtoms;
     msgErr << " atoms in structure." << sendmsg;
-    return (-1);
+    return -1;
   }
 
-  // create atom  
-  MolAtom *newatom = atom(cur_atom);
-  newatom->init(cur_atom, resid, insertion);
-
   // add names to namelist, and put indices in MolAtom object
+  int nameindex, typeindex, resnameindex, segnameindex, altlocindex, chainindex;
   nameindex = atomNames.add_name(name, atomNames.num());
   typeindex = atomTypes.add_name(atomtype, atomTypes.num());
   resnameindex = resNames.add_name(resname, resNames.num());
@@ -202,6 +208,10 @@ int BaseMolecule::add_atom(const char *name, const char *atomtype,
     chainindex = chainNames.add_name("X", chainNames.num());
   else
     chainindex = chainNames.add_name(chain, chainNames.num());
+
+  // create first atom  
+  MolAtom *newatom = atom(cur_atom);
+  newatom->init(cur_atom, resid, insertion);
 
   // set atom member variables
   newatom->nameindex = nameindex;
@@ -233,7 +243,27 @@ int BaseMolecule::add_atom(const char *name, const char *atomtype,
     return -1;
   }
 
-  return cur_atom++;
+  cur_atom++; // first atom was added without difficulty
+
+  // Now we can do the rest in a tight loop without
+  // all of the per-atom checking we would do normally,
+  // giving us a big speed boost with large counts.
+  while (cur_atom < newtotalcount) {
+    newatom = atom(cur_atom);
+    newatom->init(cur_atom, resid, insertion);
+
+    newatom->nameindex = nameindex;       // set atom member variables
+    newatom->typeindex = typeindex;
+    newatom->atomicnumber = atomicnumber;
+    newatom->resnameindex = resnameindex;
+    newatom->segnameindex = segnameindex;
+    newatom->altlocindex = altlocindex;
+    newatom->chainindex = chainindex;
+
+    cur_atom++;
+  } 
+
+  return cur_atom;
 }
 
 
@@ -626,15 +656,21 @@ void BaseMolecule::analyze(void) {
   // like electron density maps, which have no atoms.
   // It is kinda wierd, then to make BaseMolecule be at the top of the
   // heirarchy.  Oh well.
-  if(nAtoms < 1)
+  if (nAtoms < 1)
     return;
+
+  wkf_timerhandle tm = wkf_timer_create();
+  wkf_timer_start(tm);
 
   // call routines to find different characteristics of the molecule
   msgInfo << "Analyzing structure ..." << sendmsg;
   msgInfo << "   Atoms: " << nAtoms << sendmsg;
 
   // count unique bonds/angles/dihedrals/impropers/cterms
-  msgInfo << "   Bonds: " << count_bonds() << sendmsg;
+  int total_bondcount = count_bonds();
+  double bondtime = wkf_timer_timenow(tm);
+
+  msgInfo << "   Bonds: " << total_bondcount << sendmsg;
   msgInfo << "   Angles: " << num_angles()
           << "  Dihedrals: " << num_dihedrals()
           << "  Impropers: " << num_impropers()
@@ -663,19 +699,22 @@ void BaseMolecule::analyze(void) {
 
   // assign per-atom backbone types
   find_backbone();
+  double backbonetime = wkf_timer_timenow(tm);
 
   // find all the atoms in a resid connected to DNA/RNA/PROTEIN/WATER
   // also, assign a unique resid (uniq_resid) to each atom
   nResidues = find_residues();
+  double findrestime = wkf_timer_timenow(tm);
   msgInfo << "   Residues: " << nResidues << sendmsg;
 
   nWaters = find_waters();
+  double findwattime = wkf_timer_timenow(tm);
   msgInfo << "   Waters: " << nWaters << sendmsg;
   
   // determine which residues are connected to each other
   bonderrorcount=0; // reset error count before residue connectivity search
   find_connected_residues(nResidues); 
-
+  double findconrestime = wkf_timer_timenow(tm);
  
   nSegments = find_segments(); 
   msgInfo << "   Segments: " << nSegments << sendmsg;
@@ -688,19 +727,20 @@ void BaseMolecule::analyze(void) {
 
   nNucleicFragments = nfragList.num();
   msgInfo << "   Nucleic: " << nNucleicFragments << sendmsg;
+  double findfragstime = wkf_timer_timenow(tm);
   
   // NOTE: The current procedure incorrectly identifies some lipid 
   // atoms as "ATOMNUCLEICBACK" (but not as "nucleic") as well
   // as some single water oxygens as "backbone". Here, we 
   // correct this by setting all atoms of non-polymeric residue types
   // to be "ATOMNORMAL" (i.e.: not backbone).
-  MolAtom *a;
   int i;
   for (i=0; i<nAtoms; i++) {
-    a = atom(i); 
+    MolAtom *a = atom(i); 
     if ((a->residueType != RESNUCLEIC) && (a->residueType != RESPROTEIN)) 
       a->atomType = ATOMNORMAL;
   }
+  double fixlipidtime = wkf_timer_timenow(tm);
 
   // Search for hydrogens
   // XXX Must be done after the rest of the structure finding routines,
@@ -713,16 +753,145 @@ void BaseMolecule::analyze(void) {
     if (aname != NULL && IS_HYDROGEN(aname))
       a->atomType = ATOMHYDROGEN;
   }
+  double findhydrogentime = wkf_timer_timenow(tm);
 
 #if defined(VMDFASTRIBBONS)
   calculate_ribbon_controlpoints();
 #endif
-  
+  double calcribbontime = wkf_timer_timenow(tm);
+
+#if 1
+  if (getenv("VMDBASEMOLECULETIMING") != NULL) {
+    printf("BaseMolecule::analyze() runtime breakdown:\n");
+    printf("  %.2f bonds\n", bondtime);
+    printf("  %.2f backbone\n", backbonetime - bondtime);
+    printf("  %.2f findres\n", findrestime -  backbonetime);
+    printf("  %.2f findwat\n", findwattime - findrestime);
+    printf("  %.2f findconres\n", findconrestime - findwattime);
+    printf("  %.2f findfrags\n", findfragstime - findconrestime);
+    printf("  %.2f fixlipds\n", fixlipidtime - findfragstime);
+    printf("  %.2f findH\n", findhydrogentime - fixlipidtime);
+    printf("  %.2f calcribbons\n", calcribbontime - findhydrogentime);
+  }
+#endif
+ 
+  wkf_timer_destroy(tm);
 }
 
 
 /// functions to find the backbone by matching atom names
 int BaseMolecule::find_backbone(void) {
+#if 1
+  const char * protnames[] = { "CA", "C", "O", "N", NULL };
+  const char * prottermnames[] = { "OT1", "OT2", "OXT", "O1", "O2", NULL };
+  const char * nucnames[] = { "P", "O1P", "O2P", "OP1", "OP2", 
+                              "C3*", "C3'", "O3*", "O3'", "C4*", "C4'", 
+                              "C5*", "C5'", "O5*", "O5'", NULL };
+#if 0
+  // non-backbone nucleic acid atom names
+  const char * nucnames2[] = { "C1*", "C1'", "C2*", "C2'", 
+                               "O2*", "O2'", "O4*", "O4'", NULL };
+#endif
+  const char *nuctermnames[] = { "H5T", "H3T", NULL };
+
+  ResizeArray<int> prottypecodes;
+  ResizeArray<int> prottermtypecodes;
+  ResizeArray<int> nuctypecodes;
+  ResizeArray<int> nuctermtypecodes;
+  const char ** str;
+  int tc, i, j, k;
+
+  // proteins
+  for (str=protnames; *str!=NULL; str++) {
+    if ((tc = atomNames.typecode((char *) *str)) >= 0) 
+      prottypecodes.append(tc);
+  }
+  for (str=prottermnames; *str!=NULL; str++) {
+    if ((tc = atomNames.typecode((char *) *str)) >= 0) 
+      prottermtypecodes.append(tc);
+  }
+
+  // nucleic acids
+  for (str=nucnames; *str!=NULL; str++) {
+    if ((tc = atomNames.typecode((char *) *str)) >= 0) 
+      nuctypecodes.append(tc);
+  }
+  for (str=nuctermnames; *str!=NULL; str++) {
+    if ((tc = atomNames.typecode((char *) *str)) >= 0) 
+      nuctermtypecodes.append(tc);
+  }
+
+  int numprotcodes = prottypecodes.num();
+  int numprottermcodes = prottermtypecodes.num();
+  int numnuccodes = nuctypecodes.num();
+  int numnuctermcodes = nuctermtypecodes.num();
+  
+  int *protcodes = &prottypecodes[0];
+  int *prottermcodes = &prottermtypecodes[0];
+  int *nuccodes = &nuctypecodes[0];
+  int *nuctermcodes = &nuctermtypecodes[0];
+
+  // short-circuit protein and nucleic residue analysis if we 
+  // don't find any atom names we recognize
+  if ((numprotcodes + numprottermcodes + 
+       numnuccodes + numnuctermcodes) == 0) {
+    // initialize all atom types to non-backbone
+    for (i=0; i<nAtoms; i++) {
+      MolAtom *a = atom(i);
+      a->atomType = ATOMNORMAL;
+    }
+  } else {
+    // loop over all atoms assigning atom backbone type flags
+    for (i=0; i<nAtoms; i++) {
+      MolAtom *a = atom(i);
+ 
+      // initialize atom type to non-backbone
+      a->atomType = ATOMNORMAL;
+
+      // check for protein backbone atom names
+      for (j=0; j < numprotcodes; j++) {
+        if (a->nameindex == protcodes[j]) {
+          a->atomType = ATOMPROTEINBACK;
+          break;
+        }
+      }
+
+      // check terminal residue names as well
+      for (j=0; j < numprottermcodes; j++) {
+        if (a->nameindex == prottermcodes[j]) { // check if OT1, OT2
+          for (k=0; k < a->bonds; k++) {
+            if (atom(a->bondTo[k])->atomType == ATOMPROTEINBACK) {
+              a->atomType = ATOMPROTEINBACK;
+              break;
+            }
+          }
+        }
+      }
+
+      // check if in nucleic backbone, if not already set
+      if (!(a->atomType)) {
+        for (j=0; j < numnuccodes; j++) {
+          if (a->nameindex == nuccodes[j]) {
+            a->atomType = ATOMNUCLEICBACK;
+            break;
+          }
+        }
+      }
+
+      // check if nucleic terminal atom names
+      for (j=0; j < numnuctermcodes; j++) {
+        if (a->nameindex == nuctermcodes[j]) {
+          for (k=0; k < a->bonds; k++) {
+            if (atom(a->bondTo[k])->atomType == ATOMNUCLEICBACK) {
+              a->atomType = ATOMNUCLEICBACK;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+#else
   int i, j, k;
 
   // Search for the protein backbone
@@ -829,6 +998,7 @@ int BaseMolecule::find_backbone(void) {
       }
     }
   }
+#endif
 
   return 0; 
 }
@@ -842,9 +1012,51 @@ int BaseMolecule::find_backbone(void) {
 // as well, I add TIP, TIP2, TIP3, and TIP4
 // The count is the number of sets of connected RESWATERS
 int BaseMolecule::find_waters(void) {
-  int i, j;
-  MolAtom *a;
+#if 1
+  const char *watresnames[] = { "H2O", "HHO", "OHH", "HOH", "OH2", 
+                                "SOL", "WAT", 
+                                "TIP", "TIP2", "TIP3", "TIP4",
+                                "SPC", NULL };
 
+  // SPC conflicts with a PDB compound:
+  //   http://minerva.roca.csic.es/hicup/SPC/spc_pdb.txt
+  //
+  // XXX we should add a check to make sure that there are only 
+  //     three atoms in the residue when all is said and done. If there
+  //     are more, then we should undo the assignment as a water and mark it
+  //     as protein etc as appropriate.  This is tricky since at this stage
+  //     we haven't done any connectivity tests etc, and we're only working
+  //     with individual atoms.  Perhaps its time to re-think this logic.
+
+  ResizeArray<int> watrestypecodes;
+  const char ** str;
+  int tc, i, j;
+
+  for (str=watresnames; *str!=NULL; str++) {
+    if ((tc = resNames.typecode((char *) *str)) >= 0)
+      watrestypecodes.append(tc);
+  }
+  int numwatrescodes = watrestypecodes.num();
+  int *watrescodes = &watrestypecodes[0];
+
+  // Short-circuit the water search if no water residue name typecodes
+  if (numwatrescodes == 0) {
+    return 0;
+  } else {
+    for (i=0; i<nAtoms; i++) {
+      MolAtom *a = atom(i);
+      if (a->residueType == RESNOTHING) {  // make sure it isn't named yet
+        for (j=0; j<numwatrescodes; j++) {
+          if (a->resnameindex == watrescodes[j]) {
+            a->residueType = RESWATERS;
+            break;
+          }
+        }
+      }
+    }
+  }
+#else
+  int i, j;
   int watertypes[12];
   watertypes[0] = resNames.typecode((char *) "H2O");
   watertypes[1] = resNames.typecode((char *) "HH0");
@@ -857,6 +1069,7 @@ int BaseMolecule::find_waters(void) {
   watertypes[8] = resNames.typecode((char *) "TIP2");
   watertypes[9] = resNames.typecode((char *) "TIP3");
   watertypes[10] = resNames.typecode((char *) "TIP4");
+
   // this conflicts with a PDB compound:
   //   http://minerva.roca.csic.es/hicup/SPC/spc_pdb.txt
   //
@@ -868,8 +1081,22 @@ int BaseMolecule::find_waters(void) {
   //     with individual atoms.  Perhaps its time to re-think this logic.
   watertypes[11] = resNames.typecode((char *) "SPC");
 
+  // Short-circuit the water search if no water residue name typecodes
+  // exist in the molecule yet.  This is a big performance gain in cases
+  // when we're working with large structures containing billions of atoms
+  // with no solvent added yet.
+  int waterresnameexists=0;
+  for (j=0; j<12; j++) {
+    if (watertypes[j] != -1) {
+      waterresnameexists=1;
+    }
+  }
+  if (!waterresnameexists) {
+    return 0;
+  }
+
   for (i=0; i<nAtoms; i++) {
-    a = atom(i);
+    MolAtom *a = atom(i);
     if (a->residueType == RESNOTHING) {  // make sure it isn't named yet
       for (j=0; j<12; j++) {
         if (watertypes[j] == a->resnameindex) {
@@ -879,6 +1106,7 @@ int BaseMolecule::find_waters(void) {
       }
     }
   }
+#endif
  
   int count = find_connected_waters2();
 
@@ -908,8 +1136,8 @@ int BaseMolecule::find_connected_waters2(void) {
   int count, i;
   IntStackHandle s;
 
-  char *tmp = new char[nAtoms];
-  memset(tmp, 0, nAtoms * sizeof(char));
+  // allocate cleared aray of tmp flags
+  char *tmp = (char *) calloc(1, nAtoms * sizeof(char));
 
   s = intstack_create(nAtoms);
 
@@ -938,9 +1166,61 @@ int BaseMolecule::find_connected_waters2(void) {
   }
 
   intstack_destroy(s);
-  delete [] tmp;
+  free(tmp);
 
   return count;
+}
+
+
+
+// assign a uniq resid (uniq_resid) to each set of connected atoms
+// with the same residue id.  There could be many residues with the
+// same id, but not connected (the SSN problem - SSNs are not unique
+// so don't use them as the primary key)
+int BaseMolecule::make_uniq_resids(int *flgs) {
+  int i;
+  int num_residues = 0;
+  IntStackHandle s = intstack_create(nAtoms);
+
+  for (i=0; i<nAtoms; i++) {
+    if (!flgs[i]) {  // not been numbered
+      // find connected atoms to i with the same resid and label
+      // it with the uniq_resid
+      MolAtom *a = atom(i);
+      int resid = a->resid;
+//      char *insertion = a->insertionstr;
+      char insertioncode = a->insertionstr[0];
+
+      intstack_push(s, i);
+      int nextatom;
+
+      // Loop over all atoms we're bonded to in the same chain/segname
+      while (!intstack_pop(s, &nextatom)) {
+        MolAtom *a = atom(nextatom);
+        a->uniq_resid = num_residues;  // give it the new resid number
+        flgs[nextatom] = TRUE;         // mark this atom done
+  
+        int j;
+        for (j=a->bonds - 1; j>=0; j--) {
+          int bi = a->bondTo[j];
+          if (flgs[bi] == 0) {
+            MolAtom *b = atom(bi);
+            if (a->chainindex == b->chainindex && 
+                a->segnameindex == b->segnameindex &&
+                b->resid == resid && b->insertionstr[0] == insertioncode)
+//                b->resid == resid && !strcmp(b->insertionstr, insertion))
+              intstack_push(s, bi);
+          }
+        }
+      }
+
+      num_residues++;
+    }
+  }
+
+  intstack_destroy(s);
+
+  return num_residues;
 }
 
 
@@ -1012,6 +1292,35 @@ void BaseMolecule::clean_up_connection(IntStackHandle s, int i, int tmpid, int *
 }
 
 
+// Find connected backbone atoms with the same resid
+// if found, find all the atoms with the same resid
+// which are connected to those backbone atoms only through
+// atoms of the same resid
+void BaseMolecule::find_and_mark(IntStackHandle s, int n, int backbone,
+                                 int restype, int *tmpid, int *flgs) {
+  int i;
+  int residueid; // the real resid
+
+  intstack_popall(s); // just in case
+  for (i=0; i<nAtoms; i++) {
+    MolAtom *a = atom(i);   // look for a new backbone atom
+    if (a->atomType == backbone && flgs[i] == 0) {
+      residueid = a->resid;
+      if (find_connected_backbone(s, backbone, i, residueid, *tmpid, flgs) >= n) {
+        // if find was successful, start all over again
+        clean_up_connection(s, i, *tmpid, flgs);
+        // but mark all the Atoms connected to here
+        find_connected_atoms_in_resid(s, restype, i, residueid, *tmpid, flgs);
+        // and one more was made
+        (*tmpid)++;
+      } else {
+        // clean things up so I won't have problems later
+        clean_up_connection(s, i, *tmpid, flgs);
+      }
+    }
+  }
+}
+
 
 // now that I know this resid is okay, mark it so
 void BaseMolecule::find_connected_atoms_in_resid(IntStackHandle s,
@@ -1045,95 +1354,10 @@ void BaseMolecule::find_connected_atoms_in_resid(IntStackHandle s,
 }
 
 
-
-// Find connected backbone atoms with the same resid
-// if found, find all the atoms with the same resid
-// which are connected to those backbone atoms only through
-// atoms of the same resid
-void BaseMolecule::find_and_mark(int n, int backbone,
-  int restype, int *tmpid, int *flgs)
-{
-  int i;
-  MolAtom *a;
-  int residueid; // the real resid
-  IntStackHandle s = intstack_create(nAtoms);
-
-  for (i=0; i<nAtoms; i++) {
-    a = atom(i);   // look for a new backbone atom
-    if (a->atomType == backbone && flgs[i] == 0) {
-      residueid = a->resid;
-      if (find_connected_backbone(s, backbone, i, residueid, *tmpid, flgs) >= n) {
-        // if find was successful, start all over again
-        clean_up_connection(s, i, *tmpid, flgs);
-        // but mark all the Atoms connected to here
-        find_connected_atoms_in_resid(s, restype, i, residueid, *tmpid, flgs);
-        // and one more was made
-        (*tmpid)++;
-      } else {
-        // clean things up so I won't have problems later
-        clean_up_connection(s, i, *tmpid, flgs);
-      }
-    }
-  }
-
-  intstack_destroy(s);
-}
-
-
-
-// assign a uniq resid (uniq_resid) to each set of connected atoms
-// with the same residue id.  There could be many residues with the
-// same id, but not connected (the SSN problem - SSNs are not unique
-// so don't use them as the primary key)
-int BaseMolecule::make_uniq_resids(int *flgs) {
-  int i;
-  int num_residues = 0;
-  IntStackHandle s = intstack_create(nAtoms);
-
-  for (i=0; i<nAtoms; i++) {
-    if (!flgs[i]) {  // not been numbered
-      // find connected atoms to i with the same resid and label
-      // it with the uniq_resid
-      MolAtom *a = atom(i);
-      int resid = a->resid;
-      char *insertion = a->insertionstr;
-
-      intstack_push(s, i);
-      int nextatom;
-
-      // Loop over all atoms we're bonded to in the same chain/segname
-      while (!intstack_pop(s, &nextatom)) {
-        MolAtom *a = atom(nextatom);
-        a->uniq_resid = num_residues;  // give it the new resid number
-        flgs[nextatom] = TRUE;         // mark this atom done
-  
-        int j;
-        for (j=a->bonds - 1; j>=0; j--) {
-          int bi = a->bondTo[j];
-          if (flgs[bi] == 0) {
-            MolAtom *b = atom(bi);
-            if (a->chainindex == b->chainindex && 
-                a->segnameindex == b->segnameindex &&
-                b->resid == resid && !strcmp(b->insertionstr, insertion))
-              intstack_push(s, bi);
-          }
-        }
-      }
-
-      num_residues++;
-    }
-  }
-
-  intstack_destroy(s);
-
-  return num_residues;
-}
-
-
-
 int BaseMolecule::find_residues(void) {
-  int *flgs = new int[nAtoms]; // flags used for connected atom searches
-  memset(flgs, 0, nAtoms * sizeof(int)); // clear flags array
+  // flags used for connected atom searches
+  // zero cleared at allocation time..
+  int *flgs = (int *) calloc(1, nAtoms * sizeof(int)); 
   
   // assign a uniq resid (uniq_resid) to each set of connected atoms
   // with the same residue id.  There could be many residues with the
@@ -1143,20 +1367,24 @@ int BaseMolecule::find_residues(void) {
    
   int back_res_count = 1; // tmp count of number of residues on some backbone
   memset(flgs, 0, nAtoms * sizeof(int)); // clear flags array
+
+  IntStackHandle s = intstack_create(nAtoms);
   
   //  hunt for the proteins
   // there must be 4 PROTEINBACK atoms connected and with the same resid
   // then all connected atoms will be marked as PROTEIN atoms
   // this gets everything except the terminals
-  find_and_mark(4, ATOMPROTEINBACK, RESPROTEIN, &back_res_count, flgs);
+  find_and_mark(s, 4, ATOMPROTEINBACK, RESPROTEIN, &back_res_count, flgs);
   
   // do the same for nucleic acids
   // XXX we might not want to check for the phosphate (P and 2 O's).  Here's
   // the quick way I can almost do that.  Unfortionately, that
   // messes up nfragList, since it needs a P to detect an end
-  find_and_mark(4, ATOMNUCLEICBACK, RESNUCLEIC, &back_res_count, flgs);
+  find_and_mark(s, 4, ATOMNUCLEICBACK, RESNUCLEIC, &back_res_count, flgs);
+
+  intstack_destroy(s);
   
-  delete [] flgs;
+  free(flgs);
   return num_residues;
 }
 
@@ -1176,71 +1404,96 @@ void BaseMolecule::find_connected_residues(int num_residues) {
   residueList.appendN(NULL, num_residues); // init the list to NULLs
  
   for (i=nAtoms-1; i>=0; i--) {      // go through all the atoms
-    j = atom(i)->uniq_resid;
+    MolAtom *a = atom(i);
+    j = a->uniq_resid;
     if (residueList[j] == NULL) {    // then init the residue
-      residueList[j] = new Residue(atom(i)->resid, atom(i)->residueType);
+      residueList[j] = new Residue(a->resid, a->residueType);
     }
     // Tell the residue that this atom is in it
     residueList[j]->add_atom(i);
   }
 
-  // double check that everything was created
-  for (i=0; i<num_residues; i++) {
-    if (residueList[i] == NULL) { // no atom was found for this residue
-      msgErr << "Mysterious residue creation in ";
-      msgErr << "BaseMolecule::find_connected_residues." << sendmsg;
-      residueList[i] = new Residue((int) -1, RESNOTHING);
-    }
-  }
 
   // finally, check for unusual connections between residues, e.g. between
-  // protein and water.
-  for (i=0; i<num_residues; i++) {
-    Residue *res = residueList[i];
-    int bondfromtype = res->residueType;
-    int numatoms = res->atoms.num();
-    for (j=0; j<numatoms; j++) {
-      MolAtom *a = atom(res->atoms[j]);
+  // protein and water, or residues that have no atoms.
+  int resmissingatomflag=0;
 
-      // find off-residue bonds to residues of the same chain/segname
-      int k;
-      for (k=0; k<a->bonds; k++) {
-        MolAtom *b = atom(a->bondTo[k]);
+  // if we have more than 10M residues, skip the checks and text warnings
+  if (num_residues > 10000000) {
+    for (i=0; i<num_residues; i++) {
+      Residue *res = residueList[i];
 
-        // skip connections to atoms on different chains/segnames
-        if (a->chainindex != b->chainindex || 
-            a->segnameindex != b->segnameindex)
-          continue;
+      // double check that everything was created
+      if (res == NULL) {
+        // no atom was found for this residue
+        resmissingatomflag=1;
+        res = new Residue((int) -1, RESNOTHING);
+        residueList[i] = res;
+      } 
+    }
+  } else {
+    for (i=0; i<num_residues; i++) {
+      Residue *res = residueList[i];
+
+      // double check that everything was created
+      if (res == NULL) {
+        // no atom was found for this residue
+        resmissingatomflag=1;
+        res = new Residue((int) -1, RESNOTHING);
+        residueList[i] = res;
+      } 
+
+      int bondfromtype = res->residueType;
+      int numatoms = res->atoms.num();
+      for (j=0; j<numatoms; j++) {
+        MolAtom *a = atom(res->atoms[j]);
+
+        // find off-residue bonds to residues of the same chain/segname
+        int k;
+        for (k=0; k<a->bonds; k++) {
+          MolAtom *b = atom(a->bondTo[k]);
+
+          // skip connections to atoms on different chains/segnames
+          if (a->chainindex != b->chainindex || 
+              a->segnameindex != b->segnameindex)
+            continue;
          
-        if (b->uniq_resid != i) {
-          int bondtotype = residueList[b->uniq_resid]->residueType;
-
-          if (bondfromtype != bondtotype) {
-            if (i < b->uniq_resid) { // so that we only warn once
-              msgWarn << "Unusual bond between residues:  ";
-              msgWarn << residueList[i]->resid;
-              switch (bondfromtype) {
-                case RESPROTEIN: msgWarn << " (protein)"; break;
-                case RESNUCLEIC: msgWarn << " (nucleic)"; break;
-                case RESWATERS:  msgWarn << " (waters)"; break;
-                default:
-                case RESNOTHING: msgWarn << " (none)"; break;
+          if (b->uniq_resid != i) {
+            int bondtotype = residueList[b->uniq_resid]->residueType;
+  
+            if (bondfromtype != bondtotype) {
+              if (i < b->uniq_resid) { // so that we only warn once
+                msgWarn << "Unusual bond between residues:  ";
+                msgWarn << residueList[i]->resid;
+                switch (bondfromtype) {
+                  case RESPROTEIN: msgWarn << " (protein)"; break;
+                  case RESNUCLEIC: msgWarn << " (nucleic)"; break;
+                  case RESWATERS:  msgWarn << " (waters)"; break;
+                  default:
+                  case RESNOTHING: msgWarn << " (none)"; break;
+                }
+                msgWarn << " and ";
+                msgWarn << residueList[b->uniq_resid]->resid;
+                switch (bondtotype) {
+                  case RESPROTEIN: msgWarn << " (protein)"; break;
+                  case RESNUCLEIC: msgWarn << " (nucleic)"; break;
+                  case RESWATERS:  msgWarn << " (waters)"; break;
+                  default:
+                  case RESNOTHING: msgWarn << " (none)"; break;
+                }
+                msgWarn << sendmsg;
               }
-              msgWarn << " and ";
-              msgWarn << residueList[b->uniq_resid]->resid;
-              switch (bondtotype) {
-                case RESPROTEIN: msgWarn << " (protein)"; break;
-                case RESNUCLEIC: msgWarn << " (nucleic)"; break;
-                case RESWATERS:  msgWarn << " (waters)"; break;
-                default:
-                case RESNOTHING: msgWarn << " (none)"; break;
-              }
-              msgWarn << sendmsg;
             }
           }
         }
       }
     }
+  }
+
+  // emit any warnings here, only once
+  if (resmissingatomflag) {
+    msgErr << "Mysterious residue creation in " 
+           << "BaseMolecule::find_connected_residues." << sendmsg;
   }
 }
 
@@ -1249,8 +1502,8 @@ void BaseMolecule::find_connected_residues(int num_residues) {
 int BaseMolecule::find_connected_fragments(void) {
   int i;
   int count = 0;
-  char *flgs = new char[residueList.num()]; // set up temp space
-  memset(flgs, 0, residueList.num() * sizeof(char)); // clear flags
+  // flags are all cleared to zeros initially
+  char *flgs = (char *) calloc(1, residueList.num() * sizeof(char));
   IntStackHandle s = intstack_create(residueList.num());
 
   int atomsg = atomNames.typecode((char *) "SG"); // to find disulfide bonds
@@ -1299,7 +1552,7 @@ int BaseMolecule::find_connected_fragments(void) {
   }
 
   intstack_destroy(s);
-  delete [] flgs;
+  free(flgs);
 
   return count;
 }
@@ -1478,6 +1731,12 @@ void BaseMolecule::find_subfragments(int startatom,
           int endatom, int altendatom, int alt2endatom, int alt3endatom,
           int restype, ResizeArray<Fragment *> *subfragList)
 {
+  // Short-circuit the fragment search if none of search typecodes exist
+  if (startatom==-1 && altstartatom==-1 && alt2startatom==-1 && 
+      endatom==-1 && altendatom==-1 && alt2endatom==-1 && alt3endatom==-1) {
+    return;
+  }
+
   int i, j, k;
   MolAtom *a;
   char *flgs = new char[residueList.num()];
@@ -1525,6 +1784,12 @@ void BaseMolecule::find_subfragments(int startatom,
 void BaseMolecule::find_subfragments_topologically(int restype, 
   ResizeArray<Fragment *> *subfragList, 
   int endatom, int altendatom, int alt2endatom, int alt3endatom) {
+
+  // Short-circuit the fragment search if none of search typecodes exist
+  if (endatom==-1 && altendatom==-1 && alt2endatom==-1 && alt3endatom==-1) {
+    return;
+  }
+
   int i; 
   char *flgs = new char[residueList.num()];
   memset(flgs, 0, residueList.num() * sizeof(char));  // clear flags
@@ -1659,9 +1924,9 @@ void BaseMolecule::calculate_ribbon_controlpoints() {
     }
 
     // copy this fragment's control point lists to permanent storage
-    if (cpind.num() == 2*num) {
+    if (cpind.num() == 2L*num) {
       int *cpindices = new int[cpind.num()];
-      memcpy(cpindices, &cpind[0], cpind.num() * sizeof(int));
+      memcpy(cpindices, &cpind[0], long(cpind.num()) * sizeof(int));
 
       // add control point list to the master list
       nfragCPList.append(cpindices);
@@ -1734,20 +1999,21 @@ int BaseMolecule::find_small_rings(int maxringsize) {
   ResizeArray<int> back_edge_src, back_edge_dest;
     
   n_back_edges = find_back_edges(back_edge_src, back_edge_dest);
-
-#if 0
-  msgInfo << "  BACK EDGES: " << n_back_edges << sendmsg;
-  for (int i=0; i < n_back_edges; i++) {
-    msgInfo << "       SRC:" << back_edge_src[i] << ", DST:" << back_edge_dest[i] << sendmsg;
-  }
-#endif
-
   n_rings = find_small_rings_from_back_edges(maxringsize, back_edge_src, back_edge_dest);
 
-#if 0
-  msgInfo << " SMALL RINGS: " << n_rings << sendmsg;
-  for (int i=0; i < n_rings; i++) {
-    msgInfo << "    RING: " << *(smallringList[i]) << sendmsg;
+#if 1
+  if (getenv("VMDFINDSMALLRINGSDEBUG") != NULL) {
+    int i;
+
+    msgInfo << "  BACK EDGES: " << n_back_edges << sendmsg;
+    for (i=0; i < n_back_edges; i++) {
+      msgInfo << "       SRC:" << back_edge_src[i] << ", DST:" << back_edge_dest[i] << sendmsg;
+    }
+
+    msgInfo << " SMALL RINGS: " << n_rings << sendmsg;
+    for (i=0; i < n_rings; i++) {
+      msgInfo << "    RING: " << *(smallringList[i]) << sendmsg;
+    }
   }
 #endif
 
@@ -2190,11 +2456,11 @@ int BaseMolecule::find_linkages_for_ring_from_partial(LinkagePath &lp, int maxpa
 
 void BaseMolecule::add_volume_data(const char *name, const float *o,
     const float *xa, const float *ya, const float *za, int x, int y, int z,
-    float *data) {
+    float *scalar, float *grad, float *variance) {
   msgInfo << "Analyzing Volume..." << sendmsg;
 
   VolumetricData *vdata = new VolumetricData(name, o, xa, ya, za,
-                                             x, y, z, data);
+                                             x, y, z, scalar);
   
   // Print out grid size along with memory use for the grid itself plus
   // the memory required for the volume gradients (4x the scalar grid memory)
@@ -2205,12 +2471,27 @@ void BaseMolecule::add_volume_data(const char *name, const float *o,
 
   msgInfo << "   Total voxels: " << x*y*z << sendmsg;
 
+#if 1
+  char minstr[1024];
+  char maxstr[1024];
+  char rangestr[1024];
+  sprintf(minstr, "%g", vdata->datamin);
+  sprintf(maxstr, "%g", vdata->datamax);
+  sprintf(rangestr, "%g", (vdata->datamax - vdata->datamin));
+  msgInfo << "   Min: " << minstr << "  Max: " << maxstr 
+          << "  Range: " << rangestr << sendmsg;
+#else
   msgInfo << "   Min: " << vdata->datamin << "  Max: " << vdata->datamax 
           << "  Range: " << (vdata->datamax - vdata->datamin) << sendmsg;
+#endif
 
-  msgInfo << "   Computing volume gradient map for smooth shading" << sendmsg;
-
-  vdata->compute_volume_gradient(); // calc gradients for smooth vertex normals
+  if (grad) {
+    msgInfo << "   Assigning volume gradient and normal map" << sendmsg;
+    vdata->set_volume_gradient(grad); // set gradients for smooth normals
+  } else {
+    msgInfo << "   Computing volume gradient map for smooth shading" << sendmsg;
+    vdata->compute_volume_gradient(); // calc gradients for smooth normals
+  }
 
   volumeList.append(vdata);
 
@@ -2220,11 +2501,11 @@ void BaseMolecule::add_volume_data(const char *name, const float *o,
 
 void BaseMolecule::add_volume_data(const char *name, const double *o,
     const double *xa, const double *ya, const double *za, int x, int y, int z,
-    float *data) {
+    float *scalar) {
   msgInfo << "Analyzing Volume..." << sendmsg;
 
   VolumetricData *vdata = new VolumetricData(name, o, xa, ya, za,
-                                             x, y, z, data);
+                                             x, y, z, scalar);
   
   // Print out grid size along with memory use for the grid itself plus
   // the memory required for the volume gradients (4x the scalar grid memory)
@@ -2239,7 +2520,6 @@ void BaseMolecule::add_volume_data(const char *name, const double *o,
           << "  Range: " << (vdata->datamax - vdata->datamin) << sendmsg;
 
   msgInfo << "   Computing volume gradient map for smooth shading" << sendmsg;
-
   vdata->compute_volume_gradient(); // calc gradients for smooth vertex normals
 
   volumeList.append(vdata);

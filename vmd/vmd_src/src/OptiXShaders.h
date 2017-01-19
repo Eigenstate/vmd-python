@@ -11,18 +11,46 @@
 *
 *      $RCSfile: OptiXRenderer.C
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.22 $         $Date: 2015/05/24 03:15:38 $
+*      $Revision: 1.27 $         $Date: 2016/11/04 06:12:40 $
 *
 ***************************************************************************
 * DESCRIPTION:
 *   OptiX PTX shader code
 *
+* This work is described in:
 *  "GPU-Accelerated Molecular Visualization on
 *   Petascale Supercomputing Platforms"
 *   John E. Stone, Kirby L. Vandivort, and Klaus Schulten.
 *   UltraVis'13: Proceedings of the 8th International Workshop on
 *   Ultrascale Visualization, pp. 6:1-6:8, 2013.
 *   http://dx.doi.org/10.1145/2535571.2535595
+*
+*  "Atomic Detail Visualization of Photosynthetic Membranes with
+*   GPU-Accelerated Ray Tracing"
+*   John E. Stone, Melih Sener, Kirby L. Vandivort, Angela Barragan,
+*   Abhishek Singharoy, Ivan Teo, João V. Ribeiro, Barry Isralewitz,
+*   Bo Liu, Boon Chong Goh, James C. Phillips, Craig MacGregor-Chatwin,
+*   Matthew P. Johnson, Lena F. Kourkoutis, C. Neil Hunter, and Klaus Schulten
+*   J. Parallel Computing, 55:17-27, 2016.
+*   http://dx.doi.org/10.1016/j.parco.2015.10.015
+*
+*  "Immersive Molecular Visualization with Omnidirectional
+*   Stereoscopic Ray Tracing and Remote Rendering"
+*   John E. Stone, William R. Sherman, and Klaus Schulten.
+*   High Performance Data Analysis and Visualization Workshop,
+*   2016 IEEE International Parallel and Distributed Processing
+*   Symposium Workshops (IPDPSW), pp. 1048-1057, 2016.
+*   http://dx.doi.org/10.1109/IPDPSW.2016.121
+*
+* Portions of this code are derived from Tachyon:
+*   "An Efficient Library for Parallel Ray Tracing and Animation"
+*   John E. Stone.  Master's Thesis, University of Missouri-Rolla,
+*   Department of Computer Science, April 1998
+*
+*   "Rendering of Numerical Flow Simulations Using MPI"
+*   John Stone and Mark Underwood.
+*   Second MPI Developers Conference, pages 138-141, 1996.
+*   http://dx.doi.org/10.1109/MPIDC.1996.534105
 *
 ***************************************************************************/
 
@@ -33,7 +61,7 @@
 // When compiling with OptiX 3.8 or grater, we use the new
 // progressive rendering APIs rather than our previous hand-coded
 // progressive renderer.
-#if (defined(VMDOPTIX_VCA) || (OPTIX_VERSION >= 3080))
+#if (defined(VMDOPTIX_VCA) || (OPTIX_VERSION >= 3080)) // && !defined(VMDUSEOPENHMD)
 #define VMDOPTIX_PROGRESSIVEAPI 1
 #endif
 
@@ -49,6 +77,21 @@
   typedef optix::float3 float3;
 #endif
 
+
+// XXX OptiX 4.0 and 4.0.1 have a significant performance impact
+//     on VMD startup if we use the same 256-way combinatorial
+//     shader specialization that had very little impact on
+//     OptiX 3.[789].x previously.  Until we have an appropriate
+//     strategy to address this, using the fully general shader approach
+//     is the only reasonable approach in the short-term.
+#if OPTIX_VERSION < 4000
+// this macro enables or disables the use of an array of
+// template-specialized shaders for every combination of
+// scene-wide and material-specific shader features.
+#define ORT_USE_TEMPLATE_SHADERS 1
+#endif
+
+
 // Enable reversed traversal of any-hit rays for shadows/AO.
 // This optimization yields a 20% performance gain in many cases.
 // #define USE_REVERSE_SHADOW_RAYS 1
@@ -60,18 +103,32 @@ enum RtShadowMode { RT_SHADOWS_OFF=0,        ///< shadows disabled
                     RT_SHADOWS_ON_REVERSE=2  ///< any-hit traversal reversal 
                   };
 
+
+//
+// Lighting data structures
+//
 #if defined(VMDOPTIX_LIGHTUSEROBJS)
 typedef struct {
   int num_lights;
-  float3 dirs[DISP_LIGHTS+1];
-//  float3 dirs[5]; ///< VMD DISP_LIGHTS directional light count macro is 4 
+  float3 dirs[DISP_LIGHTS+1];  ///< VMD directional light count macro is 4 
 } DirectionalLightList;
+
+typedef struct {
+  int num_lights;
+  float3 posns[DISP_LIGHTS+1]; ///< VMD light count macro is 4 
+} PositionalLightList;
 #endif
 
 typedef struct {
   float3 dir;
   int    padding; // pad to next power of two
 } DirectionalLight;
+
+typedef struct {
+  float3 pos;
+  int    padding; // pad to next power of two
+} PositionalLight;
+
 
 //
 // Cylinders

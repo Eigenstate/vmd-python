@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DispCmds.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.105 $	$Date: 2015/05/03 04:28:03 $
+ *	$Revision: 1.110 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -101,10 +101,10 @@ void DispCmdSphereArray::putdata(const float * spcenters,
 
   DispCmdSphereArray *ptr = (DispCmdSphereArray *) dobj->append(DSPHEREARRAY, 
                            sizeof(DispCmdSphereArray) +
-                           sizeof(float) * num_spheres * 3 +
+                           sizeof(float) * num_spheres * 3L +
                            sizeof(float) * num_spheres + 
-                           sizeof(float) * num_spheres * 3 +
-                           sizeof(int) * 2);
+                           sizeof(float) * num_spheres * 3L +
+                           sizeof(int) * 2L);
   if (ptr == NULL)
     return;
   ptr->numspheres = num_spheres;
@@ -115,9 +115,9 @@ void DispCmdSphereArray::putdata(const float * spcenters,
   float *colors;
   ptr->getpointers(centers, radii, colors);
 
-  memcpy(centers, spcenters, sizeof(float) * num_spheres * 3);
+  memcpy(centers, spcenters, sizeof(float) * num_spheres * 3L);
   memcpy(radii, spradii, sizeof(float) * num_spheres);
-  memcpy(colors, spcolors, sizeof(float) * num_spheres * 3);
+  memcpy(colors, spcolors, sizeof(float) * num_spheres * 3L);
 }
 
 //*************************************************************
@@ -130,8 +130,8 @@ void DispCmdPointArray::putdata(const float * pcenters,
 
   DispCmdPointArray *ptr = (DispCmdPointArray *) dobj->append(DPOINTARRAY, 
                            sizeof(DispCmdPointArray) +
-                           sizeof(float) * num_points * 3 +
-                           sizeof(float) * num_points * 3 +
+                           sizeof(float) * num_points * 3L +
+                           sizeof(float) * num_points * 3L +
                            sizeof(float) +
                            sizeof(int));
   if (ptr == NULL)
@@ -143,8 +143,8 @@ void DispCmdPointArray::putdata(const float * pcenters,
   float *colors;
   ptr->getpointers(centers, colors);
 
-  memcpy(centers, pcenters, sizeof(float) * num_points * 3);
-  memcpy(colors, pcolors, sizeof(float) * num_points * 3);
+  memcpy(centers, pcenters, sizeof(float) * num_points * 3L);
+  memcpy(colors, pcolors, sizeof(float) * num_points * 3L);
 }
 
 void DispCmdPointArray::putdata(const float * pcenters,
@@ -158,8 +158,8 @@ void DispCmdPointArray::putdata(const float * pcenters,
 
   DispCmdPointArray *ptr = (DispCmdPointArray *) dobj->append(DPOINTARRAY, 
                            sizeof(DispCmdPointArray) +
-                           sizeof(float) * num_selected * 3 +
-                           sizeof(float) * num_selected * 3 +
+                           sizeof(float) * num_selected * 3L +
+                           sizeof(float) * num_selected * 3L +
                            sizeof(float) +
                            sizeof(int));
   if (ptr == NULL)
@@ -172,7 +172,7 @@ void DispCmdPointArray::putdata(const float * pcenters,
   ptr->getpointers(centers, colors);
 
   const float *fp = pcenters;
-  int i, ind;
+  long i, ind;
   for (ind=0,i=0; i < num_atoms; i++) {
     // draw a sphere for each selected atom
     if (on[i]) {
@@ -184,9 +184,9 @@ void DispCmdPointArray::putdata(const float * pcenters,
       colors[ind    ] = cp[0];
       colors[ind + 1] = cp[1];
       colors[ind + 2] = cp[2];
-      ind += 3;
+      ind += 3L;
     }
-    fp += 3;
+    fp += 3L;
   }
 }
 
@@ -203,9 +203,9 @@ void DispCmdLitPointArray::putdata(const float * pcenters,
 
   DispCmdLitPointArray *ptr = (DispCmdLitPointArray *) dobj->append(DLITPOINTARRAY, 
                            sizeof(DispCmdLitPointArray) +
-                           sizeof(float) * num_points * 3 +
-                           sizeof(float) * num_points * 3 +
-                           sizeof(float) * num_points * 3 +
+                           sizeof(float) * num_points * 3L +
+                           sizeof(float) * num_points * 3L +
+                           sizeof(float) * num_points * 3L +
                            sizeof(float) +
                            sizeof(int));
   if (ptr == NULL)
@@ -218,9 +218,9 @@ void DispCmdLitPointArray::putdata(const float * pcenters,
   float *colors;
   ptr->getpointers(centers, normals, colors);
 
-  memcpy(centers, pcenters, sizeof(float) * num_points * 3);
-  memcpy(normals, pnormals, sizeof(float) * num_points * 3);
-  memcpy(colors, pcolors, sizeof(float) * num_points * 3);
+  memcpy(centers, pcenters, sizeof(float) * num_points * 3L);
+  memcpy(normals, pnormals, sizeof(float) * num_points * 3L);
+  memcpy(colors, pcolors, sizeof(float) * num_points * 3L);
 }
 
 //*************************************************************
@@ -231,28 +231,28 @@ void DispCmdLine::putdata(float *newpos1, float *newpos2, VMDDisplayList *dobj) 
                                          sizeof(DispCmdLine)));
   if (ptr == NULL)
     return;
-  memcpy(ptr->pos1, newpos1, 3*sizeof(float));
-  memcpy(ptr->pos2, newpos2, 3*sizeof(float));
+  memcpy(ptr->pos1, newpos1, 3L*sizeof(float));
+  memcpy(ptr->pos2, newpos2, 3L*sizeof(float));
 }
 
 // draw a series of independent lines, (v0 v1), (v2 v3), (v4 v5)
 void DispCmdLineArray::putdata(float *v, int n, VMDDisplayList *dobj) {
-  void *ptr = dobj->append(DLINEARRAY, (1+6*n)*sizeof(float));
+  void *ptr = dobj->append(DLINEARRAY, (1+6L*n)*sizeof(float));
   if (ptr == NULL)
     return;
   float *fltptr = (float *)ptr;
   *fltptr = (float)n;
-  memcpy(fltptr+1, v, 6*n*sizeof(float));
+  memcpy(fltptr+1, v, 6L*n*sizeof(float));
 }
 
 // draw a series of connected polylines, (v0 v1 v2 v3 v4 v5)
 void DispCmdPolyLineArray::putdata(float *v, int n, VMDDisplayList *dobj) {
-  void *ptr = dobj->append(DPOLYLINEARRAY, (1+3*n)*sizeof(float));
+  void *ptr = dobj->append(DPOLYLINEARRAY, (1+3L*n)*sizeof(float));
   if (ptr == NULL)
     return;
   float *fltptr = (float *)ptr;
   *fltptr = (float)n;
-  memcpy(fltptr+1, v, 3*n*sizeof(float));
+  memcpy(fltptr+1, v, 3L*n*sizeof(float));
 }
 
 //*************************************************************
@@ -265,12 +265,12 @@ void DispCmdTriangle::set_array(const float *p1,const float *p2,const float *p3,
                                          sizeof(DispCmdTriangle)));
   if (ptr == NULL)
     return;
-  memcpy(ptr->pos1,p1,3*sizeof(float)); 
-  memcpy(ptr->pos2,p2,3*sizeof(float)); 
-  memcpy(ptr->pos3,p3,3*sizeof(float)); 
-  memcpy(ptr->norm1,n1,3*sizeof(float)); 
-  memcpy(ptr->norm2,n2,3*sizeof(float)); 
-  memcpy(ptr->norm3,n3,3*sizeof(float)); 
+  memcpy(ptr->pos1, p1, 3L*sizeof(float)); 
+  memcpy(ptr->pos2, p2, 3L*sizeof(float)); 
+  memcpy(ptr->pos3, p3, 3L*sizeof(float)); 
+  memcpy(ptr->norm1, n1, 3L*sizeof(float)); 
+  memcpy(ptr->norm2, n2, 3L*sizeof(float)); 
+  memcpy(ptr->norm3, n3, 3L*sizeof(float)); 
 }
 
 // put in new data, and put the command
@@ -309,9 +309,9 @@ void DispCmdSquare::putdata(float *p1, float *p2,float *p3,VMDDisplayList *dobj)
   cross_prod(ptr->norml, tmp1, tmp2);  
   vec_normalize(ptr->norml);
 
-  memcpy(ptr->pos1,p1,3*sizeof(float));
-  memcpy(ptr->pos2,p2,3*sizeof(float));
-  memcpy(ptr->pos3,p3,3*sizeof(float));
+  memcpy(ptr->pos1, p1, 3L*sizeof(float));
+  memcpy(ptr->pos2, p2, 3L*sizeof(float));
+  memcpy(ptr->pos3, p3, 3L*sizeof(float));
   for (i=0; i<3; i++)
     ptr->pos4[i] = p1[i] + tmp2[i];  // compute the fourth point
 }
@@ -329,17 +329,17 @@ void DispCmdTriMesh::putdata(const float * vertices,
   if (colors == NULL) {
     ptr = (DispCmdTriMesh *) 
                 (dobj->append(DTRIMESH_C3F_N3F_V3F, sizeof(DispCmdTriMesh) +
-                              sizeof(float) * num_facets * 3 * 6));
+                              sizeof(float) * num_facets * 3L * 6L));
   } else {
     ptr = (DispCmdTriMesh *) 
                 (dobj->append(DTRIMESH_C3F_N3F_V3F, sizeof(DispCmdTriMesh) +
-                              sizeof(float) * num_facets * 3 * 9));
+                              sizeof(float) * num_facets * 3L * 9L));
   }
 
   if (ptr == NULL)
     return;
 
-  ptr->numverts=num_facets * 3;
+  ptr->numverts=num_facets * 3L;
   ptr->numfacets=num_facets;
 
   float *c=NULL, *n=NULL, *v=NULL;
@@ -349,13 +349,13 @@ void DispCmdTriMesh::putdata(const float * vertices,
   } else {
     ptr->pervertexcolors=1;
     ptr->getpointers(c, n, v);
-    memcpy(c, colors,   ptr->numverts * 3 * sizeof(float));
+    memcpy(c, colors,   ptr->numverts * 3L * sizeof(float));
   }
 
   if (normals == NULL) {
     ptr->pervertexnormals=0;
-    int i;
-    for (i=0; i<(num_facets * 9); i+=9) {
+    long i;
+    for (i=0; i<(num_facets * 9L); i+=9) {
       float tmp1[3], tmp2[3], tmpnorm[3];
       const float *v0 = &vertices[i  ];
       const float *v1 = &vertices[i+3];
@@ -380,10 +380,10 @@ void DispCmdTriMesh::putdata(const float * vertices,
     }  
   } else {
     ptr->pervertexnormals=1;
-    memcpy(n, normals,  ptr->numverts * 3 * sizeof(float));
+    memcpy(n, normals,  ptr->numverts * 3L * sizeof(float));
   }
 
-  memcpy(v, vertices, ptr->numverts * 3 * sizeof(float));
+  memcpy(v, vertices, ptr->numverts * 3L * sizeof(float));
 }
 
 
@@ -399,18 +399,18 @@ void DispCmdTriMesh::putdata(const float * vertices,
   if (colors == NULL) {
     ptr = (DispCmdTriMesh *) 
                 (dobj->append(DTRIMESH_C4U_N3F_V3F, sizeof(DispCmdTriMesh) +
-                              sizeof(float) * num_facets * 3 * 6));
+                              sizeof(float) * num_facets * 3L * 6L));
   } else {
     ptr = (DispCmdTriMesh *) 
                 (dobj->append(DTRIMESH_C4U_N3F_V3F, sizeof(DispCmdTriMesh) +
-                              4 * sizeof(unsigned char) * num_facets * 3 +
-                              sizeof(float) * num_facets * 3 * 6));
+                              4L * sizeof(unsigned char) * num_facets * 3L +
+                              sizeof(float) * num_facets * 3L * 6L));
   }
 
   if (ptr == NULL)
     return;
 
-  ptr->numverts=num_facets * 3;
+  ptr->numverts=num_facets * 3L;
   ptr->numfacets=num_facets;
 
   unsigned char *c=NULL;
@@ -421,12 +421,12 @@ void DispCmdTriMesh::putdata(const float * vertices,
   } else {
     ptr->pervertexcolors=1;
     ptr->getpointers(c, n, v);
-    memcpy(c, colors,   ptr->numverts * 4 * sizeof(unsigned char));
+    memcpy(c, colors,   ptr->numverts * 4L * sizeof(unsigned char));
   }
 
   ptr->pervertexnormals=1;
-  memcpy(n, normals,  ptr->numverts * 3 * sizeof(float));
-  memcpy(v, vertices, ptr->numverts * 3 * sizeof(float));
+  memcpy(n, normals,  ptr->numverts * 3L * sizeof(float));
+  memcpy(v, vertices, ptr->numverts * 3L * sizeof(float));
 }
 
 
@@ -442,20 +442,20 @@ void DispCmdTriMesh::putdata(const float * vertices,
   if (colors == NULL) {
     ptr = (DispCmdTriMesh *) 
                 (dobj->append(DTRIMESH_C4U_N3B_V3F, sizeof(DispCmdTriMesh) +
-                              sizeof(char) * num_facets * 3 * 3 +
-                              sizeof(float) * num_facets * 3 * 3));
+                              sizeof(char) * num_facets * 3L * 3L +
+                              sizeof(float) * num_facets * 3L * 3L));
   } else {
     ptr = (DispCmdTriMesh *) 
                 (dobj->append(DTRIMESH_C4U_N3B_V3F, sizeof(DispCmdTriMesh) +
-                              4 * sizeof(unsigned char) * num_facets * 3 +
-                              sizeof(char) * num_facets * 3 * 3 +
-                              sizeof(float) * num_facets * 3 * 3));
+                              4L * sizeof(unsigned char) * num_facets * 3L +
+                              sizeof(char) * num_facets * 3L * 3L +
+                              sizeof(float) * num_facets * 3L * 3L));
   }
 
   if (ptr == NULL)
     return;
 
-  ptr->numverts=num_facets * 3;
+  ptr->numverts=num_facets * 3L;
   ptr->numfacets=num_facets;
 
   unsigned char *c=NULL;
@@ -467,12 +467,12 @@ void DispCmdTriMesh::putdata(const float * vertices,
   } else {
     ptr->pervertexcolors=1;
     ptr->getpointers(c, n, v);
-    memcpy(c, colors,   ptr->numverts * 4 * sizeof(unsigned char));
+    memcpy(c, colors,   ptr->numverts * 4L * sizeof(unsigned char));
   }
 
   ptr->pervertexnormals=1;
-  memcpy(n, normals,  ptr->numverts * 3 * sizeof(char));
-  memcpy(v, vertices, ptr->numverts * 3 * sizeof(float));
+  memcpy(n, normals,  ptr->numverts * 3L * sizeof(char));
+  memcpy(v, vertices, ptr->numverts * 3L * sizeof(float));
 }
 
 
@@ -491,10 +491,10 @@ void DispCmdTriMesh::putdata(const float * vertices,
   if (enablestrips)  {
     // Rearrange face data into triangle strips
     ACTCData *tc = actcNew();  // intialize ACTC stripification library
-    int fsize = num_facets * 3;
-    int i, ind, ii;
-    int iPrimCount = 0;
-    int iCurrPrimSize;
+    long fsize = num_facets * 3L;
+    long i, ind, ii;
+    long iPrimCount = 0;
+    long iCurrPrimSize;
 
     // XXX over-allocate the vertex and facet buffers to prevent an
     //     apparent bug in ACTC 1.1 from crashing VMD.  This was causing
@@ -518,7 +518,7 @@ void DispCmdTriMesh::putdata(const float * vertices,
       // send triangle data over to ACTC library
       actcBeginInput(tc);
       for (ii=0; ii < num_facets; ii++) {
-        ind = ii * 3;
+        ind = ii * 3L;
         if ((actcAddTriangle(tc, facets[ind], facets[ind + 1], facets[ind + 2])) != ACTC_NO_ERROR) {
           msgInfo << "ACTC Add Triangle Error." << sendmsg;
         }
@@ -564,8 +564,8 @@ void DispCmdTriMesh::putdata(const float * vertices,
     // make a triangle mesh (no strips)
     DispCmdTriMesh *ptr = (DispCmdTriMesh *) 
                   (dobj->append(DTRIMESH_C4F_N3F_V3F, sizeof(DispCmdTriMesh) +
-                                          sizeof(float) * num_verts * 10 +
-                                          sizeof(int) * num_facets * 3));
+                                          sizeof(float) * num_verts * 10L +
+                                          sizeof(int) * num_facets * 3L));
     if (ptr == NULL)
       return;
     ptr->pervertexcolors=1;
@@ -577,8 +577,8 @@ void DispCmdTriMesh::putdata(const float * vertices,
     ptr->getpointers(cnv, f);
 
 #if 1
-    int ind10, ind3;
-    for (ind10=0,ind3=0; ind10<num_verts*10; ind10+=10,ind3+=3) {
+    long ind10, ind3;
+    for (ind10=0,ind3=0; ind10<num_verts*10L; ind10+=10,ind3+=3) {
       cnv[ind10    ] =   colors[ind3    ];
       cnv[ind10 + 1] =   colors[ind3 + 1]; 
       cnv[ind10 + 2] =   colors[ind3 + 2]; 
@@ -591,10 +591,10 @@ void DispCmdTriMesh::putdata(const float * vertices,
       cnv[ind10 + 9] = vertices[ind3 + 2];
     }
 #else
-    int i, ind, ind2;
+    long i, ind, ind2;
     for (i=0; i<num_verts; i++) {
-      ind = i * 10;
-      ind2 = i * 3;
+      ind = i * 10L;
+      ind2 = i * 3L;
       cnv[ind    ] =   colors[ind2    ];
       cnv[ind + 1] =   colors[ind2 + 1]; 
       cnv[ind + 2] =   colors[ind2 + 2]; 
@@ -608,7 +608,7 @@ void DispCmdTriMesh::putdata(const float * vertices,
     } 
 #endif
 
-    memcpy(f, facets, ptr->numfacets * 3 * sizeof(int));
+    memcpy(f, facets, ptr->numfacets * 3L * sizeof(int));
   }
 }
 
@@ -629,7 +629,7 @@ void DispCmdTriStrips::putdata(const float * vertices,
   DispCmdTriStrips *ptr = (DispCmdTriStrips *) (dobj->append(DTRISTRIP, 
                                          sizeof(DispCmdTriStrips) +
                                          sizeof(int *) * num_strips +
-                                         sizeof(float) * num_verts * 10 +
+                                         sizeof(float) * num_verts * 10L +
                                          sizeof(int) * num_strip_verts +
                                          sizeof(int) * num_strips));
   if (ptr == NULL) 
@@ -645,10 +645,10 @@ void DispCmdTriStrips::putdata(const float * vertices,
   ptr->getpointers(cnv, f, vertsperstrip);
 
   // copy vertex,color,normal data
-  int i, ind, ind2;
+  long i, ind, ind2;
   for (i=0; i<num_verts; i++) {
-    ind = i * 10;
-    ind2 = i * 3;
+    ind = i * 10L;
+    ind2 = i * 3L;
     cnv[ind    ] =   colors[ind2    ];
     cnv[ind + 1] =   colors[ind2 + 1];
     cnv[ind + 2] =   colors[ind2 + 2];
@@ -684,8 +684,8 @@ void DispCmdWireMesh::putdata(const float * vertices,
  
   DispCmdWireMesh *ptr = (DispCmdWireMesh *) (dobj->append(DWIREMESH, 
                                          sizeof(DispCmdWireMesh) +
-                                         sizeof(float) * num_verts * 10 +
-                                         sizeof(int) * num_lines * 3));
+                                         sizeof(float) * num_verts * 10L +
+                                         sizeof(int) * num_lines * 3L));
   if (ptr == NULL) 
     return;
   ptr->numverts=num_verts;
@@ -695,10 +695,10 @@ void DispCmdWireMesh::putdata(const float * vertices,
   int *l;
   ptr->getpointers(cnv, l);
 
-  int i, ind, ind2;
+  long i, ind, ind2;
   for (i=0; i<num_verts; i++) {
-    ind = i * 10;
-    ind2 = i * 3;
+    ind = i * 10L;
+    ind2 = i * 3L;
     cnv[ind    ] =   colors[ind2    ];
     cnv[ind + 1] =   colors[ind2 + 1]; 
     cnv[ind + 2] =   colors[ind2 + 2]; 
@@ -711,7 +711,7 @@ void DispCmdWireMesh::putdata(const float * vertices,
     cnv[ind + 9] = vertices[ind2 + 2];
   } 
 
-  memcpy(l, lines, ptr->numlines * 2 * sizeof(int));
+  memcpy(l, lines, ptr->numlines * 2L * sizeof(int));
 }
 
 //*************************************************************
@@ -736,14 +736,14 @@ void DispCmdCylinder::putdata(const float *pos1, const float *pos2, float rad,
     rot[1] = sinf( (float) VMD_TWOPI / (float) res);
   }
   lastres = res;
-  size_t size = (9 + res*3*3)*sizeof(float);
+  size_t size = (9L + res*3L*3L)*sizeof(float);
 
   float *pos = (float *)(dobj->append(DCYLINDER, size));
   if (pos == NULL) 
     return;
 
-  memcpy(pos,pos1,3*sizeof(float));
-  memcpy(pos+3,pos2,3*sizeof(float));
+  memcpy(pos,   pos1, 3L*sizeof(float));
+  memcpy(pos+3, pos2, 3L*sizeof(float));
   pos[6] = rad;
   pos[7] = (float)res;
   pos[8] = (float)filled;
@@ -807,8 +807,8 @@ void DispCmdCone::putdata(float *p1,float *p2,float newrad,float newrad2,int new
                                          sizeof(DispCmdCone)));
   if (ptr == NULL) 
     return;
-  memcpy(ptr->pos1,p1,3*sizeof(float));
-  memcpy(ptr->pos2,p2,3*sizeof(float));
+  memcpy(ptr->pos1, p1, 3L*sizeof(float));
+  memcpy(ptr->pos2, p2, 3L*sizeof(float));
   ptr->radius=newrad;
   ptr->radius2=newrad2;
   ptr->res=newres;
@@ -830,14 +830,14 @@ void DispCmdText::putdata(const float *c, const char *s,
                           float thickness, VMDDisplayList *dobj) {
   if (s != NULL) {
     size_t len = strlen(s)+1;
-    char *buf = (char *)(dobj->append(DTEXT, len+4*sizeof(float)));
+    char *buf = (char *)(dobj->append(DTEXT, len+4L*sizeof(float)));
     if (buf == NULL) 
       return;
     ((float *)buf)[0] = c[0];          // X
     ((float *)buf)[1] = c[1];          // Y
     ((float *)buf)[2] = c[2];          // Z
     ((float *)buf)[3] = thickness;     // thickness
-    memcpy(buf+4*sizeof(float),s,len); // text string
+    memcpy(buf+4L*sizeof(float),s,len); // text string
   }
 }
 
@@ -869,9 +869,9 @@ void DispCmdVolSlice::putdata(int mode, const float *pnormal, const float *verts
     return;
 
   cmd->texmode = mode;
-  memcpy(cmd->normal, pnormal, 3*sizeof(float));
-  memcpy(cmd->v, verts, 12*sizeof(float));
-  memcpy(cmd->t, texs,  12*sizeof(float));
+  memcpy(cmd->normal, pnormal, 3L*sizeof(float));
+  memcpy(cmd->v, verts, 12L*sizeof(float));
+  memcpy(cmd->t, texs,  12L*sizeof(float));
 }
 
 //*************************************************************
@@ -892,10 +892,10 @@ void DispCmdVolumeTexture::putdata(unsigned long texID,
   cmd->ysize = size[1];
   cmd->zsize = size[2];
   cmd->texmap = texptr;
-  memcpy(cmd->v0, pv0, 3*sizeof(float));
-  memcpy(cmd->v1, pv1, 3*sizeof(float));
-  memcpy(cmd->v2, pv2, 3*sizeof(float));
-  memcpy(cmd->v3, pv3, 3*sizeof(float));
+  memcpy(cmd->v0, pv0, 3L*sizeof(float));
+  memcpy(cmd->v1, pv1, 3L*sizeof(float));
+  memcpy(cmd->v2, pv2, 3L*sizeof(float));
+  memcpy(cmd->v3, pv3, 3L*sizeof(float));
 }
 
 //*************************************************************
@@ -947,7 +947,7 @@ void DispCmdPickPoint::putdata(float *pos, int newtag, VMDDisplayList *dobj) {
                                                sizeof(DispCmdPickPoint)));
   if (ptr == NULL)
     return;
-  memcpy(ptr->postag,pos,3*sizeof(float));
+  memcpy(ptr->postag, pos, 3L*sizeof(float));
   ptr->tag=newtag;
 }
 
@@ -965,13 +965,13 @@ void DispCmdPickPointArray::putdata(int num, int numsel, int firstsel, int *on,
     // then there's no need to actually store the pick point indices
     ptr = (DispCmdPickPointArray *) (dobj->append(DPICKPOINT_ARRAY, 
                                      sizeof(DispCmdPickPointArray) +
-                                     3 * sizeof(float) * numsel));
+                                     3L * sizeof(float) * numsel));
   } else {
     // if only some of the indices are selected, then we allocate storage
     // for the list of indices to be copied in.
     ptr = (DispCmdPickPointArray *) (dobj->append(DPICKPOINT_ARRAY, 
                                      sizeof(DispCmdPickPointArray) + 
-                                     3 * sizeof(float) * numsel +
+                                     3L * sizeof(float) * numsel +
                                      sizeof(int) * numsel));
   }
 
@@ -987,21 +987,21 @@ void DispCmdPickPointArray::putdata(int num, int numsel, int firstsel, int *on,
     // if all indices are selected note it, copy in coords, and we're done.
     ptr->allselected = 1;
     ptr->getpointers(crds, tags);
-    memcpy(crds, coords, 3 * sizeof(float) * numsel);
+    memcpy(crds, coords, 3L * sizeof(float) * numsel);
   } else {
     // if only some indices are selected, copy in the selected ones
     ptr->allselected = 0;
     ptr->getpointers(crds, tags);
 
     // copy tags for selected/enabled indices
-    int cnt=numsel; // early-exit as soon as we found the last selected atom
-    int i,cp;
+    long cnt=numsel; // early-exit as soon as we found the last selected atom
+    long i,cp;
     for (cp=0,i=0; cnt > 0; i++) {
       if (on[i]) {
         cnt--;
 
-        int idx = i*3;
-        int idx2 = cp*3;
+        long idx = i*3L;
+        long idx2 = cp*3L;
         crds[idx2    ] = coords[idx    ];
         crds[idx2 + 1] = coords[idx + 1];
         crds[idx2 + 2] = coords[idx + 2];
@@ -1023,7 +1023,7 @@ void DispCmdPickPointArray::putdata(int num, int *indices,
 
   ptr = (DispCmdPickPointArray *) (dobj->append(DPICKPOINT_ARRAY, 
                                    sizeof(DispCmdPickPointArray) + 
-                                   3 * sizeof(float) * num +
+                                   3L * sizeof(float) * num +
                                    sizeof(int) * num));
 
   if (ptr == NULL)
@@ -1036,7 +1036,7 @@ void DispCmdPickPointArray::putdata(int num, int *indices,
   float *crds;
   int *tags;
   ptr->getpointers(crds, tags);
-  memcpy(crds, coords, num * 3 * sizeof(float));
+  memcpy(crds, coords, num * 3L * sizeof(float));
   memcpy(tags, indices, num * sizeof(int));
 }
 

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: lammpsplugin.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.47 $       $Date: 2015/05/30 15:33:34 $
+ *      $Revision: 1.49 $       $Date: 2016/11/28 05:01:54 $
  *
  ***************************************************************************/
 
@@ -171,7 +171,7 @@ typedef struct {
 } lammpsdata;
 
 /* merge sort for integer atom id map: merge function */
-static int id_merge(int *output, int *left, int nl, int *right, int nr)
+static void id_merge(int *output, int *left, int nl, int *right, int nr)
 {
     int i,l,r;
     i = l = r = 0;
@@ -1578,7 +1578,7 @@ VMDPLUGIN_API int VMDPLUGIN_init() {
   plugin.prettyname = "LAMMPS Trajectory";
   plugin.author = "Marco Kalweit, Axel Kohlmeyer, Lutz Maibaum, John Stone";
   plugin.majorv = 0;
-  plugin.minorv = 21;
+  plugin.minorv = 22;
   plugin.is_reentrant = VMDPLUGIN_THREADUNSAFE;
 #ifdef _USE_ZLIB
   plugin.filename_extension = "lammpstrj,lammpstrj.gz";

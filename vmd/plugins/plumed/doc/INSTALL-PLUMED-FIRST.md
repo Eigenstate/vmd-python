@@ -7,7 +7,7 @@ named _plumed_ (PLUMED 2.1, recommended) and _driver_ (PLUMED 1.3).
 You can have either or both installed.
 
  * **Linux/Unix** and **OSX**: download the code from the [PLUMED home
-     page](http://www.plumed-code.org) and build it according to the
+     page](http://www.plumed.org) and build it according to the
      instructions.
 
  * **Windows**: Plumed-GUI provides a _Help > Attempt

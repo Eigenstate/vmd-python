@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawForce.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.54 $	$Date: 2012/08/10 14:48:24 $
+ *	$Revision: 1.56 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -98,7 +98,7 @@ void DrawForce::create_cmdlist(void) {
         append(DMATERIALON);
 
         // for each atom, if it has a nonzero user force, then display it
-        int maxidx = mol->nAtoms * 3;
+        long maxidx = mol->nAtoms * 3L;
         for (int idx=0; idx<maxidx; idx+=3) {
           // check for nonzero forces
           if (tsforce[idx]>0.0f || tsforce[idx+1]>0.0f || tsforce[idx+2]>0.0f ||

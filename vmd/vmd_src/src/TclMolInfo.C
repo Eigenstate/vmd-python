@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: TclMolInfo.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.94 $	$Date: 2013/09/04 20:13:26 $
+ *	$Revision: 1.96 $	$Date: 2016/11/28 03:05:05 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -418,7 +418,7 @@ static int molinfo_get(ctxt context, int molid, int argc, const char *argv[],
     generic_molinfo_wave_int("numorbitals", num_orbitals);
     generic_molinfo_wave_int("multiplicity", multiplicity);
     generic_molinfo_qmts_arr("%.12f", "scfenergy", scfenergies, ts->qm_timestep->get_num_scfiter());
-    generic_molinfo_qmts_arr("%.6f", "gradients", gradients, 3*mol->nAtoms);
+    generic_molinfo_qmts_arr("%.6f", "gradients", gradients, 3L*mol->nAtoms);
 
     generic_molinfo_qm("%d", "nimag", get_num_imag());
     generic_molinfo_qm("%d", "nintcoords", get_num_intcoords());
@@ -443,7 +443,7 @@ static int molinfo_get(ctxt context, int molid, int argc, const char *argv[],
     generic_molinfo_qm_arr("%d", "num_prim_per_shell", num_prim_per_shell, mol->qm_data->get_num_shells());
 //    generic_molinfo_qm_arr("%d", "shell_types", shell_types, mol->qm_data->num_basis);
 //    generic_molinfo_qm_arr("%d", "angular_momentum", angular_momentum, mol->qm_data->num_wave_f);
-//    generic_molinfo_qm_arr("%.6f", "basis_array", basis_array, 2*mol->qm_data->num_basis);
+//    generic_molinfo_qm_arr("%.6f", "basis_array", basis_array, 2L*mol->qm_data->num_basis);
 
     } else if (!strcmp(arg, "basis")) {
       Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
@@ -715,11 +715,11 @@ static int molinfo_get(ctxt context, int molid, int argc, const char *argv[],
         }
         Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), tcl_result);
       }
-    generic_molinfo_qm_mat("%.6f", "carthessian", carthessian, 3*mol->nAtoms);
+    generic_molinfo_qm_mat("%.6f", "carthessian", carthessian, 3L*mol->nAtoms);
     generic_molinfo_qm_mat("%.6f", "inthessian",  inthessian,  mol->qm_data->get_num_intcoords());
-    generic_molinfo_qm_mat("%.8f", "normalmodes", normalmodes, 3*mol->nAtoms);
-    generic_molinfo_qm_arr("%.2f", "wavenumbers", wavenumbers, 3*mol->nAtoms);
-    generic_molinfo_qm_arr("%.6f", "intensities", intensities, 3*mol->nAtoms);
+    generic_molinfo_qm_mat("%.8f", "normalmodes", normalmodes, 3L*mol->nAtoms);
+    generic_molinfo_qm_arr("%.2f", "wavenumbers", wavenumbers, 3L*mol->nAtoms);
+    generic_molinfo_qm_arr("%.6f", "intensities", intensities, 3L*mol->nAtoms);
     generic_molinfo_qm_arr("%d",   "imagmodes",   imagmodes,   mol->qm_data->get_num_imag());
 
     } else if (!strcmp(arg, "angles")) {
@@ -741,11 +741,11 @@ static int molinfo_get(ctxt context, int molid, int argc, const char *argv[],
         Tcl_ListObjAppendElement(interp, adata, 
                                  Tcl_NewStringObj((char *)atname, -1));
         Tcl_ListObjAppendElement(interp, adata,
-                                 Tcl_NewIntObj(mol->angles[3*i]));
+                                 Tcl_NewIntObj(mol->angles[3L*i]));
         Tcl_ListObjAppendElement(interp, adata,
-                                 Tcl_NewIntObj(mol->angles[3*i+1]));
+                                 Tcl_NewIntObj(mol->angles[3L*i+1]));
         Tcl_ListObjAppendElement(interp, adata,
-                                 Tcl_NewIntObj(mol->angles[3*i+2]));
+                                 Tcl_NewIntObj(mol->angles[3L*i+2]));
         Tcl_ListObjAppendElement(interp, alist, adata);
       }
       Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), alist);
@@ -768,13 +768,13 @@ static int molinfo_get(ctxt context, int molid, int argc, const char *argv[],
         Tcl_ListObjAppendElement(interp, adata, 
                                  Tcl_NewStringObj((char *)atname, -1));
         Tcl_ListObjAppendElement(interp, adata,
-                                 Tcl_NewIntObj(mol->dihedrals[4*i]));
+                                 Tcl_NewIntObj(mol->dihedrals[4L*i]));
         Tcl_ListObjAppendElement(interp, adata,
-                                 Tcl_NewIntObj(mol->dihedrals[4*i+1]));
+                                 Tcl_NewIntObj(mol->dihedrals[4L*i+1]));
         Tcl_ListObjAppendElement(interp, adata,
-                                 Tcl_NewIntObj(mol->dihedrals[4*i+2]));
+                                 Tcl_NewIntObj(mol->dihedrals[4L*i+2]));
         Tcl_ListObjAppendElement(interp, adata,
-                                 Tcl_NewIntObj(mol->dihedrals[4*i+3]));
+                                 Tcl_NewIntObj(mol->dihedrals[4L*i+3]));
         Tcl_ListObjAppendElement(interp, alist, adata);
       }
       Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), alist);
@@ -797,13 +797,13 @@ static int molinfo_get(ctxt context, int molid, int argc, const char *argv[],
         Tcl_ListObjAppendElement(interp, adata, 
                                  Tcl_NewStringObj((char *)atname, -1));
         Tcl_ListObjAppendElement(interp, adata,
-                                 Tcl_NewIntObj(mol->impropers[4*i]));
+                                 Tcl_NewIntObj(mol->impropers[4L*i]));
         Tcl_ListObjAppendElement(interp, adata,
-                                 Tcl_NewIntObj(mol->impropers[4*i+1]));
+                                 Tcl_NewIntObj(mol->impropers[4L*i+1]));
         Tcl_ListObjAppendElement(interp, adata,
-                                 Tcl_NewIntObj(mol->impropers[4*i+2]));
+                                 Tcl_NewIntObj(mol->impropers[4L*i+2]));
         Tcl_ListObjAppendElement(interp, adata,
-                                 Tcl_NewIntObj(mol->impropers[4*i+3]));
+                                 Tcl_NewIntObj(mol->impropers[4L*i+3]));
         Tcl_ListObjAppendElement(interp, alist, adata);
       }
       Tcl_ListObjAppendElement(interp, Tcl_GetObjResult(interp), alist);
@@ -812,7 +812,7 @@ static int molinfo_get(ctxt context, int molid, int argc, const char *argv[],
       for (int i=0; i<mol->num_cterms(); i++) {
         Tcl_Obj *adata = Tcl_NewListObj(0,NULL);
         for (int j=0; j<8; j++) {
-          Tcl_ListObjAppendElement(interp, adata, Tcl_NewIntObj(mol->cterms[8*i+j]));
+          Tcl_ListObjAppendElement(interp, adata, Tcl_NewIntObj(mol->cterms[8L*i+j]));
         }
         Tcl_ListObjAppendElement(interp, alist, adata);
       }

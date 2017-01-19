@@ -11,7 +11,7 @@
 #
 # 	$RCSfile: vmdinit.tcl,v $
 # 	$Author: johns $	$Locker:  $		$State: Exp $
-#	$Revision: 1.151 $	$Date: 2011/04/13 01:40:15 $
+#	$Revision: 1.153 $	$Date: 2016/10/27 03:46:34 $
 #
 ############################################################################
 # DESCRIPTION:
@@ -198,6 +198,44 @@ if {![info exists env(TMPDIR)]} {
     }
     default {
       set env(TMPDIR) /usr/tmp
+    }
+  }
+}
+
+
+#######################################
+# Workaround for MacOS X Tk file browser in the short term
+# until we have a Tk build or other solution that's universal
+if {![info exists env(VMDFILECHOOSER)]} {
+  switch [vmdinfo arch] {
+    MACOSXX86_64 -
+    MACOSXX86 -
+    MACOSX {
+
+      # force VMD to use FLTK browser, but this doesn't help plugins
+      # set env(VMDFILECHOOSER) FLTK
+
+      # A broader solution is to prevent Tk from using the 
+      # MacOS X system-native file dialog and instead use a 
+      # pure Tk-based file selector implementation that doesn't
+      # trigger conflicts with the VMD FLTK OpenGL context.
+      set ::tk_strictMotif 0
+      proc ::tk_getOpenFile args {
+        if {$::tk_strictMotif} { 
+          return [tk::MotifFDialog open {*}$args]
+        } else { 
+          return [::tk::dialog::file:: open {*}$args]
+        }
+      }
+
+      proc ::tk_getSaveFile args {
+        if {$::tk_strictMotif} { 
+          return [tk::MotifFDialog save {*}$args]
+        } else {
+          return [::tk::dialog::file:: save {*}$args]
+        }
+      }                                                                     
+
     }
   }
 }

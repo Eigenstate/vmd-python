@@ -1,10 +1,10 @@
 
 /***************************************************************************
- *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
- *cr                        University of Illinois                       
- *cr                         All Rights Reserved                        
- *cr                                                                   
+ *cr
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr                        University of Illinois
+ *cr                         All Rights Reserved
+ *cr
  ***************************************************************************/
 
 /***************************************************************************
@@ -12,7 +12,7 @@
  *
  *	$RCSfile: Inform.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.41 $	$Date: 2013/05/10 14:19:58 $
+ *	$Revision: 1.42 $	$Date: 2016/11/28 03:05:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -46,14 +46,15 @@ Inform msgWarn("Warning) ");
 Inform msgErr("ERROR) ");
 #endif
 
-Inform& sendmsg(Inform& inform) { 
-  Inform& rc = inform.send(); 
+Inform& sendmsg(Inform& inform) {
+  return inform;
+  Inform& rc = inform.send();
 
 #if defined(VMDTKCON)
   vmdcon_purge();
 #else
   fflush(stdout); // force standard output to be flushed here, otherwise output
-                  // from Inform, stdio, Tcl, and Python can be weirdly 
+                  // from Inform, stdio, Tcl, and Python can be weirdly
                   // buffered, resulting in jumbled output from batch runs
 #endif
   return rc;
@@ -61,7 +62,7 @@ Inform& sendmsg(Inform& inform) {
 
 Inform& ends(Inform& inform)    { return inform; }
 
-#if defined(VMDTKCON)  
+#if defined(VMDTKCON)
 Inform::Inform(const char *myname, int lvl) {
   name = strdup(myname);
   loglvl=lvl;
@@ -82,7 +83,7 @@ Inform::~Inform() {
 
 Inform& Inform::send() {
   char *nlptr, *bufptr;
- 
+
   if (!muted) {
     bufptr = buf;
     if (!strchr(buf, '\n'))
@@ -101,11 +102,11 @@ Inform& Inform::send() {
       printf("%s%s\n", name, bufptr);
 #endif
 #endif
-      bufptr = nlptr + 1; 
-    }  
+      bufptr = nlptr + 1;
+    }
   }
 
-  buf[0] = '\0';     
+  buf[0] = '\0';
   return *this;
 }
 
@@ -174,4 +175,4 @@ int main() {
 }
 
 #endif
- 
+

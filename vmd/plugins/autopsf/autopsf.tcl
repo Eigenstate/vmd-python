@@ -1,11 +1,11 @@
 ##
 ## Automatic PSF Builder Plugin
 ##
-## Authors: Peter Freddolino, John Stone, Jan Saam
+## Authors: Peter Freddolino, John Stone, Jan Saam, Joao Ribeiro
 ##          vmd@ks.uiuc.edu
 ##
 ##           
-## $Id: autopsf.tcl,v 1.127 2015/04/28 17:41:36 ryanmcgreevy Exp $
+## $Id: autopsf.tcl,v 1.142 2016/09/21 18:19:02 jribeiro Exp $
 ##
 ## Home Page:
 ##   http://www.ks.uiuc.edu/Research/vmd/plugins/autopsf
@@ -23,7 +23,8 @@ package require solvate
 package require autoionize
 package require paratool
 package require psfcheck
-package provide autopsf 1.5
+package require topotools
+package provide autopsf 1.6
 
 
 namespace eval ::autopsf:: {
@@ -36,13 +37,14 @@ namespace eval ::autopsf:: {
   variable glycanbondlist {};     # List of distance based glycosidic bonds
   variable extrabonds {};         # List of bonds from CONECT 
   variable mutatehis  {};         # List protonation types for metal bound histidines
+  variable mutatelist {};         # List of user defined mutations qwikmd
   variable cysironbondlist {};    # List of cysteine-iron bonds
   variable chaintoseg {};         # pairlist that matches chain identifiers with segids
   variable segtoseg {};           # pairlist that matches input segment identifiers with segids
   variable hetnamlist {};         # List of long names for hetero compounds from orig. PDB
   variable zerocoord  {};         # List of atoms located at the origin.
   variable oseltext   "protein or nucleic or glycan";         # User provided selection text. This part will be built by psfgen. 
-  variable regenall true;        # If true, we'll run regenerate angles dihedrals
+  variable regenall 1;        # If true, we'll run regenerate angles dihedrals
   variable casesen 1; # if true, we make psfgen case sensitive
   variable nofailedguess false;
   variable frags    "all";
@@ -52,6 +54,7 @@ namespace eval ::autopsf:: {
   variable nfrag    false;
   variable water    false;
   variable ionize   false;
+  variable qwikmd false; # If true, use qwikmd macro selection fro protein, nucleic and glycan
   variable nuctype RNA ;
   variable guess    true;
   variable autoterm true;        # Automatically apply terminal patches.
@@ -86,6 +89,12 @@ namespace eval ::autopsf:: {
   variable splitonly false
   #are we using charmm36 topology files? (Important for NA)
   variable charmm36 0 
+  
+  # track log file name so we can close and reopen it as necessary
+  variable logfilename {}
+  
+  # keep track of the temporary molecule loaded into VMD so we can delete it when done
+  variable tempMol {}
   
   # GUI related stuff
   variable gui
@@ -150,7 +159,7 @@ proc ::autopsf::autopsf { args } {
   variable water   false
   variable ionize  false
   variable gui     false
-  variable regenall true
+  variable regenall 1
   variable guess   true
   variable autoterm true
   variable splitonly false
@@ -161,6 +170,8 @@ proc ::autopsf::autopsf { args } {
   variable incomplete 1
   variable nofailedguess false;
   variable patchlist  [list];
+  variable mutatelist [list];
+  variable qwikmd false;
   set numargs [llength $args]	 
   if {$numargs == 0} {autopsf_usage}
 
@@ -180,7 +191,7 @@ proc ::autopsf::autopsf { args } {
       continue
     }
     if {$i == "-regen"} {
-      set regenall true
+      set regenall 1
       set arglist [lreplace $arglist $argnum $argnum]
       continue
     }
@@ -225,6 +236,11 @@ proc ::autopsf::autopsf { args } {
       set arglist [lreplace $arglist $argnum $argnum]
       continue
     }
+    if {$i == "-qwikmd"} {
+      set qwikmd true
+      set oseltext "qwikmd_protein or qwikmd_nucleic or qwikmd_glycan or qwikmd_lipid"
+      continue
+    }
     incr argnum
   }
 
@@ -234,7 +250,11 @@ proc ::autopsf::autopsf { args } {
   foreach {i j} $arglist {
     if {$i=="-prefix"}  then { set basename $j; continue  }
     if {$i=="-patch"}   then {
-	    lappend patchlist $j;
+	    set patchlist $j;
+      continue
+    }
+    if {$i=="-mutate"} {
+      set mutatelist $j;
       continue
     }
     if {$i=="-top"}     then { 
@@ -607,6 +627,8 @@ proc ::autopsf::reset_gui {} {
   set extrabonds [list]
   variable mutatehis
   set mutatehis [list]
+  variable mutatelist
+  set mutatelist [list]
   variable cysironbondlist 
   set cysironbondlist [list]
   variable chaintoseg 
@@ -614,7 +636,7 @@ proc ::autopsf::reset_gui {} {
   variable segtoseg
   set segtoseg [list]
   variable oseltext "protein or nucleic"
-  variable regenall true
+  variable regenall 1
   variable nofailedguess false
   variable ionize false
   variable guess true
@@ -736,6 +758,7 @@ proc autopsf::afterchains_gui {} {
   variable segtoseg
   variable patchlist
   variable logfileout
+  variable logfilename
 #   variable guistep
   if {![info exists chainnames] || [llength $chainnames] == 0} {
     tk_messageBox -icon error -type ok -title Message -parent .autopsf -message "Your molecule needs to have at least one chain to create a psf and pdb. Please either use the Guess Chains button or add a chain manually."
@@ -770,8 +793,21 @@ proc autopsf::afterchains_gui {} {
   }
   variable mutatehis $tmpmutate
 
-  #Open log file
-  set logfileout [open "${basename}.log" "w"]
+  # perform residues mutations
+  set tmpmutate {}
+  variable mutatelist
+  #set mutatelist [lindex $mutatelist 0]
+  if {$mutatelist != ""} {
+    foreach mut $mutatelist {
+       set segid [lindex [lsearch -inline $chaintoseg "[list [lrange $mut 0 1]] *" ] 1]
+       lappend tmpmutate [list $segid [lindex $mut 1] [lindex $mut 2]]
+    }
+    variable mutatelist $tmpmutate
+  }
+
+  #Open log file for the first time
+  set logfilename "${basename}.log"
+  set logfileout [open $logfilename w]
 
   puts $logfileout "\#Original PDB file: \n\#PDBSTART"
   set pdbfileold [open "${basename}-temp.pdb" "r"]
@@ -851,7 +887,9 @@ proc autopsf::afterchains_gui {} {
   }
 
   update_patchtexts
-
+  
+  close $logfileout
+  
   if {[llength $patchlist] == 0} {
     tk_messageBox -icon info -type ok -title Message -parent .autopsf -message "Because no patches were automatically assigned to your molecule, a complete psf and pdb will be generated now. If you would like to add patches and regenerate these files, use the Add patch button and click \"Apply patches and finish PSF/PDB\" when done. A new psf/pdb combo will then be generated."
     makepatches_gui
@@ -863,20 +901,27 @@ proc autopsf::makepatches_gui {} {
   variable chainnames
   variable chaintoseg
   variable segtoseg
-  variable patchlist
+  # variable patchlist
+  variable patchtexts
+  variable logfilename
   variable logfileout
-  variable patched 
+  variable patched
+  
+  # re-open logfile in append mode
+  set logfileout [open $logfilename a] 
+  
   #apply patches
-  foreach patch $patchlist {
-    set mylength [llength $patch]
-    if {$mylength == 5} {
-      puts $logfileout "Applying patch: [lindex $patch 0] [lindex $patch 1]:[lindex $patch 2] [lindex $patch 3]:[lindex $patch 4]"
-      eval "patch [lindex $patch 0] [lindex $patch 1]:[lindex $patch 2] [lindex $patch 3]:[lindex $patch 4]"
-    } elseif {$mylength == 3} {
-      puts $logfileout "Applying patch: [lindex $patch 0] [lindex $patch 1]:[lindex $patch 2]"
-      eval "patch [lindex $patch 0] [lindex $patch 1]:[lindex $patch 2]"
-    }
-  }
+  #foreach patch $patchlist {
+    #set mylength [llength $patch]
+    #if {$mylength == 5} {
+      #puts $logfileout "Applying patch: [lindex $patch 0] [lindex $patch 1]:[lindex $patch 2] [lindex $patch 3]:[lindex $patch 4]"
+      #eval "patch [lindex $patch 0] [lindex $patch 1]:[lindex $patch 2] [lindex $patch 3]:[lindex $patch 4]"
+    #} elseif {$mylength == 3} {
+      #puts $logfileout "Applying patch: [lindex $patch 0] [lindex $patch 1]:[lindex $patch 2]"
+      #eval "patch [lindex $patch 0] [lindex $patch 1]:[lindex $patch 2]"
+    #}
+  #}
+  foreach patch $patchtexts {eval "patch $patch"}
   set patched true
 
 
@@ -935,15 +980,18 @@ proc autopsf::makepatches_gui {} {
     variable vdwrepindex
     mol delrep $vdwrepindex $currentMol
     set vdwrepindex -1
+    cleanup
+
   }
-  #close $logfileout
-  clean_tempfiles
+  close $logfileout
 }
 
 #Proc to clean up temp files
 proc ::autopsf::clean_tempfiles {} {
   variable basename
+  variable tempMol
   foreach tempfile [glob -nocomplain ${basename}-temp* ${basename}*modified* ${basename}_preformat*] { file delete $tempfile }
+  mol delete $tempMol
 }
 
 #Procs to enable and disable different parts of the gui
@@ -1094,7 +1142,9 @@ proc ::autopsf::psfmain {} {
   variable gui
   variable chainnames
   variable patched
-
+  variable patchtexts
+  variable logfilename
+  variable logfileout
   puts "WORKING ON: $currentMol"
   preformat_pdb $currentMol
   
@@ -1117,9 +1167,9 @@ proc ::autopsf::psfmain {} {
   topology ${basename}-temp.top
   puts "${basename}-temp.top"
   
-  foreach file [glob ${basename}*.*] {
-    file copy -force $file ./test/$file
-  }
+  #foreach file [glob ${basename}*.*] {
+   # file copy -force $file ./test/$file
+  #}
 
   # Apply default resname and name aliases
   psfaliases
@@ -1140,8 +1190,24 @@ proc ::autopsf::psfmain {} {
   }
   variable mutatehis $tmpmutate
 
-  #Open log file
-  set logfileout [open "${basename}.log" "w"]
+  # perform residues mutations
+  set tmpmutate {}
+  variable mutatelist
+  if {$mutatelist != ""} {
+    foreach mut $mutatelist {
+      set segid [lindex [lsearch -inline $chaintoseg "[list [lrange $mut 0 1]] *" ] 1]
+      lappend tmpmutate [list $segid [lindex $mut 1] [lindex $mut 2]]
+    }
+    variable mutatelist $tmpmutate
+  }
+
+  # If continuing from GUI run, re-open existing logfile. Otherwise, create a new one
+  if { $logfilename != "" } {
+	  set logfileout [open $logfilename a]
+  } else {
+	set logfilename "${basename}.log"
+	set logfileout [open $logfilename w]
+}
 
   puts $logfileout "\#Original PDB file: \n\#PDBSTART"
   set pdbfileold [open "${basename}-temp.pdb" "r"]
@@ -1152,28 +1218,45 @@ proc ::autopsf::psfmain {} {
   # Build the segments
   psfsegments $logfileout
 
-  # Apply the used specified patches
+  # Apply the user specified patches
   variable patchlist
   variable segtoseg
-  foreach userpatch $patchlist {
+  if { !$gui } {
+	  set patchaux {}
+	  set patchaux $patchlist
+	  set patchlist {}
+        foreach patch $patchaux {
+		lset patch 1 [lindex [lsearch -inline $chaintoseg "[list [lrange $patch 1 2]] *" ] 1] 
+		if {[llength $patch] == 5} {
+		  lset patch 3 [lindex [lsearch -inline $chaintoseg "[list [lrange $patch 3 4]] *" ] 1] 
+		} 
+		lappend patchlist $patch
+	  }
+  }
+ 
+  update_patchtexts
+  foreach patch $patchtexts { eval "patch $patch" }
+#  set patched true
+
+#  foreach userpatch $patchlist {
 #   #   set patch [lindex $userpatch 0]
 #   #   foreach segres [lrange $userpatch 1 end] {
 # 	#set newseg [lindex [lsearch -inline $segtoseg "{[split $segres :]} *"] 1]
-# 	#puts $logfileout "\#Applying patch $newseg:[lindex [split $segres :] 1]"
+# 	#puts $logfileout "NOTE: Applying patch $newseg:[lindex [split $segres :] 1]"
 # 	#append patch " $newseg:[lindex [split $segres :] 1]"
 #   #   }
-      set userpatch "[lindex $userpatch 0] [lindex $userpatch 1]:[lindex $userpatch 2]   [lindex $userpatch 3]:[lindex $userpatch 4]"
-      puts $userpatch
+#      set userpatch "[lindex $userpatch 0] [lindex $userpatch 1]:[lindex $userpatch 2]   [lindex $userpatch 3]:[lindex $userpatch 4]"
+#      puts $userpatch
       #   puts $patch
-      eval patch $userpatch
-  }
+#      eval patch $userpatch
+#  }
   
   if {!$patched} {
     set ssbondlist [find_ssbonds]; 
     foreach ssbond $ssbondlist {
 	set seg1 {}
 	set seg2 {}
-	puts "SSBOND definition: $ssbondlist" ;# REMOVEME
+	# puts "SSBOND definition: $ssbondlist" ;# REMOVEME
 	if {[lindex $ssbond 0]=="chain"} {
 		set seg1 [lindex [lsearch -inline $chaintoseg "{[lrange $ssbond 1 2]} *"] 1]
 		set seg2 [lindex [lsearch -inline $chaintoseg "{[lrange $ssbond 4 5]} *"] 1]
@@ -1182,7 +1265,7 @@ proc ::autopsf::psfmain {} {
 		set seg2 [lindex $ssbond 4]
 	}
 
-	puts "\#patch DISU $seg1:[lindex $ssbond 2] $seg2:[lindex $ssbond 5]" ;#REMOVEME
+	# puts "\#patch DISU $seg1:[lindex $ssbond 2] $seg2:[lindex $ssbond 5]" ;#REMOVEME
 	puts $logfileout "\#patch DISU $seg1:[lindex $ssbond 2] $seg2:[lindex $ssbond 5]"
 	patch DISU $seg1:[lindex $ssbond 2] $seg2:[lindex $ssbond 5]
     }
@@ -1233,7 +1316,7 @@ proc ::autopsf::psfmain {} {
 	    foreach atom [segment atoms $segid $resid] {
 	      set coord [segment coordinates $segid $resid $atom]
 	      if {$coord=={0.000000 0.000000 0.000000} && [lsearch $zerocoord "$segid $resid $atom"]<0} {
-		  puts $logfileout "\#Deleting atom $segid:$resid $atom with unspecified coordinates."
+		  puts $logfileout "\#Deleting atom $segid:$resid $atom with unspecified coordinates." ;#"
 		  delatom $segid $resid $atom
 	      }
 	    }
@@ -1288,7 +1371,11 @@ proc ::autopsf::psfmain {} {
   variable basename
   foreach tempfile [glob ${basename}-temp*] { file delete $tempfile }
 
-  #close $logfileout
+  close $logfileout
+  set qwikmd false
+  if {!$unparcode} {
+	cleanup
+  }
   return $unparcode
 }
 
@@ -1310,6 +1397,7 @@ proc ::autopsf::write_selection_tempfiles { mol } {
   variable pfrag
   variable nfrag
   variable ofrag
+  variable qwikmd
   variable oseltext
 
   puts "pfrag: $pfrag ofrag: $ofrag allfrag: $allfrag osel: $oseltext nfrag: $nfrag"
@@ -1329,7 +1417,9 @@ proc ::autopsf::write_selection_tempfiles { mol } {
     if {$ofrag} {
       set writestring "$writestring or $oseltext"
     }
-
+    if {$qwikmd} {
+      set writestring "$writestring or $oseltext"
+    }
     set writesel [atomselect $currentMol "$writestring"]
   }
 
@@ -1355,6 +1445,9 @@ proc ::autopsf::write_selection_tempfiles { mol } {
 
   #Read the CONECT info and set bonds accordingly
   set file [file rootname [molinfo $currentMol get name]].pdb
+  # Since the addition of the format pdb functions (proc preformat_pdb) autopsf is not capable of reading 
+  # the CONECT info, when the pdb is loaded from a local file (not directly from the PDB databank). The new created *_formatted.pdb
+  # doesn't carry this information present in the original pdb file.
   read_pdb_conect $file $currentMol
 
   #Write a temporary xbgf file for checktop
@@ -1822,6 +1915,8 @@ proc ::autopsf::resplit_chains { fname } {
 	    0 {set typestr "Prot "}
 	    1 {set typestr "DNA  "}
 	    2 {set typestr "RNA  "}
+	    3 {set typestr "Water"}
+	    4 {set typestr "Glyc "}
 	    default {set typestr "Other"}
 	  }
 	  set newstring [format $chainformat $segname $length $start $end $nter $cter $typestr]
@@ -1841,10 +1936,76 @@ proc ::autopsf::resplit_chains { fname } {
 # its own segname, but this is impossible without pre-sorting the #
 # PDB file prior to passing through AutoPSF.                      #
 ###################################################################
+
+
+
+###################################################################
+# Procedure to ensure the continuity of the atom indexes on each  #
+# residue and also the increasing number of the resiIDs on each   #
+# chain. To ensure the atom indexing, ::TopoTools::selections2mol #
+# loads atoms selection containing individual residue, keeping a  #
+# continuous number of the atoms. The increasing number of the    #
+# is done by the "foreach residue $residueList" loop              #
+################################################################### 
+proc ::autopsf::sort_to_writepdb { molid selection outPutFileName} {
+  set sel [list] 
+  foreach chain [lsort -unique [$selection get chain]] {
+    set selectionAux [atomselect $molid "\(residue [$selection get residue]\) and chain \"$chain\""]  
+    set residueList [lsort -unique -integer -increasing  [$selectionAux get residue] ]
+
+    set residList [$selectionAux get resid]
+    array set x {}
+    set res {}
+    foreach e $residList {
+        if {[info exists x($e)]} continue
+        lappend res $e
+        set x($e) {}
+    }
+    set residList $res
+    set reslength [expr [llength $residList] -1]
+   
+    
+    set resListIncr 0
+    set reorderResids 0
+    if {[lindex $residList 0] > [lindex $residList 1] && [llength $residList] > 1} {
+      set reorderResids 1
+      puts "Warning: Residues ID with inverted order: [lindex $residList 0] -- [lindex $residList end], chain ${chain}."
+      puts "Warning: Residues will be order according to the atom sequence."
+
+    }
+    set residList [lsort -integer -increasing $residList]
+    foreach residue $residueList {
+      set selAux [atomselect $molid "residue $residue"]
+       if {$reorderResids == 1} {
+        $selAux set resid [lindex $residList $resListIncr]
+      }
+      
+      lappend sel $selAux
+     
+      incr resListIncr
+    }
+   $selectionAux delete
+  } 
+ if {[llength $sel] > 0} {
+    set auxMol [::TopoTools::selections2mol $sel]
+    set selAll [atomselect $auxMol all]
+    $selAll writepdb ${outPutFileName}
+    
+    foreach seli $sel {
+      $seli delete
+    }
+    $selAll delete
+    mol delete $auxMol 
+  } else {
+    $selection writepdb ${outPutFileName}
+  }
+}
+
 proc ::autopsf::preformat_pdb { molid } {
   variable basename
   variable currentMol
-  
+  variable tempMol
+  variable qwikmd
   array set sorted_glycans {}
   array set glycan_olist {}
   set final_segnames {}
@@ -1854,17 +2015,32 @@ proc ::autopsf::preformat_pdb { molid } {
   # An ugly hack because the atomselect keyword "protein" will not capture protein residues with missing
   # backbone atoms
   set protres {ALA ARG ASN ASP CYS GLN GLU GLY HIS HSD HSE HSP ILE LEU LYS MET PHE PRO SER THR TRP TYR VAL}
-  set protein [atomselect $molid "resname $protres"]
+  ## In case of being called by qwikmd, use qwikmd macros to identify the different molecules types:
+  ## qwikmd_protein for protein, qwikmd_glycan for glycans. 
+  ## Only water has no macro defined in qwikmd.  
+  set seltext "resname $protres"
+  if {$qwikmd} {
+    set seltext "qwikmd_protein"
+  } 
+  set protein [atomselect $molid $seltext]
   set ion [atomselect $molid ion]
   set water [atomselect $molid water]
-  set glycan [atomselect $molid glycan]
-  set other [atomselect $molid "not (resname $protres or ion or water or glycan)"]
-  
-  $protein writepdb ${basename}_preformat_protein.pdb
-  $ion writepdb ${basename}_preformat_ion.pdb 
-  $water writepdb ${basename}_preformat_water.pdb
-  $glycan writepdb ${basename}_preformat_glycan.pdb
-  $other writepdb ${basename}_preformat_other.pdb 
+  if {!$qwikmd} {
+    set glycan [atomselect $molid glycan]
+    set other [atomselect $molid "not (($seltext) or ion or water or glycan)"]
+  } else {
+    set glycan [atomselect $molid qwikmd_glycan]
+    set other [atomselect $molid "not (($seltext) or ion or water or qwikmd_glycan)"]
+  }
+  #Only proteins,glycans and other (everything but water and ions) are reordered
+  sort_to_writepdb $molid $protein ${basename}_preformat_protein.pdb
+  sort_to_writepdb $molid $glycan ${basename}_preformat_glycan.pdb
+  sort_to_writepdb $molid $other ${basename}_preformat_other.pdb
+  # $protein writepdb ${basename}_preformat_protein.pdb
+   $ion writepdb ${basename}_preformat_ion.pdb 
+   $water writepdb ${basename}_preformat_water.pdb
+  # $glycan writepdb ${basename}_preformat_glycan.pdb
+  # $other writepdb ${basename}_preformat_other.pdb 
   
   set filenames [list ${basename}_preformat_protein.pdb ${basename}_preformat_ion.pdb \
 		      ${basename}_preformat_water.pdb ${basename}_preformat_glycan.pdb \
@@ -2083,8 +2259,12 @@ proc ::autopsf::preformat_pdb { molid } {
   file delete ${basename}_formatted_stripped.pdb
     
   
-  set currentMol [mol new ${basename}_formatted.pdb]
-  file delete $filenames
+  set tempMol [mol new ${basename}_formatted.pdb]
+  set currentMol $tempMol
+  foreach tempfile $filenames {
+  file delete $tempfile
+  }
+  
 
 }
 
@@ -2120,6 +2300,7 @@ proc ::autopsf::split_protein_and_water_pdb { fname } {
   variable chaintypes
   variable thischaintype
   variable segsthischain
+  variable qwikmd
   set nters [list]
   set chainlengths [list]
   set cters [list]
@@ -2218,7 +2399,7 @@ proc ::autopsf::split_protein_and_water_pdb { fname } {
 	if {[vecsub {0 0 0} $coor]=={0.0 0.0 0.0}} {
 	    set name [string trim [string range $line 12 15]]
 	    #puts "Atom $curseg:$curres $name located at {0 0 0}"
-	    lappend zerocoord [list $curseg $curres $name]
+            lappend zerocoord [list $curseg $curres $name]
 	}	     
       }
       
@@ -2226,25 +2407,45 @@ proc ::autopsf::split_protein_and_water_pdb { fname } {
       
       if {[regexp {HOH|TIP3|TIP4|TP4E|TP4V|TP3E|SPCE|SPC} $resname]} {
 	set curwater 1 
-      } 
+      }
       if {[regexp {ALA|ARG|ASN|ASP|CYS|^GLN|GLU|GLY|HIS|HSD|HSE|HSP|ILE|LEU|LYS|MET|PHE|PRO|SER|THR|TRP|TYR|VAL} $resname] } {
 	set curprot 1
-      } 
-      if {[regexp {GUA|CYT|THY|ADE|URA|^A$|^C$|^G$|^T$|^U$|^Ar$|^Ad$|^Cr$|^Cd$|^Gr$|^Gd$|^Ur$|^Td$} $resname]} { 
+      }
+      if {$qwikmd && !$curprot} {
+        set list [atomselect macro qwikmd_protein]
+      	if {[string first  "or (resname $resname)" $list] > -1 } {
+		set curprot 1
+      	}
+      }
+      if {[regexp {GUA|CYT|THY|ADE|URA|^A$|^C$|^G$|^T$|^U$|^Ar$|^Ad$|^Cr$|^Cd$|^Gr$|^Gd$|^Ur$|^Td$|^DA$|^DT$|^DG$|^DC$} $resname]} { 
 	set curnuc 1
+  }
+    if {$qwikmd && !$curnuc} {
+         set list [atomselect macro qwikmd_nucleic]
+      if {[string first  "or (resname $resname)" $list] > -1 } {
+  set curnuc 1
+      }
+    }
+    if {$curnuc} {
 	if {[regexp {^U$|URA|^Ur$} $resname]} {
 	  set isrna 1
 	  set isdna 0
 	}
-	if {[regexp {^T$|THY|^Td$} $resname]} {
+	if {[regexp {^T$|THY|^Td$|^DT$|^DA$|^DG$|DC$} $resname]} {
 	  set isrna 0
 	  set isdna 1
 	}
-      } 
-      if {[regexp {MAN|BMA|NAG|FUC|AMAN|BMAN|BGLN|AFUC} $resname]} {
+	}
+      
+      if {[regexp {AMAN|BMAN|AFUC|BGLN|MAN|BMA|FUC|NAG|AGLC|BGLC|AALT|BALT|AALL|BALL|AGAL|BGAL|AGUL|BGUL|AIDO|BIDO|ATAL|BTAL|AXYL|BXYL|AFUC|BFUC|ARHM|BRHM} $resname]} {
 	set curglyc 1
       }
-      
+    if {$qwikmd && !$curglyc} {
+         set list [atomselect macro qwikmd_glycan]
+      if {[string first  "or (resname $resname)" $list] > -1 } {
+  set curglyc 1
+      }
+      }
       if {!$curnuc && !$curprot && !$curwater && !$curglyc} {
 	set curo 1
       }
@@ -2267,7 +2468,7 @@ proc ::autopsf::split_protein_and_water_pdb { fname } {
       set lastresindex [expr $lineindex - 1]; #last atom of last residue
       # read in and temporarily store one complete residue
       while {[string trim [string range $thisline 22 25]] == $curres &&
-	     [string trim [string range $thisline 26 26]] == $curresA } {
+	     [string trim [string range $thisline 26 26]] == $curresA && [string trim [string range $thisline 21 21]] == $curchain} {
 	lappend thisresdat $thisline
 	incr i
 	incr lineindex
@@ -2321,10 +2522,41 @@ proc ::autopsf::split_protein_and_water_pdb { fname } {
 	    break
 	  }
 	}
+
 	if { [vecdist $Ccoords $Ncoords] >= 2. } {
 	  set newseg 1
 	}
       }
+      #check if the non-consecutive nucleic residues are connected (Bond formed by O3' - P)
+   if { !$newseg && !$first && $curnuc && $resdif != 1 } {
+    set Ocoords [list]
+    set Pcoords [list]
+     foreach entry $lastresdat {
+        if { [regexp "^O3" [string trim [string range $entry 13 16]]] == 1 } {
+          set Ox [string trim [string range $entry 30 37]]
+          set Oy [string trim [string range $entry 38 45]]
+          set Oz [string trim [string range $entry 46 53]]
+          set Ocoords [list $Ox $Oy $Oz]
+          break
+        }
+      }
+      foreach entry $thisresdat {
+        if { [string trim [string range $entry 13 16]] == "P" } {
+          set Px [string trim [string range $entry 30 37]]
+          set Py [string trim [string range $entry 38 45]]
+          set Pz [string trim [string range $entry 46 53]]
+          set Pcoords [list $Px $Py $Pz]
+          break
+        }
+      }
+      if {[llength $Ocoords] > 0 && [llength $Pcoords] > 0} {
+        if {[vecdist $Ocoords $Pcoords] >= 2. } {
+          set newseg 1
+        }
+      } else {
+         set newseg 1
+      }
+   }    
       
       # A related problem exists for glycans. While a typical glycan chain is numbered
       # sequentially, the chain itself is often branched and there are multiple possible
@@ -2344,7 +2576,7 @@ proc ::autopsf::split_protein_and_water_pdb { fname } {
       
 
       # If any of the conditions for a new segment are satisfied, 
-      if { $newseg || (!$curwater && !$curprot && !$curglyc && ($resdif != 0 && $resdif != 1 && !($resdif == 2 && $oldres == -1))) } {
+      if { $newseg || (!$curwater && !$curprot && !$curglyc && !$curnuc && ($resdif != 0 && $resdif != 1 && !($resdif == 2 && $oldres == -1))) } {
 	if {[info exists out]} {
 	    lappend chainends [expr [lindex $equivindices [expr $lastresindex]] + 1]
 	    lappend cters [get_cter $segid $thischaintype]
@@ -2381,7 +2613,10 @@ proc ::autopsf::split_protein_and_water_pdb { fname } {
 	incr nseg
 	puts "Curwater: $curwater Curprot: $curprot Curnuc: $curnuc Curo: $curo Curglyc: $curglyc"
 	# Determine segment type
-	if { $curwater } { 
+	if {!$curglyc } {
+    set segid {}
+  }
+      if { $curwater } { 
 	  incr nwatseg;
 	  set prefix "${curchain}W"
 	  set thischaintype 3
@@ -2399,6 +2634,7 @@ proc ::autopsf::split_protein_and_water_pdb { fname } {
 	  }
 	} elseif {$curglyc} {
 	  set segid $curseg
+    set prefix "${curchain}O"
 	  set thischaintype 4
 	} elseif {$curo} {
 	  incr noseg
@@ -2406,12 +2642,12 @@ proc ::autopsf::split_protein_and_water_pdb { fname } {
 	  set thischaintype 3
 	}
 	
-	if {!$curglyc} {
+	if {!$curglyc || $segid == ""} {
 	  set segsthischain [expr {[regexp -all "$prefix\[0-9\]+" $seglist] + 1}]  
 	  set segid "$prefix${segsthischain}" 
 	}
 	# Add this residue to the chain:res->segid lookup table
-	lappend chaintoseg [list [list [string index $thisline 21] $curres] $segid]
+	lappend chaintoseg [list [list $curchain $curres] $segid]
 	lappend segtoseg   [list [list $curseg $curres] $segid]
 	if {[regexp -all "$segid" $seglist] == 0} {
 	  lappend seglist $segid
@@ -2421,6 +2657,7 @@ proc ::autopsf::split_protein_and_water_pdb { fname } {
 	set newname "${fname}_${segid}.pdb"
 	set out [open $newname w]
 	lappend nters [get_nter $segid $resname $thischaintype]
+
 	lappend chainnames $segid
 	lappend chainstarts [expr [lindex $equivindices [expr $firstresindex]] + 1]
 	lappend fnamelist $newname
@@ -2509,6 +2746,10 @@ proc ::autopsf::psfaliases {} {
   pdbalias residue Ad ADE
   pdbalias residue Ur URA
   pdbalias residue Td THY
+  pdbalias residue DT THY
+  pdbalias residue DG GUA
+  pdbalias residue DC CYT
+  pdbalias residue DA ADE
   # Glycans. Currently only the four common "stem" residues of
   # N-linked glycans are implemented
   pdbalias residue BMA BMAN
@@ -2608,7 +2849,7 @@ proc ::autopsf::psfsegments {logfileout} {
     set nuc  [regexp {^N[0-9]*$} $segid]
 
     puts "$start $end"
-    puts $logfileout "\#Creating chain $segname: $length residues from indices $start to $end in original file. Patches: Nter $nter, Cter $cter"
+    puts $logfileout "\#Creating chain $segname: $length residues from indices $start to $end in original file. Patches: Nter $nter, Cter $cter" 	;#"
 
     # fix the segment names in the original file
     set segsel [atomselect $currentMol "serial $start to $end"]
@@ -2652,13 +2893,21 @@ proc ::autopsf::psfsegments {logfileout} {
 
       variable mutatehis
       foreach mut [lsearch -inline -all $mutatehis "$segid *"] {
-	      puts "mutating [lindex $mut 1] [lindex $mut 2]"
-	      puts $logfileout "\#mutating [lindex $mut 1] [lindex $mut 2]"
-	      mutate [lindex $mut 1] [lindex $mut 2] 
+	puts "mutating [lindex $mut 1] [lindex $mut 2]"
+	puts $logfileout "\#mutating [lindex $mut 1] [lindex $mut 2]"
+	mutate [lindex $mut 1] [lindex $mut 2] 
+      }
+
+      variable mutatelist
+      foreach mut [lsearch -inline -all $mutatelist "$segid *"] {
+        puts "mutating [lindex $mut 1] [lindex $mut 2]"
+        puts $logfileout "\#mutating [lindex $mut 1] [lindex $mut 2]"
+        mutate [lindex $mut 1] [lindex $mut 2] 
       }
     }
     coordpdb $segfile $segid
     if {$type == 1} {
+
       apply_dna_patch $segfile $segid
     }
 
@@ -3130,9 +3379,12 @@ proc ::autopsf::quit_chooser {} {
 
 proc ::autopsf::cleanup {} {
   # These were temp files for splitting the pdb and for checktop
+
   variable basename
-  puts "cleanup: $basename"
-  foreach tempfile [glob ${basename}-temp* ${basename}_modified*] { file delete $tempfile }
+  variable tempMol
+  foreach tempfile [glob -nocomplain ${basename}-temp* ${basename}*modified* ${basename}_preformat*] { file delete $tempfile }
+  mol delete $tempMol
+
 
   # If the molecule hasn't been taken over by Paratool, we will delete the files
   variable incomplete
@@ -3218,11 +3470,17 @@ proc ::autopsf::find_ssbonds { {dist 3.0} } {
 
 proc ::autopsf::make_glycan_patches { {dist 2.0} } {
   variable currentMol
+  variable qwikmd
   set linklist ""
   set glycanbonds ""
-  set C1list [list]
-  set glycannames {AMAN BMAN AFUC BGLN MAN BMA FUC NAG }
-  set C1sel [atomselect $currentMol "glycan and name C1"]
+  set C1list [list] 
+  set glycannames {AMAN BMAN AFUC BGLN MAN BMA FUC NAG AGLC BGLC AALT BALT AALL BALL AGAL BGAL AGUL BGUL AIDO BIDO ATAL BTAL AXYL BXYL AFUC BFUC ARHM BRHM}
+  if {!$qwikmd} {
+    set C1sel [atomselect $currentMol "(resname $glycannames) and name C1"]
+  } else {
+    set C1sel [atomselect $currentMol "qwikmd_glycan and name C1"]
+  }
+  
   puts [$C1sel get index]
   foreach Cindex [$C1sel get index] {
     set thisC [atomselect $currentMol "index $Cindex"]
@@ -3242,7 +3500,6 @@ proc ::autopsf::make_glycan_patches { {dist 2.0} } {
     }
     $linkatom delete
   }
-
   foreach C1entry $C1list linkentry $linklist {
     foreach { currentresname currentchain currentsegname currentresid currentindex } $C1entry {break}
     if { $linkentry == "None" } {
@@ -3252,7 +3509,7 @@ proc ::autopsf::make_glycan_patches { {dist 2.0} } {
     foreach { linkresname linkchain linksegname linkresid linkname } $linkentry {break}
 puts " $currentresname $currentchain $currentsegname $currentresid $currentindex; \
 	$linkresname $linkchain $linksegname $linkresid $linkname"
-    if {[regexp {AMAN|AFUC|MAN|FUC} $currentresname] } { ;# put all alpha-1 carbohydrate residues here
+    if {[regexp {AMAN|AFUC|AGLC|AALT|AALL|AGAL|AGUL|AIDO|ATAL|AXYL|ARHM|ADEO|ARIB|AARB|ALYF|AXYF|MAN|FUC} $currentresname] } { ;# put all alpha-1 carbohydrate residues here
 	set dir1 "a"
     } else {
 	set dir1 "b"
@@ -3263,21 +3520,21 @@ puts " $currentresname $currentchain $currentsegname $currentresid $currentindex
 	set protlink 1
     } elseif {$linkname == "O2"} {
 	set link2num 2
-	if { [ regexp {AMAN|BMAN|MAN|BMA} $linkresname] } { ;# put all residues with an axial O2 here
+	if { [ regexp {AMAN|BMAN|MAN|BMA|AALT|BALT|ARHM|BRHM|AIDO|BIDO|ATAL|BTAL} $linkresname] } { ;# put all residues with an axial O2 here
 	    set dir2 "a"
 	} else {
 	    set dir2 "b"
 	}
     } elseif {$linkname == "O3"} {
 	set link2num 3
-	if {[regexp {...} $linkresname] != -1} { ;# put all residues with an axial O3 here
+	if {[regexp {AALT|BALT|AALL|BALL|AGUL|BGUL|AIDO|BIDO} $linkresname] != -1} { ;# put all residues with an axial O3 here
 	    set dir2 "a"
 	} else {
 	    set dir2 "b"
 	}
     } elseif {$linkname == "O4"} {
 	set link2num 4
-	if { [regexp {AFUC|FUC} $linkresname] } { ;# put all residues with an axial O4 here
+	if { [regexp {AFUC|BFUC|FUC|AGAL|BGAL|AGUL|BGUL|AIDO|BIDO|ATAL|BTAL} $linkresname] } { ;# put all residues with an axial O4 here
 	    set dir2 "a"
 	} else {
 	    set dir2 "b"
@@ -3335,7 +3592,6 @@ proc ::autopsf::get_pdb_hetnam { molid } {
 proc ::autopsf::read_pdb_conect { file molid } {
   variable gui
   puts "Reading PDB CONECT records..."
-
   #Check if we're using something loaded from the pdb
   if {[molinfo $molid get filetype] == "webpdb"} {
       #Download the file locally
@@ -3594,7 +3850,8 @@ proc ::autopsf::apply_dna_patch {infile segname} {
 
   set i 0
   foreach resid [$sel get resid] resname [$sel get resname] {
-    if {$resname == "CYT" || $resname == "THY" || $resname == "T" || $resname == "C" || $resname == "Cd" || $resname == "Td"} {
+    if { [regexp {CYT|^C$|^Cd$|^DC$|THY|^T$|^Td$|^DT$} $resname] } {
+    # if {$resname == "CYT" || $resname == "THY" || $resname == "T" || $resname == "C" || $resname == "Cd" || $resname == "Td"} {}
       if $charmm36 {
         if {$i == 0} {
           patch DEO5 $segname:$resid
@@ -3605,7 +3862,8 @@ proc ::autopsf::apply_dna_patch {infile segname} {
         patch DEO1 $segname:$resid
       }
     }
-    if {$resname == "ADE" || $resname == "GUA" || $resname == "A" || $resname == "G" || $resname == "Ad" || $resname == "Gd"} {
+    if { [regexp {ADE|^A$|^Ad$|^DA$|GUA|^G$|^Gd$|^DG$} $resname] } {
+    # if {$resname == "ADE" || $resname == "GUA" || $resname == "A" || $resname == "G" || $resname == "Ad" || $resname == "Gd"} {}
       if $charmm36 {
         if {$i == 0} {
           patch DEO5 $segname:$resid

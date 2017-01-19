@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: FileRenderList.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.83 $	$Date: 2015/05/25 13:11:17 $
+ *	$Revision: 1.93 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -40,8 +40,11 @@
 #if defined(VMDLIBOPTIX)
 // We include the OptiX related headers first to prevent collisions between
 // enums in OptiXRenderer, and preprocessor macros in Tachyon...
-#include "OptiXDisplayDevice.h"       // Compiled-in OptiX renderer
-#include "OptiXRenderer.h"            // Compiled-in OptiX renderer
+#include "OptiXDisplayDevice.h"       // Compiled-in OptiX ray tracer
+#include "OptiXRenderer.h"            // Compiled-in OptiX ray tracer
+#endif
+#if defined(VMDLIBOSPRAY)
+#include "OSPRayDisplayDevice.h"      // Compiled-in OSPRay ray tracer
 #endif
 #if defined(VMDLIBTACHYON) 
 #include "LibTachyonDisplayDevice.h"  // Compiled-in Tachyon ray tracer
@@ -98,30 +101,67 @@ FileRenderList::FileRenderList(VMDApp *vmdapp) : app(vmdapp) {
 #endif
 
 #if defined(VMDLIBOPTIX)
-  // check for user-supplied remote VCA rendering cluster URL, user, passwd,
-  // if all three are set, we attach to the remote cluster and if successful,
-  // the remote connection is used during OptiX context initialization.
-  cluster_dev = NULL;
+  if (!getenv("VMDNOOPTIX")) {
+    int optixdevcount=OptiXRenderer::device_count();
+
+    // Only emit detailed OptiX GPU data if we're running on a single node.
+    // Put the console informational text immediately prior to the creation of
+    // FileRenderList objects where the renderers are actually instantiated, 
+    // so that all of the OptiX GPU and compilation status info is together
+    if (vmdapp->nodecount == 1) {
+      if (optixdevcount > 0) {
+        msgInfo << "Detected " << optixdevcount << " available TachyonL/OptiX ray tracing "
+                << ((optixdevcount > 1) ? "accelerators" : "accelerator")
+                << sendmsg;
+      }
+    }
+
+    // check for user-supplied remote VCA rendering cluster URL, user, passwd,
+    // if all three are set, we attach to the remote cluster and if successful,
+    // the remote connection is used during OptiX context initialization.
+    cluster_dev = NULL;
 
 #if defined(VMDOPTIX_PROGRESSIVEAPI)
-  const char *vca_url  = getenv("VMDOPTIX_CLUSTER");
-  const char *vca_user = getenv("VMDOPTIX_USER");
-  const char *vca_pw   = getenv("VMDOPTIX_PASSWD");
+    const char *vca_url  = getenv("VMDOPTIX_CLUSTER");
+    const char *vca_user = getenv("VMDOPTIX_USER");
+    const char *vca_pw   = getenv("VMDOPTIX_PASSWD");
 
-  if (vca_url && vca_user && vca_pw) {
-    cluster_dev = OptiXRenderer::remote_connect(vca_url, vca_user, vca_pw);
+    if (vca_url && vca_user && vca_pw) {
+      cluster_dev = OptiXRenderer::remote_connect(vca_url, vca_user, vca_pw);
+    }
+#endif
+
+    // Perform runtime check for OptiX availability before we add it to the
+    // list of available renderers.
+    if (optixdevcount > 0) { 
+      // Emit a console message during OptiX renderer instantiation
+      // since the JIT compilation and linkage of the 256+ shaders may
+      // take several seconds on machines with several GPUs...
+      if (vmdapp->nodecount == 1) {
+        msgInfo << "  Compiling " 
+                << OptiXRenderer::material_shader_table_size() 
+                << " OptiX shaders on " << optixdevcount << " target GPU" 
+                << ((optixdevcount > 1) ? "s" : "") << "..." << sendmsg;
+      }
+
+      add(new OptiXDisplayDevice(vmdapp, 0, cluster_dev));
+#if defined(VMDOPENGL) && defined(VMDOPTIX_INTERACTIVE_OPENGL)
+      add(new OptiXDisplayDevice(vmdapp, 1, cluster_dev));
+#endif
+    }
   }
 #endif
 
-  // Perform runtime check for OptiX availability before we add it to the
-  // list of available renderers.
-  if (OptiXRenderer::device_count() > 0) { 
-    add(new OptiXDisplayDevice(vmdapp, 0, cluster_dev));
-#if defined(VMDOPTIX_INTERACTIVE_OPENGL)
-    add(new OptiXDisplayDevice(vmdapp, 1, cluster_dev));
+#if defined(VMDLIBOSPRAY)
+  if (!getenv("VMDNOOSPRAY")) {
+    OSPRayDisplayDevice::OSPRay_Global_Init(); // call only ONCE
+    add(new OSPRayDisplayDevice(vmdapp, 0));
+#if defined(VMDOPENGL) && defined(VMDOSPRAY_INTERACTIVE_OPENGL)
+    add(new OSPRayDisplayDevice(vmdapp, 1));
 #endif
   }
 #endif
+
   add(new POV3DisplayDevice());
   add(new VrmlDisplayDevice());
   add(new Vrml2DisplayDevice());

@@ -1,5 +1,5 @@
 #
-# $Id: fftk_guiInterface.tcl,v 1.36 2015/05/08 15:49:19 mayne Exp $
+# $Id: fftk_guiInterface.tcl,v 1.42 2016/05/31 21:21:22 mayne Exp $
 #
 
 #======================================================
@@ -7,7 +7,7 @@ namespace eval ::ForceFieldToolKit::gui {
 
     # General Variables
     variable w
-    
+
     # BuildPar Variables
     variable bparIdMissingAnalyzeMolID
     variable bparVDWInputParFile
@@ -17,12 +17,12 @@ namespace eval ::ForceFieldToolKit::gui {
     variable bparVDWrefComment
     variable bparCGenFFMolID
     variable bparCGenFFTvSort
-    
+
     # GenZMatrix Variables
     variable gzmAtomLabels
     variable gzmVizSpheresDon
     variable gzmVizSpheresAcc
-    
+
     # ChargeOpt Variables
     variable coptAtomLabel
     variable coptAtomLabelInd
@@ -40,7 +40,7 @@ namespace eval ::ForceFieldToolKit::gui {
     variable coptPrevLogFile
     variable coptStatus
     variable coptFinalChargeTotal
-    
+
     # BondAngleOpt Variables
     variable baoptParInProg
     variable baoptEditBA
@@ -51,14 +51,14 @@ namespace eval ::ForceFieldToolKit::gui {
     variable baoptBuildScript
     variable baoptReturnObjCurrent
     variable baoptReturnObjPrevious
-    
+
     # GenDihScan Variables
     variable gdsAtomLabels
     variable gdsEditIndDef
     variable gdsEditEqVal
     variable gdsEditPlusMinus
     variable gdsEditStepSize
-    
+
     # DihOpt Variables
     variable doptEditDef
     variable doptEditFC
@@ -111,7 +111,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     # STYLE SETUP
     # set variables for controlling element paddings (style)
     set vbuttonPadX 5; # vertically aligned std buttons
-    set vbuttonPadY 0 
+    set vbuttonPadY 0
     set hbuttonPadX "5 0"; # horzontally aligned std buttons
     set hbuttonPadY 0
     set buttonRunPadX 10; # large buttons that launch procs
@@ -133,8 +133,10 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     set downPoint \u25BC
     set rightPoint \u25B6
     # accept and cancel indicators
-    set accept \u2713
-    set cancel \u2715
+    # old symbols for checkmark (\u2713) and x (\u2715) are unrecognized on most newer linux OSes
+    # sqrt is the closest functioning symbol for checkmark.  'x' works for cancel cross
+    set accept \u221A
+    set cancel x
     # motion indicators
     set upArrow \u2191
     set downArrow \u2193
@@ -150,6 +152,9 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     if { [lsearch -exact $themeList "aqua"] != -1 } {
         ttk::style theme use aqua
         set placeHolderPadX 18
+        # better special symbols for accept/cancel are available on mac
+        set accept \u2713
+        set cancel \u2715
     } elseif { [lsearch -exact $themeList "clam"] != -1 } {
         ttk::style theme use clam
     } elseif { [lsearch -exact $themeList "classic"] != -1 } {
@@ -189,29 +194,29 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     # set a default initial geometry
     # note that height will resize as required by gridded components, width does not
     # 800 is a graceful width for all
-    wm geometry $w 825x500    
-    
+    wm geometry $w 825x500
+
     # build/grid a high level frame (hlf) just inside the window to contain the notebook
     ttk::frame $w.hlf
     grid $w.hlf -column 0 -row 0 -sticky nsew
     # allow hlf to resize with window
     grid columnconfigure $w.hlf 0 -weight 1
     grid rowconfigure $w.hlf 0 -weight 1
-    
-    
+
+
     # build/grid the notebook (nb)
     # will contain tabs for each major task in parameterization
     # tabs will be added in each individual section as needed (see below)
     ttk::notebook $w.hlf.nb
     grid $w.hlf.nb -column 0 -row 0 -sticky nsew
-    
-    
+
+
     # build/grid the console
     ttk::labelframe $w.hlf.console -labelanchor nw -padding $labelFrameInternalPadding
-    ttk::label $w.hlf.console.lblWidget -text "GUI Event Log (on)" -anchor w -font TkDefaultFont
+    ttk::label $w.hlf.console.lblWidget -text "GUI Event Log (ON) <click to toggle>" -anchor w -font TkDefaultFont
     $w.hlf.console configure -labelwidget $w.hlf.console.lblWidget
-    ttk::label $w.hlf.consolePlaceHolder -text "GUI Event Log (off)" -anchor w -font TkDefaultFont
-    
+    ttk::label $w.hlf.consolePlaceHolder -text "GUI Event Log (OFF) <click to toggle>" -anchor w -font TkDefaultFont
+
     # setup mouse bindings to turn console on and off
     bind $w.hlf.console.lblWidget <Button-1> {
         grid remove .fftk_gui.hlf.console
@@ -226,7 +231,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
 
-    set console $w.hlf.console    
+    set console $w.hlf.console
 
     ttk::treeview $console.log -selectmode none -yscrollcommand ".fftk_gui.hlf.console.scroll set"
         $console.log configure -columns {num msg time} -show {} -height 3
@@ -238,13 +243,21 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         $console.log column time -width 200 -stretch 0 -anchor e
     ttk::scrollbar $console.scroll -orient vertical -command ".fftk_gui.hlf.console.log yview"
 
-    grid $console -column 0 -row 1 -sticky nswe -padx 15 -pady 5
+    grid $console -column 0 -row 1 -sticky nswe -padx 15 -pady "5 0"
     grid columnconfigure $console 0 -weight 1
     grid $console.log -column 0 -row 0 -sticky nswe
     grid $console.scroll -column 1 -row 0 -sticky nswe
 
     grid $w.hlf.consolePlaceHolder -column 0 -row 1 -sticky nswe -padx 22 -pady 5
-    grid remove $w.hlf.consolePlaceHolder
+
+    # send message to the console logging startup
+    ::ForceFieldToolKit::gui::consoleMessage "ffTK Startup"
+
+    # turn off by default - necessary for screens with limited vertical space
+    grid remove $w.hlf.console
+    set ::ForceFieldToolKit::gui::consoleState 0
+    #::ForceFieldToolKit::gui::resizeToActiveTab
+    #grid $w.hlf.consolePlaceHolder
 
 
     # ffTK citation
@@ -257,19 +270,35 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     if { [lsearch [font names] TkDefaultFontBold] == -1 } { font create TkDefaultFontBold -family $font_f -size $font_s -weight bold -slant $font_sl -underline $font_u -overstrike $font_o }
     unset fontOpts font_f font_s font_w font_sl font_u font_o
 
-    ttk::frame $console.citeFrame
-    ttk::label $console.citeFrame.lbl1 -text "To cite ${ff}TK please use:  C.G. Mayne, J. Saam, K. Schulten, E. Tajkhorshid, J.C. Gumbart. "
-    #ttk::label $console.citeFrame.lbl1 -text "To cite ${ff}TK please use:  Mayne, C. G. et al. "
-    ttk::label $console.citeFrame.lbl2 -text "J. Comput. Chem. " -font TkDefaultFontItalic
-    ttk::label $console.citeFrame.lbl3 -text "2013" -font TkDefaultFontBold
-    ttk::label $console.citeFrame.lbl4 -text ", 34, 2757-2770."
+#    ttk::frame $console.citeFrame
+#    ttk::label $console.citeFrame.lbl1 -text "To cite ${ff}TK please use:  C.G. Mayne, J. Saam, K. Schulten, E. Tajkhorshid, J.C. Gumbart. "
+#    #ttk::label $console.citeFrame.lbl1 -text "To cite ${ff}TK please use:  Mayne, C. G. et al. "
+#    ttk::label $console.citeFrame.lbl2 -text "J. Comput. Chem. " -font TkDefaultFontItalic
+#    ttk::label $console.citeFrame.lbl3 -text "2013" -font TkDefaultFontBold
+#    ttk::label $console.citeFrame.lbl4 -text ", 34, 2757-2770."
+#
+#    grid $console.citeFrame -column 0 -row 1
+#        grid $console.citeFrame.lbl1 -column 1 -row 0
+#        grid $console.citeFrame.lbl2 -column 2 -row 0
+#        grid $console.citeFrame.lbl3 -column 3 -row 0
+#        grid $console.citeFrame.lbl4 -column 4 -row 0
 
-    grid $console.citeFrame -column 0 -row 1
-        grid $console.citeFrame.lbl1 -column 1 -row 0
-        grid $console.citeFrame.lbl2 -column 2 -row 0
-        grid $console.citeFrame.lbl3 -column 3 -row 0
-        grid $console.citeFrame.lbl4 -column 4 -row 0
-    
+    ttk::frame $w.hlf.citeFrame
+    ttk::separator $w.hlf.citeFrame.sep1 -orient horizontal
+    ttk::label $w.hlf.citeFrame.lbl1 -text "To cite ${ff}TK please use:  C.G. Mayne, J. Saam, K. Schulten, E. Tajkhorshid, J.C. Gumbart. "
+    ttk::label $w.hlf.citeFrame.lbl2 -text "J. Comput. Chem. " -font TkDefaultFontItalic
+    ttk::label $w.hlf.citeFrame.lbl3 -text "2013" -font TkDefaultFontBold
+    ttk::label $w.hlf.citeFrame.lbl4 -text ", 34, 2757-2770."
+
+    grid $w.hlf.citeFrame -column 0 -row 2 -sticky nswe -padx 15 -pady "0 5"
+        grid $w.hlf.citeFrame.sep1 -sticky nwe -column 0 -columnspan 6 -row 0
+        grid $w.hlf.citeFrame.lbl1 -column 1 -row 1
+        grid $w.hlf.citeFrame.lbl2 -column 2 -row 1
+        grid $w.hlf.citeFrame.lbl3 -column 3 -row 1
+        grid $w.hlf.citeFrame.lbl4 -column 4 -row 1
+    grid columnconfigure $w.hlf.citeFrame {0 5} -weight 1
+
+
 
     #---------------------------------------------------#
     #  BuildPar   tab                                   #
@@ -280,10 +309,10 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     $w.hlf.nb add $w.hlf.nb.buildpar -text "BuildPar"
     # allow frame to change width with window
     grid columnconfigure $w.hlf.nb.buildpar 0 -weight 1
-    
+
     # for shorter naming convention
     set bpar $w.hlf.nb.buildpar
-    
+
     # IDENTIFY MISSING PARAMETERS frame
     # ---------------------------------
     # Building an initial parameter file for missing parameters
@@ -291,7 +320,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $bpar.missingPars.lblWidget -text "$downPoint Identify Missing Parameters" -anchor w -font TkDefaultFont
     $bpar.missingPars configure -labelwidget $bpar.missingPars.lblWidget
     ttk::label $bpar.missingParsPlaceHolder -text "$rightPoint Identify Missing Parameters" -anchor w -font TkDefaultFont
-    
+
     # set mouse click bindings to expand/contract buildpar settings
     bind $bpar.missingPars.lblWidget <Button-1> {
         grid remove .fftk_gui.hlf.nb.buildpar.missingPars
@@ -303,7 +332,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid .fftk_gui.hlf.nb.buildpar.missingPars
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # build id missing elements
     ttk::label $bpar.missingPars.psfPathLbl -text "Input PSF File:" -anchor center
     ttk::entry $bpar.missingPars.psfPath -textvariable ::ForceFieldToolKit::BuildPar::idMissingPSF -width 40
@@ -337,7 +366,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::button $bpar.missingPars.clear -text "Clear" -command { .fftk_gui.hlf.nb.buildpar.missingPars.parFilesBox delete [.fftk_gui.hlf.nb.buildpar.missingPars.parFilesBox children {}] }
 
     ttk::separator $bpar.missingPars.sep1 -orient horizontal
-    
+
     # frame for viz missing elements goes here
     ttk::button $bpar.missingPars.analyze -text "Analyze" \
         -command {
@@ -355,12 +384,12 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set ::ForceFieldToolKit::BuildPar::idMissingRefParList {}
             foreach tvItem [.fftk_gui.hlf.nb.buildpar.missingPars.parFilesBox children {}] {
                 lappend ::ForceFieldToolKit::BuildPar::idMissingRefParList [lindex [.fftk_gui.hlf.nb.buildpar.missingPars.parFilesBox item $tvItem -values] 0]
-            } 
+            }
             # run the proc
             ::ForceFieldToolKit::gui::bparAnalyzeMissingPars
         }
-    ttk::separator $bpar.missingPars.sep2 -orient horizontal   
-   
+    ttk::separator $bpar.missingPars.sep2 -orient horizontal
+
     ttk::frame $bpar.missingPars.vizFrame
         ttk::label $bpar.missingPars.vizFrame.bondsLbl -text "Bonds" -anchor w
         ttk::treeview $bpar.missingPars.vizFrame.bondsTv -selectmode extended -yscrollcommand "$bpar.missingPars.vizFrame.bondsScroll set"
@@ -370,14 +399,14 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
                 $bpar.missingPars.vizFrame.bondsTv column $col -width 50 -stretch 1 -anchor center
             }
 
-        ttk::label $bpar.missingPars.vizFrame.anglesLbl -text "Angles" -anchor w 
+        ttk::label $bpar.missingPars.vizFrame.anglesLbl -text "Angles" -anchor w
         ttk::treeview $bpar.missingPars.vizFrame.anglesTv -selectmode extended -yscrollcommand "$bpar.missingPars.vizFrame.anglesScroll set"
             $bpar.missingPars.vizFrame.anglesTv configure -columns {type1 type2 type3 active indsList} -displaycolumns {type1 type2 type3} -show {} -height 4
-            foreach col {type1 type2 type3} { 
+            foreach col {type1 type2 type3} {
                 $bpar.missingPars.vizFrame.anglesTv heading $col -text $col
                 $bpar.missingPars.vizFrame.anglesTv column $col -width 50 -stretch 1 -anchor center
             }
-        
+
         ttk::label $bpar.missingPars.vizFrame.dihedralsLbl -text "Dihedrals" -anchor w
         ttk::treeview $bpar.missingPars.vizFrame.dihedralsTv -selectmode extended -yscrollcommand "$bpar.missingPars.vizFrame.dihedralsScroll set"
             $bpar.missingPars.vizFrame.dihedralsTv configure -columns {type1 type2 type3 type4 active indsList} -displaycolumns {type1 type2 type3 type4} -show {} -height 4
@@ -410,11 +439,11 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             .fftk_gui.hlf.nb.buildpar.missingPars.vizFrame.${tv} tag configure inactive -foreground gray
             bind $bpar.missingPars.vizFrame.${tv} <Double-ButtonPress-1> "::ForceFieldToolKit::gui::bparToggleStateMissingPars $tv"
         }
-        
+
 
     # end of viz frame
     ttk::separator $bpar.missingPars.sep3 -orient horizontal
-    
+
     ttk::label $bpar.missingPars.outPathLbl -text "Output PAR File:" -anchor center
     ttk::entry $bpar.missingPars.outPath -textvariable ::ForceFieldToolKit::BuildPar::idMissingParOutPath -width 40
     ttk::button $bpar.missingPars.outPathBrowse -text "SaveAs" \
@@ -422,11 +451,11 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set temppath [tk_getSaveFile -title "Save the Initial Parameter File As..." -filetypes $::ForceFieldToolKit::gui::parType -defaultextension {.par}]
             if {![string eq $temppath ""]} { set ::ForceFieldToolKit::BuildPar::idMissingParOutPath $temppath }
         }
-    
-    ttk::separator $bpar.missingPars.sep4 -orient horizontal    
+
+    ttk::separator $bpar.missingPars.sep4 -orient horizontal
 
     ttk::button $bpar.missingPars.buildInitParFile -text "Write Initial Parameter File" \
-        -command {           
+        -command {
             # construct lists of the active parameters
             set bondlist {}
             foreach tvItem [.fftk_gui.hlf.nb.buildpar.missingPars.vizFrame.bondsTv children {}] {
@@ -435,7 +464,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
                 if { $state } {
                     lappend bondlist [list $b1 $b2]
                 } else {
-                    lappend bondlist [list "!${b1}" $b2] 
+                    lappend bondlist [list "!${b1}" $b2]
                 }
                 unset state b1 b2
             }
@@ -477,7 +506,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         }
 
     ttk::label $bpar.missingPars.warning -foreground red -text "WARNING: Assign missing LJ parameters prior to using initial parameter file." -anchor center
-    
+
     # Grid id missing elements
     grid $bpar.missingPars -column 0 -row 0 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $bpar.missingPars 1 -weight 1
@@ -504,18 +533,18 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $bpar.missingPars.sep1            -column 0 -row 7 -columnspan 4 -sticky we -padx $hsepPadX -pady $hsepPadY
 
     # frame for viz missing elements goes here
-    grid $bpar.missingPars.analyze         -column 0 -row 8 -columnspan 4 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY 
+    grid $bpar.missingPars.analyze         -column 0 -row 8 -columnspan 4 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
     grid $bpar.missingPars.sep2            -column 0 -row 9 -columnspan 4 -sticky we -padx $hsepPadX -pady "0 $hsepPadY"
 
     grid $bpar.missingPars.vizFrame        -column 0 -row 10 -columnspan 4 -sticky nswe -padx "0 $vbuttonPadX"
         grid $bpar.missingPars.vizFrame.bondsLbl        -column 0 -row 0 -sticky nswe
         grid $bpar.missingPars.vizFrame.bondsTv         -column 0 -row 1 -sticky nswe
         grid $bpar.missingPars.vizFrame.bondsScroll      -column 1 -row 1 -sticky ns -padx "0 5"
-           
+
         grid $bpar.missingPars.vizFrame.anglesLbl       -column 2 -row 0 -sticky nswe
         grid $bpar.missingPars.vizFrame.anglesTv        -column 2 -row 1 -sticky nswe
         grid $bpar.missingPars.vizFrame.anglesScroll     -column 3 -row 1 -sticky ns -padx "0 5"
-   
+
         grid $bpar.missingPars.vizFrame.dihedralsLbl    -column 4 -row 0 -sticky nswe
         grid $bpar.missingPars.vizFrame.dihedralsTv     -column 4 -row 1 -sticky nswe
         grid $bpar.missingPars.vizFrame.dihedralsScroll  -column 5 -row 1 -sticky ns -padx "0 5"
@@ -539,7 +568,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $bpar.missingPars.sep4            -column 0 -row 14 -columnspan 4 -sticky we -padx $hsepPadX -pady $hsepPadY
     grid $bpar.missingPars.buildInitParFile -column 0 -row 15 -columnspan 4 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
     grid $bpar.missingPars.warning         -column 0 -row 16 -columnspan 4 -sticky nswe -padx 10 -pady "5 10"
-    
+
 
     # ASSIGN MISSING VDW frame
     # ------------------------
@@ -548,7 +577,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $bpar.vdwPars.lblWidget -text "$downPoint Assign Missing VDW/LJ Parameters by Analogy" -anchor w -font TkDefaultFont
     $bpar.vdwPars configure -labelwidget $bpar.vdwPars.lblWidget
     ttk::label $bpar.vdwParsPlaceHolder -text "$rightPoint Assign Missing VDW/LJ Parameters by Analogy" -anchor w -font TkDefaultFont
-    
+
     # set mouse click bindings to expand/contract buildpar vdw settings
     bind $bpar.vdwPars.lblWidget <Button-1> {
         grid remove .fftk_gui.hlf.nb.buildpar.vdwPars
@@ -562,21 +591,21 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid rowconfigure .fftk_gui.hlf.nb.buildpar 1 -weight 1
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # grid the overall frame
     grid $bpar.vdwPars -column 0 -row 1 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $bpar.vdwPars 0 -weight 1
     grid remove $bpar.vdwPars
     grid $bpar.vdwParsPlaceHolder -column 0 -row 1 -sticky nswe -padx $placeHolderPadX -pady $placeHolderPadY
 
-    
+
     # build vdw input elements
     ttk::frame $bpar.vdwPars.input
     ttk::label $bpar.vdwPars.input.lbl -text "Incomplete PAR File:" -anchor w
     ttk::entry $bpar.vdwPars.input.parfile -textvariable ::ForceFieldToolKit::gui::bparVDWInputParFile
     ttk::button $bpar.vdwPars.input.browse -text "Browse" \
         -command {
-            set tempfile [tk_getOpenFile -title "Select a Parameter File" -filetypes $::ForceFieldToolKit::gui::parType] 
+            set tempfile [tk_getOpenFile -title "Select a Parameter File" -filetypes $::ForceFieldToolKit::gui::parType]
             if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::gui::bparVDWInputParFile $tempfile }
         }
     ttk::button $bpar.vdwPars.input.load -text "Load" \
@@ -627,18 +656,18 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             ::ForceFieldToolKit::SharedFcns::writeParFile $inputParData $::ForceFieldToolKit::gui::bparVDWInputParFile
             ::ForceFieldToolKit::gui::consoleMessage "Incomplete PAR file updated (overwritten)"
         }
-    
+
     # grid vdw input elements
     grid $bpar.vdwPars.input -column 0 -row 0 -sticky nswe
     grid columnconfigure $bpar.vdwPars.input 1 -weight 1
     grid columnconfigure $bpar.vdwPars.input {2 3 4} -uniform ct1
-    
+
     grid $bpar.vdwPars.input.lbl -column 0 -row 0 -sticky nswe
     grid $bpar.vdwPars.input.parfile -column 1 -row 0 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $bpar.vdwPars.input.browse -column 2 -row 0 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
     grid $bpar.vdwPars.input.load -column 3 -row 0 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
     grid $bpar.vdwPars.input.update -column 4 -row 0 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
-    
+
     # build vdw parameter elements
     ttk::frame $bpar.vdwPars.missingPars
     ttk::label $bpar.vdwPars.missingPars.lbl -text "VDW/LJ Parameters" -anchor w
@@ -660,7 +689,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         $bpar.vdwPars.missingPars.tv column eps14 -width 100 -stretch 1 -anchor center
         $bpar.vdwPars.missingPars.tv column rmin14 -width 100 -stretch 1 -anchor center
     ttk::scrollbar $bpar.vdwPars.missingPars.scroll -orient vertical -command "$bpar.vdwPars.missingPars.tv yview"
-    
+
     ttk::button $bpar.vdwPars.missingPars.setFromRef -text "Set from Reference" \
         -command {
             if { [.fftk_gui.hlf.nb.buildpar.vdwPars.missingPars.tv selection] == {} || [.fftk_gui.hlf.nb.buildpar.vdwPars.refvdw.tv selection] == {} } {
@@ -673,23 +702,23 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
                 .fftk_gui.hlf.nb.buildpar.vdwPars.missingPars.tv set [.fftk_gui.hlf.nb.buildpar.vdwPars.missingPars.tv selection] rmin14 [lindex $refPars 1 1]
             }
         }
-    
+
     # grid vdw parameter elements
     grid rowconfigure $bpar.vdwPars 1 -weight 1
     grid $bpar.vdwPars.missingPars -column 0 -row 1 -sticky nswe
     grid columnconfigure $bpar.vdwPars.missingPars {0 1 2 3 4} -weight 1 -minsize 10 -uniform ct1
     grid rowconfigure $bpar.vdwPars.missingPars 2 -weight 1
-    
+
     grid $bpar.vdwPars.missingPars.lbl -column 0 -row 0 -columnspan 4 -sticky nswe
     grid $bpar.vdwPars.missingPars.typeLbl -column 0 -row 1 -sticky nswe
     grid $bpar.vdwPars.missingPars.epsLbl -column 1 -row 1 -sticky nswe
     grid $bpar.vdwPars.missingPars.rminLbl -column 2 -row 1 -sticky nswe
     grid $bpar.vdwPars.missingPars.eps14Lbl -column 3 -row 1 -sticky nswe
     grid $bpar.vdwPars.missingPars.rmin14Lbl -column 4 -row 1 -sticky nswe
-    
+
     grid $bpar.vdwPars.missingPars.tv -column 0 -row 2 -columnspan 5 -sticky nswe -pady "0 10"
     grid $bpar.vdwPars.missingPars.scroll -column 5 -row 2 -sticky nswe -pady "0 10"
-    
+
     grid $bpar.vdwPars.missingPars.setFromRef -column 1 -columnspan 3 -row 3 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
 
 
@@ -700,20 +729,20 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
 
     grid $bpar.vdwPars.sepFrame -column 0 -row 2 -sticky nswe
     grid columnconfigure $bpar.vdwPars.sepFrame 0 -weight 1
-    grid $bpar.vdwPars.sepFrame.sep1 -column 0 -row 0 -sticky nswe -padx $hsepPadX -pady "10 2" 
+    grid $bpar.vdwPars.sepFrame.sep1 -column 0 -row 0 -sticky nswe -padx $hsepPadX -pady "10 2"
     grid $bpar.vdwPars.sepFrame.sep2 -column 0 -row 1 -sticky nswe -padx $hsepPadX -pady "2 10"
 
 
 
     # build vdw reference parameter loader
     ttk::frame $bpar.vdwPars.refvdw
-    ttk::label $bpar.vdwPars.refvdw.lbl -text "Reference Parameter Set Browser" -anchor center -font "TkHeadingFont" 
+    ttk::label $bpar.vdwPars.refvdw.lbl -text "Reference Parameter Set Browser" -anchor center -font "TkHeadingFont"
     ttk::label $bpar.vdwPars.refvdw.eleLbl -text "Element" -anchor w
     ttk::menubutton $bpar.vdwPars.refvdw.ele -direction below -menu $bpar.vdwPars.refvdw.ele.menu -textvariable ::ForceFieldToolKit::gui::bparVDWele
     menu $bpar.vdwPars.refvdw.ele.menu -tearoff no
     ttk::label $bpar.vdwPars.refvdw.parSetLbl -text "Parameter Set" -anchor w
     ttk::menubutton $bpar.vdwPars.refvdw.parSet -direction below -menu $bpar.vdwPars.refvdw.parSet.menu -textvariable ::ForceFieldToolKit::gui::bparVDWparSet
-    menu $bpar.vdwPars.refvdw.parSet.menu -tearoff no    
+    menu $bpar.vdwPars.refvdw.parSet.menu -tearoff no
     ttk::button $bpar.vdwPars.refvdw.load -text "Load Topology + Parameter Set" -command { ::ForceFieldToolKit::gui::bparLoadRefVDWData }
     ttk::button $bpar.vdwPars.refvdw.clear -text "Clear" \
         -command {
@@ -724,11 +753,11 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set ::ForceFieldToolKit::gui::bparVDWele {}
             set ::ForceFieldToolKit::gui::bparVDWparSet {}
             set ::ForceFieldToolKit::gui::bparVDWrefComment {}
-            
+
             # message the console
             ::ForceFieldToolKit::gui::consoleMessage "Ref. VDW/LJ parameter set(s) cleared"
         }
-    
+
     ttk::treeview $bpar.vdwPars.refvdw.tv -selectmode browse -yscrollcommand "$bpar.vdwPars.refvdw.scroll set"
         $bpar.vdwPars.refvdw.tv configure -column {ele type ljPars filename comments} -display {ele type ljPars filename} -show {headings} -height 5
         $bpar.vdwPars.refvdw.tv heading ele -text "Ele"
@@ -743,30 +772,30 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
 
     ttk::label $bpar.vdwPars.refvdw.commentLbl -text "Parameter Comment(s):" -anchor w
     ttk::label $bpar.vdwPars.refvdw.comment -textvariable ::ForceFieldToolKit::gui::bparVDWrefComment -anchor w
-    
+
     # grid vdw reference parameter loader
     grid rowconfigure $bpar.vdwPars 3 -weight 3
     grid $bpar.vdwPars.refvdw -column 0 -row 3 -sticky nswe
     grid columnconfigure $bpar.vdwPars.refvdw {4} -weight 1
     grid columnconfigure $bpar.vdwPars.refvdw 0 -minsize 75
     grid columnconfigure $bpar.vdwPars.refvdw 1 -minsize 200
-    
+
     grid $bpar.vdwPars.refvdw.lbl -column 0 -row 0 -columnspan 6 -sticky nswe
     grid $bpar.vdwPars.refvdw.eleLbl -column 0 -row 1 -sticky nswe
     grid $bpar.vdwPars.refvdw.ele -column 0 -row 2 -sticky nswe;# -padx $hbuttonPadX -pady $hbuttonPadY
     grid $bpar.vdwPars.refvdw.parSetLbl -column 1 -row 1 -sticky nswe
     grid $bpar.vdwPars.refvdw.parSet -column 1 -row 2 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
-    
+
     grid $bpar.vdwPars.refvdw.load -column 2 -row 2 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
     grid $bpar.vdwPars.refvdw.clear -column 3 -row 2 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
-    
+
     grid rowconfigure $bpar.vdwPars.refvdw 3 -weight 1
     grid $bpar.vdwPars.refvdw.tv -column 0 -row 3 -columnspan 5 -sticky nswe
     grid $bpar.vdwPars.refvdw.scroll -column 5 -row 3 -sticky nswe
 
     grid $bpar.vdwPars.refvdw.commentLbl -column 0 -row 4 -columnspan 6 -sticky nswe
     grid $bpar.vdwPars.refvdw.comment -column 0 -row 5 -columnspan 6 -sticky nswe -padx "10 0"
-    
+
     # set a binding to copy the comments from tv to the label
     bind $bpar.vdwPars.refvdw.tv <<TreeviewSelect>> {
         set tvcomments {}
@@ -890,7 +919,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $bpar.cgenff.io.container.chain         -column 2 -row 0 -sticky nsw -padx $entryPadX -pady $entryPadY
     grid $bpar.cgenff.io.container.segLbl        -column 3 -row 0
     grid $bpar.cgenff.io.container.seg           -column 4 -row 0 -sticky nsw -padx $entryPadX -pady $entryPadY
-    grid $bpar.cgenff.io.container.resGetFromMol -column 5 -row 0 -sticky nsw -padx $vbuttonPadX -pady $vbuttonPadY 
+    grid $bpar.cgenff.io.container.resGetFromMol -column 5 -row 0 -sticky nsw -padx $vbuttonPadX -pady $vbuttonPadY
 
     grid columnconfigure $bpar.cgenff.io {0 2} -weight 0
     grid columnconfigure $bpar.cgenff.io {1}   -weight 1
@@ -940,7 +969,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         ttk::treeview  $bpar.cgenff.pars.${ele}Tv     -selectmode extended -yscrollcommand "$bpar.cgenff.pars.${ele}Scroll set"
         ttk::scrollbar $bpar.cgenff.pars.${ele}Scroll -orient vertical -command "$bpar.cgenff.pars.${ele}Tv yview"
     }
-    
+
     # configure tvs (is there a reasonabl way to do these programmatically?)
     # bonds
     $bpar.cgenff.pars.bondsTv configure -columns {typedef k b0 penalty comments indlist} -displaycolumns {typedef k b0 penalty} -show {headings} -height 4
@@ -950,7 +979,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     $bpar.cgenff.pars.bondsTv heading penalty -text "Penalty"   -anchor center -command { ::ForceFieldToolKit::gui::bparCGenFFSortPars bonds penalty 3 }
     $bpar.cgenff.pars.bondsTv column typedef -width 200 -stretch 4 -anchor center
     foreach ele {k b0 penalty} { $bpar.cgenff.pars.bondsTv column $ele -width 100 -stretch 2 -anchor center }
-    
+
     # angles
     $bpar.cgenff.pars.anglesTv configure -columns {typedef k theta kub s penalty comments indlist} -displaycolumns {typedef k theta kub s penalty} -show {headings} -height 4
     $bpar.cgenff.pars.anglesTv heading typedef -text "Type Def." -anchor center -command { ::ForceFieldToolKit::gui::bparCGenFFSortPars angles typedef 0 }
@@ -982,7 +1011,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     $bpar.cgenff.pars.impropersTv heading penalty -text "Penalty"   -anchor center -command { ::ForceFieldToolKit::gui::bparCGenFFSortPars impropers penalty 3 }
     $bpar.cgenff.pars.impropersTv column typedef -width 200 -stretch 4 -anchor center
     foreach ele {k psi penalty} { $bpar.cgenff.pars.impropersTv column $ele -width 100 -stretch 2 -anchor center }
-    
+
     # grid parameter analysis elements
     grid $bpar.cgenff.pars -column 0 -row 5 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
 
@@ -1022,7 +1051,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     }
     bind $bpar.cgenff.pars.bondsTv <KeyPress-Escape> { .fftk_gui.hlf.nb.buildpar.cgenff.pars.bondsTv selection set {} }
     bind $bpar.cgenff.pars.bondsTv <<TreeviewSelect>> { ::ForceFieldToolKit::gui::bparCGenFFTvSelectionDidChange }
- 
+
     # bind angles
     bind $bpar.cgenff.pars.anglesLbl <Button-1> {
         if { [.fftk_gui.hlf.nb.buildpar.cgenff.pars.anglesLbl cget -state] eq "disabled" } {
@@ -1076,13 +1105,13 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
 
 
     # UPDATE PARAMETERS frame
-    # -----------------------    
+    # -----------------------
     # Build frame for updating parameters after optimization
     ttk::labelframe $bpar.update -labelanchor nw -padding $labelFrameInternalPadding
     ttk::label $bpar.update.lblWidget -text "$downPoint Update Parameter File with Optimized Parameters" -anchor w -font TkDefaultFont
     $bpar.update configure -labelwidget $bpar.update.lblWidget
     ttk::label $bpar.updatePlaceHolder -text "$rightPoint Update Parameter File with Optimized Parameters" -anchor w -font TkDefaultFont
-    
+
     # set mouse click bindings to expand/contract buildpar settings
     bind $bpar.update.lblWidget <Button-1> {
         grid remove .fftk_gui.hlf.nb.buildpar.update
@@ -1094,7 +1123,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid .fftk_gui.hlf.nb.buildpar.update
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-   
+
     # build update elements
     ttk::label $bpar.update.inputParPathLbl -text "Input Parameter File:" -anchor center
     ttk::entry $bpar.update.inputParPath -textvariable ::ForceFieldToolKit::BuildPar::updateInputParPath
@@ -1123,7 +1152,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             ::ForceFieldToolKit::BuildPar::buildUpdatedParFile
             ::ForceFieldToolKit::gui::consoleMessage "Updated PAR file written"
         }
-    
+
     # grid update elements
     grid $bpar.update -column 0 -row 3 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $bpar.update 1 -weight 1
@@ -1131,7 +1160,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid rowconfigure $bpar.update 5 -minsize 50 -weight 0
     grid remove $bpar.update
     grid $bpar.updatePlaceHolder -column 0 -row 3 -sticky nswe -padx $placeHolderPadX -pady $placeHolderPadY
-    
+
     grid $bpar.update.inputParPathLbl -column 0 -row 0 -sticky nswe
     grid $bpar.update.inputParPath -column 1 -row 0 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $bpar.update.inputParPathBrowse -column 2 -row 0 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
@@ -1154,10 +1183,10 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     $w.hlf.nb add $w.hlf.nb.geomopt -text "Opt. Geometry"
     # allow the frame to expand width with the nb
     grid columnconfigure $w.hlf.nb.geomopt 0 -weight 1
-    
+
     # for shorter naming notation
     set gopt $w.hlf.nb.geomopt
-    
+
     # IO Section
     # ----------
     # build the io elements
@@ -1176,18 +1205,18 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set tempfile [tk_getSaveFile -title "Save the Gaussian Input File As..." -filetypes $::ForceFieldToolKit::gui::gauType -defaultextension {.gau}]
             if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GeomOpt::com $tempfile }
         }
-    
+
     # grid the io elements
     grid $gopt.io -column 0 -row 0 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $gopt.io 1 -weight 1
-    
+
     grid $gopt.io.pdbLbl -column 0 -row 0 -sticky nswe
     grid $gopt.io.pdb -column 1 -row 0 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $gopt.io.pdbBrowse -column 2 -row 0 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $gopt.io.comLbl -column 0 -row 1 -sticky nswe
     grid $gopt.io.com -column 1 -row 1 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $gopt.io.comSaveAs -column 2 -row 1 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
     # Gaussian Settings
     # -----------------
     # build the gaussian settings elements
@@ -1203,11 +1232,11 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $gopt.gaussian.routeLbl -text "Route:" -anchor center
     ttk::entry $gopt.gaussian.route -textvariable ::ForceFieldToolKit::GeomOpt::qmRoute
     ttk::button $gopt.gaussian.resetDefaults -text "Reset to Defaults" -command { ::ForceFieldToolKit::GeomOpt::resetGaussianDefaults }
-    
+
     # grid the gaussian settings elements
     grid $gopt.gaussian -column 0 -row 1 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
     grid rowconfigure $gopt.gaussian {0 1} -uniform rt1
-    
+
     grid $gopt.gaussian.procLbl -column 0 -row 0 -sticky nswe
     grid $gopt.gaussian.proc -column 1 -row 0 -sticky we
     grid $gopt.gaussian.memLbl -column 2 -row 0 -sticky nswe
@@ -1233,7 +1262,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
 
     ttk::separator $gopt.sep1 -orient horizontal
     grid $gopt.sep1 -column 0 -row 3 -sticky we -padx $hsepPadX -pady $hsepPadY
-    
+
 
     # UPDATE SECTION
     # --------------
@@ -1291,17 +1320,17 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     #---------------------------------------------------#
     #  GenZMatrix tab                                   #
     #---------------------------------------------------#
-    
+
     # build the genzmat frame, add it to the notebook as a tab
     ttk::frame $w.hlf.nb.genzmat
     $w.hlf.nb add $w.hlf.nb.genzmat -text "Water Int."
     # allow the genzmat frame to expand with the nb, column only (ie. width)
     grid columnconfigure $w.hlf.nb.genzmat 0 -weight 1
-    
+
     # for shorter naming notation
     set gzm $w.hlf.nb.genzmat
-    
-    
+
+
     # IO Section
     #-----------------
     # build io section
@@ -1319,7 +1348,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::entry $gzm.io.pdbPath -textvariable ::ForceFieldToolKit::GenZMatrix::pdbPath -width 44
     ttk::button $gzm.io.pdbBrowse -text "Browse" \
         -command {
-            set tempfile [tk_getOpenFile -title "Select a PDB File" -filetypes $::ForceFieldToolKit::gui::pdbType] 
+            set tempfile [tk_getOpenFile -title "Select a PDB File" -filetypes $::ForceFieldToolKit::gui::pdbType]
             if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenZMatrix::pdbPath $tempfile }
         }
     ttk::label $gzm.io.outFolderLbl -text "Output Path:" -anchor w
@@ -1357,12 +1386,12 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             mol addfile $::ForceFieldToolKit::GenZMatrix::pdbPath
             ::ForceFieldToolKit::gui::consoleMessage "PSF/PDB loaded (Water Int.)"
         }
-        
+
     # grid io section
     grid $gzm.io -column 0 -row -0 -sticky nwe -pady 10
     grid columnconfigure $gzm.io 1 -weight 1
     grid rowconfigure $gzm.io {0 1 2 3} -uniform rt1
-    
+
     grid $gzm.io.psfLbl -column 0 -row 0
     grid $gzm.io.psfPath -column 1 -row 0 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $gzm.io.psfBrowse -column 2 -row 0 -padx $vbuttonPadX -pady $vbuttonPadY
@@ -1374,12 +1403,12 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $gzm.io.outFolderBrowse -column 2 -row 2 -padx $vbuttonPadX -pady $vbuttonPadY
     grid $gzm.io.basenameLbl -column 0 -row 3
     grid $gzm.io.subcontainer1 -column 1 -row 3 -sticky we
-    
+
     grid columnconfigure $gzm.io.subcontainer1 0 -weight 1
     grid $gzm.io.subcontainer1.basename -column 0 -row 0 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $gzm.io.subcontainer1.takeFromTop -column 1 -row 0 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
     grid $gzm.io.subcontainer1.loadPsfPdb -column 2 -row 0 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
-    
+
     # HB Donor/Acceptors Section
     #---------------------------
     # build hb donors/acceptors section
@@ -1407,7 +1436,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         }
     ttk::button $gzm.hbDonAcc.clear -text "Clear Lists" \
         -command {
-            set ::ForceFieldToolKit::GenZMatrix::donList {}       
+            set ::ForceFieldToolKit::GenZMatrix::donList {}
             set ::ForceFieldToolKit::GenZMatrix::accList {}
         }
 
@@ -1424,7 +1453,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $gzm.hbDonAcc.accList -column 0 -row 3 -sticky nswe
     grid $gzm.hbDonAcc.clear -column 1 -row 3 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
 
-    
+
     # QM Settings Section
     #--------------------
     # build section to modify QM settings
@@ -1442,7 +1471,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::button $gzm.qm.defaults -text "Reset to Defaults" -command { ::ForceFieldToolKit::GenZMatrix::resetGaussianDefaults }
     ttk::label $gzm.qm.routeLbl -text "Route:" -justify center
     ttk::entry $gzm.qm.route -textvariable ::ForceFieldToolKit::GenZMatrix::qmRoute
-    
+
     # grid the section elements
     grid $gzm.qm -column 0 -row 2 -sticky nsew -padx $labelFramePadX -pady $labelFramePadY
     grid rowconfigure $gzm.qm {0 1} -uniform rt1
@@ -1457,22 +1486,22 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $gzm.qm.defaults -column 8 -row 0 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
     grid $gzm.qm.routeLbl -column 0 -row 1 -padx $entryPadX -pady $entryPadY
     grid $gzm.qm.route -column 1 -row 1 -columnspan 8 -sticky nswe
-    
-    
+
+
     # Generate Section
     #-----------------
     ttk::separator $gzm.sep1 -orient horizontal
     grid $gzm.sep1 -column 0 -row 3 -sticky we -padx $hsepPadX -pady $hsepPadY
-    
+
     ttk::frame $gzm.run
-    ttk::button $gzm.run.generate -text "Write Gaussian Input Files" -command { 
+    ttk::button $gzm.run.generate -text "Write Gaussian Input Files" -command {
         ::ForceFieldToolKit::GenZMatrix::genZmatrix
         ::ForceFieldToolKit::GenZMatrix::writeSPfiles
     }
     ttk::button $gzm.run.loadCOM -text "Load GAU Files" \
         -command {
-            set ::ForceFieldToolKit::gui::gzmCOMfiles [tk_getOpenFile -title "Select GAU File(s) to Load" -multiple 1 -filetypes $::ForceFieldToolKit::gui::gauType] 
-            if { [llength $::ForceFieldToolKit::gui::gzmCOMfiles] eq 0 } { 
+            set ::ForceFieldToolKit::gui::gzmCOMfiles [tk_getOpenFile -title "Select GAU File(s) to Load" -multiple 1 -filetypes $::ForceFieldToolKit::gui::gauType]
+            if { [llength $::ForceFieldToolKit::gui::gzmCOMfiles] eq 0 } {
                 return
             } else {
                foreach comfile $::ForceFieldToolKit::gui::gzmCOMfiles {
@@ -1487,7 +1516,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::button $gzm.run.loadLOG -text "Load LOG Files" \
         -command {
             set ::ForceFieldToolKit::gui::gzmLOGfiles [tk_getOpenFile -title "Select LOG File(s) to Load" -multiple 1 -filetypes $::ForceFieldToolKit::gui::logType]
-            if { [llength $::ForceFieldToolKit::gui::gzmLOGfiles] eq 0 } { 
+            if { [llength $::ForceFieldToolKit::gui::gzmLOGfiles] eq 0 } {
                 return
             } else {
                 set molList {}
@@ -1514,7 +1543,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
                 }
                 mol top $bestMol
                 unset molList bestMol mostFrames
-            }        
+            }
             ::ForceFieldToolKit::gui::consoleMessage "Gaussian LOG files loaded (Water Int.)"
         }
 
@@ -1524,8 +1553,8 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $gzm.run.loadLOG -column 2 -row 0 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
     grid columnconfigure $gzm.run {0 1 2} -uniform ct2 -weight 1
     grid rowconfigure $gzm.run 0 -minsize 50
-    
-    
+
+
     #---------------------------------------------------#
     #  ChargeOpt  tab                                   #
     #---------------------------------------------------#
@@ -1535,18 +1564,18 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     $w.hlf.nb add $w.hlf.nb.chargeopt -text "Opt. Charges"
     # allow the chargeopt frame to expand with the nb, column only (ie. width)
     grid columnconfigure $w.hlf.nb.chargeopt 0 -weight 1
-        
+
     # for shorter naming notation
     set copt $w.hlf.nb.chargeopt
-    
-    
+
+
     # Input section
     #----------------------
     # build label frame
     ttk::labelframe $copt.input -labelanchor nw -padding $labelFrameInternalPadding
     ttk::label $copt.input.lblWidget -text "$downPoint Input" -anchor w -font TkDefaultFont
     $copt.input configure -labelwidget $copt.input.lblWidget
-    
+
     # build placeholder label (when compacted)
     ttk::label $copt.inputPlaceHolder -text "$rightPoint Input" -anchor w -font TkDefaultFont
 
@@ -1573,10 +1602,10 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::ChargeOpt::psfPath $tempfile }
         }
     ttk::label $copt.input.pdbLbl -text "PDB File:"
-    ttk::entry $copt.input.pdbPath -textvariable ::ForceFieldToolKit::ChargeOpt::pdbPath  
+    ttk::entry $copt.input.pdbPath -textvariable ::ForceFieldToolKit::ChargeOpt::pdbPath
     ttk::button $copt.input.pdbBrowse -text "Browse" \
         -command {
-            set tempfile [tk_getOpenFile -title "Select a PDB File" -filetypes $::ForceFieldToolKit::gui::pdbType] 
+            set tempfile [tk_getOpenFile -title "Select a PDB File" -filetypes $::ForceFieldToolKit::gui::pdbType]
             if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::ChargeOpt::pdbPath $tempfile }
         }
     ttk::label $copt.input.resLbl -text "Residue Name:"
@@ -1586,7 +1615,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             if { [llength [molinfo list]] == 0 } { tk_messageBox -type ok -icon warning -message "Action halted on error!" -detail "No PSF/PDB loaded in VMD."; return }
             set ::ForceFieldToolKit::ChargeOpt::resName [lindex [[atomselect top all] get resname] 0]
         }
-    
+
     ttk::separator $copt.input.sep1 -orient vertical
 
     ttk::button $copt.input.load -text "Load PSF/PDB" \
@@ -1616,7 +1645,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     $copt.input.labelSelect.menu add command -label "Charge" -command { set ::ForceFieldToolKit::gui::coptAtomLabel Charge; ::ForceFieldToolKit::gui::coptShowAtomLabels }
 
     ttk::separator $copt.input.sep2 -orient horizontal
-    
+
     ttk::label $copt.input.parFilesBoxLbl -text "Parameter Files (both pre-defined and in-progress)" -anchor w
     ttk::treeview $copt.input.parFilesBox -selectmode browse -yscrollcommand "$copt.input.parScroll set"
         $copt.input.parFilesBox configure -columns {filename} -show {} -height 3
@@ -1624,16 +1653,16 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::scrollbar $copt.input.parScroll -orient vertical -command "$copt.input.parFilesBox yview"
     ttk::button $copt.input.parAdd -text "Add" \
         -command {
-            set tempfiles [tk_getOpenFile -title "Select Parameter File(s)" -multiple 1 -filetypes $::ForceFieldToolKit::gui::parType] 
+            set tempfiles [tk_getOpenFile -title "Select Parameter File(s)" -multiple 1 -filetypes $::ForceFieldToolKit::gui::parType]
             foreach tempfile $tempfiles {
                 if {![string eq $tempfile ""]} { .fftk_gui.hlf.nb.chargeopt.input.parFilesBox insert {} end -values [list $tempfile] }
             }
         }
     ttk::button $copt.input.parDelete -text "Delete" -command { .fftk_gui.hlf.nb.chargeopt.input.parFilesBox delete [.fftk_gui.hlf.nb.chargeopt.input.parFilesBox selection] }
     ttk::button $copt.input.parClear -text "Clear" -command { .fftk_gui.hlf.nb.chargeopt.input.parFilesBox delete [.fftk_gui.hlf.nb.chargeopt.input.parFilesBox children {}] }
-    
+
     ttk::separator $copt.input.sep3 -orient horizontal
-    
+
     ttk::label $copt.input.logLbl -text "Output LOG:" -anchor w
     ttk::entry $copt.input.log -textvariable ::ForceFieldToolKit::ChargeOpt::outFileName
     ttk::button $copt.input.logSaveAs -text "SaveAs" \
@@ -1641,7 +1670,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set tempfile [tk_getSaveFile -title "Save Charge Optimization Output LOG As..." -initialfile "$::ForceFieldToolKit::ChargeOpt::outFileName" -filetypes $::ForceFieldToolKit::gui::logType -defaultextension {.log}]
             if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::ChargeOpt::outFileName $tempfile }
         }
-    
+
     # grid input elements
     grid $copt.input -column 0 -row 0 -sticky nsew -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $copt.input 1 -weight 1 ; # allows graceful width resize
@@ -1649,7 +1678,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid rowconfigure $copt.input 8 -weight 1 ; # allows par files box height resize
     grid remove $copt.input
     grid $copt.inputPlaceHolder -column 0 -row 0 -sticky nsew -padx $placeHolderPadX -pady $placeHolderPadY
-    
+
     grid $copt.input.psfLbl -column 0 -row 0
     grid $copt.input.psfPath -column 1 -row 0 -columnspan 2 -sticky nsew -padx $entryPadX -pady $entryPadY
     grid $copt.input.psfBrowse -column 3 -row 0 -padx $vbuttonPadX -pady $vbuttonPadY
@@ -1661,11 +1690,11 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $copt.input.resTakeFromTop -column 2 -row 2 -padx $hbuttonPadX -pady $hbuttonPadY
 
     grid $copt.input.sep1 -column 4 -row 0 -rowspan 3 -sticky nswe -padx $vsepPadX -pady $vsepPadY
-    
+
     grid $copt.input.load -column 5 -row 0 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $copt.input.labelSelectLbl -column 5 -row 1 -sticky swe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $copt.input.labelSelect -column 5 -row 2 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
     grid $copt.input.sep2 -column 0 -row 3 -columnspan 6 -sticky we -padx $hsepPadX -pady $hsepPadY
 
     grid $copt.input.parFilesBoxLbl -column 0 -row 4 -columnspan 3 -sticky nswe
@@ -1674,13 +1703,13 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $copt.input.parAdd -column 5 -row 5 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $copt.input.parDelete -column 5 -row 6 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $copt.input.parClear -column 5 -row 7 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
     grid $copt.input.sep3 -column 0 -row 9 -columnspan 6 -sticky we -padx $hsepPadX -pady $hsepPadY
-    
+
     grid $copt.input.logLbl -column 0 -row 10
     grid $copt.input.log -column 1 -row 10 -columnspan 2 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $copt.input.logSaveAs -column 3 -row 10 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
 
 
     # Charge Constraints Section (cconstr)
@@ -1689,7 +1718,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::labelframe $copt.cconstr -labelanchor nw -padding $labelFrameInternalPadding
     ttk::label $copt.cconstr.lblWidget -text "$downPoint Charge Constraints" -font TkDefaultFont
     $copt.cconstr configure -labelwidget $copt.cconstr.lblWidget
-    
+
     # build placeholder lable (when compacted)
     ttk::label $copt.cconstrPlaceHolder -text "$rightPoint Charge Constraints" -anchor w -font TkDefaultFont
 
@@ -1706,7 +1735,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid rowconfigure .fftk_gui.hlf.nb.chargeopt 1 -weight 1
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # build elements
     ttk::label $copt.cconstr.groupLbl -text "Charge Group" -anchor w
     ttk::label $copt.cconstr.initLbl -text "Initial Charge" -anchor center
@@ -1735,14 +1764,14 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             -values [list $::ForceFieldToolKit::gui::coptEditGroup $::ForceFieldToolKit::gui::coptEditInit $::ForceFieldToolKit::gui::coptEditLowBound $::ForceFieldToolKit::gui::coptEditUpBound]
         }
     ttk::button $copt.cconstr.buttonFrame.editCancel -text "$cancel" -width 1 -command {::ForceFieldToolKit::gui::coptSetEditData "cconstr"}
-    
+
     # set a binding to copy information into the Edit Box when the seletion changes
     bind $copt.cconstr.chargeData <<TreeviewSelect>> { ::ForceFieldToolKit::gui::coptSetEditData "cconstr" }
     bind $copt.cconstr.chargeData <KeyPress-Delete> {
         .fftk_gui.hlf.nb.chargeopt.cconstr.chargeData delete [.fftk_gui.hlf.nb.chargeopt.cconstr.chargeData selection]
         ::ForceFieldToolKit::gui::coptClearEditData "cconstr"
         }
-    
+
 
     ttk::button $copt.cconstr.add -text "Add" \
         -command {
@@ -1760,11 +1789,16 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         }
     ttk::button $copt.cconstr.guess -text "Guess" \
         -command {
-            if { [llength [molinfo list]] == 0 } {
-                tk_messageBox -type ok -icon warning -message "Action halted on error!" -detail "No molecule found as TOP in VMD.  Load PSF/PDB pair from INPUT section."
-                return
-            }
-            ::ForceFieldToolKit::gui::coptGuessChargeGroups
+            # make sure that the input exists
+            if { $::ForceFieldToolKit::ChargeOpt::psfPath eq "" || ![file exists $::ForceFieldToolKit::ChargeOpt::psfPath] || \
+                 $::ForceFieldToolKit::ChargeOpt::pdbPath eq "" || ![file exists $::ForceFieldToolKit::ChargeOpt::psfPath] } {
+                    tk_messageBox -type ok -icon warning -message "Action halted on error!" -detail "An error was found for the PSF or PDB file specified in the INPUT section."
+                    return
+                }
+            set temp_molid [mol new $::ForceFieldToolKit::ChargeOpt::psfPath waitfor all]
+            mol addfile $::ForceFieldToolKit::ChargeOpt::pdbPath waitfor all $temp_molid
+            ::ForceFieldToolKit::gui::coptGuessChargeGroups $temp_molid
+            mol delete $temp_molid
         }
     ttk::button $copt.cconstr.moveUp -text "Move $upArrow" \
         -command {
@@ -1796,7 +1830,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         }
 
     ttk::separator $copt.cconstr.sep1 -orient horizontal
-    
+
     ttk::frame $copt.cconstr.chargeSumFrame
     ttk::label $copt.cconstr.chargeSumFrame.netChargeLbl -text "Net Charge:" -anchor w
     ttk::entry $copt.cconstr.chargeSumFrame.netChargeEntry -textvariable ::ForceFieldToolKit::gui::coptNetCharge -justify center -width 3
@@ -1818,7 +1852,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
                 tk_messageBox -type ok -icon warning -message "Action halted on error!" -detail "Net Integer charge MUST be a valid integer."
                 return
             }
-            
+
             set molID [mol new $::ForceFieldToolKit::ChargeOpt::psfPath]
             # reTypeFromPSF/reChargeFromPSF has been depreciated
             # ::ForceFieldToolKit::SharedFcns::reChargeFromPSF $::ForceFieldToolKit::ChargeOpt::psfPath $molID
@@ -1840,7 +1874,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid columnconfigure $copt.cconstr 3 -weight 0 -minsize 100
     grid rowconfigure $copt.cconstr 4 -weight 1; # graceful height resize
     grid rowconfigure $copt.cconstr {1 2 3 6 8} -uniform rt1; # define similar rows
-    
+
     grid remove $copt.cconstr
     grid $copt.cconstrPlaceHolder -column 0 -row 1 -sticky nswe -padx $placeHolderPadX -pady $placeHolderPadY
 
@@ -1856,7 +1890,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $copt.cconstr.guess -column 6 -row 1 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $copt.cconstr.moveUp -column 6 -row 2 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $copt.cconstr.moveDown -column 6 -row 3 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
     grid $copt.cconstr.editLbl -column 0 -row 5 -sticky nswe
     grid $copt.cconstr.editGroup -column 0 -row 6 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $copt.cconstr.editInit -column 1 -row 6 -sticky nswe -padx $entryPadX -pady $entryPadY
@@ -1867,7 +1901,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid columnconfigure $copt.cconstr.buttonFrame 1 -weight 1
     grid $copt.cconstr.buttonFrame.editUpdate -column 0 -row 0 -sticky nswe
     grid $copt.cconstr.buttonFrame.editCancel -column 1 -row 0 -sticky nswe
-    
+
     grid $copt.cconstr.sep1 -column 0 -row 7 -columnspan 7 -sticky we -padx $hsepPadX -pady $hsepPadY
     grid $copt.cconstr.chargeSumFrame -column 0 -row 8 -columnspan 4 -sticky nswe
     #grid columnconfigure $copt.cconstr.chargeSumFrame 1 -weight 1
@@ -1905,7 +1939,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid rowconfigure .fftk_gui.hlf.nb.chargeopt 2 -weight 1
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     ttk::frame $copt.qmt.spe
     ttk::label $copt.qmt.spe.lbl -text "Single Point Energy Data"
     ttk::label $copt.qmt.spe.cmpdHFLogLbl -text "Cmpd LOG (HF):" -anchor w
@@ -1929,9 +1963,9 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set tempfile [tk_getOpenFile -title "Select LOG File From Single Point Energy Calculation for Water" -filetypes $::ForceFieldToolKit::gui::logType]
             if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::ChargeOpt::watLog $tempfile }
         }
-    
+
     ttk::separator $copt.qmt.sep1
-    
+
     ttk::frame $copt.qmt.wie
     ttk::label $copt.qmt.wie.wieLbl -text "Water Interaction Energy Data" -anchor w
     ttk::label $copt.qmt.wie.logFileLbl -text "LOG File" -anchor w
@@ -1946,7 +1980,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         $copt.qmt.wie.logData column atomName -width 90 -stretch 0 -anchor center
         $copt.qmt.wie.logData column weight -width 60 -stretch 0 -anchor center
     ttk::scrollbar $copt.qmt.wie.logScroll -orient vertical -command "$copt.qmt.wie.logData yview"
-    
+
     ttk::button $copt.qmt.wie.import -text "Add" \
         -command {
             # read in files, multiple allowed
@@ -1977,7 +2011,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             .fftk_gui.hlf.nb.chargeopt.qmt.wie.logData delete [.fftk_gui.hlf.nb.chargeopt.qmt.wie.logData children {}]
             ::ForceFieldToolKit::gui::coptClearEditData "wie"
         }
-    
+
     ttk::label $copt.qmt.wie.editLbl -text "Edit Entry" -anchor w
     ttk::frame $copt.qmt.wie.editFrame
     ttk::entry $copt.qmt.wie.editFrame.editLog -textvariable ::ForceFieldToolKit::gui::coptEditLog
@@ -1994,18 +2028,18 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             -values [list $::ForceFieldToolKit::gui::coptEditLog $::ForceFieldToolKit::gui::coptEditAtomName $::ForceFieldToolKit::gui::coptEditWeight]
     }
     ttk::button $copt.qmt.wie.buttonFrame.editCancel -text "$cancel" -width 1 -command { ::ForceFieldToolKit::gui::coptSetEditData "wie" }
-    
+
     # set a binding to copy information into the Edit Box when the seletion changes
     bind $copt.qmt.wie.logData <<TreeviewSelect>> { ::ForceFieldToolKit::gui::coptSetEditData "wie"}
 
-    
+
     # grid elements
     grid $copt.qmt -column 0 -row 2 -sticky nsew -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $copt.qmt 0 -weight 1
     grid rowconfigure $copt.qmt 2 -weight 1
     grid remove $copt.qmt
     grid $copt.qmtPlaceHolder -column 0 -row 2 -sticky nswe -padx $placeHolderPadX -pady $placeHolderPadY
-    
+
     grid $copt.qmt.spe -column 0 -row 0 -sticky nsew
     grid columnconfigure $copt.qmt.spe 1 -weight 1
     grid rowconfigure $copt.qmt.spe {0 1} -uniform rt1
@@ -2020,7 +2054,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $copt.qmt.spe.watLogLbl -column 0 -row 3 -sticky nswe
     grid $copt.qmt.spe.watLog -column 1 -row 3 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $copt.qmt.spe.watLogBrowse -column 2 -row 3 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
     grid $copt.qmt.sep1 -column 0 -row 1 -sticky we -padx $hsepPadX -pady $hsepPadY
 
     grid $copt.qmt.wie -column 0 -row 2 -sticky nsew
@@ -2029,21 +2063,21 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid columnconfigure $copt.qmt.wie 2 -minsize 60 -weight 0
     grid rowconfigure $copt.qmt.wie 5 -weight 1
     grid rowconfigure $copt.qmt.wie {2 3 4 6} -uniform rt1
-    
+
     grid $copt.qmt.wie.wieLbl -column 0 -row 0 -sticky nswe
     grid $copt.qmt.wie.logFileLbl -column 0 -row 1 -sticky nswe
-    grid $copt.qmt.wie.atomNameLbl -column 1 -row 1 -sticky nswe 
-    grid $copt.qmt.wie.weightLbl -column 2 -row 1 -sticky nswe 
+    grid $copt.qmt.wie.atomNameLbl -column 1 -row 1 -sticky nswe
+    grid $copt.qmt.wie.weightLbl -column 2 -row 1 -sticky nswe
     grid $copt.qmt.wie.logData -column 0 -row 2 -columnspan 3 -rowspan 4 -sticky nsew
     grid $copt.qmt.wie.logScroll -column 3 -row 2 -rowspan 4 -sticky nsew
     grid $copt.qmt.wie.import -column 4 -row 2 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $copt.qmt.wie.delete -column 4 -row 3 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $copt.qmt.wie.clear -column 4 -row 4 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
     grid $copt.qmt.wie.editLbl -column 0 -row 6 -sticky nswe
     grid $copt.qmt.wie.editFrame -column 0 -row 7 -sticky nswe
     grid columnconfigure $copt.qmt.wie.editFrame 0 -weight 1
-    
+
     grid $copt.qmt.wie.editFrame.editLog -column 0 -row 0 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $copt.qmt.wie.editFrame.editBrowse -column 1 -row 0 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $copt.qmt.wie.editAtomName -column 1 -row 7 -sticky nswe -padx $entryPadX -pady $entryPadY
@@ -2074,7 +2108,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid .fftk_gui.hlf.nb.chargeopt.advset
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # watShift proc settings
     ttk::frame $copt.advset.watShift
     ttk::label $copt.advset.watShift.lbl -text "Water Shift Settings" -anchor w
@@ -2090,7 +2124,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::entry $copt.advset.watShift.scale -textvariable ::ForceFieldToolKit::ChargeOpt::scale -width 5 -justify center
 
     ttk::separator $copt.advset.sep1
-    
+
     # optimize proc settings
     ttk::frame $copt.advset.optimize
     ttk::label $copt.advset.optimize.lbl -text "Optimize Settings" -anchor w
@@ -2123,7 +2157,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::entry $copt.advset.optimize.saSettings.iter -textvariable ::ForceFieldToolKit::ChargeOpt::saIter -width 8 -justify center
 
     ttk::separator $copt.advset.sep2
-    
+
     # extra charge settings
     ttk::frame $copt.advset.charge
     ttk::label $copt.advset.charge.lbl -text "Additional Charge Settings" -anchor w
@@ -2135,7 +2169,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     # change entry box to treeview here?  make appearance conditional on checkbutton?
 
     ttk::separator $copt.advset.sep3
-    
+
     # run settings
     ttk::frame $copt.advset.run
     ttk::label $copt.advset.run.lbl -text "Run Settings" -anchor w
@@ -2143,7 +2177,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::checkbutton $copt.advset.run.debugButton -offvalue 0 -onvalue 1 -variable ::ForceFieldToolKit::ChargeOpt::debug
     ttk::label $copt.advset.run.buildScriptLbl -text "Build Run Script" -anchor w
     ttk::checkbutton $copt.advset.run.buildScriptButton -offvalue 0 -onvalue 1 -variable ::ForceFieldToolKit::gui::coptBuildScript
-    
+
     # grid elements
     grid $copt.advset -column 0 -row 3 -sticky nsew -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $copt.advset 0 -weight 1
@@ -2162,9 +2196,9 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $copt.advset.watShift.offset -column 7 -row 1 -sticky w -padx $entryPadX -pady $entryPadY
     grid $copt.advset.watShift.scaleLbl -column 8 -row 1 -sticky nswe
     grid $copt.advset.watShift.scale -column 9 -row 1 -sticky w -padx $entryPadX -pady $entryPadY
-    
+
     grid $copt.advset.sep1 -column 0 -row 1 -sticky we -padx $hsepPadX -pady $hsepPadY
-    
+
     grid $copt.advset.optimize -column 0 -row 2 -sticky nswe
     grid columnconfigure $copt.advset.optimize {4 5} -weight 0
     grid columnconfigure $copt.advset.optimize {6} -weight 1
@@ -2186,9 +2220,9 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $copt.advset.optimize.saSettings.iterLbl -column 4 -row 0 -sticky nswe
     grid $copt.advset.optimize.saSettings.iter -column 5 -row 0 -sticky we -padx $entryPadX -pady $entryPadY
     grid remove $copt.advset.optimize.saSettings
-    
+
     grid $copt.advset.sep2 -column 0 -row 3 -sticky we -padx $hsepPadX -pady $hsepPadY
-    
+
     grid $copt.advset.charge -column 0 -row 4 -sticky nsew
     grid columnconfigure $copt.advset.charge 2 -weight 1
     grid $copt.advset.charge.lbl -column 0 -row 0 -sticky nswe -columnspan 2
@@ -2197,9 +2231,9 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $copt.advset.charge.reChargeOverrideLbl -column 1 -row 1 -sticky nswe
     grid $copt.advset.charge.reChargeOverrideSet -column 2 -row 1 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $copt.advset.charge.reChargeOverrideLbl2 -column 2 -row 2 -sticky nswe
-    
+
     grid $copt.advset.sep3 -column 0 -row 5 -sticky we -padx $hsepPadX -pady $hsepPadY
-    
+
     grid $copt.advset.run -column 0 -row 6 -sticky nswe
     grid $copt.advset.run.lbl -column 0 -row 0 -sticky nswe -columnspan 4
     grid $copt.advset.run.debugButton -column 0 -row 1
@@ -2207,7 +2241,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $copt.advset.run.buildScriptButton -column 2 -row 1 -padx "5 0"
     grid $copt.advset.run.buildScriptLbl -column 3 -row 1 -sticky nswe
 
-    
+
     # Results Section
     #----------------
 
@@ -2230,7 +2264,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid rowconfigure .fftk_gui.hlf.nb.chargeopt 4 -weight 1
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # build elements
     ttk::frame $copt.results.container1
     ttk::label $copt.results.container1.cgroupLbl -text "Charge Group" -anchor w
@@ -2259,7 +2293,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             ::ForceFieldToolKit::gui::coptClearEditData "results"
             set ::ForceFieldToolKit::gui::coptFinalChargeTotal ""
         }
-        
+
     ttk::separator $copt.results.container1.sep1 -orient horizontal
     ttk::button $copt.results.container1.setAsInit -text "Set As Initial" -command {
         # validation
@@ -2276,7 +2310,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set chargeList($chargeGroup) $finalCharge
         }
 
-        # reset the initial charges based on the results        
+        # reset the initial charges based on the results
         foreach ele [.fftk_gui.hlf.nb.chargeopt.cconstr.chargeData children {}] {
             set chargeGroup [.fftk_gui.hlf.nb.chargeopt.cconstr.chargeData set $ele group]
             if { ![info exists chargeList($chargeGroup)] } {
@@ -2293,10 +2327,10 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
 
     # set a binding to copy information into the Edit Box when the seletion changes
     bind $copt.results.container1.cgroups <<TreeviewSelect>> { ::ForceFieldToolKit::gui::coptSetEditData "results" }
-    
+
     ttk::label $copt.results.container1.chargeTotalLbl -text "Charge Total: " -anchor e
     ttk::label $copt.results.container1.chargeTotal -textvariable ::ForceFieldToolKit::gui::coptFinalChargeTotal -anchor center
-    
+
     ttk::separator $copt.results.sep1 -orient horizontal
     ttk::frame $copt.results.container2
     ttk::label $copt.results.container2.psfUpdateLbl -text "Update PSF with new charges (Requires PSF/PDB from Input)" -anchor w
@@ -2349,20 +2383,20 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $copt.results.container1.editAcceptCancel.accept -column 0 -row 0 -sticky nswe
     grid $copt.results.container1.editAcceptCancel.cancel -column 1 -row 0 -sticky nswe
     grid $copt.results.container1.clear -column 4 -row 4 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
     grid $copt.results.container1.sep1 -column 4 -row 5 -sticky nswe -padx $hsepPadX -pady $hsepPadY
     grid $copt.results.container1.setAsInit -column 4 -row 6 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $copt.results.container1.openCOLP -column 4 -row 7 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
     grid $copt.results.container1.chargeTotalLbl -column 1 -row 9 -sticky nwse
     grid $copt.results.container1.chargeTotal -column 2 -row 9 -sticky nswe
-    
+
     grid $copt.results.sep1 -column 0 -row 1 -sticky nswe -padx $hsepPadX -pady $hsepPadY
 
     grid $copt.results.container2 -column 0 -row 2 -sticky nswe
     grid columnconfigure $copt.results.container2 1 -weight 1
     grid rowconfigure $copt.results.container2 {2 6} -uniform rt1
-    
+
     grid $copt.results.container2.psfUpdateLbl -column 0 -row 0 -columnspan 4 -sticky nswe
     grid $copt.results.container2.psfNewPathDir -column 0 -row 2 -columnspan 2 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $copt.results.container2.psfNewPathBrowse -column 2 -row 2 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
@@ -2374,8 +2408,8 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $copt.results.container2.logLoadPath -column 0 -row 6 -columnspan 2 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $copt.results.container2.logLoadBrowse -column 2 -row 6 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
     grid $copt.results.container2.logLoad -column 3 -row 6 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
-    
-    
+
+
     # Run Section
     #------------
     ttk::separator $copt.sep1 -orient horizontal
@@ -2384,7 +2418,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $copt.status.txt -textvariable ::ForceFieldToolKit::gui::coptStatus -anchor w
     ttk::button $copt.runOpt -text "Run Optimization" \
         -command { ::ForceFieldToolKit::gui::coptRunOpt }
-    
+
     grid $copt.sep1 -column 0 -row 5 -sticky we -padx $hsepPadX -pady $hsepPadY
     grid $copt.status -column 0 -row 6 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
     grid $copt.status.lbl -column 0 -row 0 -sticky nswe
@@ -2401,36 +2435,36 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     $w.hlf.nb add $w.hlf.nb.genbonded -text "Calc. Bonded"
     # allow frame to change width with window
     grid columnconfigure $w.hlf.nb.genbonded 0 -weight 1
-    
+
     # for shorter naming convention
     set genbonded $w.hlf.nb.genbonded
-    
+
     # GENERATE HESSIAN
     # -----------------
     # build hess elements
     ttk::labelframe $genbonded.hess -labelanchor nw -text "Generate Hessian" -padding $labelFrameInternalPadding
-    
+
     ttk::label $genbonded.hess.ioLbl -text "Input/Output Settings:" -anchor w
     ttk::label $genbonded.hess.psfLbl -text "PSF File:" -anchor center
     ttk::entry $genbonded.hess.psf -textvariable ::ForceFieldToolKit::GenBonded::psf
     ttk::button $genbonded.hess.psfBrowse -text "Browse" \
         -command {
             set tempfile [tk_getOpenFile -title "Select a PSF File" -filetypes $::ForceFieldToolKit::gui::psfType]
-            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::psf $tempfile }        
+            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::psf $tempfile }
         }
     ttk::label $genbonded.hess.pdbLbl -text "PDB File:" -anchor center
     ttk::entry $genbonded.hess.pdb -textvariable ::ForceFieldToolKit::GenBonded::pdb
     ttk::button $genbonded.hess.pdbBrowse -text "Browse" \
         -command {
             set tempfile [tk_getOpenFile -title "Select a PDB File" -filetypes $::ForceFieldToolKit::gui::pdbType]
-            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::pdb $tempfile }        
+            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::pdb $tempfile }
         }
     ttk::label $genbonded.hess.geomCHKLbl -text "Opt. Geom. CHK File:" -anchor center
     ttk::entry $genbonded.hess.geomCHK -textvariable ::ForceFieldToolKit::GenBonded::geomCHK
     ttk::button $genbonded.hess.geomCHKBrowse -text "Browse" \
         -command {
-            set tempfile [tk_getOpenFile -title "Select the Geometry Optimization Checkpoint File" -filetypes $::ForceFieldToolKit::gui::chkType] 
-            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::geomCHK $tempfile }        
+            set tempfile [tk_getOpenFile -title "Select the Geometry Optimization Checkpoint File" -filetypes $::ForceFieldToolKit::gui::chkType]
+            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::geomCHK $tempfile }
         }
     ttk::label $genbonded.hess.comLbl -text "Output GAU File:" -anchor center
     ttk::entry $genbonded.hess.com -textvariable ::ForceFieldToolKit::GenBonded::com
@@ -2439,9 +2473,9 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set tempfile [tk_getSaveFile -title "Save Gaussian Input File As..." -initialfile "$::ForceFieldToolKit::GenBonded::com" -filetypes $::ForceFieldToolKit::gui::gauType -defaultextension {.gau}]
             if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::com $tempfile }
         }
-        
+
     ttk::separator $genbonded.hess.sep1 -orient horizontal
-    
+
     ttk::frame $genbonded.hess.gaussian
     ttk::label $genbonded.hess.gaussian.lbl -text "Gaussian Settings:"
     ttk::label $genbonded.hess.gaussian.qmProcLbl -text "Processors:" -anchor w
@@ -2450,17 +2484,17 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::entry $genbonded.hess.gaussian.qmMem -textvariable ::ForceFieldToolKit::GenBonded::qmMem -width 2 -justify center
     ttk::label $genbonded.hess.gaussian.qmRouteLbl -text "Route:" -anchor center
     ttk::entry $genbonded.hess.gaussian.qmRoute -textvariable ::ForceFieldToolKit::GenBonded::qmRoute
-    
+
     ttk::button $genbonded.hess.gaussian.reset2defaults -text "Reset to Defaults" -command { ::ForceFieldToolKit::GenBonded::resetGaussianDefaults }
-    
+
     ttk::separator $genbonded.hess.sep2 -orient horizontal
-    
+
     ttk::button $genbonded.hess.writeHessCom -text "Write Gaussian Input File" \
         -command {
             ::ForceFieldToolKit::GenBonded::writeComFile
             ::ForceFieldToolKit::gui::consoleMessage "Gaussian GAU file written for hessian calculation"
         }
-    
+
     # grid hess elements
     grid $genbonded.hess -column 0 -row 0 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $genbonded.hess 1 -weight 1
@@ -2482,11 +2516,11 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $genbonded.hess.comSaveAs -column 2 -row 4 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
 
     grid $genbonded.hess.sep1 -column 0 -row 5 -columnspan 3 -sticky nswe -padx $hsepPadX -pady $hsepPadY
-    
+
     grid $genbonded.hess.gaussian -column 0 -row 6 -columnspan 3 -sticky nswe
     grid columnconfigure $genbonded.hess.gaussian 5 -weight 1
-    
-    grid $genbonded.hess.gaussian.lbl -column 0 -row 0 -columnspan 5 -sticky nswe 
+
+    grid $genbonded.hess.gaussian.lbl -column 0 -row 0 -columnspan 5 -sticky nswe
     grid $genbonded.hess.gaussian.qmProcLbl -column 0 -row 1 -sticky nswe
     grid $genbonded.hess.gaussian.qmProc -column 1 -row 1 -sticky we
     grid $genbonded.hess.gaussian.qmMemLbl -column 2 -row 1 -sticky nswe
@@ -2497,7 +2531,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
 
     grid $genbonded.hess.sep2 -column 0 -row 7 -columnspan 3 -sticky nswe -padx $hsepPadX -pady $hsepPadY
     grid $genbonded.hess.writeHessCom -column 0 -row 8 -columnspan 3 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
-    
+
     # CALCULATE BONDED PARAMETERS
     # ---------------------------
     # build calc elements
@@ -2507,28 +2541,28 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::button $genbonded.calcBonded.psfBrowse -text "Browse" \
         -command {
             set tempfile [tk_getOpenFile -title "Select a PSF File" -filetypes $::ForceFieldToolKit::gui::psfType]
-            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::psf $tempfile }        
+            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::psf $tempfile }
         }
     ttk::label $genbonded.calcBonded.pdbLbl -text "PDB File:" -anchor center
     ttk::entry $genbonded.calcBonded.pdb -textvariable ::ForceFieldToolKit::GenBonded::pdb
     ttk::button $genbonded.calcBonded.pdbBrowse -text "Browse" \
         -command {
             set tempfile [tk_getOpenFile -title "Select a PDB File" -filetypes $::ForceFieldToolKit::gui::pdbType]
-            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::pdb $tempfile }        
+            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::pdb $tempfile }
         }
     ttk::label $genbonded.calcBonded.tempParLbl -text "Template PAR File:" -anchor center
     ttk::entry $genbonded.calcBonded.tempPar -textvariable ::ForceFieldToolKit::GenBonded::templateParFile
     ttk::button $genbonded.calcBonded.tempParBrowse -text "Browse" \
         -command {
             set tempfile [tk_getOpenFile -title "Select a Template Parameter File" -filetypes $::ForceFieldToolKit::gui::parType]
-            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::templateParFile $tempfile }        
+            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::templateParFile $tempfile }
         }
     ttk::label $genbonded.calcBonded.glogLbl -text "Gaussian LOG File:" -anchor center
     ttk::entry $genbonded.calcBonded.glog -textvariable ::ForceFieldToolKit::GenBonded::glog
     ttk::button $genbonded.calcBonded.glogBrowse -text "Browse" \
         -command {
             set tempfile [tk_getOpenFile -title "Select Hessian Calculation Log File" -filetypes $::ForceFieldToolKit::gui::logType]
-            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::glog $tempfile }        
+            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::glog $tempfile }
         }
     ttk::label $genbonded.calcBonded.blogLbl -text "Output File:" -anchor center
     ttk::entry $genbonded.calcBonded.blog -textvariable ::ForceFieldToolKit::GenBonded::blog
@@ -2537,16 +2571,16 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set tempfile [tk_getSaveFile -title "Save Bonded Parameters As..." -initialfile "$::ForceFieldToolKit::GenBonded::blog" -filetypes $::ForceFieldToolKit::gui::logType -defaultextension {.log}]
             if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenBonded::blog $tempfile }
         }
-    
+
     ttk::separator $genbonded.calcBonded.sep1 -orient horizontal
     ttk::button $genbonded.calcBonded.calcBondedPars -text "Extract Bonded Parameters" -command { ::ForceFieldToolKit::GenBonded::extractBonded }
-    
+
     # build calc elements
     grid $genbonded.calcBonded -column 0 -row 1 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $genbonded.calcBonded 1 -weight 1
     grid rowconfigure $genbonded.calcBonded {0 1 2 3} -uniform rt1
     grid rowconfigure $genbonded.calcBonded 6 -minsize 50
-    
+
     grid $genbonded.calcBonded.psfLbl -column 0 -row 0 -sticky nswe
     grid $genbonded.calcBonded.psf -column 1 -row 0 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $genbonded.calcBonded.psfBrowse -column 2 -row 0 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
@@ -2562,12 +2596,12 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $genbonded.calcBonded.blogLbl -column 0 -row 4 -sticky nswe
     grid $genbonded.calcBonded.blog -column 1 -row 4 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $genbonded.calcBonded.blogSaveAs -column 2 -row 4 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
     grid $genbonded.calcBonded.sep1 -column 0 -row 5 -columnspan 3 -sticky nswe -padx $hsepPadX -pady $hsepPadY
     grid $genbonded.calcBonded.calcBondedPars -column 0 -row 6 -columnspan 3 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
-    
 
-    
+
+
     # with the development of "let fftk guess" in the baopt routine, there is no longer a *good* reason
     # to extract parameters directly from the hessian.
 
@@ -2585,7 +2619,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     #$w.hlf.nb hide $w.hlf.nb.bondangleopt
     # allow frame to change width with content
     grid columnconfigure $w.hlf.nb.bondangleopt 0 -weight 1
-    
+
     # for shorter naming convention
     set baopt $w.hlf.nb.bondangleopt
 
@@ -2613,7 +2647,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid rowconfigure .fftk_gui.hlf.nb.bondangleopt 0 -weight 1
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # build input elements
     ttk::label $baopt.input.psfPathLbl -anchor center -text "PSF File:"
     ttk::entry $baopt.input.psfPath -textvariable ::ForceFieldToolKit::BondAngleOpt::psf
@@ -2636,9 +2670,9 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set tempfile [tk_getOpenFile -title "Select the Hessian Log File" -filetypes $::ForceFieldToolKit::gui::logType]
             if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::BondAngleOpt::hessLog $tempfile }
         }
-        
+
     ttk::separator $baopt.input.sep1 -orient horizontal
-    
+
     ttk::label $baopt.input.parInProgLbl -text "In-Progress PAR File:" -anchor w
     ttk::entry $baopt.input.parInProg -textvariable ::ForceFieldToolKit::BondAngleOpt::parInProg
     ttk::button $baopt.input.parInProgBrowse -text "Browse" \
@@ -2646,8 +2680,8 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set tempfile [tk_getOpenFile -title "Select the In-Progress PAR File" -filetypes $::ForceFieldToolKit::gui::parType]
             if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::BondAngleOpt::parInProg $tempfile }
         }
-    
-    ttk::label $baopt.input.parLbl -text "Additional Associated Parameter Files" -anchor w    
+
+    ttk::label $baopt.input.parLbl -text "Additional Associated Parameter Files" -anchor w
     ttk::treeview $baopt.input.parFiles -selectmode browse -yscrollcommand "$baopt.input.parScroll set"
         $baopt.input.parFiles configure -columns {filename} -show {} -height 3
         $baopt.input.parFiles column filename -stretch 1
@@ -2663,7 +2697,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::button $baopt.input.parFilesClear -text "Clear" -command { .fftk_gui.hlf.nb.bondangleopt.input.parFiles delete [.fftk_gui.hlf.nb.bondangleopt.input.parFiles children {}] }
 
     ttk::separator $baopt.input.sep2 -orient horizontal
-    
+
     ttk::label $baopt.input.namdbinLbl -text "NAMD Bin:" -anchor center
     ttk::entry $baopt.input.namdbin -textvariable ::ForceFieldToolKit::BondAngleOpt::namdbin
     ttk::button $baopt.input.namdBrowse -text "Browse" \
@@ -2687,7 +2721,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid rowconfigure $baopt.input 9 -weight 1
     grid remove $baopt.input
     grid $baopt.inputPlaceHolder -column 0 -row 0 -sticky nswe -padx $placeHolderPadX -pady $placeHolderPadY
-    
+
     # grid input elements
     grid $baopt.input.psfPathLbl -column 0 -row 0 -sticky nswe
     grid $baopt.input.psfPath -column 1 -row 0 -columnspan 2 -sticky nswe -padx $entryPadX -pady $entryPadY
@@ -2701,26 +2735,26 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $baopt.input.parInProgLbl -column 0 -row 3 -sticky nswe
     grid $baopt.input.parInProg -column 1 -row 3 -columnspan 2 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $baopt.input.parInProgBrowse -column 3 -row 3 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
     grid $baopt.input.sep1 -column 0 -row 4 -columnspan 4 -sticky nswe -padx $hsepPadX -pady $hsepPadY
- 
-    
+
+
     grid $baopt.input.parLbl -column 0 -row 5 -columnspan 2 -sticky nswe
     grid $baopt.input.parFiles -column 0 -row 6 -columnspan 2 -rowspan 4 -sticky nswe
     grid $baopt.input.parScroll -column 2 -row 6 -rowspan 4 -sticky nswe
     grid $baopt.input.parFilesAdd -column 3 -row 6 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $baopt.input.parFilesDelete -column 3 -row 7 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $baopt.input.parFilesClear -column 3 -row 8 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
     grid $baopt.input.sep2 -column 0 -row 10 -columnspan 4 -sticky nswe -padx $hsepPadX -pady $hsepPadY
-    
+
     grid $baopt.input.namdbinLbl -column 0 -row 11 -sticky nswe
     grid $baopt.input.namdbin -column 1 -row 11 -columnspan 2 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $baopt.input.namdBrowse -column 3 -row 11 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $baopt.input.logLbl -column 0 -row 12 -sticky nswe
     grid $baopt.input.log -column 1 -row 12 -columnspan 2 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $baopt.input.logSaveAs -column 3 -row 12 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
 
     # PARAMETERS TO OPTIMIZE
     # ----------------------
@@ -2743,7 +2777,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid rowconfigure .fftk_gui.hlf.nb.bondangleopt 1 -weight 1
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # grid the pars frame
     grid $baopt.pconstr -column 0 -row 1 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $baopt.pconstr 0 -weight 0 -minsize 80
@@ -2755,7 +2789,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid remove $baopt.pconstr
     grid $baopt.pconstrPlaceHolder -column 0 -row 1 -sticky nswe -padx $placeHolderPadX -pady $placeHolderPadY
 
-    
+
     # build pars to optimize elements
     ttk::label $baopt.pconstr.baLbl -text "Bond/Angle" -anchor center
     ttk::label $baopt.pconstr.defLbl -text "Atom Type Def." -anchor center
@@ -2784,7 +2818,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     }
     # set a binding to unselect entry when pressing escape button
     bind $baopt.pconstr.pars2opt <KeyPress-Escape> { .fftk_gui.hlf.nb.bondangleopt.pconstr.pars2opt selection set {} }
-    
+
     ttk::button $baopt.pconstr.fftkGuessPars -text "Guess" -command { ::ForceFieldToolKit::gui::baoptGuessPars }
     ttk::button $baopt.pconstr.import -text "Import" \
         -command {
@@ -2806,7 +2840,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
                 return
             }
         }
-   
+
     ttk::button $baopt.pconstr.add -text "Add" -command { .fftk_gui.hlf.nb.bondangleopt.pconstr.pars2opt insert {} end -values [list "" "AT1 AT2 (AT3)" "FC" "Eq Value"] }
     ttk::button $baopt.pconstr.delete -text "Delete" \
         -command {
@@ -2849,7 +2883,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set ::ForceFieldToolKit::gui::baoptEditEq [lindex $editData 3]
             unset editData
         }
-    
+
 
     # grid pars to optimize
     grid $baopt.pconstr.baLbl -column 0 -row 0 -sticky nswe
@@ -2858,7 +2892,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $baopt.pconstr.eqLbl -column 3 -row 0 -sticky nswe
     grid $baopt.pconstr.pars2opt -column 0 -row 1 -columnspan 4 -rowspan 5 -sticky nswe
     grid $baopt.pconstr.scroll -column 4 -row 1 -rowspan 5 -sticky nswe
-    
+
     grid $baopt.pconstr.fftkGuessPars -column 5 -row 1 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $baopt.pconstr.import -column 5 -row 2 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $baopt.pconstr.add -column 5 -row 3 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
@@ -2896,7 +2930,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid rowconfigure .fftk_gui.hlf.nb.bondangleopt 2 -weight 1
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # optimization settings
     ttk::frame $baopt.adv.opt
     ttk::label $baopt.adv.opt.lbl -text "Optimize Settings" -anchor w
@@ -2932,9 +2966,9 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::entry $baopt.adv.opt.saSettings.tSteps -textvariable ::ForceFieldToolKit::BondAngleOpt::saTSteps -width 8 -justify center
     ttk::label $baopt.adv.opt.saSettings.iterLbl -text "Iter:" -anchor w
     ttk::entry $baopt.adv.opt.saSettings.iter -textvariable ::ForceFieldToolKit::BondAngleOpt::saIter -width 8 -justify center
-    
+
     ttk::separator $baopt.adv.sep1 -orient horizontal
-    
+
     # parameter settings
     ttk::frame $baopt.adv.parSettings
     ttk::label $baopt.adv.parSettings.lbl -text "Adv. Parameter Settings" -anchor w
@@ -2952,11 +2986,11 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::entry $baopt.adv.parSettings.angleKlb -textvariable ::ForceFieldToolKit::BondAngleOpt::angLB -width 6 -justify center
     ttk::label $baopt.adv.parSettings.angleKubLbl -text "K Upper Bound:" -anchor w
     ttk::entry $baopt.adv.parSettings.angleKub -textvariable ::ForceFieldToolKit::BondAngleOpt::angUB -width 6 -justify center
-    
 
-    
+
+
     ttk::separator $baopt.adv.sep2 -orient horizontal
-    
+
     # run settings
     ttk::frame $baopt.adv.run
     ttk::label $baopt.adv.run.lbl -text "Run Settings" -anchor w
@@ -2994,9 +3028,9 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $baopt.adv.opt.saSettings.iterLbl -column 4 -row 0 -sticky nswe
     grid $baopt.adv.opt.saSettings.iter -column 5 -row 0 -sticky nswe
     grid remove $baopt.adv.opt.saSettings
-    
+
     grid columnconfigure $baopt.adv.opt 6 -weight 1
-    
+
     grid $baopt.adv.sep1 -column 0 -row 1 -sticky we -padx $hsepPadX -pady $hsepPadY
 
     grid $baopt.adv.parSettings -column 0 -row 2 -sticky nswe
@@ -3015,7 +3049,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $baopt.adv.parSettings.angleKlb -column 4 -row 2 -sticky nswe
     grid $baopt.adv.parSettings.angleKubLbl -column 5 -row 2 -sticky nswe
     grid $baopt.adv.parSettings.angleKub -column 6 -row 2 -sticky nswe
-    
+
     grid $baopt.adv.sep2 -column 0 -row 3 -sticky nswe -padx $hsepPadX -pady $hsepPadY
 
     grid $baopt.adv.run -column 0 -row 4 -sticky nswe
@@ -3023,7 +3057,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $baopt.adv.run.debugButton -column 0 -row 1 -sticky nswe
     grid $baopt.adv.run.debugLbl -column 1 -row 1 -sticky nswe
     grid $baopt.adv.run.buildScriptButton -column 2 -row 1 -sticky nswe -padx "10 0"
-    grid $baopt.adv.run.buildScriptLbl -column 3 -row 1 -sticky nswe 
+    grid $baopt.adv.run.buildScriptLbl -column 3 -row 1 -sticky nswe
 
 
     # RESULTS
@@ -3074,8 +3108,8 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         $baopt.results.pars2opt column def -width 150 -stretch 1 -anchor center
         $baopt.results.pars2opt column fc -width 80 -stretch 0 -anchor center
         $baopt.results.pars2opt column eq -width 80 -stretch 0 -anchor center
-    ttk::scrollbar $baopt.results.scroll -orient vertical -command "$baopt.results.pars2opt yview"    
-    
+    ttk::scrollbar $baopt.results.scroll -orient vertical -command "$baopt.results.pars2opt yview"
+
     ttk::button $baopt.results.clear -text "Clear" -command { .fftk_gui.hlf.nb.bondangleopt.results.pars2opt delete [.fftk_gui.hlf.nb.bondangleopt.results.pars2opt children {}] }
     ttk::button $baopt.results.setAsInit -text "Set As Initial" \
         -command {
@@ -3106,7 +3140,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         -command {
             set tempfile [tk_getOpenFile -title "Select the Bonds/Angles Optimization LOG File" -filetypes $::ForceFieldToolKit::gui::logType]
             if {![string eq $tempfile ""]} { set inFile [open $tempfile r] } else { return }
-            
+
             set readstate 0
             while { ![eof $inFile] } {
                 set inLine [string trim [gets $inFile]]
@@ -3124,7 +3158,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             }; # end while
             close $inFile; unset tempfile; unset readstate
         }
-    
+
     #
     ttk::frame $baopt.results.obj
     ttk::label $baopt.results.obj.currLbl -text "Current Final Obj. Value:" -anchor w
@@ -3162,7 +3196,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     # build run
     ttk::frame $baopt.status
     ttk::label $baopt.status.lbl -text "Status:"
-    ttk::label $baopt.status.txt -textvariable ::ForceFieldToolKit::gui::baoptStatus    
+    ttk::label $baopt.status.txt -textvariable ::ForceFieldToolKit::gui::baoptStatus
 
     ttk::button $baopt.runOpt -text "Run Optimization" -command { ::ForceFieldToolKit::gui::baoptRunOpt }
 
@@ -3170,10 +3204,10 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $baopt.status -column 0 -row 6 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
     grid $baopt.status.lbl -column 0 -row 0 -sticky nswe
     grid $baopt.status.txt -column 1 -row 0 -sticky nswe
-    
+
     grid $baopt.runOpt -column 0 -row 7 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
     grid rowconfigure $baopt 7 -minsize 50
-    
+
 
 
     #---------------------------------------------------#
@@ -3187,10 +3221,10 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid columnconfigure $w.hlf.nb.genDihScan 0 -weight 1
     # allow certain frames to gracefully change height
     grid rowconfigure $w.hlf.nb.genDihScan {2} -weight 1
-    
+
     # for shorter naming convention
     set gds $w.hlf.nb.genDihScan
-    
+
     # INPUT/OUTPUT
     # ------------
     # build input/output
@@ -3227,7 +3261,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             }
             set ::ForceFieldToolKit::GenDihScan::basename [lindex [[atomselect top all] get resname] 0]
         }
-    
+
     ttk::separator $gds.io.sep1 -orient vertical
     ttk::button $gds.io.loadMolec -text "Load PSF/PDB" \
         -command {
@@ -3259,16 +3293,16 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid columnconfigure $gds.io.bNameSub 0 -weight 1
     grid $gds.io.bNameSub.basename -column 0 -row 0 -sticky nswe -padx $entryPadX -pady $entryPadY
     grid $gds.io.bNameSub.takeFromTop -column 1 -row 0 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
-    
+
     grid $gds.io.sep1 -column 3 -row 0 -rowspan 4 -sticky nswe -padx $vsepPadX -pady $vsepPadY
     grid $gds.io.loadMolec -column 4 -row 0 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $gds.io.toggleAtomLabels -column 4 -row 1 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
-    
+
+
     # build/grid a separator
     ttk::separator $gds.sep1 -orient horizontal
     grid $gds.sep1 -column 0 -row 1 -sticky nswe -padx $hsepPadX -pady $hsepPadY
-    
+
     # DIHEDRALS TO SCAN
     # -----------------
     # build dihedrals to scan
@@ -3285,7 +3319,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         $gds.dihs2scan.tv column plusMinus -width 100 -stretch 1 -anchor center
         $gds.dihs2scan.tv column stepSize -width 100 -stretch 1 -anchor center
     ttk::scrollbar $gds.dihs2scan.scroll -orient vertical -command "$gds.dihs2scan.tv yview"
-    
+
     # setup the binding to copy the selected TV item data to the edit boxes
     # also show a representation of the selected tv item
     bind $gds.dihs2scan.tv <<TreeviewSelect>> {
@@ -3293,10 +3327,10 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         set ::ForceFieldToolKit::gui::gdsEditIndDef [lindex $editData 0]
         set ::ForceFieldToolKit::gui::gdsEditPlusMinus [lindex $editData 1]
         set ::ForceFieldToolKit::gui::gdsEditStepSize [lindex $editData 2]
-        
+
         ::ForceFieldToolKit::gui::gdsShowSelRep
     }
-    
+
     ttk::button $gds.dihs2scan.add -text "Add" -command { .fftk_gui.hlf.nb.genDihScan.dihs2scan.tv insert {} end -values {{ind1 ind2 ind3 ind4} value value} }
     ttk::button $gds.dihs2scan.import -text "Read from PAR" \
         -command {
@@ -3369,7 +3403,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         set ::ForceFieldToolKit::gui::gdsEditPlusMinus [lindex $editData 2]
         set ::ForceFieldToolKit::gui::gdsEditStepSize [lindex $editData 3]
         }
-    
+
     # grid dihedrals to scan
     grid $gds.dihs2scan -column 0 -row 2 -sticky nswe
     grid columnconfigure $gds.dihs2scan 0 -weight 1 -minsize 150
@@ -3377,13 +3411,13 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid columnconfigure $gds.dihs2scan 2 -weight 1 -minsize 100
     grid rowconfigure $gds.dihs2scan 7 -weight 1
     grid rowconfigure $gds.dihs2scan {1 2 3 5 6 9} -uniform rt1
-    
+
     grid $gds.dihs2scan.dihLbl -column 0 -row 0 -sticky nswe
     grid $gds.dihs2scan.plusMinusLbl -column 1 -row 0 -sticky nswe
     grid $gds.dihs2scan.stepSizeLbl -column 2 -row 0 -sticky nswe
     grid $gds.dihs2scan.tv -column 0 -row 1 -columnspan 4 -rowspan 7 -sticky nswe
     grid $gds.dihs2scan.scroll -column 3 -row 1 -rowspan 7 -sticky nswe
-    
+
     grid $gds.dihs2scan.add -column 4 -row 2 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $gds.dihs2scan.import -column 4 -row 1 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $gds.dihs2scan.move -column 4 -row 3 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
@@ -3394,7 +3428,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $gds.dihs2scan.sep1 -column 4 -row 4 -sticky nswe -padx $hsepPadX -pady $hsepPadY
     grid $gds.dihs2scan.delete -column 4 -row 5 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $gds.dihs2scan.clear -column 4 -row 6 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    
+
     grid $gds.dihs2scan.editLbl -column 0 -row 8 -sticky nswe
     grid $gds.dihs2scan.editIndDef -column 0 -row 9 -sticky nswe
     grid $gds.dihs2scan.editPlusMinus -column 1 -row 9 -sticky nswe
@@ -3404,11 +3438,11 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid columnconfigure $gds.dihs2scan.editAcceptCancel 1 -weight 1
     grid $gds.dihs2scan.editAcceptCancel.accept -column 0 -row 0 -sticky nswe
     grid $gds.dihs2scan.editAcceptCancel.cancel -column 1 -row 0 -sticky nswe
-    
+
     # build/grid a separator
     ttk::separator $gds.sep2 -orient horizontal
     grid $gds.sep2 -column 0 -row 3 -sticky nswe -padx $hsepPadX -pady $hsepPadY
-    
+
     # GAUSSIAN SETTINGS
     # -----------------
     # build gaussian settings
@@ -3425,7 +3459,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $gds.qm.routeLbl -text "Route:" -justify center
     ttk::entry $gds.qm.route -textvariable ::ForceFieldToolKit::GenDihScan::qmRoute
 
-    
+
     # grid gaussian settings
     grid $gds.qm -column 0 -row 4 -sticky nswe
     grid rowconfigure $gds.qm {0 1} -uniform rt1
@@ -3440,12 +3474,12 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $gds.qm.defaults -column 8 -row 0 -sticky we -padx $hbuttonPadX -pady $hbuttonPadY
     grid $gds.qm.routeLbl -column 0 -row 1
     grid $gds.qm.route -column 1 -row 1 -columnspan 8 -sticky nswe -padx $entryPadX -pady $entryPadY
-    
+
     # build/grid a separator
     ttk::separator $gds.sep3 -orient horizontal
     grid $gds.sep3 -column 0 -row 5 -sticky nswe -padx $hsepPadX -pady $hsepPadY
-    
-    
+
+
     # GENERATE
     # build generate section
     ttk::frame $gds.generate
@@ -3480,20 +3514,20 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
                 ::ForceFieldToolKit::gui::consoleMessage "Gaussian LOG file(s) loaded (Scan Torsions)"
             }
         }
-    
+
     ttk::button $gds.generate.torexplor -text "Open Torsion Explorer" -command { ::ForceFieldToolKit::GenDihScan::TorExplor::launchGUI }
 
     # grid generate section
     grid $gds.generate -column 0 -row 6 -sticky nswe
     grid columnconfigure $gds.generate {0 1 2} -uniform ct1 -weight 1
     grid rowconfigure $gds.generate 0 -minsize 50
-    
+
     grid $gds.generate.go        -column 0 -row 0 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
     grid $gds.generate.load      -column 1 -row 0 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
     grid $gds.generate.torexplor -column 2 -row 0 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
-    
-    
-    
+
+
+
     #---------------------------------------------------#
     #  DihOpt     tab                                   #
     #---------------------------------------------------#
@@ -3503,10 +3537,10 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     $w.hlf.nb add $w.hlf.nb.dihopt -text "Opt. Torsions"
     # allow frame to change width with content
     grid columnconfigure $w.hlf.nb.dihopt 0 -weight 1
-    
+
     # for shorter naming convention
-    set dopt $w.hlf.nb.dihopt  
-    
+    set dopt $w.hlf.nb.dihopt
+
     # INPUT
     # -----
     # build input labels
@@ -3514,7 +3548,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $dopt.input.lblWidget -text "$downPoint Input" -anchor w -font TkDefaultFont
     $dopt.input configure -labelwidget $dopt.input.lblWidget
     ttk::label $dopt.inputPlaceHolder -text "$rightPoint Input" -anchor w -font TkDefaultFont
-    
+
     # set mouse click bindings to expand/contract input settings
     bind $dopt.input.lblWidget <Button-1> {
         grid remove .fftk_gui.hlf.nb.dihopt.input
@@ -3528,7 +3562,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid rowconfigure .fftk_gui.hlf.nb.dihopt 0 -weight 1
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # build input elements
     ttk::label $dopt.input.psfPathLbl -text "PSF File:" -anchor center
     ttk::entry $dopt.input.psfPath -textvariable ::ForceFieldToolKit::DihOpt::psf
@@ -3544,9 +3578,9 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set tempfile [tk_getOpenFile -title "Select a PDB File" -filetypes $::ForceFieldToolKit::gui::pdbType]
             if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::DihOpt::pdb $tempfile }
         }
-    
+
     ttk::separator $dopt.input.sep1 -orient horizontal
-    
+
     ttk::label $dopt.input.parFilesLbl -text "Parameter Files (both pre-defined and in-progress)" -anchor w
     ttk::treeview $dopt.input.parFiles -selectmode browse -yscrollcommand "$dopt.input.parFilesScroll set"
         $dopt.input.parFiles configure -columns {filename} -show {} -height 3
@@ -3561,9 +3595,9 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         }
     ttk::button $dopt.input.delete -text "Delete" -command { .fftk_gui.hlf.nb.dihopt.input.parFiles delete [.fftk_gui.hlf.nb.dihopt.input.parFiles selection] }
     ttk::button $dopt.input.clear -text "Clear" -command { .fftk_gui.hlf.nb.dihopt.input.parFiles delete [.fftk_gui.hlf.nb.dihopt.input.parFiles children {}] }
-    
+
     ttk::separator $dopt.input.sep2 -orient horizontal
-    
+
     ttk::label $dopt.input.namdbinLbl -text "NAMD binary:" -anchor center
     ttk::entry $dopt.input.namdbin -textvariable ::ForceFieldToolKit::DihOpt::namdbin
     ttk::button $dopt.input.namdbinBrowse -text "Browse" \
@@ -3576,9 +3610,9 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::button $dopt.input.logSaveAs -text "SaveAs" \
         -command {
             set tempfile [tk_getSaveFile -title "Save Dihedral Optimization LOG File As..." -initialfile "$::ForceFieldToolKit::DihOpt::outFileName" -filetypes $::ForceFieldToolKit::gui::logType -defaultextension {.log}]
-            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::DihOpt::outFileName $tempfile }            
+            if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::DihOpt::outFileName $tempfile }
         }
-    
+
     # grid input elements
     grid $dopt.input -column 0 -row 0 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $dopt.input 1 -weight 1
@@ -3614,7 +3648,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $dopt.qmt.lblWidget -text "$downPoint QM Target Data" -anchor w -font TkDefaultFont
     $dopt.qmt configure -labelwidget $dopt.qmt.lblWidget
     ttk::label $dopt.qmtPlaceHolder -text "$rightPoint QM Target Data" -anchor w -font TkDefaultFont
-    
+
     # set mouse click bindings to expand/contract qmt settings
     bind $dopt.qmt.lblWidget <Button-1> {
         grid remove .fftk_gui.hlf.nb.dihopt.qmt
@@ -3628,7 +3662,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid rowconfigure .fftk_gui.hlf.nb.dihopt 1 -weight 1
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # build QM target data (Gaussian Log files) elements
     ttk::label $dopt.qmt.lbl -text "Gaussian Dihedral Scan LOG Files" -anchor w
     ttk::treeview $dopt.qmt.tv -selectmode browse -yscrollcommand "$dopt.qmt.scroll set"
@@ -3642,25 +3676,57 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
                 if {![string eq $tempfile ""]} { .fftk_gui.hlf.nb.dihopt.qmt.tv insert {} end -values $tempfile }
             }
         }
+    ttk::button $dopt.qmt.moveUp -text "Move $upArrow" \
+        -command {
+            # ID of current
+            set currentID [.fftk_gui.hlf.nb.dihopt.qmt.tv selection]
+            # ID of previous
+            if {[set previousID [.fftk_gui.hlf.nb.dihopt.qmt.tv prev $currentID ]] ne ""} {
+                # Index of previous
+                set previousIndex [.fftk_gui.hlf.nb.dihopt.qmt.tv index $previousID]
+                # Move ahead of previous
+                .fftk_gui.hlf.nb.dihopt.qmt.tv move $currentID {} $previousIndex
+                unset previousIndex
+            }
+            unset currentID previousID
+        }
+    ttk::button $dopt.qmt.moveDown -text "Move $downArrow" \
+        -command {
+            # ID of current
+            set currentID [.fftk_gui.hlf.nb.dihopt.qmt.tv selection]
+            # ID of Next
+            if {[set previousID [.fftk_gui.hlf.nb.dihopt.qmt.tv next $currentID ]] ne ""} {
+                # Index of Next
+                set previousIndex [.fftk_gui.hlf.nb.dihopt.qmt.tv index $previousID]
+                # Move below next
+                .fftk_gui.hlf.nb.dihopt.qmt.tv move $currentID {} $previousIndex
+                unset previousIndex
+            }
+            unset currentID previousID
+        }
+    ttk::separator $dopt.qmt.sep1 -orient horizontal
     ttk::button $dopt.qmt.delete -text "Delete" -command { .fftk_gui.hlf.nb.dihopt.qmt.tv delete [.fftk_gui.hlf.nb.dihopt.qmt.tv selection] }
     ttk::button $dopt.qmt.clear -text "Clear" -command { .fftk_gui.hlf.nb.dihopt.qmt.tv delete [.fftk_gui.hlf.nb.dihopt.qmt.tv children {}] }
-    
+
     # grid the QM target data elements
     grid $dopt.qmt -column 0 -row 1 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $dopt.qmt 0 -weight 1
-    grid rowconfigure $dopt.qmt 4 -weight 1
-    
+    grid rowconfigure $dopt.qmt 7 -weight 1
+
     grid remove $dopt.qmt
     grid $dopt.qmtPlaceHolder -column 0 -row 1 -sticky nswe -padx $placeHolderPadX -pady $placeHolderPadY
-    
-    grid $dopt.qmt.lbl -column 0 -row 0 -sticky nswe
-    grid $dopt.qmt.tv -column 0 -row 1 -rowspan 4 -sticky nswe
-    grid $dopt.qmt.scroll -column 1 -row 1 -rowspan 4 -sticky nswe
-    grid $dopt.qmt.add -column 2 -row 1 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    grid $dopt.qmt.delete -column 2 -row 2 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
-    grid $dopt.qmt.clear -column 2 -row 3 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
 
-    
+    grid $dopt.qmt.lbl -column 0 -row 0 -sticky nswe
+    grid $dopt.qmt.tv -column 0 -row 1 -rowspan 7 -sticky nswe
+    grid $dopt.qmt.scroll -column 1 -row 1 -rowspan 7 -sticky nswe
+    grid $dopt.qmt.add -column 2 -row 1 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
+    grid $dopt.qmt.moveUp -column 2 -row 2 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
+    grid $dopt.qmt.moveDown -column 2 -row 3 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
+    grid $dopt.qmt.sep1 -column 2 -row 4 -sticky nswe -padx $hsepPadX -pady $hsepPadY
+    grid $dopt.qmt.delete -column 2 -row 5 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
+    grid $dopt.qmt.clear -column 2 -row 6 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
+
+
     # DIH PARAMETER SETTINGS
     # ----------------------
     # build the parameter settings labels
@@ -3668,7 +3734,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $dopt.parSet.lblWidget -text "$downPoint Dihedral Parameter Settings" -anchor w -font TkDefaultFont
     $dopt.parSet configure -labelwidget $dopt.parSet.lblWidget
     ttk::label $dopt.parSetPlaceHolder -text "$rightPoint Dihedral Parameter Settings" -anchor w -font TkDefaultFont
-    
+
     # set mouse click bindings to expand/contract
     bind $dopt.parSet.lblWidget <Button-1> {
         grid remove .fftk_gui.hlf.nb.dihopt.parSet
@@ -3682,7 +3748,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid rowconfigure .fftk_gui.hlf.nb.dihopt 2 -weight 1
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # build the parameter settings elements
     ttk::label $dopt.parSet.typeDefLbl -text "Dihedral Type Definition" -anchor w
     ttk::label $dopt.parSet.fcLbl -text "Force Constant (k)" -anchor center
@@ -3702,7 +3768,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         $dopt.parSet.tv column delta -width 100 -stretch 0 -anchor center
         $dopt.parSet.tv column lock -width 100 -stretch 0 -anchor center
     ttk::scrollbar $dopt.parSet.scroll -orient vertical -command "$dopt.parSet.tv yview"
-    
+
     # setup the binding to copy the selected TV item data to the edit boxes
     bind $dopt.parSet.tv <<TreeviewSelect>> {
         set editData [.fftk_gui.hlf.nb.dihopt.parSet.tv item [.fftk_gui.hlf.nb.dihopt.parSet.tv selection] -values]
@@ -3712,7 +3778,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         set ::ForceFieldToolKit::gui::doptEditDelta [lindex $editData 3]
         set ::ForceFieldToolKit::gui::doptEditLock [lindex $editData 4]
     }
-    
+
     ttk::button $dopt.parSet.import -text "Read from PAR" \
         -command {
             set tempfile [tk_getOpenFile -title "Select A Parameter File" -filetypes $::ForceFieldToolKit::gui::parType]
@@ -3786,12 +3852,12 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set ::ForceFieldToolKit::gui::doptEditDelta {}
             set ::ForceFieldToolKit::gui::doptEditLock {}
         }
-    
+
     ttk::label $dopt.parSet.editLbl -text "Edit Entry" -anchor w
     ttk::entry $dopt.parSet.editDef -textvariable ::ForceFieldToolKit::gui::doptEditDef -justify left
     ttk::entry $dopt.parSet.editFC -textvariable ::ForceFieldToolKit::gui::doptEditFC -justify center -width 1
     ttk::menubutton $dopt.parSet.editMult -direction below -menu $dopt.parSet.editMult.menu -textvariable ::ForceFieldToolKit::gui::doptEditMult -width 1
-    menu $dopt.parSet.editMult.menu -tearoff no 
+    menu $dopt.parSet.editMult.menu -tearoff no
         $dopt.parSet.editMult.menu add command -label "1" -command { set ::ForceFieldToolKit::gui::doptEditMult 1 }
         $dopt.parSet.editMult.menu add command -label "2" -command { set ::ForceFieldToolKit::gui::doptEditMult 2 }
         $dopt.parSet.editMult.menu add command -label "3" -command { set ::ForceFieldToolKit::gui::doptEditMult 3 }
@@ -3822,7 +3888,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
             set ::ForceFieldToolKit::gui::doptEditMult [lindex $editData 2]
             set ::ForceFieldToolKit::gui::doptEditDelta [lindex $editData 3]
         }
-    
+
     # grid the parameter settings elements
     grid $dopt.parSet -column 0 -row 2 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $dopt.parSet 0 -weight 1 -minsize 150
@@ -3873,7 +3939,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $dopt.adv.lblWidget -text "$downPoint Advanced Settings" -anchor w -font TkDefaultFont
     $dopt.adv configure -labelwidget $dopt.adv.lblWidget
     ttk::label $dopt.advPlaceHolder -text "$rightPoint Advanced Settings" -anchor w -font TkDefaultFont
-    
+
     # set mouse click bindings to expand/contract
     bind $dopt.adv.lblWidget <Button-1> {
         grid remove .fftk_gui.hlf.nb.dihopt.adv
@@ -3885,7 +3951,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid .fftk_gui.hlf.nb.dihopt.adv
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # build advanced settings section
     ttk::frame $dopt.adv.dih
     ttk::label $dopt.adv.dih.lbl -text "Dihedral Settings" -anchor w
@@ -3931,6 +3997,8 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $dopt.adv.run.writeEnCompsLbl -text "Write Energy Comparison Data"
     ttk::label $dopt.adv.run.outFreqLbl -text "Output Freq.:" -anchor w
     ttk::entry $dopt.adv.run.outFreq -textvariable ::ForceFieldToolKit::DihOpt::outFreq -width 8 -justify center
+    ttk::checkbutton $dopt.adv.run.keepMMTraj -offvalue 0 -onvalue 1 -variable ::ForceFieldToolKit::DihOpt::keepMMTraj
+    ttk::label $dopt.adv.run.keepMMTrajLbl -text "Save MM Traj." -anchor w
 
     # grid advanced settings section
     grid $dopt.adv -column 0 -row 3 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
@@ -3970,8 +4038,10 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     #grid $dopt.adv.run.writeEnCompsButton -column 4 -row 1 -sticky nswe
     #grid $dopt.adv.run.writeEnCompsLbl -column 5 -row 1 -sticky nswe -padx "0 10"
     grid $dopt.adv.run.outFreqLbl -column 6 -row 1 -sticky nswe
-    grid $dopt.adv.run.outFreq -column 7 -row 1 -sticky nswe
-    
+    grid $dopt.adv.run.outFreq -column 7 -row 1 -sticky nswe -padx "0 10"
+    grid $dopt.adv.run.keepMMTraj -column 8 -row 1 -sticky nswe
+    grid $dopt.adv.run.keepMMTrajLbl -column 9 -row 1 -sticky nswe
+
     # RESULTS
     # -------
     # build the results section heading
@@ -3979,7 +4049,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $dopt.results.lblWidget -text "$downPoint Visualize Results" -anchor w -font TkDefaultFont
     $dopt.results configure -labelwidget $dopt.results.lblWidget
     ttk::label $dopt.resultsPlaceHolder -text "$rightPoint Visualize Results" -anchor w -font TkDefaultFont
-    
+
     # set mouse click bindings to expand/contract
     bind $dopt.results.lblWidget <Button-1> {
         grid remove .fftk_gui.hlf.nb.dihopt.results
@@ -3993,7 +4063,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid rowconfigure .fftk_gui.hlf.nb.dihopt 4 -weight 1
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # grid the results section heading
     grid $dopt.results -column 0 -row 4 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $dopt.results 0 -weight 1
@@ -4012,7 +4082,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $dopt.results.preamble.mmeStatusLbl -textvariable ::ForceFieldToolKit::gui::doptMMEStatus -anchor w
     ttk::label $dopt.results.preamble.dihAllLbl -text "dihAll:" -anchor w
     ttk::label $dopt.results.preamble.dihAllStatusLbl -textvariable ::ForceFieldToolKit::gui::doptDihAllStatus -anchor w
-        
+
     # grid the preamble Section
     grid $dopt.results.preamble -column 0 -row 0 -sticky nswe -padx "10 0"
     grid $dopt.results.preamble.lbl -column 0 -row 0 -sticky nswe
@@ -4022,14 +4092,14 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $dopt.results.preamble.mmeStatusLbl -column 4 -row 0 -sticky nswe
     grid $dopt.results.preamble.dihAllLbl -column 5 -row 0 -sticky nswe
     grid $dopt.results.preamble.dihAllStatusLbl -column 6 -row 0 -sticky nswe
-    
+
     # build/grid separator
     ttk::separator $dopt.results.sep1 -orient horizontal
     grid $dopt.results.sep1 -column 0 -row 1 -sticky nswe -padx $hsepPadX -pady $hsepPadY
-    
+
     # DATA
     # ----
-    # build the results data section    
+    # build the results data section
     ttk::frame $dopt.results.data
     ttk::label $dopt.results.data.dsetLbl -text "Data Set" -anchor center
     ttk::label $dopt.results.data.rmseLbl -text "RMSE" -anchor center
@@ -4044,7 +4114,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         $dopt.results.data.tv column color -width 100 -stretch 0 -anchor center
     ttk::scrollbar $dopt.results.data.scroll -orient vertical -command "$dopt.results.data.tv yview"
     bind $dopt.results.data.tv <KeyPress-Escape> { .fftk_gui.hlf.nb.dihopt.results.data.tv selection remove [.fftk_gui.hlf.nb.dihopt.results.data.tv children {}] }
-    
+
     ttk::label $dopt.results.data.editColorLbl -text "Set Data Color:" -anchor w
     ttk::menubutton $dopt.results.data.editColor -direction below -menu $dopt.results.data.editColor.menu -textvariable ::ForceFieldToolKit::gui::doptEditColor -width 12
     menu $dopt.results.data.editColor.menu -tearoff no
@@ -4056,7 +4126,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         $dopt.results.data.editColor.menu add command -label "orange" -command { set ::ForceFieldToolKit::gui::doptEditColor "orange"; ::ForceFieldToolKit::gui::doptSetColor }
         $dopt.results.data.editColor.menu add command -label "purple" -command { set ::ForceFieldToolKit::gui::doptEditColor "purple"; ::ForceFieldToolKit::gui::doptSetColor }
         $dopt.results.data.editColor.menu add command -label "yellow" -command { set ::ForceFieldToolKit::gui::doptEditColor "yellow"; ::ForceFieldToolKit::gui::doptSetColor }
-        
+
     ttk::button $dopt.results.data.plot -text "Plot Selected" \
         -command {
             # simple validation
@@ -4141,9 +4211,9 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
                 }
                 .fftk_gui.hlf.nb.dihopt.refine.parSet.tv insert {} end -values [list $typedef $k $mult $delta $lock]
             }
-            
+
         }
-        
+
     # grid results data section
     grid $dopt.results.data -column 0 -row 2 -sticky nswe
     grid columnconfigure $dopt.results.data 0 -weight 0 -minsize 100
@@ -4158,7 +4228,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $dopt.results.data.colorLbl -column 2 -row 0 -sticky nswe
     grid $dopt.results.data.tv -column 0 -row 1 -columnspan 3 -rowspan 6 -sticky nswe
     grid $dopt.results.data.scroll -column 3 -row 1 -rowspan 6 -sticky nswe
-    
+
     grid $dopt.results.data.editColorLbl -column 4 -row 1 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $dopt.results.data.editColor -column 4 -row 2 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
     grid $dopt.results.data.plot -column 4 -row 3 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
@@ -4176,12 +4246,12 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $dopt.results.data.remove.clear -column 1 -row 0 -sticky nswe
 
     grid $dopt.results.data.sep2 -column 0 -row 7 -columnspan 5 -sticky nswe -padx $hsepPadX -pady $hsepPadY
-    grid $dopt.results.data.io -column 0 -row 8 -columnspan 5 -sticky nswe 
+    grid $dopt.results.data.io -column 0 -row 8 -columnspan 5 -sticky nswe
     grid columnconfigure $dopt.results.data.io {0 1 2} -weight 1
     grid $dopt.results.data.io.import -column 0 -row 0 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
     grid $dopt.results.data.io.write -column 1 -row 0 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
     grid $dopt.results.data.io.setRefitInp -column 2 -row 0 -sticky nswe -padx $hbuttonPadX -pady $hbuttonPadY
-    
+
 
     # REFINE
     # ------
@@ -4190,7 +4260,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $dopt.refine.lblWidget -text "$downPoint Refine" -anchor w -font TkDefaultFont
     $dopt.refine configure -labelwidget $dopt.refine.lblWidget
     ttk::label $dopt.refinePlaceHolder -text "$rightPoint Refine" -anchor w -font TkDefaultFont
-    
+
     # set mouse click bindings to expand/contract
     bind $dopt.refine.lblWidget <Button-1> {
         grid remove .fftk_gui.hlf.nb.dihopt.refine
@@ -4198,30 +4268,30 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         grid rowconfigure .fftk_gui.hlf.nb.dihopt 5 -weight 0
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     bind $dopt.refinePlaceHolder <Button-1> {
         grid remove .fftk_gui.hlf.nb.dihopt.refinePlaceHolder
         grid .fftk_gui.hlf.nb.dihopt.refine
         grid rowconfigure .fftk_gui.hlf.nb.dihopt 5 -weight 1
         ::ForceFieldToolKit::gui::resizeToActiveTab
     }
-    
+
     # grid the refine section heading
     grid $dopt.refine -column 0 -row 5 -sticky nswe -padx $labelFramePadX -pady $labelFramePadY
     grid columnconfigure $dopt.refine 0 -weight 1
     grid rowconfigure $dopt.refine 2 -weight 1
     grid remove $dopt.refine
     grid $dopt.refinePlaceHolder -column 0 -row 5 -sticky nswe -padx $placeHolderPadX -pady $placeHolderPadY
-    
+
     # build the refine section
     ttk::label $dopt.refine.lbl -text "Modify Dihedral Parameters for Refitting/Refinement" -anchor w
     ttk::separator $dopt.refine.sep1 -orient horizontal
-    
+
     # grid the refine top section
     grid $dopt.refine.lbl -column 0 -row 0 -sticky nswe
     grid $dopt.refine.sep1 -column 0 -row 1 -sticky nswe -padx $hsepPadX -pady $hsepPadY
-    
-    # build the refine parSet section    
+
+    # build the refine parSet section
     ttk::frame $dopt.refine.parSet
     ttk::label $dopt.refine.parSet.typeDefLbl -text "Dihedral Type Definition" -anchor w
     ttk::label $dopt.refine.parSet.fcLbl -text "Force Constant (k)" -anchor center
@@ -4241,7 +4311,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         $dopt.refine.parSet.tv column delta -width 100 -stretch 0 -anchor center
         $dopt.refine.parSet.tv column lock -width 100 -stretch 0 -anchor center
     ttk::scrollbar $dopt.refine.parSet.scroll -orient vertical -command "$dopt.refine.parSet.tv yview"
-    
+
     # setup the binding to copy the selected TV item data to the edit boxes
     bind $dopt.refine.parSet.tv <<TreeviewSelect>> {
         set editData [.fftk_gui.hlf.nb.dihopt.refine.parSet.tv item [.fftk_gui.hlf.nb.dihopt.refine.parSet.tv selection] -values]
@@ -4251,7 +4321,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
         set ::ForceFieldToolKit::gui::doptRefineEditDelta [lindex $editData 3]
         set ::ForceFieldToolKit::gui::doptRefineEditLock [lindex $editData 4]
     }
-    
+
     ttk::button $dopt.refine.parSet.duplicate -text "Duplicate" -width 8 \
         -command {
             set currID [.fftk_gui.hlf.nb.dihopt.refine.parSet.tv selection]
@@ -4310,7 +4380,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::entry $dopt.refine.parSet.editDef -textvariable ::ForceFieldToolKit::gui::doptRefineEditDef -justify left
     ttk::entry $dopt.refine.parSet.editFC -textvariable ::ForceFieldToolKit::gui::doptRefineEditFC -justify center -width 1
     ttk::menubutton $dopt.refine.parSet.editMult -direction below -menu $dopt.refine.parSet.editMult.menu -textvariable ::ForceFieldToolKit::gui::doptRefineEditMult -width 1
-    menu $dopt.refine.parSet.editMult.menu -tearoff no 
+    menu $dopt.refine.parSet.editMult.menu -tearoff no
         $dopt.refine.parSet.editMult.menu add command -label "1" -command { set ::ForceFieldToolKit::gui::doptRefineEditMult 1 }
         $dopt.refine.parSet.editMult.menu add command -label "2" -command { set ::ForceFieldToolKit::gui::doptRefineEditMult 2 }
         $dopt.refine.parSet.editMult.menu add command -label "3" -command { set ::ForceFieldToolKit::gui::doptRefineEditMult 3 }
@@ -4350,8 +4420,8 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid columnconfigure $dopt.refine.parSet {1 2 3 4} -weight 0 -minsize 100
     grid rowconfigure $dopt.refine.parSet {1 2 4 5} -uniform rt1
     grid rowconfigure $dopt.refine.parSet 6 -weight 1
-    
-    grid $dopt.refine.parSet.typeDefLbl -column 0 -row 0 -sticky nwse 
+
+    grid $dopt.refine.parSet.typeDefLbl -column 0 -row 0 -sticky nwse
     grid $dopt.refine.parSet.fcLbl -column 1 -row 0 -sticky nswe
     grid $dopt.refine.parSet.multLbl -column 2 -row 0 -sticky nswe
     grid $dopt.refine.parSet.deltaLbl -column 3 -row 0 -sticky nswe
@@ -4369,7 +4439,7 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $dopt.refine.parSet.delete -column 6 -row 5 -sticky nswe -padx $vbuttonPadX -pady $vbuttonPadY
 
     grid $dopt.refine.parSet.editLbl -column 0 -row 7 -sticky nswe
-    grid $dopt.refine.parSet.editDef -column 0 -row 8 -sticky nswe 
+    grid $dopt.refine.parSet.editDef -column 0 -row 8 -sticky nswe
     grid $dopt.refine.parSet.editFC -column 1 -row 8 -sticky nswe -padx 10
     grid $dopt.refine.parSet.editMult -column 2 -row 8 -sticky nswe -padx 24
     grid $dopt.refine.parSet.editDelta -column 3 -row 8 -sticky nswe -padx 10
@@ -4378,11 +4448,11 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid columnconfigure $dopt.refine.parSet.editButtons {0 1} -weight 1
     grid $dopt.refine.parSet.editButtons.accept -column 0 -row 0 -sticky nswe
     grid $dopt.refine.parSet.editButtons.cancel -column 1 -row 0 -sticky nswe
-    
+
     # build/grid a separator for refine section
-    ttk::separator $dopt.refine.sep2 -orient horizontal    
+    ttk::separator $dopt.refine.sep2 -orient horizontal
     grid $dopt.refine.sep2 -column 0 -row 3 -sticky nswe -pady 5
-    
+
     # build the refine refitting parameters section
     ttk::frame $dopt.refine.optSettings
     ttk::label $dopt.refine.optSettings.kmaxLbl -text "Kmax:" -anchor w
@@ -4434,21 +4504,24 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     grid $dopt.refine.optSettings.saSettings.iter -column 5 -row 0 -sticky nswe
     grid $dopt.refine.optSettings.saSettings.expLbl -column 6 -row 0 -sticky nswe
     grid $dopt.refine.optSettings.saSettings.exp -column 7 -row 0 -sticky nswe
-    
+
     # build/grid a separator for refine section
-    ttk::separator $dopt.refine.sep3 -orient horizontal    
+    ttk::separator $dopt.refine.sep3 -orient horizontal
     grid $dopt.refine.sep3 -column 0 -row 5 -sticky nswe -pady 5
-    
+
     # build/grid a refine run section
     ttk::frame $dopt.refine.run
+    ttk::button $dopt.refine.run.runManualRefine -text "Compute MM PES from Refinement Parameters" -command { ::ForceFieldToolKit::gui::doptRunManualRefine }
     ttk::button $dopt.refine.run.runRefine -text "Run Refitting/Refinement" -command { ::ForceFieldToolKit::gui::doptRunRefine }
-    
+
     # grid the refinement run section
     grid $dopt.refine.run -column 0 -row 6 -sticky nswe
     grid columnconfigure $dopt.refine.run 1 -weight 1
     grid rowconfigure $dopt.refine.run 1 -minsize 50 -weight 0
-    grid $dopt.refine.run.runRefine -column 0 -row 1 -columnspan 2 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
-    
+    grid rowconfigure $dopt.refine.run 2 -minsize 50 -weight 0
+    grid $dopt.refine.run.runManualRefine -column 0 -row 1 -columnspan 2 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
+    grid $dopt.refine.run.runRefine -column 0 -row 2 -columnspan 2 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
+
     # build/grid a separator
     ttk::separator $dopt.sep1 -orient horizontal
     grid $dopt.sep1 -column 0 -row 7 -sticky we -padx $hsepPadX -pady $hsepPadY
@@ -4460,13 +4533,13 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     ttk::label $dopt.status.lbl -text "Status:" -anchor w
     ttk::label $dopt.status.txt -textvariable ::ForceFieldToolKit::gui::doptStatus -anchor w
     ttk::button $dopt.runOpt -text "Run Optimization" -command { ::ForceFieldToolKit::gui::doptRunOpt }
-    
+
     # grid the run section
     grid $dopt.status -column 0 -row 8 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
     grid columnconfigure $dopt.status 1 -weight 1
     grid $dopt.status.lbl -column 0 -row 0 -sticky nswe
     grid $dopt.status.txt -column 1 -row 0 -sticky nswe
-    
+
     grid $dopt.runOpt -column 0 -row 9 -sticky nswe -padx $buttonRunPadX -pady $buttonRunPadY
     grid rowconfigure $dopt 9 -minsize 50 -weight 0
 
@@ -4478,10 +4551,5 @@ proc ::ForceFieldToolKit::gui::fftk_gui {} {
     # add binding to resize the window based on the active tab
     bind .fftk_gui.hlf.nb <<NotebookTabChanged>> { ::ForceFieldToolKit::gui::resizeToActiveTab }
 
-    # send message to the console logging startup
-    ::ForceFieldToolKit::gui::consoleMessage "ffTK Startup"
-
     return $w
 }
-
-

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,7 +10,7 @@
  *
  *      $RCSfile: VMDApp.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.237 $      $Date: 2014/11/08 06:52:31 $
+ *      $Revision: 1.240 $      $Date: 2016/11/28 03:05:05 $
  *
  ***************************************************************************/
 
@@ -23,6 +23,7 @@
 #include "PluginMgr.h"
 class Plugin;
 class CUDAAccel;
+class NVENCMgr;
 class DisplayDevice;
 class SymbolTable;
 class Scene;
@@ -34,17 +35,17 @@ class CommandQueue;
 class UIText;
 class MoleculeList;
 class GeometryList;
-class IMDMgr; 
+class IMDMgr;
 class Stage;
-class Mouse; 
+class Mouse;
 class FPS;
 class Animation;
-class Mobile; 
-class Spaceball; 
+class Mobile;
+class Spaceball;
 #ifdef WIN32
 class Win32Joystick;
 #endif
-class UIVR; 
+class UIVR;
 class FileRenderList;
 class VMDTitle;
 class MaterialList;
@@ -123,17 +124,17 @@ public:
   /// and then returns, when the program is ready to start main event loop.
   /// Return TRUE on successful initialization, FALSE if anything failed.
   int VMDinit(int, char **, const char *, int * dispLoc, int * dispSize);
-  
+
   ~VMDApp();
 
   /// Print the given error message and pause for the given number of seconds
   /// before setting a flag that willl make VMDupdate return FALSE.
   void VMDexit(const char *exitmsg, int exitcode, int pauseseconds);
- 
+
 private:
   /// Flag indicating whether or not to initialize MPI when MPI support
   /// has been compiled into the VMD binary.  This allows the same binary
-  /// to be run both interactively and in batch mode parallel MPI jobs, 
+  /// to be run both interactively and in batch mode parallel MPI jobs,
   /// e.g., on the Blue Waters Cray XE6/XK7 login nodes or on the compute nodes.
   int mpienabled;
 
@@ -146,7 +147,7 @@ private:
   static JString text_message;
 
   /// list of GUI menus (including both FLTK, and Tk extensions)
-  NameList<VMDMenu *> *menulist; 
+  NameList<VMDMenu *> *menulist;
 
   /// molid counter
   int nextMolID;
@@ -155,7 +156,7 @@ private:
   int stride_firsttime;
 
   /// flag; whether to exit on eof from stdin, defaults to no.
-  int eofexit;  
+  int eofexit;
 
   /// flag; whether or not background processing is going on currently
   int backgroundprocessing;
@@ -185,22 +186,26 @@ public:
   // de facto Global variables, by virtual of being public in this singleton
   UIText *uiText;               ///< the text interface JRG: made public for save_state
   UIVR *uivr;                   ///< VR tool interface
-  IMDMgr *imdMgr;               ///< IMD manager class 
+  IMDMgr *imdMgr;               ///< IMD manager class
   Animation *anim;              ///< generates delay-based frame change events
   DisplayDevice *display;       ///< display in which the images are rendered
   Scene *scene;                 ///< list of all Displayable objects to draw
 
+  void *thrpool;                ///< CPU thread pool for low-latency calcs
+
   CUDAAccel *cuda;              ///< CUDA acceleration system handle
 
-  QuickSurf *qsurf;             ///< QuickSurf object shared by all reps, 
-                                ///< to help minimize the persistent 
+  NVENCMgr *nvenc;              ///< GPU hardware H.26[45] video [en|de]coder
+
+  QuickSurf *qsurf;             ///< QuickSurf object shared by all reps,
+                                ///< to help minimize the persistent
                                 ///< GPU global memory footprint, and to make
                                 ///< it easy to force-dump all persistent
-                                ///< QuickSurf GPU global memory data 
+                                ///< QuickSurf GPU global memory data
                                 ///< structures on-demand for GPU ray tracing,
                                 ///< or other tasks that also need a lot of
-                                ///< resources.  The default persistence of 
-                                ///< QuickSurf GPU resources enable fast 
+                                ///< resources.  The default persistence of
+                                ///< QuickSurf GPU resources enable fast
                                 ///< trajectory playback.
 
   PickList *pickList;           ///< handles all picking events
@@ -241,7 +246,7 @@ public:
   void background_processing_set()   { backgroundprocessing = 1; }
 
   /// Turn off event checking for the text interface; if inactive it will
-  /// still process text from VMD, like hotkey callbacks, but Tk menus 
+  /// still process text from VMD, like hotkey callbacks, but Tk menus
   /// will not work.  This is experimental code just for the purpose of
   /// making it possible to control VMD from a thread in another program.
   void deactivate_uitext_stdin();
@@ -263,27 +268,27 @@ public:
   /// lets widgets add the menu to their own pulldown menus if they wish.
   void menu_add_extension(const char *shortname, const char *menu_path);
   void menu_remove_extension(const char *shortname);
-  
+
   /// Return 1 or 0 if the menu is on or off.  Return 0 if the menu does not
   /// exist.
   int menu_status(const char *name);
 
   /// Get the location of the specified menu.
   int menu_location(const char *name, int &x, int &y);
- 
+
   /// Turn the specified menu on or off.
   int menu_show(const char *name, int on);
 
   /// Move the specified menu to the given location on the screen.
   int menu_move(const char *name, int x, int y);
-  
+
   /// Tells the specified menu to select the "molno"-th molecule internally
   int menu_select_mol(const char *name, int molno);
-  
-  // 
+
+  //
   // methods for exporting to external rendering systems
   //
-  
+
   int filerender_num();                     ///< Number of file render methods
   const char *filerender_name(int n);       ///< Name of Nth file renderer
   const char *filerender_prettyname(int n); ///< Pretty name of Nth renderer
@@ -293,7 +298,7 @@ public:
   const char *filerender_shortname_from_prettyname(const char *pretty);
 
   /// Return whether given renderer supports antialiasing
-  int filerender_has_antialiasing(const char *method); 
+  int filerender_has_antialiasing(const char *method);
 
   /// Set the antialiasing sample count and return the new value
   int filerender_aasamples(const char *method, int aasamples);
@@ -304,7 +309,7 @@ public:
   /// Return whether the given renderer supports arbitrary image size
   int filerender_has_imagesize(const char *method);
 
-  /// Set/get the image size.  If *width or *height are zero, then the 
+  /// Set/get the image size.  If *width or *height are zero, then the
   /// existing value will be used instead.  If aspect ratio is set, then
   /// the aspect ratio will be used to determine the other member of the pair.
   /// Return success.
@@ -313,13 +318,13 @@ public:
   /// Set/get the aspect ratio for the image.  An aspect ratio of zero means
   /// the image is free to take on any size.  A positive value means the
   /// _height_ of the image will be scaled to maintain the given aspect ratio.
-  /// Negative values fail.  Return success, and place the new value of the 
+  /// Negative values fail.  Return success, and place the new value of the
   /// aspect ratio in the passed-in pointer.
   int filerender_aspectratio(const char *method, float *aspect);
 
   /// Return the number of file formats the file renderer can produce.  Returns
   /// zero if the renderer method is invalid.
-  int filerender_numformats(const char *method); 
+  int filerender_numformats(const char *method);
 
   /// Return the ith format.  NULL if invalid.
   const char *filerender_get_format(const char *method, int i);
@@ -335,24 +340,24 @@ public:
                         const char *extcmd);
 
   /// set the command string to execute after producing the scene file
-  /// Return the new value, or NULL if the method is invalid.   Specify option 
+  /// Return the new value, or NULL if the method is invalid.   Specify option
   /// as NULL to fetch the current value.
   const char *filerender_option(const char *method, const char *option);
-  
+
   /// get the default render option for the given method.
   const char *filerender_default_option(const char *method);
 
   /// get the dafault filename for this render method
   const char *filerender_default_filename(const char *method);
 
-  // 
+  //
   // methods for rotating, translating, and scaling the scene.  Return success
   //
 
   /// rotate the scene by or to the given angle, measured in degrees, about
-  /// the given axis, either 'x', 'y', or 'z'.  For rotate_by, If incr is zero, 
-  /// the rotation will be done in one redraw; otherwise the rotation will be 
-  /// performed in steps of incr. 
+  /// the given axis, either 'x', 'y', or 'z'.  For rotate_by, If incr is zero,
+  /// the rotation will be done in one redraw; otherwise the rotation will be
+  /// performed in steps of incr.
   int scene_rotate_by(float angle, char axis, float incr = 0);
   int scene_rotate_to(float angle, char axis);
 
@@ -373,16 +378,16 @@ public:
   /// no-disrupt mode is enabled, unless there's only one molecule
   void scene_resetview_newmoldata();
 
-  /// recenter the scene on the top molecule.  If there are no molecules, 
+  /// recenter the scene on the top molecule.  If there are no molecules,
   /// just restores rotation to default value.
   void scene_resetview();
- 
+
   /// Rock the scene by the given amount per redraw about the given axis.
   /// If nsteps is positive, rock for the specified number of steps, then
   /// reverse direction.
-  int scene_rock(char axis, float step, int nsteps = 0); 
- 
-  /// Stop rocking the scene. 
+  int scene_rock(char axis, float step, int nsteps = 0);
+
+  /// Stop rocking the scene.
   int scene_rockoff();
 
   /// Stop rocking AND persistent rotations induced by input devices (like
@@ -398,7 +403,7 @@ public:
   /// molecules.  If we ever create new Tcl commands and/or deprecate the old
   /// ones, we can (and should) change thse API's.  Note that there are no
   /// get-methods here because you would need to query molecules individually.
-  /// The Tcl commands just return the value for the top molecule; they can 
+  /// The Tcl commands just return the value for the top molecule; they can
   /// continue to do so, but the API should be per molecule.
   ///
   /// number of animation direction choices, and their names
@@ -415,13 +420,13 @@ public:
   /// set the animation style for all active molecules
   int animation_set_style(int);
 
-  /// set the animation frame for all active molecules.  If the specified 
+  /// set the animation frame for all active molecules.  If the specified
   /// frame is out of range for a particular molecule, then its frame will
   /// not change.  If frame is -1, go to the first frame.  If frame is -2,
   /// go to the last frame.
   int animation_set_frame(int frame);
 
-  /// set the stride for animation.  Must be >= 1.  
+  /// set the stride for animation.  Must be >= 1.
   int animation_set_stride(int);
 
   /// set the animation speed.  Must be a float between 0 and 1.  1 means
@@ -438,19 +443,19 @@ public:
   /// NULL.  The returned plugin should not be deleted.  If multiple plugins
   /// are found, the one with the highest version number is returned.
   vmdplugin_t *get_plugin(const char *type, const char *name);
-  
+
   /// Get alll plugins of the specfied type.  If no type is
-  /// specified or is NULL, all loaded plugins will be returned.  
+  /// specified or is NULL, all loaded plugins will be returned.
   /// Returns the number of plugins added to the list.
   int list_plugins(PluginList &, const char *type = NULL);
 
-  /// Try to dlopen the specified shared library and access its plugin API.  
-  /// Return the number of plugins found in the given library, or -1 on error. 
+  /// Try to dlopen the specified shared library and access its plugin API.
+  /// Return the number of plugins found in the given library, or -1 on error.
   int plugin_dlopen(const char *filename);
 
   /// Tell VMD to update its lists of plugins based on all the shared libraries
   /// it's loaded.  Methods listed below will not be updated after a call to
-  /// plugin_dlopen until this method is called.  
+  /// plugin_dlopen until this method is called.
   void plugin_update();
 
   //
@@ -463,9 +468,9 @@ public:
   /// return 1 or 0 if display updates are on or off, respectively.
   int display_update_status();
 
-  /// force a screen redraw right now, without checking for UI events 
+  /// force a screen redraw right now, without checking for UI events
   void display_update();
-  
+
   /// force a screen redraw right now, and also check for UI events
   void display_update_ui();
 
@@ -478,16 +483,16 @@ public:
   /// get/set the height of the screen.  Ignored unless positive.
   void display_set_screen_height(float);
   float display_get_screen_height();
-   
-  /// get/set the distance to the screen.  
+
+  /// get/set the distance to the screen.
   void display_set_screen_distance(float);
   float display_get_screen_distance();
- 
-  /// get/set the position of the graphics window.  
+
+  /// get/set the position of the graphics window.
   void display_set_position(int x, int y);
   //void display_get_position(int *x, int *y); // XXX doesn't work...
- 
-  /// get/set the size of the graphics window.  
+
+  /// get/set the size of the graphics window.
   void display_set_size(int w, int h);
   void display_get_size(int *w, int *h);
 
@@ -548,18 +553,18 @@ public:
   int display_set_ao(int onoff);
   int display_set_ao_ambient(float a);
   int display_set_ao_direct(float d);
-  
+
   int display_set_dof(int onoff);
   int display_set_dof_fnumber(float f);
   int display_set_dof_focal_dist(float d);
 
-  // 
-  /// turn on the title screen; burns CPU but will be turned off when a 
+  //
+  /// turn on the title screen; burns CPU but will be turned off when a
   /// molecule is loaded.
   void display_titlescreen();
 
-  // 
-  // Methods for setting color properties.  We have a set of color 
+  //
+  // Methods for setting color properties.  We have a set of color
   // _categories_ (Display, Axes...), each of which contains one or more
   // _items_ (Display->Background, Axes->X, Y, Z, ...).  Each item has a
   // color _name_ mapped to it (blue, red, ...).
@@ -574,8 +579,8 @@ public:
   /// add a new color item, consisting of a name and a default color, to
   /// the given color category.  If the color category does not already exist,
   /// it is created.  Return success.
-  int color_add_item(const char *cat, const char *item, const char *defcolor); 
-  
+  int color_add_item(const char *cat, const char *item, const char *defcolor);
+
   /// Number of color items in the given category
   int num_color_category_items(const char *category);
 
@@ -593,7 +598,7 @@ public:
   const char *color_name(int n);
 
   /// Index of given color.  If the color is invalid, return -1, other return
-  /// a number in [0, num_colors()).  The color must be one of the colors 
+  /// a number in [0, num_colors()).  The color must be one of the colors
   /// returned by color_name().  Hence, color_name(color_index(<string>))
   /// returns its input if <string> is a valid color, or NULL if it isn't.
   int color_index(const char *);
@@ -605,10 +610,10 @@ public:
   /// the regular colors, i.e. have an index in [0,num_regular_colors).
   /// Return success.
   int color_default_value(const char *colorname, float *r, float *g, float *b);
-  
+
   /// Color mapped to given color category and item, or NULL if invalid.
   const char *color_mapping(const char *category, const char *item);
- 
+
   /// get the restype for the given resname.  if the resname, is unknown,
   /// returns "Unassigned".
   const char *color_get_restype(const char *resname);
@@ -620,7 +625,7 @@ public:
   int color_set_restype(const char *resname, const char *newtype);
 
   /// color scale info
-  int colorscale_info(float *midpoint, float *min, float *max); 
+  int colorscale_info(float *midpoint, float *min, float *max);
 
   /// info about color scale methods
   int num_colorscale_methods();
@@ -631,22 +636,22 @@ public:
   int colorscale_method_index(const char *);
 
   /// Store the color scale colors in the given arrays
-  int get_colorscale_colors(int whichScale, 
+  int get_colorscale_colors(int whichScale,
       float min[3], float mid[3], float max[3]);
   /// Set the color scale colors from the given arrays
-  int set_colorscale_colors(int whichScale, 
+  int set_colorscale_colors(int whichScale,
       const float min[3], const float mid[3], const float max[3]);
-  
+
 
   /// Change the color for a particular color category and name.  color must
   /// be one of names returned by color_name().
   int color_changename(const char *category, const char *colorname,
                        const char *color);
-  
-  /// Returns the color string for a particular color category and name. 
+
+  /// Returns the color string for a particular color category and name.
   int color_get_from_name(const char *category, const char *colorname,
                        const char **color);
- 
+
   /// Change the RGB value for the specified color.
   int color_changevalue(const char *color, float r, float g, float b);
 
@@ -659,28 +664,28 @@ public:
   //
   // Command logging methods
   //
-  
-  /// Process the commands in the given file  
+
+  /// Process the commands in the given file
   int logfile_read(const char *path);
-  
-  /// save VMD state to a Tcl script.  A filename will be requested from 
+
+  /// save VMD state to a Tcl script.  A filename will be requested from
   /// the user
   int save_state();
- 
+
   /// change to a new text interpreter mode.  Currently "tcl" and "python"
   /// are supported.
   int textinterp_change(const char *interpname);
 
-  // 
+  //
   // Methods for editing and querying molecules and molecular representations
   //
- 
+
   /// Number of molecules currently loaded
   int num_molecules();
 
-  /// Create a new "empty" molecule, basically a blank slate for import 
+  /// Create a new "empty" molecule, basically a blank slate for import
   /// low-level graphics or other data.  Return the molid of the new molecule.
-  /// we also allow to set the number of atoms. this is particularly useful 
+  /// we also allow to set the number of atoms. this is particularly useful
   /// for topology building scripts.
   int molecule_new(const char *name, int natoms, int docallbacks=1);
 
@@ -695,16 +700,16 @@ public:
   /// Returns the molid of the molecule into which the data was read.
   /// If the file type is unknown, use guess_filetype to obtain a filetype;
   /// don't pass NULL to filetype.
-  int molecule_load(int molid, const char *filename, const char *filetype, 
+  int molecule_load(int molid, const char *filename, const char *filetype,
       const FileSpec *spec);
 
   /// Add volumetric data to a given molecule.  The data block will be deleted
   /// by VMD.  Return success.
-  int molecule_add_volumetric(int molid, const char *dataname, 
+  int molecule_add_volumetric(int molid, const char *dataname,
     const float origin[3], const float xaxis[3], const float yaxis[3],
     const float zaxis[3], int xsize, int ysize, int zsize, float *datablock);
 
-  int molecule_add_volumetric(int molid, const char *dataname, 
+  int molecule_add_volumetric(int molid, const char *dataname,
     const double origin[3], const double xaxis[3], const double yaxis[3],
     const double zaxis[3], int xsize, int ysize, int zsize, float *datablock);
 
@@ -714,7 +719,7 @@ public:
   /// selection must be NULL, or point to an array of flags, one for each
   /// atom in the molecule, indicating which atoms' coordinates are to be
   /// written.
-  int molecule_savetrajectory(int molid, const char *filename, 
+  int molecule_savetrajectory(int molid, const char *filename,
                               const char *filetype, const FileSpec *spec);
 
   /// Delete the specified range of timesteps from the given molecule, keeping
@@ -749,30 +754,30 @@ public:
   /// Duplicate the given frame.  The new fram will be appended at the end.
   /// Passing -1 for frame duplicates the current frame.  Return success.
   int molecule_dupframe(int molid, int frame);
-  
+
   /// name of molecule
   const char *molecule_name(int molid);
   int molecule_rename(int molid, const char *newname);
 
   /// cancel any in-progress file I/O associated with a given molecule.
   int molecule_cancel_io(int molid);
-  
+
   /// delete the molecule with the given id
   int molecule_delete(int molid);
 
   /// delete all molecules
   int molecule_delete_all(void);
-  
+
   /// make the given molecule 'active' or 'inactive'; active molecules respond
   /// to animate requests while inactive molecules do not.
   int molecule_activate(int molid, int onoff);
   int molecule_is_active(int molid);
- 
+
   /// make the given molecule fixed or unfixed.  Fixed molecules do not respond
   /// to scene transformation operations.
   int molecule_fix(int molid, int onoff);
   int molecule_is_fixed(int molid);
- 
+
   /// Turn the given molecule on or off.  Turning a molecule off causes all its
   /// reps to not be rendered.
   int molecule_display(int molid, int onoff);
@@ -783,7 +788,7 @@ public:
   int molecule_make_top(int molid);
 
   /// return the molid of the top molecule
-  int molecule_top(); 
+  int molecule_top();
 
   /// number of representations for the given molecule
   int num_molreps(int molid);
@@ -794,23 +799,23 @@ public:
   //
 
   /// Get/set the current representation style
-  const char *molrep_get_style(int molid, int repid); 
+  const char *molrep_get_style(int molid, int repid);
   int molrep_set_style(int molid, int repid, const char *style);
- 
+
   /// Get/set the current representation color
-  const char *molrep_get_color(int molid, int repid); 
+  const char *molrep_get_color(int molid, int repid);
   int molrep_set_color(int molid, int repid, const char *color);
 
-  /// Get/set the current representation selection 
-  const char *molrep_get_selection(int molid, int repid); 
+  /// Get/set the current representation selection
+  const char *molrep_get_selection(int molid, int repid);
   int molrep_set_selection(int molid, int repid, const char *selection);
 
-  /// Get the number of atoms in the rep's selection.  If invalid molid or 
+  /// Get the number of atoms in the rep's selection.  If invalid molid or
   /// repid, return -1, otherwise 0 or more.
   int molrep_numselected(int molid, int repid);
 
-  /// Get/set the current representation material 
-  const char *molrep_get_material(int molid, int repid); 
+  /// Get/set the current representation material
+  const char *molrep_get_material(int molid, int repid);
   int molrep_set_material(int molid, int repid, const char *material);
 
   /// Number of clipping planes supported per rep.  clipid in the next few
@@ -818,38 +823,38 @@ public:
   int num_clipplanes();
 
   /// Get clipping plane info for reps.  center and normal should point to
-  /// space for three floats. 
-  int molrep_get_clipplane(int molid, int repid, int clipid, float *center, 
+  /// space for three floats.
+  int molrep_get_clipplane(int molid, int repid, int clipid, float *center,
                            float *normal, float *color, int *mode);
   /// set clip plane properties.
-  int molrep_set_clipcenter(int molid, int repid, int clipid, 
+  int molrep_set_clipcenter(int molid, int repid, int clipid,
                             const float *center);
-  int molrep_set_clipnormal(int molid, int repid, int clipid, 
+  int molrep_set_clipnormal(int molid, int repid, int clipid,
                             const float *normal);
-  int molrep_set_clipcolor(int molid, int repid, int clipid, 
+  int molrep_set_clipcolor(int molid, int repid, int clipid,
                             const float *color);
   int molrep_set_clipstatus(int molid, int repid, int clipid, int onoff);
-  
+
   /// Set smoothing for reps.  Coordinates used for calculating graphics
   /// will be smoothed with a boxcar average 2*n+1 in size centered on the
-  /// current frame.   
+  /// current frame.
   int molrep_set_smoothing(int molid, int repid, int n);
 
   /// Get smoothing for given rep.  Returns -1 for invalid rep, otherwise
   /// 0 or higher.
   int molrep_get_smoothing(int molid, int repid);
-  
+
   // methods for retrieving reps by name rather than index.  The name is
   // guaranteed to be unique within a given molecule and follow the rep
   // around even when its order or index changes.
-  
+
   /// Get the name of the given rep.  Return NULL if the id is invalid.
   const char *molrep_get_name(int molid, int repid);
-  
+
   /// Get the repid of the rep with the given name.  Return -1 if the name
   /// was not found.
   int molrep_get_by_name(int molid, const char *);
- 
+
   /// Set periodic boundary condition display for this rep
   int molrep_set_pbc(int molid, int repid, int pbc);
 
@@ -874,39 +879,39 @@ public:
   // next call to molecule_addrep().  They exactly parallel the methods for
   // changing an existing representation except that no molid or repid is
   // specified.
-  
-  const char *molecule_get_style(); 
+
+  const char *molecule_get_style();
   int molecule_set_style(const char *style);
- 
-  const char *molecule_get_color(); 
+
+  const char *molecule_get_color();
   int molecule_set_color(const char *color);
 
-  const char *molecule_get_selection(); 
+  const char *molecule_get_selection();
   int molecule_set_selection(const char *selection);
 
-  const char *molecule_get_material(); 
+  const char *molecule_get_material();
   int molecule_set_material(const char *material);
 
   /// Add a rep to the given molecule, using parameters specified in the
   /// molecule_set methods.  molid must be a valid molecule id.
   int molecule_addrep(int molid);
-  
+
   /// Change the specified rep, using the same settings as for addrep.
   int molecule_modrep(int molid, int repid);
 
   /// Delete the specified rep
   int molrep_delete(int molid, int repid);
- 
+
   //@{
-  /// Turn on/off selection auto-update for the specified rep.  When on, the 
+  /// Turn on/off selection auto-update for the specified rep.  When on, the
   /// representation will recalculate its selection each time there is
-  /// change in the coordinate frame of the molecule. 
+  /// change in the coordinate frame of the molecule.
   int molrep_get_selupdate(int molid, int repid);
   int molrep_set_selupdate(int molid, int repid, int onoff);
   //@}
 
   //@{
-  /// Turn on/off automatic color update for the specified rep. 
+  /// Turn on/off automatic color update for the specified rep.
   int molrep_get_colorupdate(int molid, int repid);
   int molrep_set_colorupdate(int molid, int repid, int onoff);
   //@}
@@ -917,7 +922,7 @@ public:
   int molrep_set_scaleminmax(int molid, int repid, float min, float max);
   int molrep_reset_scaleminmax(int molid, int repid);
   //@}
-  
+
   /// Set drawing of selected frames for a given rep.  Syntax is
   /// "now" or a whitespace-separated list of terms of the form
   /// n, beg:end, or beg:stride:end.
@@ -935,22 +940,22 @@ public:
   int molecule_reanalyze(int molid);
 
   /// Force recalculation of bonds for the given molecule based on the
-  /// current set of coordinates.  
+  /// current set of coordinates.
   int molecule_bondsrecalc(int molid);
 
-  /// Force the recalculation of the secondary structure for the given 
+  /// Force the recalculation of the secondary structure for the given
   /// molecule based on the current set of coordinates.  Return true if the
   /// secondary structure was successfully recalculated, otherwise false.
   int molecule_ssrecalc(int molid);
-   
+
   /// Create a new wavefunction object based on existing wavefunction
   /// <waveid> with orbitals localized using the Pipek-Mezey algorithm.
   int molecule_orblocalize(int molid, int waveid);
 
-  // 
+  //
   // IMD methods
   //
-  
+
   /// Establish an IMD connection to the given host over the given port, using
   /// the given molecule id.  Return success.
   int imd_connect(int molid, const char *host, int port);
@@ -959,13 +964,13 @@ public:
   int imd_connected(int molid);
 
   /// Send forces, assuming an IMD connection is present.  Return success.
-  /// Format: num, indices, forces (xyzxyzxyz).  
+  /// Format: num, indices, forces (xyzxyzxyz).
   int imd_sendforces(int, const int *, const float *);
 
   /// Disconnect IMD.  Return success.
   int imd_disconnect(int molid);
 
-  // 
+  //
   // MPI related parallel processing routines
   //
 
@@ -997,12 +1002,12 @@ public:
   //
 
   /// add a label of the given category using the given molecule id's
-  /// and atom id's.  Return the index of the label object, or -1 on 
+  /// and atom id's.  Return the index of the label object, or -1 on
   /// error.  If toggle is true, the on/off status of the label will
   /// be toggled if the label already exists; if the label does not
   /// already exist, the newly created label will be on regardless of
   /// the value of toggle.
-  int label_add(const char *category, int num_ids, const int *molids, 
+  int label_add(const char *category, int num_ids, const int *molids,
       const int *atomids, const int *cells, float k, int toggle);
 
   /// turn on/off the nth label of the given category. Return success.
@@ -1041,7 +1046,7 @@ public:
   /// defined in MaterialList.  Return success.
   int material_change(const char *name, int property, float val);
 
-  /// rename the given material.  The new name must contain only 
+  /// rename the given material.  The new name must contain only
   /// alphanumeric characters (no spaces).  Return success.
   int material_rename(const char *oldname, const char *newname);
 
@@ -1049,7 +1054,7 @@ public:
   /// Return success.  Fails if the material has no default.
   int material_restore_default(int);
 
-  /// Change the mouse mode.  
+  /// Change the mouse mode.
   int mouse_set_mode(int mode, int setting);
 
 
@@ -1060,7 +1065,7 @@ public:
   int mobile_get_mode();
 
   /// Get the list of current clients
-  void mobile_get_client_list(ResizeArray <JString*>* &nick, 
+  void mobile_get_client_list(ResizeArray <JString*>* &nick,
                          ResizeArray <JString*>* &ip, ResizeArray <bool>* &active);
 
   /// Change the mobile interface network port.
@@ -1078,10 +1083,10 @@ public:
   /// Send a message to a specific client
   int mobile_sendMsg(const char *nick, const char *ip, const char *msgType, const char *msg);
 
-  /// return the current mobile interface event data, 
+  /// return the current mobile interface event data,
   /// used by the UIVR MobileTracker interface
-  void mobile_get_tracker_status(float &tx, float &ty, float &tz, 
-                                 float &rx, float &ry, float &rz, 
+  void mobile_get_tracker_status(float &tx, float &ty, float &tz,
+                                 float &rx, float &ry, float &rz,
                                  int &buttons);
 
   /// Change the spaceball mode.
@@ -1093,10 +1098,10 @@ public:
   /// Change the spaceball null region.
   int spaceball_set_null_region(int nr);
 
-  /// return the current spaceball event data, 
+  /// return the current spaceball event data,
   /// used by the UIVR SpaceballTracker interface
-  void spaceball_get_tracker_status(float &tx, float &ty, float &tz, 
-                                    float &rx, float &ry, float &rz, 
+  void spaceball_get_tracker_status(float &tx, float &ty, float &tz,
+                                    float &rx, float &ry, float &rz,
                                     int &buttons);
 
   /// show Stride message, if necessary
@@ -1105,12 +1110,12 @@ public:
   /// Show a file dialog.  Use the first available of:
   ///   Tk, Fltk, stdin
   /// Returns a new'd filename, or NULL.
-  char *vmd_choose_file(const char *title, 
+  char *vmd_choose_file(const char *title,
 		const char *extension,
 		const char *extension_label,
 		int do_save);
 
-  /// Get a unique integer serial number used for identifying display lists 
+  /// Get a unique integer serial number used for identifying display lists
   static unsigned long get_repserialnum(void);
   static unsigned long get_texserialnum(void);
 
@@ -1119,17 +1124,17 @@ public:
   int VMDupdate(int);
 
   /// text message access methods
-  static void set_text(const char* str) { 
-     text_message = str; 
+  static void set_text(const char* str) {
+     text_message = str;
   }
-  static void append_text(const char* str) { 
-     text_message += str; 
+  static void append_text(const char* str) {
+     text_message += str;
   }
-  static void clear_text() { 
-     text_message = JString(); 
+  static void clear_text() {
+     text_message = JString();
   }
-  static const char* get_text() { 
-     return text_message; 
+  static const char* get_text() {
+     return text_message;
   }
 
   void set_mouse_callbacks(int on);

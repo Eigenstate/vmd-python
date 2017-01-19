@@ -4,7 +4,7 @@
 # If needed, merge pdb-psf file of everything but protein with mutated protein (psfgen)
 # Write FEP files if requested
 #
-# $Id: mutator.tcl,v 1.15 2013/04/15 16:36:32 johns Exp $
+# $Id: mutator.tcl,v 1.16 2016/05/04 21:58:07 gumbart Exp $
 #
 
 # TODO
@@ -84,8 +84,8 @@ proc mutator_core {args} {
 	set fepprefix $cmdline(-FEP)
     }
   
-    set topfile [file join $env(CHARMMTOPDIR) top_all27_prot_lipid_na.inp]
-    set feptopfile [file join $env(CHARMMTOPDIR) top_all27_hybrid.inp]
+    set topfile [file join $env(CHARMMTOPDIR) top_all36_prot.rtf]
+    set feptopfile [file join $env(CHARMMTOPDIR) top_all36_hybrid.inp]
 
     puts "\n Mutator: Reading $psffile/$pdbfile..."
     

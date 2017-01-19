@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: VolumetricData.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.35 $	$Date: 2013/12/12 23:36:40 $
+ *	$Revision: 1.39 $	$Date: 2016/11/28 03:05:06 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -108,9 +108,6 @@ VolumetricData::VolumetricData(const char *dataname, const double *o,
 #endif
   }
 }
-
-
-/// destructor
 
 
 /// destructor
@@ -343,6 +340,21 @@ float VolumetricData::voxel_value_interpolate_from_coord(float xpos, float ypos,
 }
 
 
+/// set the volume gradient
+void VolumetricData::set_volume_gradient(float *grad) {
+  if (gradient) {
+    delete [] gradient; 
+    gradient = NULL;
+  }
+
+  if (!gradient) {
+    long gsz = ((long) xsize) * ((long) ysize) * ((long) zsize) * 3L;
+    gradient = new float[gsz];
+    memcpy(gradient, grad, gsz*sizeof(float));
+  }
+}
+
+
 /// (re)calculate the volume gradient
 void VolumetricData::compute_volume_gradient(void) {
   int xi, yi, zi;
@@ -380,7 +392,7 @@ printf("gradient map sz: %ld, MB: %ld\n", gsz, gsz*sizeof(float)/(1024*1024));
 
       row = (zi * xsize * ysize) + (yi * xsize);
       for (xi=0; xi<xsize; xi++) {
-        long index = (row + xi) * 3;
+        long index = (row + xi) * 3L;
         int xm, xp;
         xm = clamp_int(xi - 1, 0, xsize - 1);
         xp = clamp_int(xi + 1, 0, xsize - 1);
@@ -412,10 +424,10 @@ void VolumetricData::voxel_gradient_safe(int x, int y, int z, float *grad) const
   xx = (x > 0) ? ((x < xsize) ? x : xsize-1) : 0;
   yy = (y > 0) ? ((y < ysize) ? y : ysize-1) : 0;
   zz = (z > 0) ? ((z < zsize) ? z : zsize-1) : 0;
-  int index = zz*xsize*ysize + yy*xsize + xx;
-  grad[0] = gradient[index*3    ];
-  grad[1] = gradient[index*3 + 1];
-  grad[2] = gradient[index*3 + 2];
+  long index = zz*xsize*ysize + yy*xsize + xx;
+  grad[0] = gradient[index*3L    ];
+  grad[1] = gradient[index*3L + 1];
+  grad[2] = gradient[index*3L + 2];
 }
 
 

@@ -1,5 +1,5 @@
 #
-# $Id: fftk_BondAngleOpt.tcl,v 1.14 2015/05/04 14:23:37 mayne Exp $
+# $Id: fftk_BondAngleOpt.tcl,v 1.15 2015/12/31 05:17:51 gumbart Exp $
 #
 
 #======================================================
@@ -512,12 +512,14 @@ proc ::ForceFieldToolKit::BondAngleOpt::optimize {} {
         if { $typePos > -1 } {
            # baInitial is twice as long as uniqueTypes
                               #   indices   types      type (bond/angle/etc)                    qm eq. value                           qm energy 
-           lappend baIndList [list $indDef $typeDef [list [lindex $zmatqmEff [expr $pos+1] 1] [lindex $baInitial [expr 2*$typePos+1]] [lindex $targetEnList $pos] ]]
+           lappend baIndList [list $indDef $typeDef [list [lindex $zmatqmEff [expr $pos+1] 1] [lindex $targetGeomList $pos] [lindex $targetEnList $pos] ]]
+#           lappend baIndList [list $indDef $typeDef [list [lindex $zmatqmEff [expr $pos+1] 1] [lindex $baInitial [expr 2*$typePos+1]] [lindex $targetEnList $pos] ]]
            lappend mapIndPar [expr 2*$typePos]
         } else {
            set typePos [lsearch $uniqueTypes [lreverse $typeDef]] 
            if { $typePos > -1 } {
-              lappend baIndList [list $indDef [lreverse $typeDef] [list [lindex $zmatqmEff [expr $pos+1] 1] [lindex $baInitial [expr 2*$typePos+1]] [lindex $targetEnList $pos] ]]
+              lappend baIndList [list $indDef [lreverse $typeDef] [list [lindex $zmatqmEff [expr $pos+1] 1] [lindex $targetGeomList $pos] [lindex $targetEnList $pos] ]]
+#              lappend baIndList [list $indDef [lreverse $typeDef] [list [lindex $zmatqmEff [expr $pos+1] 1] [lindex $baInitial [expr 2*$typePos+1]] [lindex $targetEnList $pos] ]]
               lappend mapIndPar [expr 2*$typePos]
            }
         }

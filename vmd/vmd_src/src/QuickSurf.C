@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,31 +11,54 @@
  *
  *	$RCSfile: QuickSurf.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.101 $	$Date: 2015/05/21 03:35:35 $
+ *	$Revision: 1.115 $	$Date: 2016/11/28 04:10:05 $
  *
  ***************************************************************************
  * DESCRIPTION:
  *   Fast gaussian surface representation
  ***************************************************************************/
 
+// pgcc 2016 has troubles with hand-vectorized x86 intrinsics presently
+#if !defined(__PGIC__)
+#if defined(VMDUSEAVX512) && defined(__AVX512F__) && defined(__AVX512ER__)
+// AVX512F + AVX512ER for Xeon Phi
+#define VMDQSURFUSEAVX512 1
+#else
+// fall-back to SSE or AVX
 #define VMDQSURFUSESSE 1
 
-// XXX the AVX code path can't beat SSE yet due to the costs of
-//     CPU state transitions between AVX and SSE due to the complete
-//     lack of AVX instructions for integer arithmetic, which are needed
-//     by our fast exponential approximation.  To beat SSE will
-//     require waiting for AVX2 integer instructions that arrive with 
-//     upcoming Intel Haswell series CPUs.
-// #define VMDQSURFUSEAVX 1
+// The x86 AVX code path requires FMA and AVX2 integer instructions
+// in order to achieve performance that actually beats SSE2.
+// #define VMDQSURFUSEAVX2 1
+#endif
+#endif
+
+// The OpenPOWER VSX code path runs on POWER8 and later hardware, but is
+// untested on older platforms that support VSX instructions.
+// XXX GCC 4.8.5 breaks with conflicts between vec_xxx() routines
+//     defined in utilities.h vs. VSX intrinsics in altivec.h and similar.
+//     For now, we disable VSX for GCC for this source file.
+#if !defined(__GNUC__) && defined(__VEC__)
+#define VMDQSURFUSEVSX 1
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
-#if VMDQSURFUSESSE & defined(__SSE2__) 
+#if VMDQSURFUSESSE && defined(__SSE2__) 
 #include <emmintrin.h>
 #endif
-#if VMDQSURFUSEAVX & defined(__AVX__)
+#if VMDQSURFUSEAVX2 && defined(__AVX__) && defined(__AVX2__)
 #include <immintrin.h>
 #endif
+#if VMDQSURFUSEAVX512 && defined(__AVX512F__) && defined(__AVX512ER__)
+#include <immintrin.h>
+#endif
+#if (defined(VMDQSURFUSEVSX) && defined(__VSX__))
+#if defined(__GNUC__) && defined(__VEC__)
+#include <altivec.h>
+#endif
+#endif
+
 #include <string.h>
 #include <math.h>
 #include "QuickSurf.h"
@@ -128,33 +151,20 @@ typedef union flint_t {
   int n;
 } flint;
 
-#if VMDQSURFUSESSE & defined(__SSE2__)
+#if VMDQSURFUSESSE && defined(__SSE2__)
 // SSE variant of the 'flint' union above
 typedef union SSEreg_t {
   __m128  f;  // 4x float (SSE)
   __m128i i;  // 4x 32-bit int (SSE2)
-  struct {
-    int r0, r1, r2, r3;  // get the individual registers
-  } intreg;
-  struct {
-    float r0, r1, r2, r3;  // get the individual registers
-  } floatreg;
 } SSEreg;
 #endif
-#if VMDQSURFUSEAVX & defined(__AVX__)
+#if VMDQSURFUSEAVX2 && defined(__AVX__) && defined(__AVX2__)
 // AVX variant of the 'flint' union above
 typedef union AVXreg_t {
   __m256  f;  // 8x float (AVX)
   __m256i i;  // 8x 32-bit int (AVX)
   struct {
-    __m128i i0; // 4x 32-bit int (SSE2)
-    __m128i i1; // 4x 32-bit int (SSE2)
-  } ssereg;
-  struct {
-    int r0, r1, r2, r3;  // get the individual registers
-  } intreg;
-  struct {
-    float r0, r1, r2, r3;  // get the individual registers
+    float r0, r1, r2, r3, r4, r5, r6, r7;  // get the individual registers
   } floatreg;
 } AVXreg;
 #endif
@@ -206,8 +216,8 @@ static void vmd_gaussdensity(int verbose,
         fflush(stdout);
       }
 
-      int ind = i*4;
-      float scaledrad = xyzr[ind + 3] * radscale;
+      long ind = i*4L;
+      float scaledrad = xyzr[ind + 3L] * radscale;
 
       // MDFF atomic number weighted density factor
       float atomicnumfactor = 1.0f;
@@ -263,7 +273,7 @@ static void vmd_gaussdensity(int verbose,
             // Pre-multiply colors by the inverse isovalue we will extract   
             // the surface on, to cause the final color to be normalized.
             density *= invisovalue;
-            int caddr = (addr + x) * 3;
+            long caddr = (addr + x) * 3L;
 
             // color by atom colors
             voltexmap[caddr    ] += density * colors[ind    ];
@@ -281,7 +291,7 @@ static void vmd_gaussdensity(int verbose,
         fflush(stdout);
       }
 
-      int ind = i*4;
+      long ind = i*4L;
       float scaledrad = xyzr[ind + 3] * radscale;
 
       // MDFF atomic number weighted density factor
@@ -341,6 +351,8 @@ static void vmd_gaussdensity(int verbose,
 }
 #endif
 
+
+
 static void vmd_gaussdensity_opt(int verbose,
                                  int natoms, const float *xyzr,
                                  const float *atomicnum,
@@ -356,19 +368,36 @@ static void vmd_gaussdensity_opt(int verbose,
   maxvoxel[2] = numvoxels[2]-1; 
   const float invgridspacing = 1.0f / gridspacing;
 
-#if (VMDQSURFUSESSE & defined(__SSE2__)) || (VMDQSURFUSEAVX & defined(__AVX__))
+#if (VMDQSURFUSESSE && defined(__SSE2__)) || (VMDQSURFUSEAVX2 && defined(__AVX__) && defined(__AVX2__)) || (VMDQSURFUSEAVX512 && defined(__AVX512F__) && defined(__AVX512ER__)) 
   // XXX replace with calls to centralized control system
   int usesse=1;
   if (getenv("VMDNOSSE")) {
     usesse=0;
   }
-  int useavx=1;
-  if (getenv("VMDNOAVX")) {
-    useavx=0;
+#endif
+
+#if VMDQSURFUSEAVX2 && defined(__AVX__) && defined(__AVX2__)
+  int useavx2=1;
+  if (getenv("VMDNOAVX2")) {
+    useavx2=0;
   }
 #endif
 
-#if VMDQSURFUSESSE & defined(__SSE2__)
+#if VMDQSURFUSEAVX512 && defined(__AVX512F__) && defined(__AVX512ER__)
+  int useavx512=1;
+  if (getenv("VMDNOAVX512")) {
+    useavx512=0;
+  }
+#endif
+
+#if VMDQSURFUSEVSX && defined(__VEC__)
+  int usevsx=1;
+  if (getenv("VMDNOVSX")) {
+    usevsx=0;
+  }
+#endif
+
+#if VMDQSURFUSESSE && defined(__SSE2__)
   // Variables for SSE optimized inner loop
   __m128 gridspacing4_4;
   __attribute__((aligned(16))) float sxdelta4[4]; // 16-byte aligned for SSE
@@ -380,15 +409,39 @@ static void vmd_gaussdensity_opt(int verbose,
   }
 #endif
 
-#if VMDQSURFUSEAVX & defined(__AVX__)
-  // Variables for AVX optimized inner loop
+#if VMDQSURFUSEAVX2 && defined(__AVX__) && defined(__AVX2__)
+  // Variables for AVX2 optimized inner loop
   __m256 gridspacing8_8;
-  __attribute__((aligned(16))) float sxdelta8[8]; // 16-byte aligned for AVX
+  __attribute__((aligned(16))) float sxdelta8[8]; // 16-byte aligned for AVX2
 
-  if (useavx) {
+  if (useavx2) {
     gridspacing8_8 = _mm256_set1_ps(gridspacing * 8.0f);
     for (x=0; x<8; x++)
       sxdelta8[x] = ((float) x) * gridspacing;
+  }
+#endif
+
+#if VMDQSURFUSEAVX512 && defined(__AVX512F__) && defined(__AVX512ER__)
+  // Variables for AVX512 optimized inner loop
+  __m512 gridspacing16_16;
+  __attribute__((aligned(64))) float sxdelta16[16]; // 16-byte aligned for AVX2
+
+  if (useavx512) {
+    gridspacing16_16 = _mm512_set1_ps(gridspacing * 16.0f);
+    for (x=0; x<16; x++)
+      sxdelta16[x] = ((float) x) * gridspacing;
+  }
+#endif
+
+#if VMDQSURFUSEVSX && defined(__VEC__)
+  // Variables for VSX optimized inner loop
+  vector float gridspacing4_4;
+  __attribute__((aligned(16))) float sxdelta4[4]; // 16-byte aligned for VSX
+
+  if (usevsx) {
+    gridspacing4_4 = vec_splats(gridspacing * 4.0f);
+    for (x=0; x<4; x++)
+      sxdelta4[x] = ((float) x) * gridspacing;
   }
 #endif
 
@@ -402,7 +455,7 @@ static void vmd_gaussdensity_opt(int verbose,
         fflush(stdout);
       }
 
-      int ind = i*4;
+      long ind = i*4L;
       float scaledrad = xyzr[ind + 3] * radscale;
 
       // MDFF atomic number weighted density factor
@@ -417,7 +470,7 @@ static void vmd_gaussdensity_opt(int verbose,
       float radlim2 = radlim * radlim; // cutoff test done in cartesian coords
       radlim *= invgridspacing;
 
-#if VMDQSURFUSESSE & defined(__SSE2__)
+#if VMDQSURFUSESSE && defined(__SSE2__)
       __m128 atomicnumfactor_4;
       __m128 arinv_4;
       if (usesse) {
@@ -431,10 +484,34 @@ static void vmd_gaussdensity_opt(int verbose,
 #endif
       }
 #endif
-#if VMDQSURFUSEAVX & defined(__AVX__)
+
+#if VMDQSURFUSEAVX2 && defined(__AVX__) && defined(__AVX2__)
       __m256 atomicnumfactor_8;
-      if (useavx) {
+      __m256 arinv_8;
+      if (useavx2) {
         atomicnumfactor_8 = _mm256_set1_ps(atomicnumfactor);
+#if VMDUSESVMLEXP
+        // Use of Intel's SVML requires changing the pre-scaling factor
+        arinv_8 = _mm256_set1_ps(arinv * (2.718281828f/2.0f) / MLOG2EF); 
+#else
+        // Use our fully inlined exp approximation
+        arinv_8 = _mm256_set1_ps(arinv);
+#endif
+      }
+#endif
+
+#if VMDQSURFUSEAVX512 && defined(__AVX512F__) && defined(__AVX512ER__)
+      __m512 atomicnumfactor_16;
+      __m512 arinv_16;
+      if (useavx512) {
+        atomicnumfactor_16 = _mm512_set1_ps(atomicnumfactor);
+#if VMDUSESVMLEXP
+        // Use of Intel's SVML requires changing the pre-scaling factor
+        arinv_16 = _mm512_set1_ps(arinv * (2.718281828f/2.0f) / MLOG2EF); 
+#else
+        // Use AVX512-based exp2() approximation
+        arinv_16 = _mm512_set1_ps(arinv);
+#endif
       }
 #endif
 
@@ -463,7 +540,307 @@ static void vmd_gaussdensity_opt(int verbose,
           float dx = xmin*gridspacing - xyzr[ind];
           x=xmin;
 
-#if VMDQSURFUSESSE & defined(__SSE2__)
+#if 0 && VMDQSURFUSEAVX512 && defined(__AVX512F__) && defined(__AVX512ER__)
+          // Use AVX512 when we have a multiple-of-16 to compute
+          // finish all remaining density map points with 
+          // AVX2, SSE, or regular non-SSE loop
+          if (useavx512) {
+            __align(64) __m512 y;
+            __m512 dy2dz2_16 = _mm512_set1_ps(dy2dz2);
+            __m512 dx_16 = _mm512_add_ps(_mm512_set1_ps(dx), _mm512_load_ps(&sxdelta16[0]));
+
+            for (; (x+15)<=xmax; x+=16,dx_16=_mm512_add_ps(dx_16, gridspacing16_16)) {
+              __m512 r2 = _mm512_fmadd_ps(dx_16, dx_16, dy2dz2_16);
+              __m512 d;
+#if VMDUSESVMLEXP
+              // use Intel's SVML exp2() routine
+              y = _mm512_exp2_ps(_mm512_mul_ps(r2, arinv_16));
+#else
+              // use (much faster) exp2() approximation instruction
+              // inputs already negated and in base 2 
+              y = _mm512_exp2a23_ps(_mm512_mul_ps(r2, arinv_16));
+#endif
+
+              // At present, we do unaligned loads/stores since we can't 
+              // guarantee that the X-dimension is always a multiple of 16.
+              float *ufptr = &densitymap[addr + x];
+              d = _mm512_loadu_ps(ufptr); 
+              _mm512_storeu_ps(ufptr, _mm512_add_ps(d, y)); 
+
+              // Accumulate density-weighted color to texture map.
+              // Pre-multiply colors by the inverse isovalue we will extract
+              // the surface on, to cause the final color to be normalized.
+              d = _mm512_mul_ps(y, _mm512_set1_ps(invisovalue));
+              long caddr = (addr + x) * 3L;
+#if VMDQSURFUSEAVX2 && defined(__AVX__) && defined(__AVX2__)
+              // convert rgb3f AOS format to 8-element SOA vectors using shuffle instructions
+              float *txptr = &voltexmap[caddr];
+              __m128 *m = (__m128 *) txptr;
+              // unaligned load of 8 consecutive rgb3f texture map texels
+              __m256 m03 = _mm256_castps128_ps256(m[0]); // load lower halves
+              __m256 m14 = _mm256_castps128_ps256(m[1]);
+              __m256 m25 = _mm256_castps128_ps256(m[2]);
+              m03  = _mm256_insertf128_ps(m03, m[3], 1); // load upper halves
+              m14  = _mm256_insertf128_ps(m14, m[4], 1);
+              m25  = _mm256_insertf128_ps(m25, m[5], 1);
+ 
+              // upper Rs and Gs 
+              __m256 rg = _mm256_shuffle_ps(m14, m25, _MM_SHUFFLE(2,1,3,2));
+              // lower Gs and Bs
+              __m256 gb = _mm256_shuffle_ps(m03, m14, _MM_SHUFFLE(1,0,2,1));
+              __m256 r  = _mm256_shuffle_ps(m03, rg , _MM_SHUFFLE(2,0,3,0)); 
+              __m256 g  = _mm256_shuffle_ps(gb , rg , _MM_SHUFFLE(3,1,2,0)); 
+              __m256 b  = _mm256_shuffle_ps(gb , m25, _MM_SHUFFLE(3,0,3,1)); 
+
+              // accumulate density-scaled colors into texels
+#if 1
+              r = _mm256_fmadd_ps(d, _mm256_set1_ps(colors[ind    ]), r);
+              g = _mm256_fmadd_ps(d, _mm256_set1_ps(colors[ind + 1]), g);
+              b = _mm256_fmadd_ps(d, _mm256_set1_ps(colors[ind + 2]), b);
+#else
+              r = _mm256_add_ps(r, _mm256_mul_ps(d, _mm256_set1_ps(colors[ind    ])));
+              g = _mm256_add_ps(g, _mm256_mul_ps(d, _mm256_set1_ps(colors[ind + 1])));
+              b = _mm256_add_ps(b, _mm256_mul_ps(d, _mm256_set1_ps(colors[ind + 2])));
+#endif
+
+              // convert 8-element SOA vectors to rgb3f AOS format using shuffle instructions
+              __m256 rrg = _mm256_shuffle_ps(r, g, _MM_SHUFFLE(2,0,2,0)); 
+              __m256 rgb = _mm256_shuffle_ps(g, b, _MM_SHUFFLE(3,1,3,1)); 
+              __m256 rbr = _mm256_shuffle_ps(b, r, _MM_SHUFFLE(3,1,2,0)); 
+              __m256 r03 = _mm256_shuffle_ps(rrg, rbr, _MM_SHUFFLE(2,0,2,0));  
+              __m256 r14 = _mm256_shuffle_ps(rgb, rrg, _MM_SHUFFLE(3,1,2,0)); 
+              __m256 r25 = _mm256_shuffle_ps(rbr, rgb, _MM_SHUFFLE(3,1,3,1));  
+
+              // unaligned store of consecutive rgb3f texture map texels
+              m[0] = _mm256_castps256_ps128( r03 );
+              m[1] = _mm256_castps256_ps128( r14 );
+              m[2] = _mm256_castps256_ps128( r25 );
+              m[3] = _mm256_extractf128_ps( r03 ,1);
+              m[4] = _mm256_extractf128_ps( r14 ,1);
+              m[5] = _mm256_extractf128_ps( r25 ,1);
+#else
+              // color by atom colors
+              float r, g, b;
+              r = colors[ind    ];
+              g = colors[ind + 1];
+              b = colors[ind + 2];
+
+              AVXreg tmp;
+              tmp.f = d;
+              float density;
+              density = tmp.floatreg.r0;
+              voltexmap[caddr     ] += density * r;
+              voltexmap[caddr +  1] += density * g;
+              voltexmap[caddr +  2] += density * b;
+
+              density = tmp.floatreg.r1;
+              voltexmap[caddr +  3] += density * r;
+              voltexmap[caddr +  4] += density * g;
+              voltexmap[caddr +  5] += density * b;
+
+              density = tmp.floatreg.r2;
+              voltexmap[caddr +  6] += density * r;
+              voltexmap[caddr +  7] += density * g;
+              voltexmap[caddr +  8] += density * b;
+
+              density = tmp.floatreg.r3;
+              voltexmap[caddr +  9] += density * r;
+              voltexmap[caddr + 10] += density * g;
+              voltexmap[caddr + 11] += density * b;
+
+              density = tmp.floatreg.r4;
+              voltexmap[caddr + 12] += density * r;
+              voltexmap[caddr + 13] += density * g;
+              voltexmap[caddr + 14] += density * b;
+
+              density = tmp.floatreg.r5;
+              voltexmap[caddr + 15] += density * r;
+              voltexmap[caddr + 16] += density * g;
+              voltexmap[caddr + 17] += density * b;
+
+              density = tmp.floatreg.r6;
+              voltexmap[caddr + 18] += density * r;
+              voltexmap[caddr + 19] += density * g;
+              voltexmap[caddr + 20] += density * b;
+
+              density = tmp.floatreg.r7;
+              voltexmap[caddr + 21] += density * r;
+              voltexmap[caddr + 22] += density * g;
+              voltexmap[caddr + 23] += density * b;
+#endif
+            }
+          }
+#endif
+
+
+#if VMDQSURFUSEAVX2 && defined(__AVX__) && defined(__AVX2__)
+          // Use AVX when we have a multiple-of-8 to compute
+          // finish all remaining density map points with SSE or regular non-SSE loop
+          if (useavx2) {
+            __align(16) AVXreg scal;
+            __align(16) AVXreg n;
+            __align(16) AVXreg y;
+            __m256 dy2dz2_8 = _mm256_set1_ps(dy2dz2);
+            __m256 dx_8 = _mm256_add_ps(_mm256_set1_ps(dx), _mm256_load_ps(&sxdelta8[0]));
+
+            for (; (x+7)<=xmax; x+=8,dx_8=_mm256_add_ps(dx_8, gridspacing8_8)) {
+              __m256 r2 = _mm256_fmadd_ps(dx_8, dx_8, dy2dz2_8);
+              __m256 d;
+#if VMDUSESVMLEXP
+              // use Intel's SVML exp2() routine
+              y.f = _mm256_exp2_ps(_mm256_mul_ps(r2, arinv_8));
+#else
+              // use our (much faster) fully inlined exponential approximation
+              y.f = _mm256_mul_ps(r2, arinv_8);         /* already negated and in base 2 */
+              n.i = _mm256_cvttps_epi32(y.f);
+              d = _mm256_cvtepi32_ps(n.i);
+              d = _mm256_sub_ps(d, y.f);
+
+              // Approximate 2^{-d}, 0 <= d < 1, by interpolation.
+              // Perform Horner's method to evaluate interpolating polynomial.
+#if 1
+              y.f = _mm256_fmadd_ps(d, _mm256_set1_ps(SCEXP4), _mm256_set1_ps(SCEXP3)); 
+              y.f = _mm256_fmadd_ps(y.f, d, _mm256_set1_ps(SCEXP2));
+              y.f = _mm256_fmadd_ps(y.f, d, _mm256_set1_ps(SCEXP1));
+              y.f = _mm256_fmadd_ps(y.f, d, _mm256_set1_ps(SCEXP0));
+#else
+              y.f = _mm256_mul_ps(d, _mm256_set1_ps(SCEXP4));      /* for x^4 term */
+              y.f = _mm256_add_ps(y.f, _mm256_set1_ps(SCEXP3));    /* for x^3 term */
+              y.f = _mm256_mul_ps(y.f, d);
+              y.f = _mm256_add_ps(y.f, _mm256_set1_ps(SCEXP2));    /* for x^2 term */
+              y.f = _mm256_mul_ps(y.f, d);
+              y.f = _mm256_add_ps(y.f, _mm256_set1_ps(SCEXP1));    /* for x^1 term */
+              y.f = _mm256_mul_ps(y.f, d);
+              y.f = _mm256_add_ps(y.f, _mm256_set1_ps(SCEXP0));    /* for x^0 term */
+#endif
+
+              // Calculate 2^N exactly by directly manipulating floating point exponent,
+              // then use it to scale y for the final result.
+              // We need AVX2 instructions to be able to operate on 
+              // 8-wide integer types efficiently.
+              n.i = _mm256_sub_epi32(_mm256_set1_epi32(EXPOBIAS), n.i);
+              n.i = _mm256_slli_epi32(n.i, EXPOSHIFT);
+              y.f = _mm256_mul_ps(y.f, n.f);
+              y.f = _mm256_mul_ps(y.f, atomicnumfactor_8); // MDFF density maps
+#endif
+
+              // At present, we do unaligned loads/stores since we can't guarantee
+              // that the X-dimension is always a multiple of 8.
+              float *ufptr = &densitymap[addr + x];
+              d = _mm256_loadu_ps(ufptr); 
+              _mm256_storeu_ps(ufptr, _mm256_add_ps(d, y.f)); 
+
+              // Accumulate density-weighted color to texture map.
+              // Pre-multiply colors by the inverse isovalue we will extract
+              // the surface on, to cause the final color to be normalized.
+              d = _mm256_mul_ps(y.f, _mm256_set1_ps(invisovalue));
+              long caddr = (addr + x) * 3L;
+
+#if VMDQSURFUSEAVX2 && defined(__AVX__) && defined(__AVX2__)
+              // convert rgb3f AOS format to 8-element SOA vectors using shuffle instructions
+              float *txptr = &voltexmap[caddr];
+              __m128 *m = (__m128 *) txptr;
+              // unaligned load of 8 consecutive rgb3f texture map texels
+              __m256 m03 = _mm256_castps128_ps256(m[0]); // load lower halves
+              __m256 m14 = _mm256_castps128_ps256(m[1]);
+              __m256 m25 = _mm256_castps128_ps256(m[2]);
+              m03  = _mm256_insertf128_ps(m03, m[3], 1); // load upper halves
+              m14  = _mm256_insertf128_ps(m14, m[4], 1);
+              m25  = _mm256_insertf128_ps(m25, m[5], 1);
+ 
+              // upper Rs and Gs 
+              __m256 rg = _mm256_shuffle_ps(m14, m25, _MM_SHUFFLE(2,1,3,2));
+              // lower Gs and Bs
+              __m256 gb = _mm256_shuffle_ps(m03, m14, _MM_SHUFFLE(1,0,2,1));
+              __m256 r  = _mm256_shuffle_ps(m03, rg , _MM_SHUFFLE(2,0,3,0)); 
+              __m256 g  = _mm256_shuffle_ps(gb , rg , _MM_SHUFFLE(3,1,2,0)); 
+              __m256 b  = _mm256_shuffle_ps(gb , m25, _MM_SHUFFLE(3,0,3,1)); 
+
+              // accumulate density-scaled colors into texels
+#if 1
+              r = _mm256_fmadd_ps(d, _mm256_set1_ps(colors[ind    ]), r);
+              g = _mm256_fmadd_ps(d, _mm256_set1_ps(colors[ind + 1]), g);
+              b = _mm256_fmadd_ps(d, _mm256_set1_ps(colors[ind + 2]), b);
+#else
+              r = _mm256_add_ps(r, _mm256_mul_ps(d, _mm256_set1_ps(colors[ind    ])));
+              g = _mm256_add_ps(g, _mm256_mul_ps(d, _mm256_set1_ps(colors[ind + 1])));
+              b = _mm256_add_ps(b, _mm256_mul_ps(d, _mm256_set1_ps(colors[ind + 2])));
+#endif
+
+              // convert 8-element SOA vectors to rgb3f AOS format using shuffle instructions
+              __m256 rrg = _mm256_shuffle_ps(r, g, _MM_SHUFFLE(2,0,2,0)); 
+              __m256 rgb = _mm256_shuffle_ps(g, b, _MM_SHUFFLE(3,1,3,1)); 
+              __m256 rbr = _mm256_shuffle_ps(b, r, _MM_SHUFFLE(3,1,2,0)); 
+              __m256 r03 = _mm256_shuffle_ps(rrg, rbr, _MM_SHUFFLE(2,0,2,0));  
+              __m256 r14 = _mm256_shuffle_ps(rgb, rrg, _MM_SHUFFLE(3,1,2,0)); 
+              __m256 r25 = _mm256_shuffle_ps(rbr, rgb, _MM_SHUFFLE(3,1,3,1));  
+
+              // unaligned store of consecutive rgb3f texture map texels
+              m[0] = _mm256_castps256_ps128( r03 );
+              m[1] = _mm256_castps256_ps128( r14 );
+              m[2] = _mm256_castps256_ps128( r25 );
+              m[3] = _mm256_extractf128_ps( r03 ,1);
+              m[4] = _mm256_extractf128_ps( r14 ,1);
+              m[5] = _mm256_extractf128_ps( r25 ,1);
+#else
+              // color by atom colors
+              float r, g, b;
+              r = colors[ind    ];
+              g = colors[ind + 1];
+              b = colors[ind + 2];
+
+              AVXreg tmp;
+              tmp.f = d;
+              float density;
+              density = tmp.floatreg.r0;
+              voltexmap[caddr     ] += density * r;
+              voltexmap[caddr +  1] += density * g;
+              voltexmap[caddr +  2] += density * b;
+
+              density = tmp.floatreg.r1;
+              voltexmap[caddr +  3] += density * r;
+              voltexmap[caddr +  4] += density * g;
+              voltexmap[caddr +  5] += density * b;
+
+              density = tmp.floatreg.r2;
+              voltexmap[caddr +  6] += density * r;
+              voltexmap[caddr +  7] += density * g;
+              voltexmap[caddr +  8] += density * b;
+
+              density = tmp.floatreg.r3;
+              voltexmap[caddr +  9] += density * r;
+              voltexmap[caddr + 10] += density * g;
+              voltexmap[caddr + 11] += density * b;
+
+              density = tmp.floatreg.r4;
+              voltexmap[caddr + 12] += density * r;
+              voltexmap[caddr + 13] += density * g;
+              voltexmap[caddr + 14] += density * b;
+
+              density = tmp.floatreg.r5;
+              voltexmap[caddr + 15] += density * r;
+              voltexmap[caddr + 16] += density * g;
+              voltexmap[caddr + 17] += density * b;
+
+              density = tmp.floatreg.r6;
+              voltexmap[caddr + 18] += density * r;
+              voltexmap[caddr + 19] += density * g;
+              voltexmap[caddr + 20] += density * b;
+
+              density = tmp.floatreg.r7;
+              voltexmap[caddr + 21] += density * r;
+              voltexmap[caddr + 22] += density * g;
+              voltexmap[caddr + 23] += density * b;
+#endif
+            }
+          }
+#endif
+
+
+
+
+
+#if VMDQSURFUSESSE && defined(__SSE2__)
           // Use SSE when we have a multiple-of-4 to compute
           // finish all remaining density map points with regular non-SSE loop
           if (usesse) {
@@ -487,6 +864,13 @@ static void vmd_gaussdensity_opt(int verbose,
 
               // Approximate 2^{-d}, 0 <= d < 1, by interpolation.
               // Perform Horner's method to evaluate interpolating polynomial.
+#if 0
+              // SSE 4.x FMADD instructions are not universally available
+              y.f = _mm_fmadd_ps(d, _mm_set1_ps(SCEXP4), _mm_set1_ps(SCEXP3)); 
+              y.f = _mm_fmadd_ps(y.f, d, _mm_set1_ps(SCEXP2));
+              y.f = _mm_fmadd_ps(y.f, d, _mm_set1_ps(SCEXP1));
+              y.f = _mm_fmadd_ps(y.f, d, _mm_set1_ps(SCEXP0));
+#else
               y.f = _mm_mul_ps(d, _mm_set_ps1(SCEXP4));      /* for x^4 term */
               y.f = _mm_add_ps(y.f, _mm_set_ps1(SCEXP3));    /* for x^3 term */
               y.f = _mm_mul_ps(y.f, d);
@@ -495,6 +879,7 @@ static void vmd_gaussdensity_opt(int verbose,
               y.f = _mm_add_ps(y.f, _mm_set_ps1(SCEXP1));    /* for x^1 term */
               y.f = _mm_mul_ps(y.f, d);
               y.f = _mm_add_ps(y.f, _mm_set_ps1(SCEXP0));    /* for x^0 term */
+#endif
 
               // Calculate 2^N exactly by directly manipulating floating point exponent,
               // then use it to scale y for the final result.
@@ -514,7 +899,7 @@ static void vmd_gaussdensity_opt(int verbose,
               // Pre-multiply colors by the inverse isovalue we will extract   
               // the surface on, to cause the final color to be normalized.
               d = _mm_mul_ps(y.f, _mm_set_ps1(invisovalue));
-              int caddr = (addr + x) * 3;
+              long caddr = (addr + x) * 3L;
 
 #if 1
               float *txptr = &voltexmap[caddr];
@@ -548,6 +933,7 @@ static void vmd_gaussdensity_opt(int verbose,
               _mm_storeu_ps(txptr+0, rr0g0b0r1);
               _mm_storeu_ps(txptr+4, rg1b1r2g2);
               _mm_storeu_ps(txptr+8, rb2r3g3b3);
+
 #else
 
               // color by atom colors
@@ -611,7 +997,7 @@ static void vmd_gaussdensity_opt(int verbose,
             // Pre-multiply colors by the inverse isovalue we will extract   
             // the surface on, to cause the final color to be normalized.
             density *= invisovalue;
-            int caddr = (addr + x) * 3;
+            long caddr = (addr + x) * 3L;
 
             // color by atom colors
             voltexmap[caddr    ] += density * colors[ind    ];
@@ -629,7 +1015,7 @@ static void vmd_gaussdensity_opt(int verbose,
         fflush(stdout);
       }
 
-      int ind = i*4;
+      long ind = i*4L;
       float scaledrad = xyzr[ind+3] * radscale;
 
       // MDFF atomic number weighted density factor
@@ -644,7 +1030,7 @@ static void vmd_gaussdensity_opt(int verbose,
       float radlim2 = radlim * radlim; // cutoff test done in cartesian coords
       radlim *= invgridspacing;
 
-#if VMDQSURFUSESSE & defined(__SSE2__)
+#if VMDQSURFUSESSE && defined(__SSE2__)
       __m128 atomicnumfactor_4;
       __m128 arinv_4;
       if (usesse) {
@@ -658,10 +1044,11 @@ static void vmd_gaussdensity_opt(int verbose,
 #endif
       }
 #endif
-#if VMDQSURFUSEAVX & defined(__AVX__)
+
+#if VMDQSURFUSEAVX2 && defined(__AVX__) && defined(__AVX2__)
       __m256 atomicnumfactor_8;
       __m256 arinv_8;
-      if (useavx) {
+      if (useavx2) {
         atomicnumfactor_8 = _mm256_set1_ps(atomicnumfactor);
 #if VMDUSESVMLEXP
         // Use of Intel's SVML requires changing the pre-scaling factor
@@ -670,6 +1057,32 @@ static void vmd_gaussdensity_opt(int verbose,
         // Use our fully inlined exp approximation
         arinv_8 = _mm256_set1_ps(arinv);
 #endif
+      }
+#endif
+
+#if VMDQSURFUSEAVX512 && defined(__AVX512F__) && defined(__AVX512ER__)
+      __m512 atomicnumfactor_16;
+      __m512 arinv_16;
+      if (useavx512) {
+        atomicnumfactor_16 = _mm512_set1_ps(atomicnumfactor);
+#if VMDUSESVMLEXP
+        // Use of Intel's SVML requires changing the pre-scaling factor
+        arinv_16 = _mm512_set1_ps(arinv * (2.718281828f/2.0f) / MLOG2EF); 
+#else
+        // Use our fully inlined exp approximation
+        arinv_16 = _mm512_set1_ps(arinv);
+#endif
+      }
+#endif
+
+#if VMDQSURFUSEVSX && defined(__VEC__)
+      vector float atomicnumfactor_4;
+      vector float arinv_4;
+      if (usevsx) {
+        atomicnumfactor_4 = vec_splats(atomicnumfactor);
+
+        // Use our fully inlined exp approximation
+        arinv_4 = vec_splats(arinv);
       }
 #endif
 
@@ -698,10 +1111,41 @@ static void vmd_gaussdensity_opt(int verbose,
           float dx = xmin*gridspacing - xyzr[ind];
           x=xmin;
 
-#if VMDQSURFUSEAVX & defined(__AVX__)
+#if VMDQSURFUSEAVX512 && defined(__AVX512F__) && defined(__AVX512ER__)
+          // Use AVX512 when we have a multiple-of-16 to compute
+          // finish all remaining density map points with 
+          // AVX2, SSE, or regular non-SSE loop
+          if (useavx512) {
+            __align(64) __m512 y;
+            __m512 dy2dz2_16 = _mm512_set1_ps(dy2dz2);
+            __m512 dx_16 = _mm512_add_ps(_mm512_set1_ps(dx), _mm512_load_ps(&sxdelta16[0]));
+
+            for (; (x+15)<=xmax; x+=16,dx_16=_mm512_add_ps(dx_16, gridspacing16_16)) {
+              __m512 r2 = _mm512_fmadd_ps(dx_16, dx_16, dy2dz2_16);
+              __m512 d;
+#if VMDUSESVMLEXP
+              // use Intel's SVML exp2() routine
+              y = _mm512_exp2_ps(_mm512_mul_ps(r2, arinv_16));
+#else
+              // use (much faster) exp2() approximation instruction
+              // inputs already negated and in base 2 
+              y = _mm512_exp2a23_ps(_mm512_mul_ps(r2, arinv_16));
+#endif
+
+              // At present, we do unaligned loads/stores since we can't 
+              // guarantee that the X-dimension is always a multiple of 16.
+              float *ufptr = &densitymap[addr + x];
+              d = _mm512_loadu_ps(ufptr); 
+              _mm512_storeu_ps(ufptr, _mm512_add_ps(d, y)); 
+            }
+          }
+#endif
+
+
+#if VMDQSURFUSEAVX2 && defined(__AVX__) && defined(__AVX2__)
           // Use AVX when we have a multiple-of-8 to compute
           // finish all remaining density map points with SSE or regular non-SSE loop
-          if (useavx) {
+          if (useavx2) {
             __align(16) AVXreg scal;
             __align(16) AVXreg n;
             __align(16) AVXreg y;
@@ -709,7 +1153,7 @@ static void vmd_gaussdensity_opt(int verbose,
             __m256 dx_8 = _mm256_add_ps(_mm256_set1_ps(dx), _mm256_load_ps(&sxdelta8[0]));
 
             for (; (x+7)<=xmax; x+=8,dx_8=_mm256_add_ps(dx_8, gridspacing8_8)) {
-              __m256 r2 = _mm256_add_ps(_mm256_mul_ps(dx_8, dx_8), dy2dz2_8);
+              __m256 r2 = _mm256_fmadd_ps(dx_8, dx_8, dy2dz2_8);
               __m256 d;
 #if VMDUSESVMLEXP
               // use Intel's SVML exp2() routine
@@ -723,6 +1167,12 @@ static void vmd_gaussdensity_opt(int verbose,
 
               // Approximate 2^{-d}, 0 <= d < 1, by interpolation.
               // Perform Horner's method to evaluate interpolating polynomial.
+#if 1
+              y.f = _mm256_fmadd_ps(d, _mm256_set1_ps(SCEXP4), _mm256_set1_ps(SCEXP3)); 
+              y.f = _mm256_fmadd_ps(y.f, d, _mm256_set1_ps(SCEXP2));
+              y.f = _mm256_fmadd_ps(y.f, d, _mm256_set1_ps(SCEXP1));
+              y.f = _mm256_fmadd_ps(y.f, d, _mm256_set1_ps(SCEXP0));
+#else
               y.f = _mm256_mul_ps(d, _mm256_set1_ps(SCEXP4));      /* for x^4 term */
               y.f = _mm256_add_ps(y.f, _mm256_set1_ps(SCEXP3));    /* for x^3 term */
               y.f = _mm256_mul_ps(y.f, d);
@@ -731,26 +1181,14 @@ static void vmd_gaussdensity_opt(int verbose,
               y.f = _mm256_add_ps(y.f, _mm256_set1_ps(SCEXP1));    /* for x^1 term */
               y.f = _mm256_mul_ps(y.f, d);
               y.f = _mm256_add_ps(y.f, _mm256_set1_ps(SCEXP0));    /* for x^0 term */
+#endif
 
               // Calculate 2^N exactly by directly manipulating floating point exponent,
               // then use it to scale y for the final result.
-#if defined(__AVX2__)
-              // We need AVX2 instructions to be able to operate on integer types.
+              // We need AVX2 instructions to be able to operate on 
+              // 8-wide integer types efficiently.
               n.i = _mm256_sub_epi32(_mm256_set1_epi32(EXPOBIAS), n.i);
               n.i = _mm256_slli_epi32(n.i, EXPOSHIFT);
-#else
-              // AVX contains no integer instructions (they are part of AVX2 that will
-              // begin with the upcoming Haswell CPUs), so we have to do the integer
-              // ops to manipulate the exponent using SSE instructions. 
-              // The SSE/AVX/SSE transition in each loop kills performance, we either
-              // need to find some alternative way to maniuplate the exponent bits for 
-              // without using AVX2 or SSE instructions, or we'll have to wait for 
-              // CPUs supporting AVX2 instructions to become available.
-              n.ssereg.i0 = _mm_sub_epi32(_mm_set1_epi32(EXPOBIAS), n.ssereg.i0);
-              n.ssereg.i0 = _mm_slli_epi32(n.ssereg.i0, EXPOSHIFT);
-              n.ssereg.i1 = _mm_sub_epi32(_mm_set1_epi32(EXPOBIAS), n.ssereg.i1);
-              n.ssereg.i1 = _mm_slli_epi32(n.ssereg.i1, EXPOSHIFT);
-#endif
               y.f = _mm256_mul_ps(y.f, n.f);
               y.f = _mm256_mul_ps(y.f, atomicnumfactor_8); // MDFF density maps
 #endif
@@ -765,7 +1203,7 @@ static void vmd_gaussdensity_opt(int verbose,
 #endif
 
 
-#if VMDQSURFUSESSE & defined(__SSE2__)
+#if VMDQSURFUSESSE && defined(__SSE2__)
           // Use SSE when we have a multiple-of-4 to compute
           // finish all remaining density map points with regular non-SSE loop
           if (usesse) {
@@ -789,6 +1227,13 @@ static void vmd_gaussdensity_opt(int verbose,
 
               // Approximate 2^{-d}, 0 <= d < 1, by interpolation.
               // Perform Horner's method to evaluate interpolating polynomial.
+#if 0
+              // SSE 4.x FMADD instructions are not universally available
+              y.f = _mm_fmadd_ps(d, _mm_set1_ps(SCEXP4), _mm_set1_ps(SCEXP3)); 
+              y.f = _mm_fmadd_ps(y.f, d, _mm_set1_ps(SCEXP2));
+              y.f = _mm_fmadd_ps(y.f, d, _mm_set1_ps(SCEXP1));
+              y.f = _mm_fmadd_ps(y.f, d, _mm_set1_ps(SCEXP0));
+#else
               y.f = _mm_mul_ps(d, _mm_set_ps1(SCEXP4));      /* for x^4 term */
               y.f = _mm_add_ps(y.f, _mm_set_ps1(SCEXP3));    /* for x^3 term */
               y.f = _mm_mul_ps(y.f, d);
@@ -797,6 +1242,7 @@ static void vmd_gaussdensity_opt(int verbose,
               y.f = _mm_add_ps(y.f, _mm_set_ps1(SCEXP1));    /* for x^1 term */
               y.f = _mm_mul_ps(y.f, d);
               y.f = _mm_add_ps(y.f, _mm_set_ps1(SCEXP0));    /* for x^0 term */
+#endif
 
               // Calculate 2^N exactly by directly manipulating floating point exponent,
               // then use it to scale y for the final result.
@@ -811,6 +1257,58 @@ static void vmd_gaussdensity_opt(int verbose,
               float *ufptr = &densitymap[addr + x];
               d = _mm_loadu_ps(ufptr); 
               _mm_storeu_ps(ufptr, _mm_add_ps(d, y.f)); 
+            }
+          }
+#endif
+
+
+#if VMDQSURFUSEVSX && defined(__VEC__)
+          // Use VSX when we have a multiple-of-4 to compute
+          // finish all remaining density map points with regular non-VSX loop
+          //
+          // XXX it may be useful to compare the speed/accuracy of the
+          // polynomial approximation vs. the hardware-provided 
+          // exp2f() approximation: vec_expte()
+          //
+          if (usevsx) {
+            vector float dy2dz2_4 = vec_splats(dy2dz2);
+            vector float tmpvsxdelta4 = *((__vector float *) &sxdelta4[0]);
+            vector float dx_4 = vec_add(vec_splats(dx), tmpvsxdelta4);
+
+            for (; (x+3)<=xmax; x+=4,dx_4=vec_add(dx_4, gridspacing4_4)) {
+              vector float r2 = vec_add(vec_mul(dx_4, dx_4), dy2dz2_4);
+
+              // use our (much faster) fully inlined exponential approximation
+              vector float mb = vec_mul(r2, arinv_4);   /* already negated and in base 2 */
+              vector float mbflr = vec_floor(mb);
+              vector float d = vec_sub(mbflr, mb);
+              vector float y;
+
+              // Approximate 2^{-d}, 0 <= d < 1, by interpolation.
+              // Perform Horner's method to evaluate interpolating polynomial.
+              y = vec_madd(d, vec_splats(SCEXP4), vec_splats(SCEXP3)); // x^4
+              y = vec_madd(y, d, vec_splats(SCEXP2)); // x^2 
+              y = vec_madd(y, d, vec_splats(SCEXP1)); // x^1 
+              y = vec_madd(y, d, vec_splats(SCEXP0)); // x^0 
+
+              // Calculate 2^N exactly via vec_expte()
+              // then use it to scale y for the final result.
+              y = vec_mul(y, vec_expte(-mbflr));
+              y = vec_mul(y, atomicnumfactor_4); // MDFF density maps
+
+              // At present, we do unaligned loads/stores since we can't 
+              // guarantee that the X-dimension is always a multiple of 4.
+              float *ufptr = &densitymap[addr + x];
+              d = *((__vector float *) &ufptr[0]);
+              // XXX there must be a cleaner way to implement this
+              // d = _mm_loadu_ps(ufptr); 
+              // _mm_storeu_ps(ufptr, _mm_add_ps(d, y.f)); 
+              d = vec_add(d, y);
+
+              ufptr[0] = d[0];
+              ufptr[1] = d[1];
+              ufptr[2] = d[2];
+              ufptr[3] = d[3];
             }
           }
 #endif
@@ -873,9 +1371,9 @@ static void * densitythread(void *voidparms) {
     int natoms = tile.end-tile.start;
     const float *atomicnum = (parms->atomicnum == NULL) ? NULL : &parms->atomicnum[tile.start]; 
     vmd_gaussdensity_opt(parms->verbose, natoms, 
-                         &parms->xyzr[4*tile.start],
+                         &parms->xyzr[4L*tile.start],
                          atomicnum,
-                         (parms->thrvoltexmaps[0]!=NULL) ? &parms->colors[4*tile.start] : NULL,
+                         (parms->thrvoltexmaps[0]!=NULL) ? &parms->colors[4L*tile.start] : NULL,
                          parms->thrdensitymaps[threadid], 
                          parms->thrvoltexmaps[threadid], 
                          parms->numvoxels, 
@@ -910,7 +1408,7 @@ static void * reductionthread(void *voidparms) {
 
     // do a reduction over each of the individual texture grids
     if (parms->thrvoltexmaps[0] != NULL) {
-      for (x=tile.start*3; x<tile.end*3; x++) {
+      for (x=tile.start*3L; x<tile.end*3L; x++) {
         float tmp = 0.0f;
         for (i=1; i<numthreads; i++) {
           tmp += parms->thrvoltexmaps[i][x];
@@ -967,7 +1465,7 @@ static int vmd_gaussdensity_threaded(int verbose,
   long volsz = numvoxels[0] * numvoxels[1] * numvoxels[2];
   long volmemsz = sizeof(float) * volsz;
   long volmemszkb = volmemsz / 1024;
-  long volmemtexszkb = volmemszkb + ((voltexmap != NULL) ? 3*volmemszkb : 0);
+  long volmemtexszkb = volmemszkb + ((voltexmap != NULL) ? 3L*volmemszkb : 0);
 
   // Platforms that don't have a means of determining available
   // physical memory will return -1, in which case we fall back to the
@@ -989,12 +1487,12 @@ static int vmd_gaussdensity_threaded(int verbose,
     // as an upper bound alternative to the hard-coded heuristic.
     // This should be highly preferable to the fixed-size heuristic
     // we had used in all cases previously.
-    while ((volmemtexszkb * maxprocs) > (1024*vmdcorefree/4)) {
+    while ((volmemtexszkb * maxprocs) > (1024L*vmdcorefree/4)) {
       maxprocs /= 2;
     }
   } else {
     // Set a practical per-core maximum memory use limit to 2GB, for all cores
-    while ((volmemtexszkb * maxprocs) > (2 * 1024 * 1024))
+    while ((volmemtexszkb * maxprocs) > (2L * 1024L * 1024L))
       maxprocs /= 2;
   }
 
@@ -1019,7 +1517,7 @@ static int vmd_gaussdensity_threaded(int verbose,
       break;
     }
     if (voltexmap != NULL) {
-      parms.thrvoltexmaps[i] = (float *) calloc(1, 3 * volmemsz);
+      parms.thrvoltexmaps[i] = (float *) calloc(1, 3L * volmemsz);
       if (parms.thrvoltexmaps[i] == NULL) {
         free(parms.thrdensitymaps[i]);
         parms.thrdensitymaps[i] = NULL;
@@ -1122,9 +1620,9 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
     free(voltexmap);
   voltexmap = NULL;
 
-  ResizeArray<float> beadpos(64 + (3 * atomSel->selected) / 20);
-  ResizeArray<float> beadradii(64 + (3 * atomSel->selected) / 20);
-  ResizeArray<float> beadcolors(64 + (3 * atomSel->selected) / 20);
+  ResizeArray<float> beadpos(64 + (3L * atomSel->selected) / 20);
+  ResizeArray<float> beadradii(64 + (3L * atomSel->selected) / 20);
+  ResizeArray<float> beadcolors(64 + (3L * atomSel->selected) / 20);
 
   if (getenv("VMDQUICKSURFBEADS")) {
     usebeads=1;
@@ -1149,7 +1647,7 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
         int idx = atoms[i];
         if (atomSel->on[idx]) {
           oncount++;
-          vec_add(com, com, atompos + 3*idx);
+          vec_add(com, com, atompos + 3L*idx);
         }
       }
 
@@ -1166,7 +1664,7 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
         if (atomSel->on[idx]) {
           float tmpdist[3];
           atomcolorindex = idx;
-          vec_sub(tmpdist, com, atompos + 3*idx);
+          vec_sub(tmpdist, com, atompos + 3L*idx);
           float distsq = dot_prod(tmpdist, tmpdist);
           if (distsq > boundradsq) {
             boundradsq = distsq;
@@ -1177,7 +1675,7 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
       beadradii.append(sqrtf(boundradsq) + 1.0f);
 
       if (colorperatom) {
-        const float *cp = &cmap[colidx[atomcolorindex] * 3];
+        const float *cp = &cmap[colidx[atomcolorindex] * 3L];
         beadcolors.append3(&cp[0]);
       }
 
@@ -1208,7 +1706,7 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
     minz = maxz = beadpos[2];
     minrad = maxrad = beadradii[0];
     for (i=0; i<numbeads; i++) {
-      int ind = i * 3;
+      long ind = i * 3L;
       float tmpx = beadpos[ind  ];
       float tmpy = beadpos[ind+1];
       float tmpz = beadpos[ind+2];
@@ -1229,9 +1727,9 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
       maxrad = (r > maxrad) ? r : maxrad;
     }
   } else {
-    minx = maxx = atompos[atomSel->firstsel*3  ];
-    miny = maxy = atompos[atomSel->firstsel*3+1];
-    minz = maxz = atompos[atomSel->firstsel*3+2];
+    minx = maxx = atompos[atomSel->firstsel*3L  ];
+    miny = maxy = atompos[atomSel->firstsel*3L+1];
+    minz = maxz = atompos[atomSel->firstsel*3L+2];
 
     // Query min/max atom radii for the entire molecule
     mol->get_radii_minmax(minrad, maxrad);
@@ -1243,7 +1741,7 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
       minrad = maxrad = atomradii[atomSel->firstsel];
       for (i=atomSel->firstsel; i<=atomSel->lastsel; i++) {
         if (atomSel->on[i]) {
-          int ind = i * 3;
+          long ind = i * 3L;
           float tmpx = atompos[ind  ];
           float tmpy = atompos[ind+1];
           float tmpz = atompos[ind+2];
@@ -1278,7 +1776,7 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
 #else
       for (i=atomSel->firstsel; i<=atomSel->lastsel; i++) {
         if (atomSel->on[i]) {
-          int ind = i * 3;
+          long ind = i * 3L;
           float tmpx = atompos[ind  ];
           float tmpy = atompos[ind+1];
           float tmpz = atompos[ind+2];
@@ -1365,9 +1863,9 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
   if (usebeads) { 
     int ind =0;
     int ind4=0; 
-    xyzr = (float *) malloc(numbeads * sizeof(float) * 4);
+    xyzr = (float *) malloc(numbeads * sizeof(float) * 4L);
     if (colorperatom) {
-      colors = (float *) malloc(numbeads * sizeof(float) * 4);
+      colors = (float *) malloc(numbeads * sizeof(float) * 4L);
 
       // build compacted lists of bead coordinates, radii, and colors
       for (i=0; i<numbeads; i++) {
@@ -1398,11 +1896,11 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
       }
     }
   } else {
-    int ind = atomSel->firstsel * 3;
-    int ind4=0; 
-    xyzr = (float *) malloc(atomSel->selected * sizeof(float) * 4);
+    long ind = atomSel->firstsel * 3L;
+    long ind4=0; 
+    xyzr = (float *) malloc(atomSel->selected * sizeof(float) * 4L);
     if (colorperatom) {
-      colors = (float *) malloc(atomSel->selected * sizeof(float) * 4);
+      colors = (float *) malloc(atomSel->selected * sizeof(float) * 4L);
 
       // build compacted lists of atom coordinates, radii, and colors
       for (i=atomSel->firstsel; i <= atomSel->lastsel; i++) {
@@ -1413,7 +1911,7 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
           xyzr[ind4 + 2] = fp[2]-origin[2];
           xyzr[ind4 + 3] = atomradii[i];
  
-          const float *cp = &cmap[colidx[i] * 3];
+          const float *cp = &cmap[colidx[i] * 3L];
           colors[ind4    ] = cp[0];
           colors[ind4 + 1] = cp[1];
           colors[ind4 + 2] = cp[2];
@@ -1494,7 +1992,7 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
   long volsz = numvoxels[0] * numvoxels[1] * numvoxels[2];
   volmap = new float[volsz];
   if (colidx != NULL && cmap != NULL) {
-    voltexmap = (float*) calloc(1, 3 * sizeof(float) * numvoxels[0] * numvoxels[1] * numvoxels[2]);
+    voltexmap = (float*) calloc(1, 3L * sizeof(float) * numvoxels[0] * numvoxels[1] * numvoxels[2]);
   }
 
   fflush(stdout);

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolItem.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.356 $	$Date: 2015/05/31 22:25:05 $
+ *	$Revision: 1.361 $	$Date: 2016/11/28 03:43:28 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -56,7 +56,7 @@ DrawMolItem::DrawMolItem(const char *nm, DrawMolecule *dm, AtomColor *ac,
 
   // save data and pointers to drawing method objects
   mol = dm;
-  avg = new float[3*mol->nAtoms];
+  avg = new float[3L*mol->nAtoms];
   avgsize = 0;
   atomColor = ac;
   atomRep = ar;
@@ -428,11 +428,11 @@ void DrawMolItem::do_create_cmdlist(void) {
       //     In order to use this, we'll have to validate that the
       //     active representation doesn't touch non-selected atom coords
       const int atomloopfirst = atomSel->firstsel;
-      const int atomlooplast  = 3*(atomSel->lastsel+1);
+      const int atomlooplast  = 3L*(atomSel->lastsel+1);
 #else
       // Smooth all atom coordinates
       const int atomloopfirst = 0;
-      const int atomlooplast  = 3*mol->nAtoms;
+      const int atomlooplast  = 3L*mol->nAtoms;
 #endif
       const float rescale = 1.0f/(2.0f*avgsize+1.0f);
 
@@ -451,7 +451,7 @@ void DrawMolItem::do_create_cmdlist(void) {
       const float *ref = mol->get_frame(curframe)->pos;
 #endif      
 
-      memset(avg, 0, 3*mol->nAtoms*sizeof(float)); // clear average array
+      memset(avg, 0, 3L*mol->nAtoms*sizeof(float)); // clear average array
 
       for (i=begframe; i<=endframe; i++) {
         int ind = i;
@@ -662,9 +662,11 @@ void DrawMolItem::do_create_cmdlist(void) {
       case AtomRep::NANOSHAPER:
         draw_nanoshaper(framepos, 
           (int)atomRep->get_data(AtomRep::LINETHICKNESS), // surftype
-          (int)atomRep->get_data(AtomRep::BONDRES),    // draw wireframe
-          atomRep->get_data(AtomRep::SPHERERAD),  // probe radius
-          atomRep->get_data(AtomRep::SPHERERES)); // grid spacing
+          (int)atomRep->get_data(AtomRep::BONDRES),       // draw wireframe
+          atomRep->get_data(AtomRep::GRIDSPACING),        // grid spacing
+          atomRep->get_data(AtomRep::SPHERERAD),          // probe radius
+          atomRep->get_data(AtomRep::SPHERERES),          // skin parm
+          atomRep->get_data(AtomRep::BONDRAD));           // blob parm
         break;
 #endif
 #ifdef VMDMSMS
@@ -813,7 +815,7 @@ void DrawMolItem::place_picks(float *pos) {
   int selseglen = atomSel->lastsel-atomSel->firstsel+1;
   cmdPickPointArray.putdata(selseglen, atomSel->selected, atomSel->firstsel,
                             &atomSel->on[atomSel->firstsel], 
-                            pos + 3*atomSel->firstsel, cmdList);
+                            pos + 3L*atomSel->firstsel, cmdList);
 }
 
 
@@ -1067,7 +1069,7 @@ void DrawMolItem::draw_lines(float *framepos, int thickness, float cutoff) {
     memset(nbonds, 0, mol->nAtoms*sizeof(int));
     bondlists = new int[MAXATOMBONDS * mol->nAtoms];
     GridSearchPair *pairlist = vmd_gridsearch1(framepos, mol->nAtoms, atomSel->on, 
-        cutoff, 0, mol->nAtoms * 27);
+        cutoff, 0, mol->nAtoms * 27L);
     GridSearchPair *p, *tmp;
     for (p=pairlist; p != NULL; p=tmp) {
       MolAtom *atom1 = mol->atom(p->ind1);
@@ -1120,7 +1122,7 @@ void DrawMolItem::draw_lines(float *framepos, int thickness, float cutoff) {
     // loop over all half-bonds to be drawn in this color
     for (int j=0; j<cl.num; j++) { 
       const int id = cl.idlist[j];
-      float *fp1 = framepos + 3*id;
+      float *fp1 = framepos + 3L*id;
       const MolAtom *a1 = mol->atom(id);
       int bondsdrawn = 0;
       
@@ -1134,7 +1136,7 @@ void DrawMolItem::draw_lines(float *framepos, int thickness, float cutoff) {
       for (int k=0; k < n; k++) {
         int a2n = cutoff > 0 ? bondlists[MAXATOMBONDS*id + k] : a1->bondTo[k];
         if (atomSel->on[a2n]) {    // bonded atom displayed?
-          float *fp2 = framepos + 3*a2n;
+          float *fp2 = framepos + 3L*a2n;
           if (atomColor->color[a2n] == i) {
             // same color, so just draw a whole bond, but only if the atom
             // id of the other atom is higher to avoid drawing it twice.
@@ -1230,7 +1232,7 @@ void DrawMolItem::draw_solid_spheres(float * framepos, int res,
 
   // draw spheres using new sphere array primitive
   if ((radscale + fixrad) > 0) {           // don't draw zero scaled spheres
-    int ind = 0;
+    long ind = 0;
     ResizeArray<float> centers;
     ResizeArray<float> radii;
     ResizeArray<float> colors;
@@ -1303,7 +1305,7 @@ void DrawMolItem::draw_residue_beads(float * framepos, int sres, float radscale)
       int idx = atoms[i];
       if (atomSel->on[idx]) {
         oncount++;
-        vec_add(com, com, framepos + 3*idx);
+        vec_add(com, com, framepos + 3L*idx);
       }
     }
 
@@ -1324,7 +1326,7 @@ void DrawMolItem::draw_residue_beads(float * framepos, int sres, float radscale)
       if (atomSel->on[idx]) {
         float tmpdist[3];
         atomcolorindex = idx;
-        vec_sub(tmpdist, com, framepos + 3*idx);
+        vec_sub(tmpdist, com, framepos + 3L*idx);
         float distsq = dot_prod(tmpdist, tmpdist);
         if (distsq > boundradsq) {
 #ifdef BEADELLIPSOID
@@ -1424,7 +1426,7 @@ void DrawMolItem::draw_dotted_spheres(float * framepos, float srad, int sres) {
 	  cmdColorIndex.putdata(lastcolor, cmdList);
 	}
       
-	cmdSphere.putdata(framepos+3*i, radius[i]*radscale,cmdList);
+	cmdSphere.putdata(framepos+3L*i, radius[i]*radscale,cmdList);
       }
     }
   }
@@ -1444,7 +1446,7 @@ void DrawMolItem::draw_points(float *framepos, float pointsize) {
     int selseglen = atomSel->lastsel-atomSel->firstsel+1;
 
     // draw spheres and pick points
-    cmdPointArray.putdata(framepos + 3*atomSel->firstsel,
+    cmdPointArray.putdata(framepos + 3L*atomSel->firstsel,
                           atomColor->color + atomSel->firstsel,
                           scene,
                           pointsize,
@@ -1491,7 +1493,7 @@ void DrawMolItem::draw_cpk_licorice(float *framepos, int cpk, float brad, int br
     memset(nbonds, 0, mol->nAtoms*sizeof(int));
     bondlists = new int[MAXATOMBONDS * mol->nAtoms];
     GridSearchPair *pairlist = vmd_gridsearch1(framepos, mol->nAtoms, atomSel->on, 
-        cutoff, 0, mol->nAtoms * 27);
+        cutoff, 0, mol->nAtoms * 27L);
     GridSearchPair *p, *tmp;
     for (p=pairlist; p != NULL; p=tmp) {
       MolAtom *atom1 = mol->atom(p->ind1);
@@ -1540,7 +1542,7 @@ void DrawMolItem::draw_cpk_licorice(float *framepos, int cpk, float brad, int br
       // for each atom, draw half-bond to other displayed atoms
       if (atomSel->on[i]) {
         float mid[3], *fp1, *fp2;
-        fp1 = framepos + 3*i; // position of atom 'i'
+        fp1 = framepos + 3L*i; // position of atom 'i'
         a1 = mol->atom(i);
 
         if (lastcolor != atomColor->color[i]) {
@@ -1553,7 +1555,7 @@ void DrawMolItem::draw_cpk_licorice(float *framepos, int cpk, float brad, int br
 	for (j=0; j < n; j++) {
 	  a2n = cutoff > 0 ? bondlists[MAXATOMBONDS*i + j] : a1->bondTo[j];
 	  if (atomSel->on[a2n]) {      // bonded atom 'a2n' displayed?
-	    fp2 = framepos + 3*a2n;   // position of atom 'a2n'
+	    fp2 = framepos + 3L*a2n;   // position of atom 'a2n'
             // find the bond midpoint 'mid' between atoms 'i' and 'a2n'
             mid[0] = 0.5f * (fp1[0] + fp2[0]);
             mid[1] = 0.5f * (fp1[1] + fp2[1]);
@@ -1605,7 +1607,7 @@ void DrawMolItem::draw_bonds(float *framepos, float brad, int bres, float cutoff
   for (i=atomSel->firstsel; i <= atomSel->lastsel; i++) {
     // Only bonds to 'on' atoms are considered.
     if (atomSel->on[i]) {
-      float *p2 = framepos + 3*i;   // set p2 to atom 'i'
+      float *p2 = framepos + 3L*i;   // set p2 to atom 'i'
       a1 = mol->atom(i);            // find a selected atom
       float idouble[3], kdouble[3]; 
       float itriple[3], ktriple[3]; 
@@ -1616,7 +1618,7 @@ void DrawMolItem::draw_bonds(float *framepos, float brad, int bres, float cutoff
         if (k > i && atomSel->on[k]) {
           float *p1, p3[3], *p4, *p5;
           a2 = mol->atom(k);
-          p4 = framepos + 3*k;      // set p4 to atom 'k'
+          p4 = framepos + 3L*k;      // set p4 to atom 'k'
 
           // find the bond midpoint 'p3' between atoms 'i' and 'k' 
           p3[0] = 0.5f * (p2[0] + p4[0]);
@@ -1629,7 +1631,7 @@ void DrawMolItem::draw_bonds(float *framepos, float brad, int bres, float cutoff
           for (l=a2->bonds-1; l>=0; l--) {
             m = a2->bondTo[l];
             if (m != i && atomSel->on[m]) 
-              p5 = framepos + 3*m; // set p5 to atom 'm'
+              p5 = framepos + 3L*m; // set p5 to atom 'm'
               break;
           }
   
@@ -1638,7 +1640,7 @@ void DrawMolItem::draw_bonds(float *framepos, float brad, int bres, float cutoff
           for (h=a1->bonds-1; h>=0; h--) {
             g = a1->bondTo[h];
             if (g != k && atomSel->on[g]) 
-              p1 = framepos + 3*g; // set p1 to atom 'g'
+              p1 = framepos + 3L*g; // set p1 to atom 'g'
               break;
           }
 
@@ -1769,14 +1771,13 @@ void DrawMolItem::draw_spline_curve(int num, float *coords, int *idx,
   ResizeArray<float> pickpointcoords;
   ResizeArray<int> pickpointindices;
 
+#if 0
   const char *modulatefield = NULL; // XXX this needs to become a parameter
   const float *modulatedata = NULL; // data field to use for width modulation
   float *modulate = NULL;           // per-control point width values
 
-#if 1
   // XXX hack to let users try various stuff
   modulatefield = getenv("VMDMODULATERIBBON");
-#endif
   if (modulatefield != NULL) {
     if (!strcmp(modulatefield, "user")) {
       modulatedata = mol->current()->user;
@@ -1792,7 +1793,7 @@ void DrawMolItem::draw_spline_curve(int num, float *coords, int *idx,
     // example, we'll just end up with no modulation.
     modulate = (float *) calloc(1, mol->nResidues * sizeof(float));
   }
-
+#endif
 
   for (loop=-1; loop<num; loop++) { // go through the array
     // check if we need to do any computations, makes code faster
@@ -1845,7 +1846,7 @@ void DrawMolItem::draw_spline_curve(int num, float *coords, int *idx,
                         b_rad, b_res, use_cyl);
 
         // indicate this atom can be picked
-        int pidx = 3 * loop;
+        int pidx = 3L * loop;
         pickpointcoords.append3(&coords[pidx]);
         pickpointindices.append(idx[loop]);
       }
@@ -2053,18 +2054,18 @@ void DrawMolItem::draw_tube(float *framepos, float b_rad, int b_res) {
     // XXX copy the current coordinates into a temporary array.
     TubeIndexList &indxlist = *(*tubearray)[i];
     int num = indxlist.num();
-    float *coords = new float[3*num];
+    float *coords = new float[3L*num];
     // First two and last two points are always just the third and third to
     // last real control points.
     int firstind = indxlist[2];
     int lastind  = indxlist[num-3];
-    memcpy(coords,   framepos+3*firstind, 3*sizeof(float));
-    memcpy(coords+3, framepos+3*firstind, 3*sizeof(float));
+    memcpy(coords,   framepos+3L*firstind, 3L*sizeof(float));
+    memcpy(coords+3, framepos+3L*firstind, 3L*sizeof(float));
     for (int i=2; i<num-2; i++) {
-      memcpy(coords+3*i, framepos+3*indxlist[i], 3*sizeof(float));
+      memcpy(coords+3L*i, framepos+3L*indxlist[i], 3L*sizeof(float));
     }
-    memcpy(coords+3*(num-2), framepos+3*lastind, 3*sizeof(float));
-    memcpy(coords+3*(num-1), framepos+3*lastind, 3*sizeof(float));
+    memcpy(coords+3L*(num-2), framepos+3L*lastind, 3L*sizeof(float));
+    memcpy(coords+3L*(num-1), framepos+3L*lastind, 3L*sizeof(float));
     draw_spline_curve(num-4, coords+6, &(indxlist[0])+2, use_cyl, b_rad, b_res);
     delete [] coords;
   }
@@ -2134,12 +2135,12 @@ void DrawMolItem::draw_hbonds(float *framepos, float maxangle, int thickness, fl
     if (!a2->bonded(p->ind1)) {
       int b1 = a1->bonds;
       int b2 = a2->bonds;
-      float *coor1 = framepos + 3*p->ind1; 
-      float *coor2 = framepos + 3*p->ind2; 
+      float *coor1 = framepos + 3L*p->ind1; 
+      float *coor2 = framepos + 3L*p->ind2; 
   
       for (k=0; k < b2; k++) {
         if (mol->atom(a2->bondTo[k])->atomType == ATOMHYDROGEN) {
-          float *hydrogen = framepos + 3*a2->bondTo[k];
+          float *hydrogen = framepos + 3L*a2->bondTo[k];
 	  vec_sub(donortoH,hydrogen,coor2);
 	  vec_sub(Htoacceptor,coor1,hydrogen);
           if (angle(donortoH, Htoacceptor)  < maxangle ) {
@@ -2147,10 +2148,10 @@ void DrawMolItem::draw_hbonds(float *framepos, float maxangle, int thickness, fl
 	    cmdLine.putdata(coor1,hydrogen, cmdList); // draw line
 
             // indicate the bonded atoms can be picked
-            int pidx = 3 * a2->bondTo[k];
+            int pidx = 3L * a2->bondTo[k];
             pickpointcoords.append3(&framepos[pidx]);
 
-            pidx = 3 * p->ind1;
+            pidx = 3L * p->ind1;
             pickpointcoords.append3(&framepos[pidx]);
             pickpointindices.append2(a2->bondTo[k], p->ind1);
           }
@@ -2158,7 +2159,7 @@ void DrawMolItem::draw_hbonds(float *framepos, float maxangle, int thickness, fl
       }
       for (k=0; k < b1; k++){
         if (mol->atom(a1->bondTo[k])->atomType == ATOMHYDROGEN) {
-          float *hydrogen = framepos + 3*a1->bondTo[k];
+          float *hydrogen = framepos + 3L*a1->bondTo[k];
           vec_sub(donortoH,hydrogen,coor1);
           vec_sub(Htoacceptor,coor2,hydrogen);
           if (angle(donortoH, Htoacceptor)  < maxangle ) {
@@ -2166,10 +2167,10 @@ void DrawMolItem::draw_hbonds(float *framepos, float maxangle, int thickness, fl
 	    cmdLine.putdata(hydrogen,coor2, cmdList); // draw line
 
             // indicate the bonded atoms can be picked
-            int pidx = 3 * a1->bondTo[k];
+            int pidx = 3L * a1->bondTo[k];
             pickpointcoords.append3(&framepos[pidx]);
 
-            pidx = 3 * p->ind2;
+            pidx = 3L * p->ind2;
             pickpointcoords.append3(&framepos[pidx]);
             pickpointindices.append2(a1->bondTo[k], p->ind2);
           }
@@ -2235,8 +2236,8 @@ void DrawMolItem::draw_dynamic_bonds(float *framepos, float brad, int bres, floa
     // Use atomType info derived during initial molecule analysis for speed.
     if (!(atom1->atomType == ATOMHYDROGEN) ||
         !(atom2->atomType == ATOMHYDROGEN)) {
-      float *coor1 = framepos + 3*p->ind1; 
-      float *coor2 = framepos + 3*p->ind2; 
+      float *coor1 = framepos + 3L*p->ind1; 
+      float *coor2 = framepos + 3L*p->ind2; 
       float mid[3];
 #if 0
       if (cutoff < 0) { // Do atom-specific distance check
@@ -2269,10 +2270,10 @@ void DrawMolItem::draw_dynamic_bonds(float *framepos, float brad, int bres, floa
       cmdCylinder.putdata(mid, coor2, brad, bres, 0, cmdList);
 
       // indicate the bonded atoms can be picked
-      int pidx = 3 * p->ind1;
+      int pidx = 3L * p->ind1;
       pickpointcoords.append3(&framepos[pidx]);
 
-      pidx = 3 * p->ind2;
+      pidx = 3L * p->ind2;
       pickpointcoords.append3(&framepos[pidx]);
       pickpointindices.append2(p->ind1, p->ind2);
     }
@@ -2398,9 +2399,9 @@ void DrawMolItem::draw_polyhedra(float *framepos, float maxdist) {
     for (int i1=1; i1 <= index - 2; i1++)
       for (int i2=i1; i2 <= index - 1; i2++)
         for (int i3=i2; i3 <= index; i3++)
-	  cmdTriangle.putdata(framepos + 3*nblist[idx+i1],
-                              framepos + 3*nblist[idx+i2],
-                              framepos + 3*nblist[idx+i3], cmdList);
+	  cmdTriangle.putdata(framepos + 3L*nblist[idx+i1],
+                              framepos + 3L*nblist[idx+i2],
+                              framepos + 3L*nblist[idx+i3], cmdList);
   }
 
   free(nblist);
@@ -2475,7 +2476,7 @@ void DrawMolItem::draw_alpha_helix_cylinders(ResizeArray<float> &x,
 	cmdCylinder.putdata(start, end, bond_rad, bond_res, caps, cmdList);
       }
     }
-    memcpy(start, end, 3*sizeof(float));
+    memcpy(start, end, 3L*sizeof(float));
   }
   vec_copy(end_coord, start);
 
@@ -2521,51 +2522,51 @@ void DrawMolItem::draw_beta_sheet(ResizeArray<float> &x,
   //   I am gauranteed at least three residues for initial data
   int num = x.num();
   int i;
-  float *centers = new float[3*(num+1)];
+  float *centers = new float[3L*(num+1)];
   for (i=1; i<num; i++) {   // compute the centers
-    centers[3*i+0] = (x[i-1]+x[i])/2;
-    centers[3*i+1] = (y[i-1]+y[i])/2;
-    centers[3*i+2] = (z[i-1]+z[i])/2;
+    centers[3L*i+0] = (x[i-1]+x[i])/2;
+    centers[3L*i+1] = (y[i-1]+y[i])/2;
+    centers[3L*i+2] = (z[i-1]+z[i])/2;
   }
   // and the linear extrapolation
   centers[0] = 2*centers[3] - centers[6];
   centers[1] = 2*centers[4] - centers[7];
   centers[2] = 2*centers[5] - centers[8];
 
-  centers[3*num+0] = 2*centers[3*num-3] - centers[3*num-6];
-  centers[3*num+1] = 2*centers[3*num-2] - centers[3*num-5];
-  centers[3*num+2] = 2*centers[3*num-1] - centers[3*num-4];
+  centers[3L*num+0] = 2*centers[3L*num-3] - centers[3L*num-6];
+  centers[3L*num+1] = 2*centers[3L*num-2] - centers[3L*num-5];
+  centers[3L*num+2] = 2*centers[3L*num-1] - centers[3L*num-4];
 
   // now do the normals
-  float *norms = new float[3*(num+1)];  // along the width
-  float *perps = new float[3*(num+1)];  // along the height
+  float *norms = new float[3L*(num+1)];  // along the width
+  float *perps = new float[3L*(num+1)];  // along the height
   float d[2][3]; // deltas between successive points
   d[0][0] = x[1]-x[0];  d[0][1] = y[1]-y[0];  d[0][2] = z[1]-z[0];
   for (i=1; i<num-1; i++) {
     d[1][0] = x[i+1]-x[i];
     d[1][1] = y[i+1]-y[i];
     d[1][2] = z[i+1]-z[i];
-    cross_prod(norms+3*i, d[0], d[1]);
-    vec_normalize(norms+3*i);
+    cross_prod(norms+3L*i, d[0], d[1]);
+    vec_normalize(norms+3L*i);
     if (i%2) { // flip every other normal so they are aligned
-      norms[3*i+0] = -norms[3*i+0];
-      norms[3*i+1] = -norms[3*i+1];
-      norms[3*i+2] = -norms[3*i+2];
+      norms[3L*i+0] = -norms[3L*i+0];
+      norms[3L*i+1] = -norms[3L*i+1];
+      norms[3L*i+2] = -norms[3L*i+2];
     }
     vec_copy(d[0], d[1]);
   }
   // for the first one and last two normals, copy the end norms.
   vec_copy(norms, norms+3);
-  vec_copy(norms+3*num-3, norms+3*num-6);
-  vec_copy(norms+3*num  , norms+3*num-6);
+  vec_copy(norms+3L*num-3, norms+3L*num-6);
+  vec_copy(norms+3L*num  , norms+3L*num-6);
 
   // and the perpendiculars
   for (i=0; i<num; i++) {
-    vec_sub(d[0], centers+3*i, centers+3*i+3);
-    cross_prod(perps+3*i, d[0], norms+3*i);
-    vec_normalize(perps+3*i);
+    vec_sub(d[0], centers+3L*i, centers+3L*i+3);
+    cross_prod(perps+3L*i, d[0], norms+3L*i);
+    vec_normalize(perps+3L*i);
   }
-  vec_copy(perps+3*num, perps+3*num-3);
+  vec_copy(perps+3L*num, perps+3L*num-3);
 
   // Draw rectangular blocks for each segment
   //  upper/lower, left/right corners;  this is the beginning of the block
@@ -2582,33 +2583,33 @@ void DrawMolItem::draw_beta_sheet(ResizeArray<float> &x,
 
   // save the initial and final coordinate
   vec_copy(start_coord, centers);
-  vec_copy(end_coord, centers+3*num);
+  vec_copy(end_coord, centers+3L*num);
 
   int prev_on = 0;
   float dot=0.0f;
   for (i=0; i<num-1; i++) {  // go down the list of residues
-    dot = dot_prod(perps+3*i, perps+3*i+3);
+    dot = dot_prod(perps+3L*i, perps+3L*i+3);
     // check the amount of rotation
     if (dot < 0) { // ribbons switched orientation
       // swap normals
-      perps[3*i+3] = -perps[3*i+3];
-      perps[3*i+4] = -perps[3*i+4];
-      perps[3*i+5] = -perps[3*i+5];
-      norms[3*i+3] = -norms[3*i+3];
-      norms[3*i+4] = -norms[3*i+4];
-      norms[3*i+5] = -norms[3*i+5];
+      perps[3L*i+3] = -perps[3L*i+3];
+      perps[3L*i+4] = -perps[3L*i+4];
+      perps[3L*i+5] = -perps[3L*i+5];
+      norms[3L*i+3] = -norms[3L*i+3];
+      norms[3L*i+4] = -norms[3L*i+4];
+      norms[3L*i+5] = -norms[3L*i+5];
     }
 
     // calculate the corners of the end of the blocks
-    SCALESUM(ul[1], centers+3*i+3, norms+3*i+3, ribbon_width);
+    SCALESUM(ul[1], centers+3L*i+3, norms+3L*i+3, ribbon_width);
     vec_copy    (ll[1], ul[1]);
-    SCALEADD(ul[1], perps+3*i+3, BETASCALE);
-    SCALEADD(ll[1], perps+3*i+3, -BETASCALE);
+    SCALEADD(ul[1], perps+3L*i+3, BETASCALE);
+    SCALEADD(ll[1], perps+3L*i+3, -BETASCALE);
     
-    SCALESUM(ur[1] , centers+3*i+3, norms+3*i+3, -ribbon_width);
+    SCALESUM(ur[1] , centers+3L*i+3, norms+3L*i+3, -ribbon_width);
     vec_copy    (lr[1], ur[1]);
-    SCALEADD(ur[1], perps+3*i+3, BETASCALE);
-    SCALEADD(lr[1], perps+3*i+3, -BETASCALE);
+    SCALEADD(ur[1], perps+3L*i+3, BETASCALE);
+    SCALEADD(lr[1], perps+3L*i+3, -BETASCALE);
 
 
     // draw this section, if it is on
@@ -2625,36 +2626,36 @@ void DrawMolItem::draw_beta_sheet(ResizeArray<float> &x,
 	  // small flip, so I just need one segment
 	  // draw the sides
 	  cmdTriangle.putdata(ur[0], ul[0], ul[1],  // top
-			      perps+3*i, perps+3*i, perps+3*i+3, cmdList);
+			      perps+3L*i, perps+3L*i, perps+3L*i+3, cmdList);
 	  cmdTriangle.putdata(ur[0], ul[1], ur[1],
-			      perps+3*i, perps+3*i+3, perps+3*i+3, cmdList);
+			      perps+3L*i, perps+3L*i+3, perps+3L*i+3, cmdList);
 	  cmdTriangle.putdata(lr[0], ll[0], ll[1],  // bottom
-			      perps+3*i, perps+3*i, perps+3*i+3, cmdList);
+			      perps+3L*i, perps+3L*i, perps+3L*i+3, cmdList);
 	  cmdTriangle.putdata(lr[0], ll[1], lr[1],
-			      perps+3*i, perps+3*i+3, perps+3*i+3, cmdList);
+			      perps+3L*i, perps+3L*i+3, perps+3L*i+3, cmdList);
 	  
 	  // and the other sides
 	  cmdTriangle.putdata(ul[0], ll[0], ll[1], 
-			      norms+3*i, norms+3*i, norms+3*i+3, cmdList);
+			      norms+3L*i, norms+3L*i, norms+3L*i+3, cmdList);
 	  cmdTriangle.putdata(ul[0], ll[1], ul[1], 
-			      norms+3*i, norms+3*i+3, norms+3*i+3, cmdList);
+			      norms+3L*i, norms+3L*i+3, norms+3L*i+3, cmdList);
 	  cmdTriangle.putdata(ur[0], lr[0], lr[1], 
-			      norms+3*i, norms+3*i, norms+3*i+3, cmdList);
+			      norms+3L*i, norms+3L*i, norms+3L*i+3, cmdList);
 	  cmdTriangle.putdata(ur[0], lr[1], ur[1], 
-			      norms+3*i, norms+3*i+3, norms+3*i+3, cmdList);
+			      norms+3L*i, norms+3L*i+3, norms+3L*i+3, cmdList);
 	} else {
 	  // big turn, so make more lines
 	  // given the construction, I know the first and last residues
 	  // don't twist (the perps are just copies) so I just do a simple
 	  // spline along the centers
 	  float centers_q[4][3];
-	  make_spline_Q_matrix(centers_q, spline_basis, centers + 3*i-3);
+	  make_spline_Q_matrix(centers_q, spline_basis, centers + 3L*i-3);
 	  
 	  // make the spline for the perps and norms
 	  float perps_q[4][3];
-	  make_spline_Q_matrix(perps_q, spline_basis, perps + 3*i-3);
+	  make_spline_Q_matrix(perps_q, spline_basis, perps + 3L*i-3);
 	  float norms_q[4][3];
-	  make_spline_Q_matrix(norms_q, spline_basis, norms + 3*i-3);
+	  make_spline_Q_matrix(norms_q, spline_basis, norms + 3L*i-3);
 	  
 	  // break the section into two parts, so compute the new middle
 	  float new_center[3];
@@ -2680,43 +2681,43 @@ void DrawMolItem::draw_beta_sheet(ResizeArray<float> &x,
 	  
 	  // draw the new, intermediate blocks
 	  cmdTriangle.putdata(ur[0], ul[0], ul2,  // top
-			      perps+3*i, perps+3*i, new_perp, cmdList);
+			      perps+3L*i, perps+3L*i, new_perp, cmdList);
 	  cmdTriangle.putdata(ur[0], ul2, ur2,
-			      perps+3*i, new_perp, new_perp, cmdList);
+			      perps+3L*i, new_perp, new_perp, cmdList);
 	  cmdTriangle.putdata(lr[0], ll[0], ll2,  // bottom
-			      perps+3*i, perps+3*i, new_perp, cmdList);
+			      perps+3L*i, perps+3L*i, new_perp, cmdList);
 	  cmdTriangle.putdata(lr[0], ll2, lr2,
-			      perps+3*i, new_perp, new_perp, cmdList);
+			      perps+3L*i, new_perp, new_perp, cmdList);
 
 	// and the other sides
 	cmdTriangle.putdata(ul[0], ll[0], ll2, 
-			    norms+3*i, norms+3*i, new_norm, cmdList);
+			    norms+3L*i, norms+3L*i, new_norm, cmdList);
 	cmdTriangle.putdata(ul[0], ll2, ul2, 
-			    norms+3*i, new_norm, new_norm, cmdList);
+			    norms+3L*i, new_norm, new_norm, cmdList);
 	cmdTriangle.putdata(ur[0], lr[0], lr2, 
-			    norms+3*i, norms+3*i, new_norm, cmdList);
+			    norms+3L*i, norms+3L*i, new_norm, cmdList);
 	cmdTriangle.putdata(ur[0], lr2, ur2, 
-			    norms+3*i, new_norm, new_norm, cmdList);
+			    norms+3L*i, new_norm, new_norm, cmdList);
 	
 	// get the 1/2 half
 	cmdTriangle.putdata(ur2, ul2, ul[1],  // top
-			    new_perp, new_perp, perps+3*i+3, cmdList);
+			    new_perp, new_perp, perps+3L*i+3, cmdList);
 	cmdTriangle.putdata(ur2, ul[1], ur[1],
-			    new_perp, perps+3*i+3, perps+3*i+3, cmdList);
+			    new_perp, perps+3L*i+3, perps+3L*i+3, cmdList);
 	cmdTriangle.putdata(lr2, ll2, ll[1],  // bottom
-			    new_perp, new_perp, perps+3*i+3, cmdList);
+			    new_perp, new_perp, perps+3L*i+3, cmdList);
 	cmdTriangle.putdata(lr2, ll[1], lr[1],
-			    new_perp, perps+3*i+3, perps+3*i+3, cmdList);
+			    new_perp, perps+3L*i+3, perps+3L*i+3, cmdList);
 	
 	// and the other sides
 	cmdTriangle.putdata(ul2, ll2, ll[1], 
-			    new_norm, new_norm, norms+3*i+3, cmdList);
+			    new_norm, new_norm, norms+3L*i+3, cmdList);
 	cmdTriangle.putdata(ul2, ll[1], ul[1], 
-			    new_norm, norms+3*i+3, norms+3*i+3, cmdList);
+			    new_norm, norms+3L*i+3, norms+3L*i+3, cmdList);
 	cmdTriangle.putdata(ur2, lr2, lr[1], 
-			    new_norm, new_norm, norms+3*i+3, cmdList);
+			    new_norm, new_norm, norms+3L*i+3, cmdList);
 	cmdTriangle.putdata(ur2, lr[1], ur[1], 
-			    new_norm, norms+3*i+3, norms+3*i+3, cmdList);
+			    new_norm, norms+3L*i+3, norms+3L*i+3, cmdList);
 	}
 	
 	if (!prev_on) {
@@ -2726,7 +2727,7 @@ void DrawMolItem::draw_beta_sheet(ResizeArray<float> &x,
 	  prev_on = 1;
 	}
       } else {  // ribbon_width == 0
-        cmdLine.putdata(centers+3*i, centers+3*i+3, cmdList);
+        cmdLine.putdata(centers+3L*i, centers+3L*i+3, cmdList);
       }
     } else { // atom_on[i] >= 0
       // this isn't on.  Was prev?  If so, draw its base
@@ -2751,12 +2752,12 @@ void DrawMolItem::draw_beta_sheet(ResizeArray<float> &x,
 
   // swap the normals back, if they were swapped
   if (dot < 0) {
-    perps[3*i+0] = -perps[3*i+0];
-    perps[3*i+1] = -perps[3*i+1];
-    perps[3*i+2] = -perps[3*i+2];
-    norms[3*i+0] = -norms[3*i+0];
-    norms[3*i+1] = -norms[3*i+1];
-    norms[3*i+2] = -norms[3*i+2];
+    perps[3L*i+0] = -perps[3L*i+0];
+    perps[3L*i+1] = -perps[3L*i+1];
+    perps[3L*i+2] = -perps[3L*i+2];
+    norms[3L*i+0] = -norms[3L*i+0];
+    norms[3L*i+1] = -norms[3L*i+1];
+    norms[3L*i+2] = -norms[3L*i+2];
   }
 
   // what remains is the last one, which will be drawn as an arrow head
@@ -2767,25 +2768,25 @@ void DrawMolItem::draw_beta_sheet(ResizeArray<float> &x,
 
     // recompute the base and tip information correctly
     // the 'norms' direction is 50% longer in each direction
-    norms[3*num-3] *= 1.5;
-    norms[3*num-2] *= 1.5;
-    norms[3*num-1] *= 1.5;
+    norms[3L*num-3] *= 1.5;
+    norms[3L*num-2] *= 1.5;
+    norms[3L*num-1] *= 1.5;
 
-    SCALESUM(ul[0], centers+3*num-3, norms+3*num-3, ribbon_width);
+    SCALESUM(ul[0], centers+3L*num-3, norms+3L*num-3, ribbon_width);
     vec_copy    (ll[0], ul[0]);
-    SCALEADD(ul[0], perps+3*num-3, BETASCALE);
-    SCALEADD(ll[0], perps+3*num-3, -BETASCALE);
+    SCALEADD(ul[0], perps+3L*num-3, BETASCALE);
+    SCALEADD(ll[0], perps+3L*num-3, -BETASCALE);
 
-    SCALESUM(ur[0], centers+3*num-3, norms+3*num-3, -ribbon_width);
+    SCALESUM(ur[0], centers+3L*num-3, norms+3L*num-3, -ribbon_width);
     vec_copy    (lr[0], ur[0]);
-    SCALEADD(ur[0], perps+3*num-3, BETASCALE);
-    SCALEADD(lr[0], perps+3*num-3, -BETASCALE);
+    SCALEADD(ur[0], perps+3L*num-3, BETASCALE);
+    SCALEADD(lr[0], perps+3L*num-3, -BETASCALE);
 
     // and the tip has no norms component
-    vec_copy    (ur[1], centers+3*num);
+    vec_copy    (ur[1], centers+3L*num);
     vec_copy    (lr[1], ur[1]);
-    SCALEADD(ur[1], perps+3*num, BETASCALE);
-    SCALEADD(lr[1], perps+3*num, -BETASCALE);
+    SCALEADD(ur[1], perps+3L*num, BETASCALE);
+    SCALEADD(lr[1], perps+3L*num, -BETASCALE);
 
     // draw the arrow
     cmdColorIndex.putdata(color[atom_on[num-1]], cmdList);
@@ -2804,7 +2805,7 @@ void DrawMolItem::draw_beta_sheet(ResizeArray<float> &x,
       cmdTriangle.putdata(ul[0], ll[0], ur[0], cmdList);  // and base
       cmdTriangle.putdata(ll[0], lr[0], ur[0], cmdList);
     } else {// ribbon_width == 0
-      cmdLine.putdata(centers+3*num-3, centers+3*num, cmdList);
+      cmdLine.putdata(centers+3L*num-3, centers+3L*num, cmdList);
     } // special case for ribbon_width == 0
   }
   delete [] perps;
@@ -2878,9 +2879,9 @@ void DrawMolItem::draw_structure(float *framepos, float brad, int bres, int line
             h_start = atom;             // just started a helix
           }
 
-          x.append(framepos[3*atom+0]); // add CA atom to the coordinate arrays
-          y.append(framepos[3*atom+1]);
-          z.append(framepos[3*atom+2]);
+          x.append(framepos[3L*atom+0]); // add CA atom to the coordinate arrays
+          y.append(framepos[3L*atom+1]);
+          z.append(framepos[3L*atom+2]);
 
           if (atomSel->on[atom]) {      // atom_on contains either
             atom_on.append(atom);       // the atom index (if on)
@@ -2947,9 +2948,9 @@ void DrawMolItem::draw_structure(float *framepos, float brad, int bres, int line
           if (b_start == -1) {
             b_start = atom;             // just started a sheet
           }
-          x.append(framepos[3*atom+0]); // add CA atom to the coordinate arrays
-          y.append(framepos[3*atom+1]);
-          z.append(framepos[3*atom+2]);
+          x.append(framepos[3L*atom+0]); // add CA atom to the coordinate arrays
+          y.append(framepos[3L*atom+1]);
+          z.append(framepos[3L*atom+2]);
           if (atomSel->on[atom]) {      // atom_on contains either
             atom_on.append(atom);       // the atom index (if on)
           } else {
@@ -3046,7 +3047,7 @@ void DrawMolItem::draw_structure(float *framepos, float brad, int bres, int line
     int atom; 
     int numcaatoms = CA_num.num();
     for (i=0; i<numcaatoms; i++) {
-      atom = 3*CA_num[i];
+      atom = 3L*CA_num[i];
       vec_copy(tmp_coords, framepos+atom);
       framepos[atom+0] = resx[i];
       framepos[atom+1] = resy[i];
@@ -3077,7 +3078,7 @@ void DrawMolItem::draw_structure(float *framepos, float brad, int bres, int line
     // and revert to the original coordinate and 'on' arrays
     atomSel->on = temp_on;
     for (i=0; i<numcaatoms; i++) {
-      atom = 3*CA_num[i];
+      atom = 3L*CA_num[i];
       framepos[atom+0] = resx[i];
       framepos[atom+1] = resy[i];
       framepos[atom+2] = resz[i];

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *  $RCSfile: ParseTree.C,v $
  *  $Author: johns $		$Locker:  $		$State: Exp $
- *  $Revision: 1.145 $		$Date: 2015/05/04 03:10:44 $
+ *  $Revision: 1.147 $		$Date: 2016/11/28 03:05:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -382,7 +382,7 @@ static void same_double(symbol_data *tmp, symbol_data *tmp2, int num,
   // table.  I have to convert doubles to strings.
   hash_t hash;
   // XXX doubles can't be longer than 25 chars, can they?
-  char *doublestring = new char[25*subselselected];
+  char *doublestring = new char[25L*subselselected];
   char *istring = doublestring;
   hash_init(&hash, subselselected);
   int i;
@@ -731,16 +731,16 @@ void ParseTree::eval_pbwithin(atomparser_node *node, int num, int *flgs) {
   int i;
 
   // coords holds original coordinates in first 3N entries
-  ResizeArray<float> coords(3*2*num);
+  ResizeArray<float> coords(3L*2L*num);
 
   // others holds the flags for others in the first N entries, and will
   // be padded with zeros, one for each replicated flg atom
-  ResizeArray<int> others(2*num);
+  ResizeArray<int> others(2L*num);
   
   // repflgs holds a copy of flgs in the first N entries, and will be
   // extended with ones for each replicated flag atom.  We store the index
   // of the replicated atom in repindexes.
-  ResizeArray<int> repflgs(2*num);
+  ResizeArray<int> repflgs(2L*num);
 
   // repindexes holds the indexes of the replicated flg atoms.
   ResizeArray<int> repindexes(num);
@@ -969,7 +969,7 @@ void ParseTree::eval_k_nearest(atomparser_node *node, int num, int *flgs) {
 #endif
     for (int j=0; j<num; j++) {
       if (!others[j]) continue;
-      float d2_j=distance2(ts->pos+3*i, ts->pos+3*j);
+      float d2_j=distance2(ts->pos+3L*i, ts->pos+3L*j);
       if (d2_j<d2) d2=d2_j;
     }
     distances.push_back(PointDistance(d2,i));

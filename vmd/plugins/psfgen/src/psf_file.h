@@ -13,6 +13,7 @@ int psf_get_angles(FILE *f, int fw, int n, int *angles);
 int psf_get_dihedrals(FILE *f, int fw, int n, int *dihedrals);
 int psf_get_impropers(FILE *f, int fw, int n, int *impropers);
 int psf_get_cmaps(FILE *f, int fw, int n, int *cmaps);
+int psf_get_exclusions(FILE *f, int fw, int nexcl, int *exclusions, int natom, int *exclusion_indices);
 
 #endif
 

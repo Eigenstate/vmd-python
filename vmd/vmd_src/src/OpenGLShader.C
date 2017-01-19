@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: OpenGLShader.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.26 $	$Date: 2014/08/20 15:41:22 $
+ *	$Revision: 1.28 $	$Date: 2016/11/28 03:05:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -123,10 +123,17 @@ int OpenGLShader::CompileShaders(GLubyte *vertexShader, GLubyte *fragmentShader)
   GLint frag_compiled = 0;
   GLint linked = 0;
   GLint     length;
+ 
+  int verbose = (getenv("VMDGLSLVERBOSE") != NULL);
+
+  if (verbose)
+    msgInfo << "Verbose GLSL shader compilation enabled..." << sendmsg;
 
   // Bail out if we don't have valid pointers for shader source code
   if (vertexShader == NULL || fragmentShader == NULL) {
     ProgramObject = 0;
+    if (verbose)
+      msgErr << "GLSL shader source incomplete during compilation" << sendmsg;
     return 0;
   }
 
@@ -145,17 +152,23 @@ int OpenGLShader::CompileShaders(GLubyte *vertexShader, GLubyte *fragmentShader)
   GLGETOBJECTPARAMETERIVARB(VertexShaderObject,
                   GL_OBJECT_COMPILE_STATUS_ARB, &vert_compiled);
 
-  if (getenv("VMDGLSLVERBOSE") != NULL)
+  if (verbose)
     PrintInfoLog(VertexShaderObject, "OpenGL vertex shader compilation log: ");
 
   GLCOMPILESHADERARB(FragmentShaderObject);
   GLGETOBJECTPARAMETERIVARB(FragmentShaderObject,
                   GL_OBJECT_COMPILE_STATUS_ARB, &frag_compiled);
 
-  if (getenv("VMDGLSLVERBOSE") != NULL)
+  if (verbose)
     PrintInfoLog(FragmentShaderObject, "OpenGL fragment shader compilation log: ");
 
   if (!vert_compiled || !frag_compiled) {
+    if (verbose) {
+      if (!vert_compiled)
+        msgErr << "GLSL vertex shader failed to compile" << sendmsg;
+      if (!frag_compiled)
+        msgErr << "GLSL fragment shader failed to compile" << sendmsg;
+    }
     ProgramObject = 0;
     return 0;
   }
@@ -178,7 +191,7 @@ int OpenGLShader::CompileShaders(GLubyte *vertexShader, GLubyte *fragmentShader)
   GLLINKPROGRAMARB(ProgramObject);
   GLGETOBJECTPARAMETERIVARB(ProgramObject, GL_OBJECT_LINK_STATUS_ARB, &linked);
 
-  if (getenv("VMDGLSLVERBOSE") != NULL)
+  if (verbose)
     PrintInfoLog(ProgramObject, "OpenGL shader linkage log: " );
 
   if (vert_compiled && frag_compiled && linked) {

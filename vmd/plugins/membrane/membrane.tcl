@@ -1,11 +1,11 @@
 #
 # Replicate membrane patch (VMD/psfgen)
 #
-# $Id: membrane.tcl,v 1.22 2011/03/11 14:12:29 akohlmey Exp $
+# $Id: membrane.tcl,v 1.24 2016/07/07 03:02:16 johns Exp $
 #
 package require psfgen
 package require readcharmmtop 1.1
-package provide membrane 1.1
+package provide membrane 1.2
 
 namespace eval ::Membrane:: {
   variable w
@@ -26,7 +26,7 @@ proc ::Membrane::membrane_usage { } {
     puts "  <lipid> is lipid name (POPC or POPE; others as added)"
     puts "  <xsize> and <ysize> are membrane sizes in X and Y (Angstroms)"
     puts "  <prefix> is optional output file prefix (default \"membrane\")"
-    puts "  <topology> is optional and specifies lipid CHARMM topology (\"c27\" or \"c36\", default c27)"
+    puts "  <topology> is optional and specifies lipid CHARMM topology (\"c27\" or \"c36\", default c36)"
     error ""
 }
 
@@ -74,10 +74,10 @@ proc ::Membrane::membrane_core { args } {
 	set prefix $cmdline(-o)
     }
 
-    set topType 27
+    set topType 36
     if { [info exists cmdline(-top)] } {
-        if { [string equal -nocase $cmdline(-top) "c36"] } {
-           set topType 36
+        if { [string equal -nocase $cmdline(-top) "c27"] } {
+           set topType 27
         }
     }
 
@@ -121,6 +121,10 @@ proc ::Membrane::membrane_core { args } {
 #    if { [catch {if {$TOPOLOGY_READ != 1} {}}] } {
 	set TOPOLOGY_READ 1
 	topology $topfile
+    ###Load water and ions topologies in the case of charmm 36 version 
+    if { $topType == 36 } {
+       topology [file join $env(CHARMMTOPDIR) toppar_water_ions_namd.str]
+    }
 #    }
     resetpsf
     readpsf $psffile

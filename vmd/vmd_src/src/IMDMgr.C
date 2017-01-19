@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: IMDMgr.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.40 $       $Date: 2010/12/16 04:08:19 $
+ *      $Revision: 1.42 $       $Date: 2016/11/28 03:05:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -107,9 +107,9 @@ int IMDMgr::send_forces(int n, const int *ind, const float *force) {
 
   // make a temporary copy because sim may byte-swap ind and force.
   int *tmpind = new int[n];
-  float *tmpforce = new float[3*n];
+  float *tmpforce = new float[3L*n];
   memcpy(tmpind, ind, n*sizeof(int));
-  memcpy(tmpforce, force, 3*n*sizeof(float));
+  memcpy(tmpforce, force, 3L*n*sizeof(float));
   sim->send_forces(n, tmpind, tmpforce);
   delete [] tmpind;
   delete [] tmpforce;

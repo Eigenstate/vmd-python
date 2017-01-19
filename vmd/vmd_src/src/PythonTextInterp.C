@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: PythonTextInterp.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.67 $       $Date: 2014/08/23 03:25:14 $
+ *      $Revision: 1.68 $       $Date: 2016/11/28 03:05:04 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -38,7 +38,7 @@ static PyObject *add_callback(PyObject *, PyObject *args) {
   char *type;
   PyObject *temp;
 
-  if (!PyArg_ParseTuple(args, (char *)"sO:add_callback", &type, &temp)) 
+  if (!PyArg_ParseTuple(args, (char *)"sO:add_callback", &type, &temp))
     return NULL;
 
   if (!PyCallable_Check(temp)) {
@@ -59,7 +59,7 @@ static PyObject *del_callback(PyObject *, PyObject *args) {
   char *type;
   PyObject *temp;
 
-  if (!PyArg_ParseTuple(args, (char *)"sO:del_callback", &type, &temp)) 
+  if (!PyArg_ParseTuple(args, (char *)"sO:del_callback", &type, &temp))
     return NULL;
 
   if (!PyCallable_Check(temp)) {
@@ -108,15 +108,32 @@ static void call_callbacks(const char *type, PyObject *arglist) {
 
   PyGILState_Release(state);
 }
-  
+
 static PyMethodDef CallbackMethods[] = {
   {(char *)"add_callback", (vmdPyMethod)add_callback, METH_VARARGS },
   {(char *)"del_callback", (vmdPyMethod)del_callback, METH_VARARGS },
   {NULL, NULL}
 };
-  
+
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef vmdcallbacksdef = {
+    PyModuleDef_HEAD_INIT,
+    "vmdcallbacks",
+    NULL,
+    -1, // global state, no sub-interpreters
+    CallbackMethods,
+    NULL,
+    NULL, // m_traverse gc traversal
+    NULL, // m_clear gc clear
+    NULL  // m_free gc free
+};
+
+PyMODINIT_FUNC PyInit_vmdcallbacks(void) {
+  PyObject *m = PyModule_Create(&vmdcallbacksdef);
+#else
 static void initvmdcallbacks() {
   PyObject *m = Py_InitModule((char *)"vmdcallbacks", CallbackMethods);
+#endif
   PyObject *dict = PyDict_New();
   PyDict_SetItemString(dict, (char *)"display_update", PyList_New(0));
   PyDict_SetItemString(dict, (char *)"frame", PyList_New(0));
@@ -128,27 +145,36 @@ static void initvmdcallbacks() {
   PyDict_SetItemString(dict, (char *)"timestep", PyList_New(0));
   PyDict_SetItemString(dict, (char *)"trajectory", PyList_New(0));
   PyDict_SetItemString(dict, (char *)"userkey", PyList_New(0));
-  PyObject_SetAttrString(m, (char *)"callbacks", dict); 
+  PyObject_SetAttrString(m, (char *)"callbacks", dict);
   cbdict = dict;
+
+#if PY_MAJOR_VERSION >= 3
+    return m;
+#endif
 }
 
 extern "C" void initvmd(void);
 
 
-PythonTextInterp::PythonTextInterp(VMDApp *vmdapp) 
+PythonTextInterp::PythonTextInterp(VMDApp *vmdapp)
 : app(vmdapp) {
   msgInfo << "Starting Python..." << sendmsg;
   Py_Initialize();
 
   // Some modules (like Tk) assume that os.argv has been initialized
+#if PY_MAJOR_VERSION < 3
   PySys_SetArgv(app->argc_m, (char **)app->argv_m);
+#else
+  PySys_SetArgv(app->argc_m, (wchar_t **)app->argv_m);
+#endif
 
   set_vmdapp(app);
 
   // Set up the prompts
-  PySys_SetObject((char *)"ps1", PyString_FromString((char *)""));
-  PySys_SetObject((char *)"ps2", PyString_FromString((char *)"... "));
- 
+  PySys_SetObject((char *)"ps1", PyUnicode_FromString((char *)""));
+  PySys_SetObject((char *)"ps2", PyUnicode_FromString((char *)"... "));
+
+#if PY_MAJOR_VERSION < 3
   initvmdcallbacks();
   initvmd();
   initanimate();
@@ -173,9 +199,10 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp)
 #ifdef VMDNUMPY
   initvmdnumpy();
 #endif
+#endif
 
   // The VMD module imports all the above modules.
-  evalString("import VMD");
+  // DEBUG ROBIN evalString("import VMD");
 
   // have_tkinter and have_vmdcallback flags are set to zero if these calls
   // ever fail so that we don't fail over and over again and fill up the
@@ -188,7 +215,7 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp)
 PythonTextInterp::~PythonTextInterp() {
   Py_Finalize();
   msgInfo << "Done with Python." << sendmsg;
-  
+
 }
 
 int PythonTextInterp::doTkUpdate() {
@@ -211,7 +238,7 @@ int PythonTextInterp::doTkUpdate() {
   }
   return 0;
 }
-  
+
 void PythonTextInterp::doEvent() {
   // Call any display loop callbacks
   // abort if the call ever fails
@@ -224,8 +251,8 @@ void PythonTextInterp::doEvent() {
     needPrompt = 0;
   }
 
-  if (!vmd_check_stdin()) 
-	return;	
+  if (!vmd_check_stdin())
+	return;
   int code = PyRun_InteractiveOne(stdin, (char *)"VMD");
   needPrompt = 1;
   if (code == E_EOF) {
@@ -244,7 +271,7 @@ int PythonTextInterp::evalString(const char *s) {
 
 int PythonTextInterp::evalFile(const char *s) {
   FILE *fid = fopen(s, "r");
-  if (!fid) { 
+  if (!fid) {
     msgErr << "Error opening file '" << s << "'" << sendmsg;
     return FALSE;
   }
@@ -252,7 +279,7 @@ int PythonTextInterp::evalFile(const char *s) {
   fclose(fid);
   return !code;
 }
- 
+
 void PythonTextInterp::frame_cb(int molid, int frame) {
   PyObject *arglist = Py_BuildValue((char *)"(i,i)", molid, frame);
   call_callbacks("frame", arglist);

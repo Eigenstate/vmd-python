@@ -42,6 +42,12 @@ typedef struct topo_mol_cmap_t {
   int del;
 } topo_mol_cmap_t;
 
+typedef struct topo_mol_exclusion_t {
+  struct topo_mol_exclusion_t *next[2];
+  struct topo_mol_atom_t *atom[2];
+  int del;
+} topo_mol_exclusion_t;
+
 typedef struct topo_mol_conformation_t {
   struct topo_mol_conformation_t *next[4];
   struct topo_mol_atom_t *atom[4];
@@ -63,6 +69,7 @@ typedef struct topo_mol_atom_t {
   topo_mol_dihedral_t *dihedrals;
   topo_mol_improper_t *impropers;
   topo_mol_cmap_t *cmaps;
+  topo_mol_exclusion_t *exclusions;
   topo_mol_conformation_t *conformations;
   char name[NAMEMAXLEN];
   char type[NAMEMAXLEN];
@@ -70,6 +77,7 @@ typedef struct topo_mol_atom_t {
   double mass;
   double charge;
   double x,y,z;
+  double vx,vy,vz;
   int xyz_state;
   int partition;
   int atomid;
@@ -140,6 +148,9 @@ topo_mol_improper_t * topo_mol_improper_next(
 
 topo_mol_cmap_t * topo_mol_cmap_next(
                 topo_mol_cmap_t *tuple, topo_mol_atom_t *atom);
+
+topo_mol_exclusion_t * topo_mol_exclusion_next(
+                topo_mol_exclusion_t *tuple, topo_mol_atom_t *atom);
 
 #endif
 

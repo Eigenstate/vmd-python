@@ -6,7 +6,7 @@
 # Nevertheless this is a good template for the different sections that must
 # be parsed.
 #
-# $Id: qmtool_readwrite.tcl,v 1.57 2014/04/16 16:56:23 mayne Exp $
+# $Id: qmtool_readwrite.tcl,v 1.58 2015/10/01 21:28:40 gumbart Exp $
 #
 
 ################################################
@@ -2786,6 +2786,7 @@ proc ::QMtool::convert_inthessian_kcal { internalhessian qmmethod zmat {file {}}
    variable HFscalefac
    variable MP2scalefac
    variable B3LYPscalefac
+   variable BP86scalefac
    variable AMBERdihed
 
    # There are different scaling factors for HF and B3LYP
@@ -2795,6 +2796,9 @@ proc ::QMtool::convert_inthessian_kcal { internalhessian qmmethod zmat {file {}}
    }
    if {[string match "*MP2" $qmmethod]} {
       set fcscalefac [expr {$MP2scalefac*$MP2scalefac}]
+   }
+   if {[string match "*BP86" $qmmethod]} {
+      set fcscalefac [expr {$BP86scalefac*$BP86scalefac}]
    }
 
    puts "Force constant scaling factor=$fcscalefac for $qmmethod"

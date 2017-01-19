@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: MeasureRDF.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.14 $       $Date: 2011/01/14 16:23:10 $
+ *      $Revision: 1.16 $       $Date: 2016/11/28 03:05:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -76,27 +76,27 @@ void rdf_cpu(int natoms1,     // array of the number of atoms in
   cellz = cell[2];
 
   for (iatom=0; iatom<natoms1; iatom++) {
-    int addr = 3 * iatom;
+    long addr = 3L * iatom;
     xyz[addr    ] = fmodf(xyz[addr    ], cellx);
     xyz[addr + 1] = fmodf(xyz[addr + 1], celly);
     xyz[addr + 2] = fmodf(xyz[addr + 2], cellz);
   }
 
   for (iatom=0; iatom<natoms2; iatom++) {
-    int addr = 3 * iatom;
+    long addr = 3L * iatom;
     xyz2[addr    ] = fmodf(xyz2[addr    ], cellx);
     xyz2[addr + 1] = fmodf(xyz2[addr + 1], celly);
     xyz2[addr + 2] = fmodf(xyz2[addr + 2], cellz);
   }
 
   for (iatom=0; iatom<natoms1; iatom++) {
-    x1 = xyz[3 * iatom    ];
-    y1 = xyz[3 * iatom + 1];
-    z1 = xyz[3 * iatom + 2];
+    x1 = xyz[3L * iatom    ];
+    y1 = xyz[3L * iatom + 1];
+    z1 = xyz[3L * iatom + 2];
     for (jatom=0;jatom<natoms2;jatom++) {
-      x2 = xyz2[3 * jatom    ];
-      y2 = xyz2[3 * jatom + 1];
-      z2 = xyz2[3 * jatom + 2];
+      x2 = xyz2[3L * jatom    ];
+      y2 = xyz2[3L * jatom + 1];
+      z2 = xyz2[3L * jatom + 2];
 
       rxij = fabsf(x1 - x2);
       rxij2 = cellx - rxij;
@@ -227,8 +227,8 @@ int measure_rdf(VMDApp *app,
   // pre-allocate coordinate buffers of the max size we'll
   // ever need, so we don't have to reallocate if/when atom
   // selections are updated on-the-fly
-  float *sel1coords = new float[3*sel1->num_atoms];
-  float *sel2coords = new float[3*sel2->num_atoms];
+  float *sel1coords = new float[3L*sel1->num_atoms];
+  float *sel2coords = new float[3L*sel2->num_atoms];
   float *lhist = new float[count_h];
 
   for (nframes=0,frame=first; frame <=last; ++nframes, frame += step) {
@@ -284,7 +284,7 @@ int measure_rdf(VMDApp *app,
     const float *framepos = ts1->pos;
     for (i=0, j=0; i<sel1->num_atoms; ++i) {
       if (sel1->on[i]) {
-        int a = i*3;
+        long a = i*3L;
         sel1coords[j    ] = framepos[a    ];
         sel1coords[j + 1] = framepos[a + 1];
         sel1coords[j + 2] = framepos[a + 2];
@@ -294,7 +294,7 @@ int measure_rdf(VMDApp *app,
     framepos = ts2->pos;
     for (i=0, j=0; i<sel2->num_atoms; ++i) {
       if (sel2->on[i]) {
-        int a = i*3;
+        long a = i*3L;
         sel2coords[j    ] = framepos[a    ];
         sel2coords[j + 1] = framepos[a + 1];
         sel2coords[j + 2] = framepos[a + 2];

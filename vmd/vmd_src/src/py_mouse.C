@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -12,7 +12,7 @@
 
 static PyObject *mousemode(PyObject *self, PyObject *args) {
   int mode, submode = -1;
-  if (!PyArg_ParseTuple(args, (char *)"i|i", &mode, &submode)) 
+  if (!PyArg_ParseTuple(args, (char *)"i|i", &mode, &submode))
     return NULL;
 
   VMDApp *app = get_vmdapp();
@@ -24,18 +24,33 @@ static PyObject *mousemode(PyObject *self, PyObject *args) {
 static PyMethodDef methods[] = {
   {(char *)"mode", (vmdPyMethod)mousemode, METH_VARARGS,
     (char *)"mode(mode, submode) -- set mouse behavior in graphics window"},
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
-void initmouse() {
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef mousedef = {
+    PyModuleDef_HEAD_INIT,
+    "mouse",
+    NULL,
+    -1,
+    methods,
+    NULL, NULL, NULL, NULL
+};
+#endif
+
+PyObject* initmouse() {
+#if PY_MAJOR_VERSION >= 3
+  PyObject *m = PyModule_Create(&mousedef);
+#else
   PyObject *m = Py_InitModule((char *)"mouse", methods);
+#endif
   PyModule_AddIntConstant(m, "ROTATE", Mouse::ROTATION);
   PyModule_AddIntConstant(m, "TRANSLATE", Mouse::TRANSLATION);
   PyModule_AddIntConstant(m, "SCALE", Mouse::SCALING);
   PyModule_AddIntConstant(m, "LIGHT", Mouse::LIGHT);
   PyModule_AddIntConstant(m, "PICK", Mouse::PICK);
   PyModule_AddIntConstant(m, "USERPOINT", Mouse::USERPOINT);
-  
+
   PyModule_AddIntConstant(m, "QUERY", Mouse::QUERY);
   PyModule_AddIntConstant(m, "CENTER", Mouse::CENTER);
   PyModule_AddIntConstant(m, "LABELATOM", Mouse::LABELATOM);
@@ -52,5 +67,6 @@ void initmouse() {
   PyModule_AddIntConstant(m, "FORCEFRAG", Mouse::FORCEFRAG);
   PyModule_AddIntConstant(m, "ADDBOND", Mouse::ADDBOND);
 
+  return m;
 }
 

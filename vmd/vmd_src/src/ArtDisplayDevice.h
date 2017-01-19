@@ -3,7 +3,7 @@
 
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -14,7 +14,7 @@
  *
  *	$RCSfile: ArtDisplayDevice.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.24 $	$Date: 2013/03/07 19:39:28 $
+ *	$Revision: 1.25 $	$Date: 2016/11/28 03:04:57 $
  *
  ***************************************************************************
  * DESCRIPTION: 

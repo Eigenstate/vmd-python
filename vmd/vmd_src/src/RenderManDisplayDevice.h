@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
 *
 *      $RCSfile: RenderManDisplayDevice.h
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.28 $         $Date: 2013/04/17 03:23:12 $
+*      $Revision: 1.29 $         $Date: 2016/11/28 03:05:04 $
 *
 ***************************************************************************
 * DESCRIPTION:

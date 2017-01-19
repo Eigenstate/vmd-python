@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolItemRibbons.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.145 $	$Date: 2015/05/03 14:34:30 $
+ *	$Revision: 1.148 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -89,7 +89,7 @@ void DrawMolItem::draw_spline_ribbon(int num, float *coords,
 
   int last_loop = -10;
   int loop, i, j;
-  float *tmp_ptr = (float *) malloc(2*(num+4) * sizeof(float) * 3);
+  float *tmp_ptr = (float *) malloc(2L*(num+4L) * sizeof(float) * 3L);
   if (tmp_ptr == NULL) {
     msgErr << "Cannot make a ribbon; not enough memory!" << sendmsg;
     return;
@@ -98,11 +98,11 @@ void DrawMolItem::draw_spline_ribbon(int num, float *coords,
 
   // XXX disgusting array math here, rewrite!
   // copy the coordinates +/- the offsets into the temp ("edge") arrays
-  edge[0] = tmp_ptr + 2*3;
-  memcpy(edge[0]-2*3, coords-2*3, (num+4)*sizeof(float)*3);
+  edge[0] = tmp_ptr + 2*3L;
+  memcpy(edge[0]-2*3L, coords-2*3L, (num+4L)*sizeof(float)*3L);
   edge[1] = edge[0] + (num+4)*3;
-  memcpy(edge[1]-2*3, coords-2*3, (num+4)*sizeof(float)*3);
-  for (j=-2*3; j<(num+2)*3-1; j++) {
+  memcpy(edge[1]-2*3L, coords-2*3L, (num+4L)*sizeof(float)*3L);
+  for (j=-2*3; j<(num+2)*3L-1; j++) {
     edge[0][j] += offset[j];
     edge[1][j] -= offset[j];
   }
@@ -387,14 +387,14 @@ int DrawMolItem::draw_protein_ribbons_old(float *framepos, int b_res, float b_ra
        real_idx =   (int *) malloc((num+4) * sizeof(int));
      real_perps = (float *) malloc((num+4) * sizeof(float)*3);
 
-    coords = real_coords + 2*3;
-       idx = real_idx + 2;
-     perps = real_perps + 2*3;
+    coords = real_coords + 2*3L;
+       idx = real_idx + 2L;
+     perps = real_perps + 2*3L;
 
     // initialize CA and O atom pointers
-    capos = framepos + 3*canum;
+    capos = framepos + 3L*canum;
     last_capos = capos;
-    opos = framepos + 3*onum;
+    opos = framepos + 3L*onum;
     last_opos = opos;
 
     // duplicate first control point data
@@ -409,7 +409,7 @@ int DrawMolItem::draw_protein_ribbons_old(float *framepos, int b_res, float b_ra
       res = (*mol->pfragList[frag])[loop];
       canum = mol->find_atom_in_residue("CA", res);
       if (canum >= 0) {
-        capos = framepos + 3*canum;
+        capos = framepos + 3L*canum;
       }
       onum = mol->find_atom_in_residue("O", res);
       if (onum < 0) {
@@ -417,7 +417,7 @@ int DrawMolItem::draw_protein_ribbons_old(float *framepos, int b_res, float b_ra
       }
 
       if (onum >= 0) {
-        opos = framepos + 3*onum;
+        opos = framepos + 3L*onum;
       } else {
         rc |= RIBBON_ERR_PROTEIN_MESS;
         opos = last_opos; // try to cope if we have no oxygen index
@@ -439,15 +439,15 @@ int DrawMolItem::draw_protein_ribbons_old(float *framepos, int b_res, float b_ra
       }
       vec_add(e, g, b);   // average to the sum of the previous vectors
       vec_normalize(e);
-      vec_scale(&perps[3*loop], ribbon_width, e); // compute perps from normal
+      vec_scale(&perps[3L*loop], ribbon_width, e); // compute perps from normal
       vec_copy(g, e);     // make a cumulative sum; cute, IMHO
       last_capos = capos;
       last_opos = opos;
     }
 
     // duplicate the last control point into two extra copies
-    vec_copy(coords+3*num, capos);
-    vec_copy(coords+3*(num+1), capos);
+    vec_copy(coords+3L*num, capos);
+    vec_copy(coords+3L*(num+1), capos);
     idx[num] = idx[num+1] = -1;
 
     // copy the second perp to the first since the first one didn't have
@@ -457,8 +457,8 @@ int DrawMolItem::draw_protein_ribbons_old(float *framepos, int b_res, float b_ra
     // duplicate the first and last perps into the extra control points
     vec_copy(perps-3, perps);
     vec_copy(perps-6, perps);
-    vec_copy(perps+3*num, perps+3*num-3);
-    vec_copy(perps+3*num+3, perps+3*num);
+    vec_copy(perps+3L*num, perps+3L*num-3);
+    vec_copy(perps+3L*num+3, perps+3L*num);
 
     draw_spline_ribbon(num, coords, perps, idx, use_cyl, b_rad, b_res);
 
@@ -548,9 +548,9 @@ int DrawMolItem::draw_protein_ribbons_new(float *framepos, int b_res, float b_ra
     }
 
     // initialize CA and O atom pointers
-    capos = framepos + 3*canum;
+    capos = framepos + 3L*canum;
     last_capos = capos;
-    opos = framepos + 3*onum;
+    opos = framepos + 3L*onum;
     last_opos = opos;
 
     // now go through and set the coordinates and the perps
@@ -562,13 +562,13 @@ int DrawMolItem::draw_protein_ribbons_new(float *framepos, int b_res, float b_ra
     if (cyclic) {
       int lastres = (*mol->pfragList[frag])[num-1];
       int lastcanum = mol->find_atom_in_residue(CAtypecode, lastres);
-      last_capos = framepos + 3*lastcanum;
+      last_capos = framepos + 3L*lastcanum;
 
       int lastonum = mol->find_atom_in_residue(Otypecode, lastres);
       if (lastonum < 0 && OT1typecode >= 0) {
         lastonum = mol->find_atom_in_residue(OT1typecode, lastres);
       }
-      last_opos = framepos + 3*lastonum;
+      last_opos = framepos + 3L*lastonum;
 
       // now I need to figure out where the ribbon goes
       vec_sub(a, capos, last_capos);     // A=(pos(CA(res)) - pos(CA(res-1)))
@@ -592,7 +592,7 @@ int DrawMolItem::draw_protein_ribbons_new(float *framepos, int b_res, float b_ra
 
       canum = mol->find_atom_in_residue(CAtypecode, res);
       if (canum >= 0) {
-        capos = framepos + 3*canum;
+        capos = framepos + 3L*canum;
       }
 
       onum = mol->find_atom_in_residue(Otypecode, res);
@@ -600,14 +600,14 @@ int DrawMolItem::draw_protein_ribbons_new(float *framepos, int b_res, float b_ra
         onum = mol->find_atom_in_residue(OT1typecode, res);
       }
       if (onum >= 0) {
-        opos = framepos + 3*onum;
+        opos = framepos + 3L*onum;
       } else {
         rc |= RIBBON_ERR_PROTEIN_MESS;
         opos = last_opos; // try to cope if we have no oxygen index
       }
 
       // copy the CA coordinate into the control point array
-      vec_copy(coords+loop*3, capos);
+      vec_copy(coords+loop*3L, capos);
 
       // modulate the ribbon width by user-specified per-atom data
       if (modulatedata != NULL)
@@ -628,7 +628,7 @@ int DrawMolItem::draw_protein_ribbons_new(float *framepos, int b_res, float b_ra
       }
       vec_add(e, g, b);            // average to the sum of the previous vectors
       vec_normalize(e);
-      vec_copy(&perps[3*loop], e); // compute perps from the normal
+      vec_copy(&perps[3L*loop], e); // compute perps from the normal
       vec_copy(g, e);              // make a cumulative sum; cute, IMHO
       last_capos = capos;
       last_opos = opos;
@@ -654,11 +654,11 @@ int DrawMolItem::draw_protein_ribbons_new(float *framepos, int b_res, float b_ra
            m_fac = 1.0f;
 
         // modulate both width and height
-        widths[i] = 7 * ribbon_width * b_rad * m_fac;
+        widths[i] = 7L * ribbon_width * b_rad * m_fac;
         heights[i] = b_rad*m_fac;
 #else
         // modulate only width, and only additively
-        widths[i] = 7 * ribbon_width * b_rad + m_fac;
+        widths[i] = 7L * ribbon_width * b_rad + m_fac;
         heights[i] = b_rad;
 #endif
       }
@@ -667,7 +667,7 @@ int DrawMolItem::draw_protein_ribbons_new(float *framepos, int b_res, float b_ra
       free(heights);
     } else {
       // draw normal unmodulated ribbons
-      float widths = 7 * ribbon_width * b_rad;
+      float widths = 7L * ribbon_width * b_rad;
       float heights = b_rad;
       draw_spline_new(num, coords, perps, idx, &widths, &heights, 1, b_res, cyclic);
     }
@@ -727,9 +727,9 @@ int DrawMolItem::draw_nucleic_ribbons(float *framepos, int b_res, float b_rad,
     real_coords = (float *) malloc((num+4)*sizeof(float)*3);
     real_idx = (int *) malloc((num+4) * sizeof(int));
     real_perps = (float *) malloc((num+4) * sizeof(float)*3);
-    coords = real_coords + 2*3;
-       idx = real_idx + 2;
-     perps = real_perps + 2*3;
+    coords = real_coords + 2*3L;
+       idx = real_idx + 2L;
+     perps = real_perps + 2*3L;
 	 
     // okay, I've got space for the coordinates, the index translations,
     // and the perpendiculars, now initialize everything
@@ -787,8 +787,8 @@ int DrawMolItem::draw_nucleic_ribbons(float *framepos, int b_res, float b_rad,
       }
     }
 
-    ppos = framepos + 3*cpnum;
-    vec_add(opos, framepos + 3*o1num, framepos + 3*o2num);  // along the bisector
+    ppos = framepos + 3L*cpnum;
+    vec_add(opos, framepos + 3L*o1num, framepos + 3L*o2num);  // along the bisector
     vec_copy(last_opos, opos);
     last_ppos = ppos;
 
@@ -827,7 +827,7 @@ int DrawMolItem::draw_nucleic_ribbons(float *framepos, int b_res, float b_rad,
 
       // cpnum must be set to a valid atom or we'll crash
       if (cpnum >= 0) {
-        ppos = framepos + 3*cpnum;
+        ppos = framepos + 3L*cpnum;
         idx[loop] = cpnum;
       } else {
         rc |= RIBBON_ERR_MISSING_PHOSPHATE;
@@ -848,8 +848,8 @@ int DrawMolItem::draw_nucleic_ribbons(float *framepos, int b_res, float b_rad,
         vec_copy(opos, last_opos);
       } else {
         float tmp[3];
-        vec_sub(tmp, framepos + 3*o1num, ppos);
-        vec_sub(opos, framepos + 3*o2num, ppos);
+        vec_sub(tmp, framepos + 3L*o1num, ppos);
+        vec_sub(opos, framepos + 3L*o2num, ppos);
         vec_add(opos, tmp, opos);  // along the bisector
       }
       vec_copy(coords+loop*3, ppos);
@@ -869,7 +869,7 @@ int DrawMolItem::draw_nucleic_ribbons(float *framepos, int b_res, float b_rad,
       }
       vec_add(e, g, b);   // average to the sum of the previous vectors
       vec_normalize(e);
-      vec_scale(&perps[3*loop], ribbon_width, e); // compute perps from normal
+      vec_scale(&perps[3L*loop], ribbon_width, e); // compute perps from normal
       vec_copy(g, e);     // make a cumulative sum; cute, IMHO
       last_ppos = ppos;
       vec_copy(last_opos, opos);
@@ -880,8 +880,8 @@ int DrawMolItem::draw_nucleic_ribbons(float *framepos, int b_res, float b_rad,
       continue;
 
     // and set the final points to the last element
-    vec_copy(coords+3*num, ppos);
-    vec_copy(coords+3*(num+1), ppos);
+    vec_copy(coords+3L*num, ppos);
+    vec_copy(coords+3L*(num+1), ppos);
     idx[num] = idx[num+1] = -1;
 
     // copy the second perp to the first since the first one didn't have
@@ -891,12 +891,12 @@ int DrawMolItem::draw_nucleic_ribbons(float *framepos, int b_res, float b_rad,
     // now set the first and last perps correctly
     vec_copy(perps-3, perps);
     vec_copy(perps-6, perps);
-    vec_copy(perps+3*num, perps+3*num-3);
-    vec_copy(perps+3*num+3, perps+3*num);
+    vec_copy(perps+3L*num, perps+3L*num-3);
+    vec_copy(perps+3L*num+3, perps+3L*num);
 
     // draw the nucleic acid fragment ribbon
     if (use_new) {
-      float widths = 7 * ribbon_width * b_rad;
+      float widths = 7L * ribbon_width * b_rad;
       float heights = b_rad; 
       draw_spline_new(num, coords, perps, idx, &widths, &heights, 1, b_res, 0);
     } else {
@@ -957,7 +957,7 @@ int DrawMolItem::draw_base_sugar_rings(float *framepos, int b_res, float b_rad,
 
     // 5atoms for the ribose but only 4 triangles
     // 9atoms max for a base
-    real_coords = (float *) malloc( 14 * num * sizeof(float)*3);
+    real_coords = (float *) malloc( 14L * num * sizeof(float)*3L);
 	 
     // okay, I've got space for the coordinates now go
     for (loop=0; loop<num; loop++) {
@@ -972,7 +972,7 @@ int DrawMolItem::draw_base_sugar_rings(float *framepos, int b_res, float b_rad,
           continue;
         }
       } 
-      c1ppos = framepos + 3*c1pnum;
+      c1ppos = framepos + 3L*c1pnum;
 
       if (atomSel->on[c1pnum]) { // switch drawing by C1' atom
         o4pnum = mol->find_atom_in_residue("O4'", res);
@@ -997,10 +997,10 @@ int DrawMolItem::draw_base_sugar_rings(float *framepos, int b_res, float b_rad,
           continue;
         }
 
-        o4ppos = framepos + 3*o4pnum;
-        c2ppos = framepos + 3*c2pnum;
-        c3ppos = framepos + 3*c3pnum;
-        c4ppos = framepos + 3*c4pnum;
+        o4ppos = framepos + 3L*o4pnum;
+        c2ppos = framepos + 3L*c2pnum;
+        c3ppos = framepos + 3L*c3pnum;
+        c4ppos = framepos + 3L*c4pnum;
 	 
         midpoint(midptc1pc4p, c1ppos, c4ppos);
  	 
@@ -1038,27 +1038,27 @@ int DrawMolItem::draw_base_sugar_rings(float *framepos, int b_res, float b_rad,
           continue;
         }
 
-        n9pos = framepos + 3*n9num;    	
+        n9pos = framepos + 3L*n9num;    	
         vec_add(rescentra,rescentra,n9pos);
-        c8pos = framepos + 3*c8num; 
+        c8pos = framepos + 3L*c8num; 
         vec_add(rescentra,rescentra,c8pos);
-        n7pos = framepos + 3*n7num; 
+        n7pos = framepos + 3L*n7num; 
         vec_add(rescentra,rescentra,n7pos);
 
-        c5pos = framepos + 3*c5num;
+        c5pos = framepos + 3L*c5num;
         vec_add(rescentra,rescentra,c5pos);
         vec_add(rescentrb,rescentrb,c5pos);
-        c4pos = framepos + 3*c4num;
+        c4pos = framepos + 3L*c4num;
         vec_add(rescentra,rescentra,c5pos);
         vec_add(rescentrb,rescentrb,c5pos);
 
-        c6pos = framepos + 3*c6num; 
+        c6pos = framepos + 3L*c6num; 
         vec_add(rescentrb,rescentrb,c6pos);
-        n3pos = framepos + 3*n3num;
+        n3pos = framepos + 3L*n3num;
         vec_add(rescentrb,rescentrb,n3pos);
-        c2pos = framepos + 3*c2num;
+        c2pos = framepos + 3L*c2num;
         vec_add(rescentrb,rescentrb,c2pos);
-        n1pos = framepos + 3*n1num;
+        n1pos = framepos + 3L*n1num;
         vec_add(rescentrb,rescentrb,n1pos);
 		
         rescentrb[0] = rescentrb[0]/6.0f;
@@ -1101,17 +1101,17 @@ int DrawMolItem::draw_base_sugar_rings(float *framepos, int b_res, float b_rad,
           continue;
         }
 
-        c6pos = framepos + 3*c6num; 
+        c6pos = framepos + 3L*c6num; 
         vec_add(rescentrb,rescentrb,c6pos);
-        c5pos = framepos + 3*c5num;
+        c5pos = framepos + 3L*c5num;
         vec_add(rescentrb,rescentrb,c5pos);
-        c4pos = framepos + 3*c4num;
+        c4pos = framepos + 3L*c4num;
         vec_add(rescentrb,rescentrb,c5pos);
-        n3pos = framepos + 3*n3num;
+        n3pos = framepos + 3L*n3num;
         vec_add(rescentrb,rescentrb,n3pos);
-        c2pos = framepos + 3*c2num;
+        c2pos = framepos + 3L*c2num;
         vec_add(rescentrb,rescentrb,c2pos);
-        n1pos = framepos + 3*n1num;
+        n1pos = framepos + 3L*n1num;
         vec_add(rescentrb,rescentrb,n1pos);
 
         rescentrb[0] = rescentrb[0]/6.0f;
@@ -1177,7 +1177,7 @@ int DrawMolItem::draw_nucleotide_cylinders(float *framepos, int b_res, float b_r
   // followed by one of A, C, G, T, U, possibly followed by '3' or '5',
   // as described here: http://ffamber.cnsm.csulb.edu/
   // 
-  int ambernuctypes[4*2*3];
+  int ambernuctypes[4L*2*3];
   const char *dnarnastr = "DR";
   const char *nucstr = "ACGTU";
   const char *nuctermstr = "35";
@@ -1361,10 +1361,10 @@ int DrawMolItem::draw_nucleotide_cylinders(float *framepos, int b_res, float b_r
       }
  
       // add pick points for nucleotides 
-      int pidx = 3 * istart;
+      int pidx = 3L * istart;
       pickpointcoords.append3(&framepos[pidx]);
 
-      pidx = 3 * iend;
+      pidx = 3L * iend;
       pickpointcoords.append3(&framepos[pidx]);
 
       pickpointindices.append(istart);
@@ -1377,8 +1377,8 @@ int DrawMolItem::draw_nucleotide_cylinders(float *framepos, int b_res, float b_r
       }
 
       // get coordinates of start and end atom
-      float *cstart = framepos + 3*istart;
-      float *cend = framepos + 3*iend;
+      float *cstart = framepos + 3L*istart;
+      float *cend = framepos + 3L*iend;
 
       // draw the nucleotide cylinder
       cmdCylinder.putdata(cstart, cend, b_rad, b_res, 0, cmdList); 
@@ -1502,9 +1502,9 @@ void DrawMolItem::draw_spline_new(int num, const float *coords,
   // allocations for interpolated spline points, perps, and color indices 
   // there can be a max of splinedivs * (num + 1) sections rendered, so
   // we allocate the max we'll ever need and go from there.
-  pts  = (float *) malloc(sizeof(float) * splinedivs * 3 * (num + 1));
-  prps = (float *) malloc(sizeof(float) * splinedivs * 3 * (num + 1));
-  cols = (int *)   malloc(sizeof(int)   * splinedivs * (num + 1));
+  pts  = (float *) malloc(sizeof(float) * splinedivs * 3L * (num + 1L));
+  prps = (float *) malloc(sizeof(float) * splinedivs * 3L * (num + 1L));
+  cols = (int *)   malloc(sizeof(int)   * splinedivs * (num + 1L));
 
   // allocate memory for per-section interpolated width/height values
   if (cpscalefactors == num) {
@@ -1525,8 +1525,7 @@ void DrawMolItem::draw_spline_new(int num, const float *coords,
     // place pick points for CA atoms
     for (i=0; i<num; i++) {
       if (atomSel->on[idx[i]]) {
-        int pidx = 3 * i;
-        pickpointcoords.append3(&coords[pidx]);
+        pickpointcoords.append3(&coords[3L * i]);
         pickpointindices.append(idx[i]);
       }
     }
@@ -1840,14 +1839,14 @@ void DrawMolItem::draw_ribbon_from_points(int numpoints, const float *points,
   numverts = numpoints * numpanels;  
 
   // storage for final vertex array data
-  vertexarray = (float *) malloc(numverts * 3 * sizeof(float));
-  normalarray = (float *) malloc(numverts * 3 * sizeof(float));
-   colorarray = (float *) malloc(numverts * 3 * sizeof(float));
+  vertexarray = (float *) malloc(numverts * 3L * sizeof(float));
+  normalarray = (float *) malloc(numverts * 3L * sizeof(float));
+   colorarray = (float *) malloc(numverts * 3L * sizeof(float));
 
   // storage for panel cross-section data
-  panelverts = (float *) malloc(numpanels * 2 * sizeof(float));
-  panelnorms = (float *) malloc(numpanels * 2 * sizeof(float));
-  panelshape = (float *) malloc(numpanels * 2 * sizeof(float));
+  panelverts = (float *) malloc(numpanels * 2L * sizeof(float));
+  panelnorms = (float *) malloc(numpanels * 2L * sizeof(float));
+  panelshape = (float *) malloc(numpanels * 2L * sizeof(float));
 
   // bail out if any of the memory allocations fail
   if (!vertexarray || !normalarray || !colorarray ||
@@ -2171,9 +2170,9 @@ int DrawMolItem::draw_cartoon_ribbons(float *framepos, int b_res, float b_rad,
     float starthelixperp[3];
 
     // initialize CA and O atom pointers
-    capos = framepos + 3*canum;
+    capos = framepos + 3L*canum;
     last_capos = capos;
-    opos = framepos + 3*onum;
+    opos = framepos + 3L*onum;
     last_opos = opos;
       
     // now go through and set the coordinates and the perps
@@ -2185,13 +2184,13 @@ int DrawMolItem::draw_cartoon_ribbons(float *framepos, int b_res, float b_rad,
     if (cyclic) {
       int lastres = (*mol->pfragList[frag])[num-1];
       int lastcanum = mol->find_atom_in_residue(CAtypecode, lastres);
-      last_capos = framepos + 3*lastcanum;
+      last_capos = framepos + 3L*lastcanum;
 
       int lastonum = mol->find_atom_in_residue(Otypecode, lastres);
       if (lastonum < 0 && OT1typecode >= 0) {
         lastonum = mol->find_atom_in_residue(OT1typecode, lastres);
       }
-      last_opos = framepos + 3*lastonum;
+      last_opos = framepos + 3L*lastonum;
 
       // now I need to figure out where the ribbon goes
       vec_sub(a, capos, last_capos);     // A=(pos(CA(res)) - pos(CA(res-1)))
@@ -2221,7 +2220,7 @@ int DrawMolItem::draw_cartoon_ribbons(float *framepos, int b_res, float b_rad,
         ca3 = ca2;
         ca2 = canum;
         canum = newcanum; 
-        capos = framepos + 3*canum;
+        capos = framepos + 3L*canum;
       }
 
       onum = mol->find_atom_in_residue(Otypecode, res);
@@ -2229,7 +2228,7 @@ int DrawMolItem::draw_cartoon_ribbons(float *framepos, int b_res, float b_rad,
         onum = mol->find_atom_in_residue(OT1typecode, res);
       }
       if (onum >= 0) {
-        opos = framepos + 3*onum;
+        opos = framepos + 3L*onum;
       } else {
         rc |= RIBBON_ERR_PROTEIN_MESS;
         opos = last_opos; // try to cope if we have no oxygen index
@@ -2271,10 +2270,10 @@ int DrawMolItem::draw_cartoon_ribbons(float *framepos, int b_res, float b_rad,
 
             widths[loop] = 4 * b_rad;
             heights[loop] = 4 * b_rad;
-            vec_copy(helixpos, framepos + 3 * canum); 
-            vec_add(helixpos, helixpos, framepos + 3 * ca2); 
-            vec_add(helixpos, helixpos, framepos + 3 * ca3); 
-            vec_add(helixpos, helixpos, framepos + 3 * ca4); 
+            vec_copy(helixpos, framepos + 3L * canum); 
+            vec_add(helixpos, helixpos, framepos + 3L * ca2); 
+            vec_add(helixpos, helixpos, framepos + 3L * ca3); 
+            vec_add(helixpos, helixpos, framepos + 3L * ca4); 
             vec_scale(helixpos, 0.25, helixpos);
 
             // copy the helix coordinate into the control point array
@@ -2336,10 +2335,10 @@ int DrawMolItem::draw_cartoon_ribbons(float *framepos, int b_res, float b_rad,
             if (caplus1 < 0)
               caplus1 = canum;
 
-            vec_copy(betapos, framepos + 3 * canum); 
+            vec_copy(betapos, framepos + 3L * canum); 
             vec_scale(betapos, 2.0f, betapos);
-            vec_add(betapos, betapos, framepos + 3 * caplus1); 
-            vec_add(betapos, betapos, framepos + 3 * ca2); 
+            vec_add(betapos, betapos, framepos + 3L * caplus1); 
+            vec_add(betapos, betapos, framepos + 3L * ca2); 
             vec_scale(betapos, 0.25f, betapos);
 
             // copy the beta coordinate into the control point array
@@ -2365,7 +2364,7 @@ int DrawMolItem::draw_cartoon_ribbons(float *framepos, int b_res, float b_rad,
       }
       vec_add(e, g, b);            // average to the sum of the previous vectors
       vec_normalize(e);
-      vec_copy(&perps[3*loop], e); // compute perps from the normal
+      vec_copy(&perps[3L*loop], e); // compute perps from the normal
       vec_copy(g, e);              // make a cumulative sum; cute, IMHO
       last_capos = capos;
       last_opos = opos;
@@ -2376,7 +2375,7 @@ int DrawMolItem::draw_cartoon_ribbons(float *framepos, int b_res, float b_rad,
           vec_copy(starthelixperp, e); 
         } else  if (loop > starthelix && loop < endhelix) {
           // should interpolate rather than copy, but this is just for testing
-          vec_copy(&perps[3*loop], starthelixperp);
+          vec_copy(&perps[3L*loop], starthelixperp);
         } else if (loop == endhelix) {
           // reset helix start and end if we've reached the end
           starthelix = -1; 

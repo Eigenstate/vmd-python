@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,8 +10,8 @@
  * RCS INFORMATION:
  *
  *      $RCSfile: inthash.h,v $
- *      $Author: akohlmey $        $Locker:  $             $State: Exp $
- *      $Revision: 1.3 $      $Date: 2013/07/21 15:50:08 $
+ *      $Author: johns $        $Locker:  $             $State: Exp $
+ *      $Revision: 1.4 $      $Date: 2016/11/28 05:01:54 $
  *
  ***************************************************************************
  * DESCRIPTION:

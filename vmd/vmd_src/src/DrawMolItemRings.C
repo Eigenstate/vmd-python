@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolItemRings.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.23 $	$Date: 2010/12/16 04:08:13 $
+ *	$Revision: 1.26 $	$Date: 2016/11/28 03:04:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -107,8 +107,8 @@ void DrawMolItem::get_ring_centroid_and_normal(float *centroid, float *normal, S
     if (nexti >= N) 
       nexti = 0;
     
-    vec_copy(curvec, framepos + 3*ring[i]);
-    vec_copy(nextvec, framepos + 3*ring[nexti]);
+    vec_copy(curvec, framepos + 3L*ring[i]);
+    vec_copy(nextvec, framepos + 3L*ring[nexti]);
         
     // update centroid
     vec_add(centroid, centroid, curvec);
@@ -179,8 +179,8 @@ void DrawMolItem::paperchain_draw_ring(SmallRing &ring, float *framepos, float b
     nexti = i+1;
     if (nexti >= N) nexti = 0;
     
-    vec_copy(curvec, framepos + 3*ring[i]);
-    vec_copy(nextvec, framepos + 3*ring[nexti]);
+    vec_copy(curvec, framepos + 3L*ring[i]);
+    vec_copy(nextvec, framepos + 3L*ring[nexti]);
 
     vertices.append(curvec[0]);
     vertices.append(curvec[1]);
@@ -210,8 +210,8 @@ void DrawMolItem::paperchain_draw_ring(SmallRing &ring, float *framepos, float b
     nexti = i+1;
     if (nexti >= N) nexti = 0;
     
-    vec_copy(curvec, framepos + 3*ring[i]);
-    vec_copy(nextvec, framepos + 3*ring[nexti]);
+    vec_copy(curvec, framepos + 3L*ring[i]);
+    vec_copy(nextvec, framepos + 3L*ring[nexti]);
 
     vertices.append(curvec[0]);
     vertices.append(curvec[1]);
@@ -247,8 +247,8 @@ void DrawMolItem::paperchain_draw_ring(SmallRing &ring, float *framepos, float b
     nexti = i+1;
     if (nexti >= N) nexti = 0;
     
-    vec_copy(curvec,framepos + 3*ring[i]);
-    vec_copy(nextvec,framepos + 3*ring[nexti]);
+    vec_copy(curvec,framepos + 3L*ring[i]);
+    vec_copy(nextvec,framepos + 3L*ring[nexti]);
 
     cmdTriangle.putdata(curvec, nextvec, top, cmdList);
     cmdTriangle.putdata(curvec, nextvec, bottom, cmdList);
@@ -304,8 +304,8 @@ void DrawMolItem::twister_draw_path(LinkagePath &path, float *framepos, int star
   
   get_ring_centroid_and_normal(start_centroid, start_normal, *start_ring, framepos);
   get_ring_centroid_and_normal(end_centroid, end_normal, *end_ring, framepos);
-  vec_copy(start_pos, framepos + 3*path[0]);
-  vec_copy(end_pos, framepos + 3*path[path.num()-1]);
+  vec_copy(start_pos, framepos + 3L*path[0]);
+  vec_copy(end_pos, framepos + 3L*path[path.num()-1]);
 
   vec_sub(start_tangent, start_pos, start_centroid);
   vec_scale(vectmp1,dot_prod(start_tangent, start_normal), start_normal);
@@ -384,7 +384,7 @@ void DrawMolItem::twister_draw_path(LinkagePath &path, float *framepos, int star
   frames.append(frame);
 
   // Initial estimates for frames
-  float new_tangent[3] , rot_axis[3], axis_norm, rot_angle, t;
+  float new_tangent[3], rot_axis[3], axis_norm, rot_angle, t;
   int i;
 
   t = rib_inc;
@@ -612,11 +612,11 @@ void DrawMolItem::twister_draw_path(LinkagePath &path, float *framepos, int star
 
     // Draw hexagonal disks for joining rings
     // XXX: do this only once per ring
-    vec_copy(first_atom,framepos + 3*start_ring->first_atom());
+    vec_copy(first_atom,framepos + 3L*start_ring->first_atom());
     twister_draw_hexagon(vertices, colors, normals, facets,
                      start_centroid, start_normal, first_atom, rib_height, rib_width, top_color, bottom_color);
 
-    vec_copy(first_atom,framepos + 3*end_ring->first_atom());
+    vec_copy(first_atom,framepos + 3L*end_ring->first_atom());
     twister_draw_hexagon(vertices, colors, normals, facets,
                      end_centroid, end_normal, first_atom, rib_height, rib_width, top_color, bottom_color);
   } else {

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: OpenGLExtensions.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.51 $	$Date: 2015/05/14 04:59:39 $
+ *	$Revision: 1.54 $	$Date: 2016/11/28 03:05:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -34,10 +34,16 @@
 
 #if defined(__APPLE__) && !defined (VMDMESA) 
 #include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
 #else
 #include <GL/gl.h>
+#endif
+
+#if defined(VMDUSELIBGLU)
+#if defined(__APPLE__) && !defined (VMDMESA) 
+#include <OpenGL/glu.h>
+#else
 #include <GL/glu.h>
+#endif
 #endif
 
 // NOTE: you may have to get copies of the latest OpenGL extension headers
@@ -48,6 +54,11 @@
 #endif
 #if defined(__APPLE__) && !defined(VMDMESA) 
 #include <OpenGL/glext.h>
+#endif
+
+// Add support for EGL contexts, eglGetProcAddress() 
+#if defined(VMDEGLPBUFFER)
+#include <EGL/egl.h>
 #endif
 
 // required for Win32 calling conventions to work correctly

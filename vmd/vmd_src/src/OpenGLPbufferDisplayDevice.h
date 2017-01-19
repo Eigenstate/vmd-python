@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: OpenGLPbufferDisplayDevice.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.5 $	$Date: 2014/11/08 06:52:30 $
+ *	$Revision: 1.9 $	$Date: 2016/11/28 03:05:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -27,8 +27,35 @@
 
 #include "OpenGLRenderer.h"
 
+#if defined(VMDEGLPBUFFER) && defined(VMDGLXPBUFFER)
+#error Cannot enable both EGL and GLX Pbuffer code at the same time (yet)
+#endif
+
 class VMDApp;
 
+//
+// EGL Pbuffer support
+//
+#if defined(VMDEGLPBUFFER)
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+
+/// GLX-specific low-level handles and window IDs
+typedef struct {
+  EGLDisplay dpy;            ///< EGL display for OpenGL window 
+  EGLConfig  conf;           ///< EGL config  for OpenGL window 
+  EGLSurface surf;           ///< EGL surface for OpenGL window 
+  EGLContext ctx;            ///< EGL context for OpenGL window 
+  EGLint numdevices;         ///< EGL display/device count
+  EGLint devindex;           ///< EGL active display index
+} eglpbufferdata;
+#endif
+
+
+//
+// GLX Pbuffer support
+//
+#if defined(VMDGLXPBUFFER)
 #if !defined(_MSC_VER) && !(defined(VMDSDL) && defined(__APPLE__))
 #include <GL/glx.h>
 
@@ -42,12 +69,13 @@ class VMDApp;
 
 /// GLX-specific low-level handles and window IDs
 typedef struct {
-  Display *dpy;              ///< X server display connection
-  int dpyScreen;             ///< X server screen number
-  Window rootWindowID;       ///< ID of the root window
-  Window windowID;           ///< ID of the graphics window
+  Display *dpy;              ///< GLX X11 server display connection
+  int dpyScreen;             ///< GLX X11 server screen number
+  Window rootWindowID;       ///< ID of the X11 root window
+  Window windowID;           ///< ID of the X11 graphics window
   GLXContext cx;             ///< GLX graphics context
 } glxpbufferdata;
+#endif
 
 
 /// Subclass of OpenGLRenderer, this object has routines used by all the
@@ -59,14 +87,25 @@ private:
   unsigned int PbufferMaxYsz; ///< maximum Pbuffer Y image dimension
 
 public:
+#if defined(VMDEGLPBUFFER)
+  eglpbufferdata eglsrv;
+#endif
+#if defined(VMDGLXPBUFFER)
   glxpbufferdata glxsrv;
+#endif
 
 protected:
   // flag for whether a window was successfully created by open_window
   int have_window;
 
   // create a new window and set it's characteristics
-  Window open_window(char *, int *, int *, int, char **);
+#if defined(VMDGLXPBUFFER)
+  int glx_open_window(char *, int *, int *, int, char **);
+#endif
+#if defined(VMDEGLPBUFFER)
+  int egl_open_window(char *, int *, int *, int, char **);
+#endif
+
   virtual void do_resize_window(int, int);
   virtual void do_reposition_window(int, int) {};
 

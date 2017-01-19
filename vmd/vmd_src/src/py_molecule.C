@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_molecule.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.68 $       $Date: 2010/12/16 04:08:57 $
+ *      $Revision: 1.69 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -30,14 +30,18 @@
 #include "MoleculeList.h"
 
 
-static char mol_num_doc[] = 
+static char mol_num_doc[] =
   "num() -> int\n"
   "RAeturns the number of loaded molecules.";
 static PyObject *mol_num(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, (char *)":molecule.num"))
     return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(get_vmdapp()->num_molecules());
+#else
   return PyInt_FromLong(get_vmdapp()->num_molecules());
+#endif
 }
 
 static char mol_listall_doc[] =
@@ -51,12 +55,16 @@ static PyObject *mol_listall(PyObject *self, PyObject *args) {
   int num = app->num_molecules();
   PyObject *newlist = PyList_New(num);
   for (int i=0; i<num; i++)
+#if PY_MAJOR_VERSION >= 3
+    PyList_SET_ITEM(newlist, i, PyLong_FromLong(app->molecule_id(i)));
+#else
     PyList_SET_ITEM(newlist, i, PyInt_FromLong(app->molecule_id(i)));
+#endif
 
   return newlist;
 }
 
-static char mol_exists_doc[] = 
+static char mol_exists_doc[] =
   "exists(molid) -> boolean\n"
   "Return True if molid is valid.";
 static PyObject *mol_exists(PyObject *self, PyObject *args) {
@@ -64,10 +72,14 @@ static PyObject *mol_exists(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, (char *)"i:molecule.exists", &molid))
     return NULL;
   VMDApp *app = get_vmdapp();
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->molecule_valid_id(molid));
+#else
   return PyInt_FromLong(app->molecule_valid_id(molid));
+#endif
 }
 
-static char mol_name_doc[] = 
+static char mol_name_doc[] =
   "name(molid) -> string\n"
   "Returns name of given molecule";
 static PyObject *mol_name(PyObject *self, PyObject *args) {
@@ -82,10 +94,14 @@ static PyObject *mol_name(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyUnicode_FromString((char *)name);
+#else
   return PyString_FromString((char *)name);
+#endif
 }
 
-static char mol_numatoms_doc[] = 
+static char mol_numatoms_doc[] =
   "numatoms (molid) -> int\n"
   "Returns number of atoms in given molecule";
 // numatoms(molid)
@@ -100,10 +116,14 @@ static PyObject *mol_numatoms(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->molecule_numatoms(molid));
+#else
   return PyInt_FromLong(app->molecule_numatoms(molid));
+#endif
 }
 
-static char mol_new_doc[] = 
+static char mol_new_doc[] =
   "new(name[,natoms]) -> int\n"
   "Creates a new molecule with given name and returns molid. An\n"
   "additional integer argument adds that number of 'empty' atoms to the molecule." ;
@@ -118,25 +138,29 @@ static PyObject *mol_new(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Unable to create molecule.");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(molid);
+#else
   return PyInt_FromLong(molid);
+#endif
 }
 
-static char mol_load_doc[] = 
+static char mol_load_doc[] =
   "load(structure, sfname, coor, cfname) -> molid\n"
   "Load new molecule with structure file type 'structure', \n"
   "  structure file name 'sfname', coordinate file type 'coor', and\n"
   "  coordinate file name 'cfname'.  'coor' and 'cfname' are optional.";
 
 static PyObject *mol_load(PyObject *self, PyObject *args, PyObject *keywds) {
- 
+
   char *structure = NULL, *coor = NULL, *sfname = NULL, *cfname = NULL;
- 
+
   static char *kwlist[] = {
-    (char *)"structure", (char *)"sfname", (char *)"coor", (char *)"cfname", 
+    (char *)"structure", (char *)"sfname", (char *)"coor", (char *)"cfname",
     NULL
   };
 
-  if (!PyArg_ParseTupleAndKeywords(args, keywds, (char *)"ss|ss:molecule.load", kwlist, 
+  if (!PyArg_ParseTupleAndKeywords(args, keywds, (char *)"ss|ss:molecule.load", kwlist,
         &structure, &sfname, &coor, &cfname))
     return NULL;
 
@@ -166,7 +190,11 @@ static PyObject *mol_load(PyObject *self, PyObject *args, PyObject *keywds) {
 
   // Special-case graphics molecules to load as "blank" molecules
   if (!strcmp(structure, "graphics")) {
+#if PY_MAJOR_VERSION >= 3
+    return PyLong_FromLong(app->molecule_new(sfname,0));
+#else
     return PyInt_FromLong(app->molecule_new(sfname,0));
+#endif
   }
   FileSpec spec;
   spec.waitfor=-1; // load all frames at once by default
@@ -177,8 +205,12 @@ static PyObject *mol_load(PyObject *self, PyObject *args, PyObject *keywds) {
   }
   if (cfname) {
     app->molecule_load(molid, cfname, coor, &spec);
-  } 
-  return PyInt_FromLong(molid); 
+  }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(molid);
+#else
+  return PyInt_FromLong(molid);
+#endif
 }
 
 static char mol_cancel_doc[] =
@@ -194,7 +226,7 @@ static PyObject *mol_cancel(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   app->molecule_cancel_io(molid);
 
   Py_INCREF(Py_None);
@@ -213,9 +245,9 @@ static PyObject *mol_delete(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   app->molecule_delete(molid);
-  
+
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -227,7 +259,11 @@ static PyObject *get_top(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, (char *)":molecule.get_top"))
     return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(get_vmdapp()->molecule_top());
+#else
   return PyInt_FromLong(get_vmdapp()->molecule_top());
+#endif
 }
 
 static char set_top_doc[] =
@@ -242,9 +278,9 @@ static PyObject *set_top(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   app->molecule_make_top(molid);
-  
+
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -260,20 +296,20 @@ static PyObject *readorwrite(PyObject *self, PyObject *args, PyObject *keywds,
   int *on = NULL;
 
   static char *kwlist[] = {
-    (char *)"molid", (char *)"filetype", (char *)"filename", (char *)"beg", 
-    (char *)"end", (char *)"skip", (char *)"waitfor", (char *)"volsets", 
+    (char *)"molid", (char *)"filetype", (char *)"filename", (char *)"beg",
+    (char *)"end", (char *)"skip", (char *)"waitfor", (char *)"volsets",
     (char *)"selection", NULL
   };
 
   if (!PyArg_ParseTupleAndKeywords(args, keywds, (char *)"iss|iiiiO!O:read/write", kwlist,
-    &molid, &type, &filename, &beg, &end, &stride, &waitfor, &PyList_Type, 
+    &molid, &type, &filename, &beg, &end, &stride, &waitfor, &PyList_Type,
     &volsets, &selobj))
     return NULL;
 
   VMDApp *app = get_vmdapp();
- 
+
   int numframes = 0;
-  if (do_read) { 
+  if (do_read) {
     FileSpec spec;
     spec.first = beg;
     spec.last = end;
@@ -282,18 +318,26 @@ static PyObject *readorwrite(PyObject *self, PyObject *args, PyObject *keywds,
     if (volsets) {
       spec.nvolsets = PyList_Size(volsets);
       spec.setids = new int[spec.nvolsets];
-      for (int i=0; i<spec.nvolsets; i++) 
+      for (int i=0; i<spec.nvolsets; i++)
+#if PY_MAJOR_VERSION >= 3
+        spec.setids[i] = PyLong_AsLong(PyList_GET_ITEM(volsets, i));
+#else
         spec.setids[i] = PyInt_AsLong(PyList_GET_ITEM(volsets, i));
+#endif
       if (PyErr_Occurred()) return NULL;
     } else {
       // Have a default of {0} for setids so that it isn't always necessary
-      // to specify the set id's.  This should be ignored if the file type 
+      // to specify the set id's.  This should be ignored if the file type
       // can't read volumetric datasets
       spec.nvolsets = 1;
       spec.setids = new int[1];
       spec.setids[0] = 0;
     }
+#if PY_MAJOR_VERSION >= 3
+    return PyLong_FromLong(app->molecule_load(molid, filename, type, &spec));
+#else
     return PyInt_FromLong(app->molecule_load(molid, filename, type, &spec));
+#endif
   }
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
@@ -303,7 +347,7 @@ static PyObject *readorwrite(PyObject *self, PyObject *args, PyObject *keywds,
     AtomSel *sel = atomsel_AsAtomSel( selobj );
     if (!sel) return NULL;
     if (sel->molid() != molid) {
-      PyErr_SetString( PyExc_ValueError, 
+      PyErr_SetString( PyExc_ValueError,
           "atomsel must reference same molecule as coordinates" );
       return NULL;
     }
@@ -320,7 +364,11 @@ static PyObject *readorwrite(PyObject *self, PyObject *args, PyObject *keywds,
     PyErr_SetString(PyExc_ValueError, (char *)"Unable to save file");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(numframes);
+#else
   return PyInt_FromLong(numframes);
+#endif
 }
 
 static char mol_read_doc[] =
@@ -366,7 +414,11 @@ static PyObject *numframes(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->molecule_numframes(molid));
+#else
   return PyInt_FromLong(app->molecule_numframes(molid));
+#endif
 }
 
 static char get_frame_doc[] =
@@ -382,7 +434,11 @@ static PyObject *get_frame(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(app->molecule_frame(molid));
+#else
   return PyInt_FromLong(app->molecule_frame(molid));
+#endif
 }
 
 static char set_frame_doc[] =
@@ -433,7 +489,7 @@ static PyObject *delframe(PyObject *self, PyObject *args, PyObject *keywds) {
     PyErr_SetString(PyExc_ValueError, (char *)"Unable to delete frames");
     return NULL;
   }
- 
+
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -476,13 +532,13 @@ static PyObject *mol_ssrecalc(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   int rc;
   Py_BEGIN_ALLOW_THREADS
   rc = app->molecule_ssrecalc(molid);
   Py_END_ALLOW_THREADS
   if (!rc) {
-    PyErr_SetString(PyExc_RuntimeError, 
+    PyErr_SetString(PyExc_RuntimeError,
         "Secondary structure could not be calculated");
     return NULL;
   }
@@ -502,7 +558,7 @@ static PyObject *mol_rename(PyObject *self, PyObject *args) {
   if (!app->molecule_valid_id(molid)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
-  } 
+  }
   if (!app->molecule_rename(molid, newname)) {
     PyErr_SetString(PyExc_ValueError, (char *)"Unable to rename molecule.");
     return NULL;
@@ -510,8 +566,8 @@ static PyObject *mol_rename(PyObject *self, PyObject *args) {
   Py_INCREF(Py_None);
   return Py_None;
 }
-   
-static char add_volumetric_doc[] = 
+
+static char add_volumetric_doc[] =
   "add_volumetric(molid, name, origin, xaxis, yaxis, zaxis,\n"
   "               xsize, ysize, zsize, data)\n"
   "  Add a new volumetric data set to a molecule.  origin, xaxis, yaxis,\n"
@@ -525,19 +581,19 @@ static PyObject *mol_add_volumetric(PyObject *self, PyObject *args, PyObject *ke
   int xsize = -1, ysize = -1, zsize = -1;
   int size;
   char *name;
-  PyObject *data = NULL, *origin = NULL, *xaxis = NULL, *yaxis = NULL, 
+  PyObject *data = NULL, *origin = NULL, *xaxis = NULL, *yaxis = NULL,
            *zaxis = NULL;
   float forigin[3], fxaxis[3], fyaxis[3], fzaxis[3];
 
   static char *kwlist[] = {
     (char *)"molid", (char *)"name", (char *)"origin",  (char *)"xaxis",
-    (char *)"yaxis",  (char *)"zaxis",  (char *)"xsize", (char *)"ysize", 
+    (char *)"yaxis",  (char *)"zaxis",  (char *)"xsize", (char *)"ysize",
     (char *)"zsize", (char *)"data", NULL
   };
 
-  if (!PyArg_ParseTupleAndKeywords(args, keywds, 
+  if (!PyArg_ParseTupleAndKeywords(args, keywds,
        (char *)"isOOOOiiiO:molecule.add_volumetric", kwlist,
-       &molid, &name, &origin, &xaxis, &yaxis, &zaxis, &xsize, 
+       &molid, &name, &origin, &xaxis, &yaxis, &zaxis, &xsize,
        &ysize, &zsize, &data))
     return NULL;
 
@@ -601,7 +657,7 @@ static PyObject *mol_add_volumetric(PyObject *self, PyObject *args, PyObject *ke
   Py_INCREF(Py_None);
   return Py_None;
 }
-   
+
 static char filenames_doc[] = "get_filenames(molid): return list of files loaded in the molecule";
 static char filetypes_doc[] = "get_filetypes(molid): returns list of corresponding file types.";
 static char databases_doc[] = "get_databases(molid): returns list of databases of origin ";
@@ -621,7 +677,11 @@ static PyObject *get_filenames(PyObject *self, PyObject *args) {
   int num = mol->num_files();
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
+#if PY_MAJOR_VERSION >= 3
+    PyList_SET_ITEM(result, i, PyUnicode_FromString(mol->get_file(i)));
+#else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_file(i)));
+#endif
   }
   return result;
 }
@@ -639,7 +699,11 @@ static PyObject *get_filetypes(PyObject *self, PyObject *args) {
   int num = mol->num_files();
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
+#if PY_MAJOR_VERSION >= 3
+    PyList_SET_ITEM(result, i, PyUnicode_FromString(mol->get_type(i)));
+#else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_type(i)));
+#endif
   }
   return result;
 }
@@ -657,7 +721,11 @@ static PyObject *get_databases(PyObject *self, PyObject *args) {
   int num = mol->num_files();
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
+#if PY_MAJOR_VERSION >= 3
+    PyList_SET_ITEM(result, i, PyUnicode_FromString(mol->get_database(i)));
+#else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_database(i)));
+#endif
   }
   return result;
 }
@@ -675,7 +743,11 @@ static PyObject *get_accessions(PyObject *self, PyObject *args) {
   int num = mol->num_files();
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
+#if PY_MAJOR_VERSION >= 3
+    PyList_SET_ITEM(result, i, PyUnicode_FromString(mol->get_accession(i)));
+#else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_accession(i)));
+#endif
   }
   return result;
 }
@@ -693,13 +765,17 @@ static PyObject *get_remarks(PyObject *self, PyObject *args) {
   int num = mol->num_files();
   PyObject *result = PyList_New(num);
   for (int i=0; i<mol->num_files(); i++) {
+#if PY_MAJOR_VERSION >= 3
+    PyList_SET_ITEM(result, i, PyUnicode_FromString(mol->get_remarks(i)));
+#else
     PyList_SET_ITEM(result, i, PyString_FromString(mol->get_remarks(i)));
+#endif
   }
   return result;
 }
 
 
-static char get_periodic_doc[] = 
+static char get_periodic_doc[] =
   "get_periodic(molid=-1, frame=-1)\n"
   "return dict with keys 'a', 'b', 'c', 'alpha', 'beta', and 'gamma'\n"
   "representing the periodic cell layout for a particular frame.\n"
@@ -739,8 +815,8 @@ static PyObject *set_periodic(PyObject *self, PyObject *args, PyObject *kwds) {
     (char *)"b", (char *)"c", (char *)"alpha", (char *)"beta", (char *)"gamma",
     NULL
   };
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, 
-        (char *)"|iiffffff:molecule.set_periodic", kwlist, 
+  if (!PyArg_ParseTupleAndKeywords(args, kwds,
+        (char *)"|iiffffff:molecule.set_periodic", kwlist,
         &molid, &frame, &a, &b, &c, &alpha, &beta, &gamma))
     return NULL;
   Timestep *ts = parse_timestep(get_vmdapp(), molid, frame);
@@ -765,7 +841,7 @@ static char set_visible_doc[] =
 
 static PyObject *get_visible(PyObject *self, PyObject *args, PyObject *kwds) {
   int molid = -1;
-  static char *kwlist[] = { "molid", NULL };
+  static char *kwlist[] = { (char*)"molid", NULL };
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i", kwlist, &molid))
     return NULL;
   VMDApp *app = get_vmdapp();
@@ -781,7 +857,7 @@ static PyObject *set_visible(PyObject *self, PyObject *args, PyObject *kwds) {
   int molid = -1;
   PyObject *obj=NULL;
 
-  static char *kwlist[] = { "molid", "state", NULL };
+  static char *kwlist[] = { (char*)"molid", (char*)"state", NULL };
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "iO", kwlist, &molid, &obj))
     return NULL;
   VMDApp *app = get_vmdapp();
@@ -799,7 +875,7 @@ static PyObject *set_visible(PyObject *self, PyObject *args, PyObject *kwds) {
 static PyObject *get_physical_time(PyObject *self, PyObject *args, PyObject *kwds) {
   int molid = -1;
   int frame = -1;
-  static char *kwlist[] = { "molid", "frame", NULL };
+  static char *kwlist[] = { (char*)"molid", (char*)"frame", NULL };
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii", kwlist, &molid, &frame))
     return NULL;
   Timestep *ts = parse_timestep(get_vmdapp(), molid, frame);
@@ -811,7 +887,7 @@ static PyObject *set_physical_time(PyObject *self, PyObject *args, PyObject *kwd
   int molid = -1;
   int frame = -1;
   double value;
-  static char *kwlist[] = { "value", "molid", "frame", NULL };
+  static char *kwlist[] = { (char*)"value", (char*)"molid", (char*)"frame", NULL };
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "d|ii", kwlist, &value, &molid, &frame))
     return NULL;
   Timestep *ts = parse_timestep(get_vmdapp(), molid, frame);
@@ -843,7 +919,7 @@ static PyMethodDef MolMethods[] = {
   {(char *)"rename", (vmdPyMethod)mol_rename, METH_VARARGS, mol_rename_doc},
   {(char *)"get_top", (vmdPyMethod)get_top, METH_VARARGS, get_top_doc},
   {(char *)"set_top", (vmdPyMethod)set_top, METH_VARARGS, set_top_doc},
-  {(char *)"add_volumetric", (PyCFunction)mol_add_volumetric, 
+  {(char *)"add_volumetric", (PyCFunction)mol_add_volumetric,
                               METH_VARARGS | METH_KEYWORDS, add_volumetric_doc},
   {(char *)"get_filenames", (vmdPyMethod)get_filenames, METH_VARARGS, filenames_doc},
   {(char *)"get_filetypes", (vmdPyMethod)get_filetypes, METH_VARARGS, filetypes_doc},
@@ -856,10 +932,26 @@ static PyMethodDef MolMethods[] = {
   {(char *)"set_visible", (PyCFunction)set_visible, METH_VARARGS | METH_KEYWORDS, set_visible_doc},
   {(char *)"get_physical_time", (PyCFunction)get_physical_time, METH_VARARGS | METH_KEYWORDS },
   {(char *)"set_physical_time", (PyCFunction)set_physical_time, METH_VARARGS | METH_KEYWORDS },
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
-void initmolecule() {
-  (void) Py_InitModule((char *)"molecule", MolMethods);
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moleculedef = {
+    PyModuleDef_HEAD_INIT,
+    "molecule",
+    NULL,
+    -1,
+    MolMethods,
+    NULL, NULL, NULL, NULL
+};
+#endif
+
+PyObject* initmolecule() {
+#if PY_MAJOR_VERSION >= 3
+    PyObject *module = PyModule_Create(&moleculedef);
+#else
+    PyObject *module = Py_InitModule((char *)"molecule", MolMethods);
+#endif
+    return module;
 }
 

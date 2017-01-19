@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,8 +10,8 @@
  * RCS INFORMATION:
  *
  *      $RCSfile: cubeplugin.C,v $
- *      $Author: akohlmey $       $Locker:  $             $State: Exp $
- *      $Revision: 1.30 $       $Date: 2013/09/24 18:32:02 $
+ *      $Author: johns $       $Locker:  $             $State: Exp $
+ *      $Revision: 1.32 $       $Date: 2016/11/28 05:01:53 $
  *
  ***************************************************************************/
 
@@ -276,14 +276,14 @@ static void *open_cube_read(const char *filepath, const char *filetype,
    *   is updated to explicitly allow point/face-centered data sets.
    */
   voltmpl.origin[0] -= 0.5 * ( voltmpl.xaxis[0] / (double) xsize
-			+ voltmpl.yaxis[0] / (double) ysize
-			+ voltmpl.zaxis[0] / (double) zsize);
+                    + voltmpl.yaxis[0] / (double) ysize
+                    + voltmpl.zaxis[0] / (double) zsize);
   voltmpl.origin[1] -= 0.5 * ( voltmpl.xaxis[1] / (double) xsize
-			+ voltmpl.yaxis[1] / (double) ysize
-			+ voltmpl.zaxis[1] / (double) zsize);
+                    + voltmpl.yaxis[1] / (double) ysize
+                    + voltmpl.zaxis[1] / (double) zsize);
   voltmpl.origin[2] -= 0.5 * ( voltmpl.xaxis[2] / (double) xsize
-			+ voltmpl.yaxis[2] / (double) ysize
-			+ voltmpl.zaxis[2] / (double) zsize);
+                    + voltmpl.yaxis[2] / (double) ysize
+                    + voltmpl.zaxis[2] / (double) zsize);
 
 #if defined(TEST_PLUGIN)
   printf("cell before rotation:\n");
@@ -299,8 +299,8 @@ static void *open_cube_read(const char *filepath, const char *filetype,
 
   // store the unit cell information for later perusal.
   if (cube_readbox(&(cube->box), voltmpl.xaxis, voltmpl.yaxis, voltmpl.zaxis)) {
-	  vmdcon_printf(VMDCON_WARN, "cubeplugin) Calculation of unit cell "
-                                     "size failed. Continuing anyways...\n");
+    vmdcon_printf(VMDCON_WARN, "cubeplugin) Calculation of unit cell "
+                  "size failed. Continuing anyways...\n");
   }
 
   cube->crdpos = ftell(cube->fd); // and record beginning of coordinates

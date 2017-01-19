@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Scene.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.88 $	$Date: 2013/05/08 13:37:17 $
+ *	$Revision: 1.90 $	$Date: 2016/11/28 03:05:04 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -142,7 +142,7 @@ Scene::Scene() : root(this) {
   int i;
   for (i=BEGREGCLRS; i<REGCLRS; i++) {
     colorNames.add_name(defColorNames[i], i);
-    set_color_value(i, defaultColor + 3*i);
+    set_color_value(i, defaultColor + 3L*i);
   }
   //initialize color scale info
   for (i=0; i<num_scalemethods; i++) 
@@ -647,7 +647,7 @@ static void scale_color(const float *lowRGB, const float *midRGB,
 void Scene::create_colorscale() {
   const ColorScale &scale = colorScales[scaleMethod];
   for (int i=0; i<MAPCLRS; i++) {
-    float *rcol = colorData + 3*(BEGMAP + i);
+    float *rcol = colorData + 3L*(BEGMAP + i);
     float relpos = float(i) / float(MAPCLRS -1);
     scale_color(scale.min, scale.mid, scale.max, scaleMid, relpos, scaleMin, 
         rcol);

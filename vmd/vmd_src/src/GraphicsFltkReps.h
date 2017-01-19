@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: GraphicsFltkReps.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.132 $       $Date: 2015/05/31 22:25:05 $
+ *      $Revision: 1.136 $       $Date: 2016/11/28 03:05:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -913,6 +913,9 @@ private:
   RepChoice *method;
   Fl_Counter *gspacing;
   Fl_Counter *probe;
+  Fl_Counter *skin;
+  Fl_Counter *blob;
+
 public:
   GraphicsFltkRepNanoShaper(Fl_Callback *cb, void *v) {
     surftype = new RepChoice(x()+170,y()+30, "Surface Type");
@@ -928,31 +931,74 @@ public:
     gspacing->minimum(0.1);
     gspacing->maximum(30.0);
     gspacing->callback(cb, v);
-    probe = new RadiusCounter(x()+170,y()+120, "Probe Radius");
+
+    probe = new RadiusCounter(x()+170,y()+120, "SES Probe Radius");
     probe->minimum(0.1);
     probe->maximum(8.0);
     probe->callback(cb, v);
+
+    skin = new RadiusCounter(x()+170,y()+150, "Skin Parameter");
+    skin->minimum(0.01);
+    skin->maximum(0.99);
+    skin->callback(cb, v);
+
+    blob = new RadiusCounter(x()+170,y()+180, "Blob Parameter");
+    blob->minimum(-5.0);
+    blob->maximum(-0.5);
+    blob->callback(cb, v);
+
     Fl_Group::end();
   }
 protected:
   void do_reset() {
-    surftype->value(0);
+    surftype->value(0); // SES
     method->value(0);
     gspacing->value(0.5);
     probe->value(1.4);
+    probe->activate();
+    skin->value(0.45);
+    skin->deactivate();
+    blob->value(-2.5);
+    blob->deactivate();
   }
 public:
   const char *repcmd() {
-    sprintf(cmdbuf, "NanoShaper %f %f %f %f", 
+    sprintf(cmdbuf, "NanoShaper %f %f %f %f %f %f", 
       (float)surftype->value(), (float)method->value(), 
-      probe->value(), gspacing->value());
+      gspacing->value(), probe->value(), skin->value(), blob->value());
     return cmdbuf;
   }
+
   void set_values(AtomRep *rep) {
-    surftype->setvalue((int)rep->get_data(AtomRep::LINETHICKNESS));
+    int sftype = rep->get_data(AtomRep::LINETHICKNESS);
+    surftype->setvalue(sftype);
+       
     method->setvalue((int)rep->get_data(AtomRep::BONDRES));
-    gspacing->value(rep->get_data(AtomRep::SPHERERES));
+    gspacing->value(rep->get_data(AtomRep::GRIDSPACING));
     probe->value(rep->get_data(AtomRep::SPHERERAD));
+    skin->value(rep->get_data(AtomRep::SPHERERES));
+    blob->value(rep->get_data(AtomRep::BONDRAD));
+
+    switch (sftype) {
+     default: 
+      case 0: // SES
+        probe->activate();
+        skin->deactivate();       
+        blob->deactivate();
+        break;
+
+      case 1: // Skin
+        probe->deactivate();
+        skin->activate();       
+        blob->deactivate();
+        break;
+
+      case 2: // Blob
+        probe->deactivate();
+        skin->deactivate();       
+        blob->activate();
+        break;
+    }
   }
 };
   
@@ -2033,6 +2079,7 @@ public:
     drawstyle = new RepChoiceSmall(x()+40,y()+60,"Style");
     drawstyle->add("Line");
     drawstyle->add("Tube");
+    drawstyle->add("Spheres");
     drawstyle->callback(cb, v);
 
     seedmethod = new RepChoiceSmall(x()+40,y()+90,"Seed");

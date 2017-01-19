@@ -1,0 +1,167 @@
+<!--#set var="TITLE" value="QwikMD - Easy and Fast Molecular Dynamics"-->
+<!--#include virtual="/Research/vmd/include/header-vmd.shtml"-->
+
+
+<div style=" max-width: 1000px">
+<link rel="stylesheet" type="text/css" href="qwikmd.css" />
+
+<!--#include virtual="qwikmdnavbar.html"-->
+
+</div>
+
+<h2>Run Tab</h2>
+
+<h3>Selection Window:</h3>
+<div style="max-width: 1000px;min-height: 310px">
+
+	<div class='imgright'>
+  <img alt="qwikmdGUI"
+	   src=images/qwikmd_run_tab.png width=216px height=310px border=0/>
+	</div>	
+
+
+<p>
+
+<p align="justify">
+The selection section of QwikMD allows the user to select each parts of the PDB 
+will be prepared for the MD simulation. For example, structures obtained with NMR spectroscopy usually have more than one state of the protein. It is also common that PDB structures solved with X-ray Crystallography have oligomers of the protein, separated in different chains. These oligomers are frequently an effect of the crystallization process and the protein in solution is presented as a monomer. QwikMD allows the user to select the desired NMR state or protein chains for the MD step.
+</p>
+<p>
+	
+<b>NMR Structures</b>
+<p>
+	<p align="justify">
+Nuclear magnetic resonance spectroscopy of proteins, usually abbreviated protein NMR, is a field of structural biology in which NMR spectroscopy is used to obtain information of the structure and dynamics of proteins, nucleic acids, and their complexes. NMR structure in the PDB usually have multiple steps. In order to start a MD simulation one have to select one of the steps as the initial coordinates. It is usual, when running more than one simulation of the same system, to select different initial steps to improve sampling of conformational structure.
+	</p>
+<p>
+</div>
+
+<div style=" max-width: 1000px">
+<p>
+<b>Select chain/type</b>
+<p>
+	<p align="justify">
+With this button the user can select or deselect chains and types of molecules inside these chains. The selected groups will be the one that will be present in the MD simulation prepared with QwikMD.
+	</p>
+<p>
+
+<p>
+<b>Select Resid</b>
+<p>
+	<p align="justify">
+This button will open a new window where the user can do mutations, rename molecules that have wrong names  change protonation states, delete parts of the molecules and also inspect the structure with a interactive residue/molecule list. Select Resid is especially important in cases where one of the molecules/ions have wrong names, or names that are different from the name used in the CHARMM force field. For instance, it is common in the PDB that Ca2+ ions have the name CA. CHARMM recognize the name CA as alpha-Carbon of protein structures, and CA resname - residue name - is not recognized by CHARMM. Select Resid allow for the user to rename CA ions to proper Calcium parameters that will be compatible with the CHARMM force field.
+	</p>
+<p>
+
+<p>
+<b>QwikMD Main Window</b>
+<p>
+	<p align="justify">
+In the main window of QwikMD, every chain is separated by type of molecule forming a group - chain/type. VMD has several types of molecules, including: protein, nucleic, lipids, water, among others. The user can select different Representations for each of the groups and also different colors.
+	</p>
+<p>
+
+
+<p>
+<h3>QwikMD Output Files</h3>
+<p align="justify">
+To run molecular dynamics simulations with NAMD at least four files are required: a Protein Data Bank (pdb) file a Protein Structure File (psf), a force field parameter file and a configuration file. During the preparation steps, where the system might be solvated, ionized, among other procedures, several files are created. QwikMD separates the files created in the preparation step in a SETUP folder, while files needed to run the MD simulations are in a RUN folder. These two folders are created inside the folder defined by the user in working directory window. With the same name as the folder created by the user, a file with .QwikMD extension allows the user to load simulations performed with QwikMD and also previously created preparation steps, like amino acid residues mutations or salt concentration.
+	</p>
+
+<p>
+To run a simulation prepared with QwikMD in a computer cluster or supercomputer, one needs to copy only the RUN folder.
+
+<p>
+
+<p>
+	<p align="justify">
+To learn more about MD simulations check the list of 
+<a href="http://www.ks.uiuc.edu/Publications/Papers/Review/">reviews</a>
+ published by our group.
+ </p>
+<p>
+
+   
+<p>
+<h3>Simulation Controls</h3>
+	<p align="justify">
+QwikMD helps the user to prepare NAMD input files to run in a range of computers, from the largest supercomputers with high-end parallel platforms to the smallest laptop computers. QwikMD also allow, through the Interactive Molecular Dynamics interface of NAMD, to run live simulations where the user can look and analyze the trajectories while they are being created.
+	</p>
+
+<p>
+
+<p>
+<b>Preparing simulations with QwikMD</b>
+<p>
+	<p align="justify">
+When the Prepare button is pressed, scripts to perform all the steps required by the settings selected by user. Two folders will be created in the Working directory: files created in the preparation step in a SETUP folder, while files needed to run the MD simulations are in a RUN folder.
+	</p>
+<p>
+
+
+<p>
+<b>Running NAMD Live</b>
+<p>
+	<p align="justify">
+If you want to run Live Simulation, make sure you have the corresponding box checked before you click Prepare and then just press Start for a live simulation.
+	</p>
+<p>
+
+<p>
+<b>WARNING:</b>
+<p>
+	<p align="justify">
+Always click to FINISH your simulation before leaving VMD or closing QwikMD window. NAMD activities started from VMD will continue to run in background for all the steps requested unless you make sure the simulation was aborted before leaving QwikMD.
+	</p>
+<p>    
+
+<p>
+<b>Running NAMD in a Supercomputer</b>
+<p>
+	<p align="justify">
+To run NAMD in a supercomputer copy the RUN folder to your folder in the supercomputer file system and run NAMD following the procedures for the specific computer.
+	</p>
+<p>
+
+
+<h2>Analysis Tab</h2>
+
+
+<p align="justify">
+VMD is a powerful tool for analysis of structures and trajectories and should be used as a tool to think. Numerous tools for analysis are available under the VMD Main menu item Extensions - Analysis. In addition to these built-in tools, VMD users often use custom-written scripts to analyze desired properties of the simulated systems. VMD Tcl scripting capabilities are very extensive, and provide boundless opportunities for analysis. QwikMD provides the user with some of the most employed analysis tools, allowing also the analysis while performing live NAMD sections.
+</p>
+
+<table border=0>
+<tr>
+<td valign=top>
+<p>
+<b>Analysis Available within QwikMD</b>
+<ul>
+<li> 
+	<p align="justify">
+	Root-Mean-Square Deviation (RMSD): measure of the average distance between the atoms (usually the backbone atoms) of superimposed proteins. In the study of globular protein conformations, one customarily measures the similarity in three-dimensional structure by the RMSD of the C&alpha; atomic coordinates after optimal rigid body superposition. When a dynamical system fluctuates about some well-defined average position, the RMSD from the average over time can be referred to as the RMSF or root mean square fluctuation. The size of this fluctuation can be measured, for example using M&ouml;ssbauer spectroscopy or nuclear magnetic resonance, and can provide important physical information.
+	</p>
+<li> 
+	<p align="justify">
+	Hydrogen Bonds: the Hydrogen bonds window shows the number of hydrogen bonds formed throughout a trajectory. A hydrogen bond is formed between an atom with a hydrogen bonded to it (the donor, D) and another atom (the acceptor, A) provided that the distance D-A is less than the cut-off distance (3.5 Angstroms) and the angle D-H-A is less than the cut-off angle (30 degrees).
+	</p>
+<li> 
+	<p align="justify">
+	MD Simulation Energies : QwikMD provides an easy-to-use interface to plot the energies reported in the NAMD log files during a simulation. Here the user can plot the sum of all Potential energies (bonds, angles, dihedrals, impropers, electrostatics and vdW); Kinetic energy (atoms energy of motion) and the Total energy (sum of the Potential and Kinetic energies).
+	</p>
+<li> 
+	<p align="justify">
+	MD Temperature, Pressure and Volume: to track the evaluation/equilibrium of the MD simulation is current practice to analyze the Temperature, Pressure and the Volume dimensions. These values are calculated by NAMD and reported in the log file and can be easily plot by QwikMD. As the default MD simulations performed in QwikMD are carried in the isothermal-isobaric ensemble (NPT), the number of atoms (N), pressure (P) and temperature (T) are kept constant employing thermostat and barostat, it is interesting to observe small variation of T and P values around the user defined values.    
+	</p>
+<p> 
+
+</td>
+<td>
+<img src=images/qwikmd_analysis_gui.png width=271x height=350px border=0/>
+</td>
+</tr>
+</table>
+
+</div>
+
+<!--#include virtual="/Research/vmd/include/footer-vmd.shtml"-->

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_commands.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.40 $       $Date: 2014/08/23 03:25:14 $
+ *      $Revision: 1.41 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -27,12 +27,13 @@
 #else
 #include "Python.h"
 #endif
+#include "bytesobject.h"
 
 class VMDApp;
 class Timestep;
 class AtomSel;
 
-// store/retrieve the VMDApp instance from the __builtins__ module. 
+// store/retrieve the VMDApp instance from the __builtins__ module.
 extern VMDApp *get_vmdapp();
 void set_vmdapp(VMDApp *);
 
@@ -52,36 +53,36 @@ Timestep *parse_timestep(VMDApp *app, int molid, int frame);
 
 // Return the underlying AtomSel object.  Raise PyError and return
 // NULL on failure if the object is not an instance of atomsel.
-// Does not check if the molid referenced by the underlying AtomSel 
+// Does not check if the molid referenced by the underlying AtomSel
 // is still valid.
 AtomSel * atomsel_AsAtomSel( PyObject *obj );
 
-extern void initanimate();
-extern void initatomselection();
-extern void initatomsel();
-extern void initaxes();
-extern void initcolor();
-extern void initdisplay();
-extern void initgraphics();
-extern void initimd();
-extern void initlabel();
-extern void initmaterial();
-extern void initmolecule();
-extern void initmolrep();
-extern void initmouse();
-extern void initrender();
-extern void inittrans();
-extern void initvmdmenu();
-extern void initmeasure();
-extern void inittopology();
+extern PyObject* initaxes();
+extern PyObject* initanimate();
+extern PyObject* initatomselection();
+extern PyObject* initatomsel();
+extern PyObject* initcolor();
+extern PyObject* initdisplay();
+extern PyObject* initgraphics();
+extern PyObject* initimd();
+extern PyObject* initlabel();
+extern PyObject* initmaterial();
+extern PyObject* initmolecule();
+extern PyObject* initmolrep();
+extern PyObject* initmouse();
+extern PyObject* initrender();
+extern PyObject* inittrans();
+extern PyObject* initvmdmenu();
+extern PyObject* initmeasure();
+extern PyObject* inittopology();
 
 #ifdef VMDNUMPY
-extern void initvmdnumpy();
+extern PyObject* initvmdnumpy();
 #endif
 
-// use this typedef so that we can define our Python methods as static 
+// use this typedef so that we can define our Python methods as static
 // functions, then cast them to the proper type, rather than declaring the
-// functions extern "C", which can lead to namespace collision. 
+// functions extern "C", which can lead to namespace collision.
 
 extern "C" {
   typedef PyObject *(*vmdPyMethod)(PyObject *, PyObject *);

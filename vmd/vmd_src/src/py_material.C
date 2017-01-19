@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2016 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_material.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.25 $       $Date: 2015/05/20 20:23:48 $
+ *      $Revision: 1.26 $       $Date: 2016/11/28 03:05:08 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -34,13 +34,17 @@ static PyObject *listall(PyObject *self, PyObject *args) {
 
   MaterialList *mlist = get_vmdapp()->materialList;
   PyObject *newlist = PyList_New(0);
-  for (int i=0; i<mlist->num(); i++) 
+  for (int i=0; i<mlist->num(); i++)
+#if PY_MAJOR_VERSION >= 3
+    PyList_Append(newlist, PyUnicode_FromString(mlist->material_name(i)));
+#else
     PyList_Append(newlist, PyString_FromString(mlist->material_name(i)));
+#endif
 
   return newlist;
 }
 
-// settings(name): return a dictionary object with the material settings 
+// settings(name): return a dictionary object with the material settings
 static PyObject *settings(PyObject *self, PyObject *args) {
   char *name;
   if (!PyArg_ParseTuple(args, (char *)"s", &name))
@@ -52,27 +56,27 @@ static PyObject *settings(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, "No such material");
     return NULL;
   }
-  
+
   PyObject *dict = PyDict_New();
-  PyDict_SetItemString(dict, (char *)"ambient", 
+  PyDict_SetItemString(dict, (char *)"ambient",
     PyFloat_FromDouble(mlist->get_ambient(ind)));
-  PyDict_SetItemString(dict, (char *)"specular", 
+  PyDict_SetItemString(dict, (char *)"specular",
     PyFloat_FromDouble(mlist->get_specular(ind)));
-  PyDict_SetItemString(dict, (char *)"diffuse", 
+  PyDict_SetItemString(dict, (char *)"diffuse",
     PyFloat_FromDouble(mlist->get_diffuse(ind)));
-  PyDict_SetItemString(dict, (char *)"shininess", 
+  PyDict_SetItemString(dict, (char *)"shininess",
     PyFloat_FromDouble(mlist->get_shininess(ind)));
-  PyDict_SetItemString(dict, (char *)"mirror", 
+  PyDict_SetItemString(dict, (char *)"mirror",
     PyFloat_FromDouble(mlist->get_mirror(ind)));
-  PyDict_SetItemString(dict, (char *)"opacity", 
+  PyDict_SetItemString(dict, (char *)"opacity",
     PyFloat_FromDouble(mlist->get_opacity(ind)));
-  PyDict_SetItemString(dict, (char *)"outline", 
+  PyDict_SetItemString(dict, (char *)"outline",
     PyFloat_FromDouble(mlist->get_outline(ind)));
-  PyDict_SetItemString(dict, (char *)"outlinewidth", 
+  PyDict_SetItemString(dict, (char *)"outlinewidth",
     PyFloat_FromDouble(mlist->get_outlinewidth(ind)));
-  PyDict_SetItemString(dict, (char *)"transmode", 
+  PyDict_SetItemString(dict, (char *)"transmode",
     PyFloat_FromDouble(mlist->get_transmode(ind)));
- 
+
   return dict;
 }
 
@@ -118,13 +122,17 @@ static PyObject *add(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, (char *)"Unable to add material.");
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  return PyUnicode_FromString((char *)result);
+#else
   return PyString_FromString((char *)result);
+#endif
 }
 
 // delete('name').
 static PyObject *matdelete(PyObject *self, PyObject *args) {
   char *name = NULL;
-  if (!PyArg_ParseTuple(args, (char *)"s:material.delete", &name)) 
+  if (!PyArg_ParseTuple(args, (char *)"s:material.delete", &name))
     return NULL;
   VMDApp *app = get_vmdapp();
   if (!app->material_delete(name)) {
@@ -161,7 +169,7 @@ static PyObject *rename(PyObject *self, PyObject *args) {
   return Py_None;
 }
 
-// change(name, ambient, specular, diffuse, shininess, mirror, opacity, 
+// change(name, ambient, specular, diffuse, shininess, mirror, opacity,
 //        outline, outlinewidth, transmode)
 static PyObject *change(PyObject *self, PyObject *args, PyObject *keywds) {
   char *name;
@@ -178,12 +186,12 @@ static PyObject *change(PyObject *self, PyObject *args, PyObject *keywds) {
     (char *)"opacity",
     (char *)"outline",
     (char *)"outlinewidth",
-    (char *)"transmode", 
+    (char *)"transmode",
     NULL
   };
 
   if (!PyArg_ParseTupleAndKeywords(args, keywds, (char *)"s|fffffffff", kwlist,
-      &name, &ambient, &specular, &diffuse, &shininess, &mirror, &opacity, 
+      &name, &ambient, &specular, &diffuse, &shininess, &mirror, &opacity,
       &outline, &outlinewidth, &transmode))
     return NULL;
 
@@ -213,11 +221,11 @@ static PyObject *change(PyObject *self, PyObject *args, PyObject *keywds) {
     app->material_change(name, MAT_OUTLINEWIDTH, outlinewidth);
   if (PyDict_GetItemString(keywds, (char *)"transmode"))
     app->material_change(name, MAT_TRANSMODE, transmode);
-  
+
   Py_INCREF(Py_None);
   return Py_None;
 }
-   
+
 // default(index) - restore default of material with given index
 static PyMethodDef methods[] = {
   {(char *)"listall", (vmdPyMethod)listall, METH_VARARGS },
@@ -227,13 +235,26 @@ static PyMethodDef methods[] = {
   {(char *)"rename", (vmdPyMethod)rename, METH_VARARGS },
   {(char *)"change", (PyCFunction)change, METH_VARARGS | METH_KEYWORDS },
   {(char *)"default", (vmdPyMethod)set_default, METH_VARARGS },
-  {NULL, NULL}
+  {NULL, NULL, 0, NULL}
 };
 
-void initmaterial() {
-  (void) Py_InitModule((char *)"material", methods);
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef materialdef = {
+    PyModuleDef_HEAD_INIT,
+    "material",
+    NULL,
+    -1,
+    methods,
+    NULL, NULL, NULL, NULL
+};
+#endif
+
+PyObject* initmaterial() {
+#if PY_MAJOR_VERSION >= 3
+    PyObject *m = PyModule_Create(&materialdef);
+#else
+    PyObject *m = Py_InitModule((char *)"material", methods);
+#endif
+    return m;
 }
-
- 
-
 
