@@ -588,13 +588,13 @@ static struct PyModuleDef topologydef = {
     Methods,
     NULL, NULL, NULL, NULL
 };
-
-PyMODINIT_FUNC PyInit_topology(void) {
-    PyObject *module = PyModule_Create(&topologydef);
-    return module;
-}
-#else
-void inittopology() {
-  (void)Py_InitModule((char *)"topology", Methods);
-}
 #endif
+
+PyObject* inittopology() {
+#if PY_MAJOR_VERSION >= 3
+  PyObject *module = PyModule_Create(&topologydef);
+#else
+  PyObject *module = Py_InitModule((char *)"topology", Methods);
+#endif
+  return module;
+}

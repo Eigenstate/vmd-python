@@ -142,7 +142,7 @@ PyObject* initvmdnumpy() {
 #else
   if (_import_array() < 0) {
     PyErr_SetString(PyExc_ValueError, "vmdnumpy module not available.");
-    return;
+    return NULL;
   }
     PyObject *module = Py_InitModule((char *)"vmdnumpy", Methods);
 #endif

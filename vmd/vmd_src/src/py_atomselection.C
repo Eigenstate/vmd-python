@@ -973,15 +973,16 @@ static struct PyModuleDef atomselectiondef = {
     NULL, // m_clear gc clear
     NULL  // m_free gc free
 };
-PyMODINIT_FUNC PyInit_initatomselection(void) {
-    PyObject *module = PyModule_Create(&atomselectiondef);
-    return module;
-}
-#else
-void initatomselection(void) {
-  (void) Py_InitModule((char *)"atomselection", AtomselectionMethods);
-}
 #endif
+
+PyObject* initatomselection(void) {
+#if PY_MAJOR_VERSION >= 3
+  PyObject *module = PyModule_Create(&atomselectiondef);
+#else
+  PyObject *module = Py_InitModule((char *)"atomselection", AtomselectionMethods);
+#endif
+  return module;
+}
 
 
 

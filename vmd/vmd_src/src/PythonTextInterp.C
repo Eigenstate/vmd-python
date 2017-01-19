@@ -162,7 +162,11 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp)
   Py_Initialize();
 
   // Some modules (like Tk) assume that os.argv has been initialized
+#if PY_MAJOR_VERSION < 3
+  PySys_SetArgv(app->argc_m, (char **)app->argv_m);
+#else
   PySys_SetArgv(app->argc_m, (wchar_t **)app->argv_m);
+#endif
 
   set_vmdapp(app);
 

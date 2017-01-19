@@ -152,14 +152,14 @@ static struct PyModuleDef measuredef = {
     Methods,
     NULL, NULL, NULL, NULL
 };
-
-PyMODINIT_FUNC PyInit_measure(void) {
-    PyObject *m = PyModule_Create(&measuredef);
-    return m;
-}
-#else
-void initmeasure() {
-  (void)Py_InitModule((char *)"measure", Methods);
-}
 #endif
+
+PyObject* initmeasure() {
+#if PY_MAJOR_VERSION >= 3
+    PyObject *m = PyModule_Create(&measuredef);
+#else
+  PyObject *m = Py_InitModule((char *)"measure", Methods);
+#endif
+  return m;
+}
 

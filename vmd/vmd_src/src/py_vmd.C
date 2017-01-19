@@ -161,11 +161,13 @@ PyObject* (*initializers[])(void) = {
   initimd,
   initlabel,
   initmaterial,
+  initmeasure,
   initmolecule,
   initmolrep,
   initmouse,
   initrender,
   inittrans,
+  inittopology,
   initvmdmenu,
 #ifdef VMDNUMPY
   initvmdnumpy,
@@ -174,8 +176,8 @@ PyObject* (*initializers[])(void) = {
 
 const char *modules[] = {
     "axes", "animate", "atomsel", "color", "display", "graphics",
-    "imd", "label", "material", "molecule", "molrep", "mouse",
-    "render", "trans", "vmdmenu", "vmdnumpy"
+    "imd", "label", "material", "measure", "molecule", "molrep",
+    "mouse", "render", "trans", "topology", "vmdmenu", "vmdnumpy"
 };
 
 #if (PY_MAJOR_VERSION == 2) && (PY_MINOR_VERSION < 5)
