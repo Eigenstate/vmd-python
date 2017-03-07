@@ -129,7 +129,6 @@ static struct PyModuleDef vmdcallbacksdef = {
 };
 #endif
 
-PyMODINIT_FUNC PyInit_vmdcallbacks(void) {
 PyObject* initvmdcallbacks(void) {
 #if PY_MAJOR_VERSION >= 3
   PyObject *m = PyModule_Create(&vmdcallbacksdef);
