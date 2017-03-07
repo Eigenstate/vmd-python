@@ -64,10 +64,6 @@ static struct PyModuleDef axesdef = {
     NULL,
     -1,
     methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
 };
 #endif
 

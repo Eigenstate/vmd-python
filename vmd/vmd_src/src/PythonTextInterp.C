@@ -127,11 +127,13 @@ static struct PyModuleDef vmdcallbacksdef = {
     NULL, // m_clear gc clear
     NULL  // m_free gc free
 };
+#endif
 
 PyMODINIT_FUNC PyInit_vmdcallbacks(void) {
+PyObject* initvmdcallbacks(void) {
+#if PY_MAJOR_VERSION >= 3
   PyObject *m = PyModule_Create(&vmdcallbacksdef);
 #else
-static void initvmdcallbacks() {
   PyObject *m = Py_InitModule((char *)"vmdcallbacks", CallbackMethods);
 #endif
   PyObject *dict = PyDict_New();
@@ -148,9 +150,7 @@ static void initvmdcallbacks() {
   PyObject_SetAttrString(m, (char *)"callbacks", dict);
   cbdict = dict;
 
-#if PY_MAJOR_VERSION >= 3
-    return m;
-#endif
+  return m;
 }
 
 extern "C" void initvmd(void);
@@ -162,10 +162,10 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp)
   Py_Initialize();
 
   // Some modules (like Tk) assume that os.argv has been initialized
-#if PY_MAJOR_VERSION < 3
-  PySys_SetArgv(app->argc_m, (char **)app->argv_m);
-#else
+#if PY_MAJOR_VERSION >= 3
   PySys_SetArgv(app->argc_m, (wchar_t **)app->argv_m);
+#else
+  PySys_SetArgv(app->argc_m, (char **)app->argv_m);
 #endif
 
   set_vmdapp(app);

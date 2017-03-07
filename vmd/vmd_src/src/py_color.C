@@ -365,10 +365,6 @@ static struct PyModuleDef colordef = {
     NULL,
     -1,
     ColorMethods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
 };
 #endif
 

@@ -100,16 +100,15 @@ static struct PyModuleDef menudef = {
     NULL,
     -1,
     methods,
-    NULL, NULL, NULL, NULL
 };
 #endif
 
-PyObject* initvmdmenu() {
+PyObject* initvmdmenu(void) {
 #if PY_MAJOR_VERSION >= 3
-    PyObject *module = PyModule_Create(&menudef);
+    PyObject *m= PyModule_Create(&menudef);
 #else
-    PyObject *module = Py_InitModule((char *)"vmdmenu", methods);
+    PyObject *m= Py_InitModule((char *)"vmdmenu", methods);
 #endif
-    return module;
+    return m;
 }
 

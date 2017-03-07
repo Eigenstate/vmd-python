@@ -541,7 +541,6 @@ static struct PyModuleDef graphicsdef = {
     NULL,
     -1,
     GraphicsMethods,
-    NULL, NULL, NULL, NULL
 };
 #endif
 

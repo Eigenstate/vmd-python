@@ -200,16 +200,15 @@ static struct PyModuleDef imddef = {
     NULL,
     -1,
     methods,
-    NULL, NULL, NULL, NULL
 };
 #endif
 
 PyObject* initimd() {
 #if PY_MAJOR_VERSION >= 3
-    PyObject *module = PyModule_Create(&imddef);
+    PyObject *m= PyModule_Create(&imddef);
 #else
-    PyObject *module = Py_InitModule((char *)"imd", methods);
+    PyObject *m= Py_InitModule((char *)"imd", methods);
 #endif
-    return module;
+    return m;
 }
 

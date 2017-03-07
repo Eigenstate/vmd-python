@@ -942,7 +942,6 @@ static struct PyModuleDef moleculedef = {
     NULL,
     -1,
     MolMethods,
-    NULL, NULL, NULL, NULL
 };
 #endif
 

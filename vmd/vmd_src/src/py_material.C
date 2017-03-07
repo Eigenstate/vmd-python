@@ -245,11 +245,10 @@ static struct PyModuleDef materialdef = {
     NULL,
     -1,
     methods,
-    NULL, NULL, NULL, NULL
 };
 #endif
 
-PyObject* initmaterial() {
+PyObject* initmaterial(void) {
 #if PY_MAJOR_VERSION >= 3
     PyObject *m = PyModule_Create(&materialdef);
 #else

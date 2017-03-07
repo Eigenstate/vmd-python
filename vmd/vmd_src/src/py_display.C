@@ -256,7 +256,6 @@ static struct PyModuleDef displaydef = {
   NULL,
   -1,
   DisplayMethods,
-  NULL, NULL, NULL, NULL
 };
 #endif
 

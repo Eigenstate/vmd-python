@@ -1422,10 +1422,6 @@ static struct PyModuleDef atomseldef = {
     module_doc,
     -1, // global state, no sub-interpreters
     atomsel_methods,
-    NULL,
-    NULL, // m_traverse gc traversal
-    NULL, // m_clear gc clear
-    NULL  // m_free gc free
 };
 #endif
 

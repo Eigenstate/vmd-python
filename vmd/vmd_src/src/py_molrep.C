@@ -514,11 +514,10 @@ static struct PyModuleDef molrepdef = {
     NULL,
     -1,
     methods,
-    NULL, NULL, NULL, NULL
 };
 #endif
 
-PyObject* initmolrep() {
+PyObject* initmolrep(void) {
 #if PY_MAJOR_VERSION >= 3
     PyObject *module = PyModule_Create(&molrepdef);
 #else

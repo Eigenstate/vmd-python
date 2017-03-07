@@ -70,7 +70,11 @@ void VMDTkinterMenu::where(int &x, int &y) {
   if (root) {
     PyObject *result = PyObject_CallMethod(root, (char *)"wm_geometry", NULL);
     if (result) {
-      char *str = PyBytes_AS_STRING(result);
+#if PY_MAJOR_VERSION >= 3
+      char *str = PyUnicode_AsUTF8(result);
+#else
+      char *str = PyString_AsString(result);
+#endif
       int w, h;
       if (sscanf(str, "%dx%d+%d+%d", &w, &h, &x, &y) != 4) {
         fprintf(stderr, "couldn't parse output of geometry: %s\n", str);

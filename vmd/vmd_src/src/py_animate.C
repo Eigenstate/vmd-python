@@ -71,7 +71,11 @@ static PyObject *style(PyObject *self, PyObject *args) {
     return NULL;
 
   int stylenum = get_vmdapp()->anim->anim_style();
+#if PY_MAJOR_VERSION >= 3
   return PyUnicode_FromString(animationStyleName[stylenum]);
+#else
+  return PyString_FromString(animationStyleName[stylenum]);
+#endif
 }
 
 // goto(frame)
@@ -247,15 +251,11 @@ static PyMethodDef methods[] = {
 
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef animatedef = {
-    PyModuleDef_HEAD_INIT,
-    "animate",
-    NULL,
-    -1, // global state, no sub-interpreters
-    methods,
-    NULL,
-    NULL, // m_traverse gc traversal
-    NULL, // m_clear gc clear
-    NULL  // m_free gc free
+  PyModuleDef_HEAD_INIT,
+  "animate",
+  NULL,
+  -1, // global state, no sub-interpreters
+  methods,
 };
 #endif
 

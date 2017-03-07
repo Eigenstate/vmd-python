@@ -586,11 +586,10 @@ static struct PyModuleDef topologydef = {
     NULL,
     -1,
     Methods,
-    NULL, NULL, NULL, NULL
 };
 #endif
 
-PyObject* inittopology() {
+PyObject* inittopology(void) {
 #if PY_MAJOR_VERSION >= 3
   PyObject *module = PyModule_Create(&topologydef);
 #else

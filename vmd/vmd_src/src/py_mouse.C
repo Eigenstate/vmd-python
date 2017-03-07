@@ -34,11 +34,10 @@ static struct PyModuleDef mousedef = {
     NULL,
     -1,
     methods,
-    NULL, NULL, NULL, NULL
 };
 #endif
 
-PyObject* initmouse() {
+PyObject* initmouse(void) {
 #if PY_MAJOR_VERSION >= 3
   PyObject *m = PyModule_Create(&mousedef);
 #else

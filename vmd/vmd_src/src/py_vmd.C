@@ -45,7 +45,11 @@ static PyObject *py_evaltcl(PyObject *self, PyObject *args) {
     PyErr_SetString(PyExc_ValueError, Tcl_GetStringResult(interp));
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
   return PyUnicode_FromString(Tcl_GetStringResult(interp));
+#else
+  return PyString_FromString(Tcl_GetStringResult(interp));
+#endif
 }
 
 static PyMethodDef VMDAppMethods [] = {
@@ -81,7 +85,6 @@ static struct PyModuleDef vmddef = {
     NULL,
     -1,
     VMDAppMethods,
-    NULL, NULL, NULL, NULL
 };
 
 #define INITERROR return NULL

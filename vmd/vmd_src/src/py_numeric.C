@@ -128,7 +128,6 @@ static struct PyModuleDef vmdnumpydef = {
     NULL,
     -1,
     Methods,
-    NULL, NULL, NULL, NULL
 };
 #endif
 

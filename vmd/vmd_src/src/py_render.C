@@ -75,11 +75,10 @@ static struct PyModuleDef renderdef = {
     NULL,
     -1,
     methods,
-    NULL, NULL, NULL, NULL
 };
 #endif
 
-PyObject* initrender() {
+PyObject* initrender(void) {
 #if PY_MAJOR_VERSION >= 3
     PyObject *m = PyModule_Create(&renderdef);
 #else

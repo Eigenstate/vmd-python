@@ -380,11 +380,10 @@ static struct PyModuleDef transdef = {
     NULL,
     -1,
     TransMethods,
-    NULL, NULL, NULL, NULL
 };
 #endif
 
-PyObject* inittrans() {
+PyObject* inittrans(void) {
 #if PY_MAJOR_VERSION >= 3
     PyObject *m = PyModule_Create(&transdef);
 #else

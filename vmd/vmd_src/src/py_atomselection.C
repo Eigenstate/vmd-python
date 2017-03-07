@@ -968,10 +968,6 @@ static struct PyModuleDef atomselectiondef = {
     NULL,
     -1, // global state, no sub-interpreters
     AtomselectionMethods,
-    NULL,
-    NULL, // m_traverse gc traversal
-    NULL, // m_clear gc clear
-    NULL  // m_free gc free
 };
 #endif
 

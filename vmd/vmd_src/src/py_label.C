@@ -374,11 +374,10 @@ static struct PyModuleDef labeldef = {
     NULL,
     -1,
     LabelMethods,
-    NULL, NULL, NULL, NULL
 };
 #endif
 
-PyObject* initlabel() {
+PyObject* initlabel(void) {
 #if PY_MAJOR_VERSION >= 3
   PyObject *m = PyModule_Create(&labeldef);
 #else
