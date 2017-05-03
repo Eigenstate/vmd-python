@@ -34,7 +34,6 @@ int text_cmd_plugin(ClientData cd, Tcl_Interp *interp, int argc,
   if (argc == 3 && !strupncmp(argv[1], "dlopen", CMDLEN)) {
     int rc = app->plugin_dlopen(argv[2]);
     if (rc < 0) {
-      Tcl_AppendResult(interp, "Unable to dlopen plugin file ", argv[2], NULL);
       return TCL_ERROR;
     } 
     Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
