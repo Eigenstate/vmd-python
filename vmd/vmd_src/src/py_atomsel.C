@@ -1442,6 +1442,8 @@ PyObject* initatomsel(void) {
   if (PyType_Ready(&atomsel_type) < 0)
       return NULL;
 
-  return m;
+  // We want the atomsel class within the module to be exposed
+  PyObject *mod = PyObject_GetAttrString(m, "atomsel");
+  return mod;
 }
 
