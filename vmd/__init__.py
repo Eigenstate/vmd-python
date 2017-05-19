@@ -1,15 +1,15 @@
 """
-The VMD Python module.
+The VMD Python module, based off VMD 1.9.3.
 
-This software includes code developed by the Theoretical and Computational 
-Biophysics Group in the Beckman Institute for Advanced Science and 
+This software includes code developed by the Theoretical and Computational
+Biophysics Group in the Beckman Institute for Advanced Science and
 Technology at the University of Illinois at Urbana-Champaign.
 
 Official VMD web page: http://www.ks.uiuc.edu/Research/vmd/
 
 """
 
-__version__ = '1.9.3'
+__version__ = '2.0.0'
 __author__ = 'Robin Betz'
 
 import imp

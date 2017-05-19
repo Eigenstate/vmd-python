@@ -9,7 +9,6 @@ from subprocess import check_call
 from glob import glob
 import platform
 import os
-import site
 import sys
 
 packages = ['vmd']
@@ -93,7 +92,7 @@ class VMDBuild(DistutilsBuild):
         libs = glob(os.path.join(pydir, "lib",
                                  "libpython%s*.so" % sysconfig.get_python_version()))
         libs = sorted(libs, key=lambda x: len(x))
-        pythonldflag = libs[-1].split('/')[-1].replace("lib","-l").replace(".so","")
+        pythonldflag = libs[-1].split('/')[-1].replace("lib", "-l").replace(".so","")
         os.environ["VMDEXTRALIBS"] = " ".join([os.environ["SQLITELDFLAGS"],
                                                os.environ["EXPATLDFLAGS"],
                                                pythonldflag])
@@ -162,15 +161,13 @@ class VMDTest(Command):
 ###############################################################################
 
 setup(name='vmd-python',
-      version='1.9.3',
+      version='2.0.0',
       description='Visual Molecular Dynamics Python module',
       author='Robin Betz',
       author_email='robin@robinbetz.com',
       url='http://github.com/Eigenstate/vmd-python',
       license='VMD License',
       zip_safe=False,
-      #setup_requires=['netcdf', 'numpy'],
-      #install_requires=["netcdf"],
       extras_require = { 'hoomdplugin': ["expat"] },
 
       packages=['vmd'],
