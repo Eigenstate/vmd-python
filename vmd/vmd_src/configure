@@ -1464,7 +1464,7 @@ $vmd_libs          = "$tcl_libs";
                    @tk_cc);
 
 @vmd_ccpp	= (
-		   'androidvmdstart.C', 
+#		   'androidvmdstart.C', 
 		   'Animation.C', 
 		   'ArtDisplayDevice.C', 
 		   'AtomColor.C', 
@@ -1476,10 +1476,10 @@ $vmd_libs          = "$tcl_libs";
 		   'BaseMolecule.C', 
 		   'Benchmark.C',
                    'BondSearch.C', 
-		   'CmdAnimate.C', 
-		   'CmdColor.C', 
-		   'CmdDisplay.C', 
-		   'CmdLabel.C', 
+	   'CmdAnimate.C', 
+	   'CmdColor.C', 
+	   'CmdDisplay.C', 
+	   'CmdLabel.C', 
                    'CmdMaterial.C',
 		   'CmdMenu.C', 
 		   'CmdMol.C', 
@@ -1487,26 +1487,26 @@ $vmd_libs          = "$tcl_libs";
 		   'CmdTrans.C', 
 		   'CommandQueue.C', 
 		   'CoorPluginData.C',
-		   'CUDAAccel.C', 
-		   'DisplayDevice.C', 
-		   'Displayable.C', 
-		   'DisplayRocker.C', 
-		   'DispCmds.C', 
-		   'DrawMolecule.C', 
-		   'DrawMolItem.C', 
-		   'DrawMolItem2.C', 
-		   'DrawMolItemRibbons.C', 
-		   'DrawMolItemMSMS.C', 
-		   'DrawMolItemNanoShaper.C', 
-		   'DrawMolItemRings.C', 
-		   'DrawMolItemOrbital.C', 
-		   'DrawMolItemQuickSurf.C', 
-		   'DrawMolItemSurface.C', 
-		   'DrawMolItemVolume.C', 
-		   'DrawForce.C', 
-		   'DrawRingsUtils.C', 
+#	   'CUDAAccel.C', 
+	   'DisplayDevice.C', 
+	   'Displayable.C', 
+#	   'DisplayRocker.C', 
+#		   'DispCmds.C', 
+#		   'DrawMolecule.C', 
+#		   'DrawMolItem.C', 
+#		   'DrawMolItem2.C', 
+#		   'DrawMolItemRibbons.C', 
+#		   'DrawMolItemMSMS.C', 
+#		   'DrawMolItemNanoShaper.C', 
+#		   'DrawMolItemRings.C', 
+#		   'DrawMolItemOrbital.C', 
+#		   'DrawMolItemQuickSurf.C', 
+#		   'DrawMolItemSurface.C', 
+#		   'DrawMolItemVolume.C', 
+#		   'DrawForce.C', 
+#		   'DrawRingsUtils.C', 
 		   'FileRenderList.C', 
-		   'FileRenderer.C', 
+#	   'FileRenderer.C', 
 		   'FPS.C',
 		   'GelatoDisplayDevice.C',
 		   'GeometryAngle.C', 
@@ -1543,31 +1543,31 @@ $vmd_libs          = "$tcl_libs";
 		   'MoleculeGraphics.C', 
 		   'MolFilePlugin.C',
 		   'Mouse.C', 
-		   'MSMSInterface.C', 
-		   'NanoShaperInterface.C', 
+#	   'MSMSInterface.C', 
+#	   'NanoShaperInterface.C', 
                    'Orbital.C',
                    'OrbitalJIT.C',
                    'PeriodicTable.C',
-		   'P_JoystickTool.C',
-		   'P_TugTool.C',
-		   'P_GrabTool.C',
-		   'P_PrintTool.C',
-		   'P_PinchTool.C',
-		   'P_UIVR.C',
-		   'P_Buttons.C',
-		   'P_Tracker.C',
-		   'P_Tool.C',
-		   'P_CmdTool.C',
-		   'P_SensorConfig.C',
+#	   'P_JoystickTool.C',
+#	   'P_TugTool.C',
+#	   'P_GrabTool.C',
+#	   'P_PrintTool.C',
+#	   'P_PinchTool.C',
+#	   'P_UIVR.C',
+#	   'P_Buttons.C',
+#	   'P_Tracker.C',
+#	   'P_Tool.C',
+#	   'P_CmdTool.C',
+#	   'P_SensorConfig.C',
 		   'ParseTree.C', 
-		   'PickList.C', 
-		   'PickModeAddBond.C',
-		   'PickModeCenter.C', 
-		   'PickModeForce.C',
-		   'PickModeList.C',
-		   'PickModeMolLabel.C', 
-		   'PickModeMove.C', 
-		   'PickModeUser.C', 
+#		   'PickList.C', 
+#		   'PickModeAddBond.C',
+#		   'PickModeCenter.C', 
+#		   'PickModeForce.C',
+#		   'PickModeList.C',
+#		   'PickModeMolLabel.C', 
+#		   'PickModeMove.C', 
+#		   'PickModeUser.C', 
 		   'PlainTextInterp.C',
 		   'PluginMgr.C',
 		   'POV3DisplayDevice.C', 
@@ -1581,15 +1581,15 @@ $vmd_libs          = "$tcl_libs";
 		   'RenderManDisplayDevice.C',
 		   'Scene.C', 
 		   'SnapshotDisplayDevice.C', 
-		   'Spaceball.C',
-		   'SpaceballButtons.C',
-		   'SpaceballTracker.C',
+#		   'Spaceball.C',
+#		   'SpaceballButtons.C',
+#		   'SpaceballTracker.C',
 		   'SpatialSearch.C',
 		   'SpringTool.C',
 		   'Stage.C', 
 		   'STLDisplayDevice.C', 
 		   'Stride.C', 
-		   'Surf.C', 
+#		   'Surf.C', 
 		   'SymbolTable.C', 
 		   'TachyonDisplayDevice.C', 
 		   'Timestep.C', 
@@ -1917,8 +1917,8 @@ if ($config_arch eq "BLUEWATERS" ||
     # Assume GCC 
     $arch_cc          = "cc";
     $arch_ccpp        = "CC";
-    $arch_copts       = "-m64 -Wall -O6 -ffast-math";
-    $arch_opt_flag    = "-m64 -fno-for-scope -Wno-deprecated -Wall -O6 -ffast-math";
+    $arch_copts       = "-m64 -Wall -O3 -ffast-math -fabi-compat-version=2 -fno-finite-math-only";
+    $arch_opt_flag    = "-m64 -fno-for-scope -Wno-deprecated -Wall -O3 -ffast-math -fabi-compat-version=2 -fno-finite-math-only";
   }
 
   if ($config_mpi) {
@@ -2086,8 +2086,8 @@ if ($config_arch eq "FREEBSDAMD64") {
     $arch_shcppopts   = "-fPIC";
     $arch_shldopts    = "-L/usr/local/lib -L/usr/local/lib";
 
-    $arch_opt_flag	= "-m64 -Wall -O3 -ffast-math";
-    $arch_copts	        = "-m64 -Wall -O3 -ffast-math";
+    $arch_opt_flag	= "-m64 -Wall -O3 -ffast-math -fabi-compat-version=2 -fno-finite-math-only";
+    $arch_copts	        = "-m64 -Wall -O3 -ffast-math -fabi-compat-version=2 -fno-finite-math-only";
 
     if ($config_static) {
       $arch_lopts       = "-static";
@@ -2278,9 +2278,10 @@ if ($config_arch eq "LINUXAMD64") {
       # for compiling with g++:
       $arch_cc		= "gcc";
       $arch_ccpp  	= "g++";
-      $arch_opt_flag	= "-m64 -fno-for-scope -Wno-deprecated -Wall -O6 -ffast-math";
+      # Robin is working on this
+      $arch_opt_flag	= "-m64 -fno-for-scope -Wno-deprecated -Wall -O3 -ffast-math -fno-finite-math-only";
       $arch_depend_flag   = "-MM";
-      $arch_copts	        = "-m64 -Wall -O6 -ffast-math";
+      $arch_copts	        = "-m64 -Wall -O3 -ffast-math -fno-finite-math-only";
       $arch_template_repository = "foobar";
 
       # so far only STATIC version tested
@@ -2319,7 +2320,8 @@ if ($config_arch eq "LINUXAMD64") {
       $arch_copts      .= " -fPIC";
       $arch_nvccflags  .= " -Xcompiler -fPIC";
       $arch_lopts       = "-shared";
-      $arch_cppopts    .= " -DVMD_SHARED";
+      # Robin
+      $arch_cppopts    .= " -DVMD_SHARED -D_GLIBCXX_USE_CXX11_ABI";
     }
 }
 
@@ -2360,8 +2362,8 @@ if ($config_arch eq "LINUXPPC64") {
     $arch_cc          = "gcc";
     $arch_ccpp        = "g++";
     $arch_depend_flag = "-MM";
-    $arch_opt_flag    = "-m64 -Wall -O3 -ffast-math";
-    $arch_copts       = "-m64 -Wall -O3 -ffast-math";
+    $arch_opt_flag    = "-m64 -Wall -O3 -ffast-math -fabi-compat-version=2 -fno-finite-math-only";
+    $arch_copts       = "-m64 -Wall -O3 -ffast-math -fabi-compat-version=2 -fno-finite-math-only";
 
     if ($config_static) {
       $arch_lopts       = "-static"
@@ -2403,8 +2405,8 @@ if ($config_arch eq "MACOSX") {
     $arch_cc          = "cc";
     $arch_ccpp        = "c++";
     $arch_depend_flag = "-MM";
-    $arch_opt_flag    = "-fPIC -Os -ffast-math";
-    $arch_copts       = "-fPIC -Os -ffast-math";
+    $arch_opt_flag    = "-fPIC -Os -ffast-math -fabi-compat-version=2 -fno-finite-math-only";
+    $arch_copts       = "-fPIC -Os -ffast-math -fabi-compat-version=2 -fno-finite-math-only";
     $arch_cppopts     = "";
 
     if ($config_static) {
@@ -2495,14 +2497,14 @@ if ($config_arch eq "MACOSXX86" || $config_arch eq "MACOSXX86_64") {
       $arch_cc          = "cc";
       $arch_ccpp        = "c++";
       $arch_depend_flag = "-MM";
-      $arch_opt_flag    = "-m64 -fPIC -Os -ffast-math";
-      $arch_copts       = "-m64 -fPIC -Os -ffast-math";
+      $arch_opt_flag    = "-m64 -fPIC -Os -ffast-math -fabi-compat-version=2 -fno-finite-math-only";
+      $arch_copts       = "-m64 -fPIC -Os -ffast-math -fabi-compat-version=2 -fno-finite-math-only";
     } else {
       $arch_cc          = "cc";
       $arch_ccpp        = "c++";
       $arch_depend_flag = "-MM";
-      $arch_opt_flag    = "-m32 -fPIC -Os -ffast-math";
-      $arch_copts       = "-m32 -fPIC -Os -ffast-math";
+      $arch_opt_flag    = "-m32 -fPIC -Os -ffast-math -fabi-compat-version=2 -fno-finite-math-only";
+      $arch_copts       = "-m32 -fPIC -Os -ffast-math -fabi-compat-version=2 -fno-finite-math-only";
     }
     $arch_cppopts = "";
 
@@ -2629,8 +2631,8 @@ if ($config_arch eq "OPENPOWER" || $config_arch eq "SUMMIT") {
     } else {
       $arch_cc          = "gcc";
       $arch_ccpp        = "g++";
-      $arch_opt_flag    = "-m64 -Wall -O3 -ffast-math -mtune=power8";
-      $arch_copts       = "-m64 -Wall -O3 -ffast-math -mtune=power8";
+      $arch_opt_flag    = "-m64 -Wall -O3 -ffast-math -fabi-compat-version=2 -mtune=power8 -fno-finite-math-only";
+      $arch_copts       = "-m64 -Wall -O3 -ffast-math -fabi-compat-version=2 -mtune=power8 -fno-finite-math-only";
       $arch_depend_flag = "-MM";
     }
 

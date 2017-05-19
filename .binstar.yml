@@ -21,7 +21,6 @@
 ## The engine are the inital conda packages you want to run with
  engine:
   - python=2.7
-  - python=3.4
   - python=3.6
 #  - python=3
 ## The env param is an environment variable list
@@ -39,6 +38,7 @@
  before_script:
      # Add conda channel for expat
     - conda config --add channels https://conda.binstar.org/flynn
+    - conda config --add channels https://conda.binstar.org/asmeurer
 
 #   - echo "before_script!"
 ## Put your main computations here!

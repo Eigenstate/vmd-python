@@ -4,7 +4,7 @@ package:
 
 source:
     git_url: https://github.com/Eigenstate/vmd-python.git
-    git_tag: master
+    git_tag: testing
 
 build:
     preserve_egg_dir: False
@@ -13,12 +13,14 @@ build:
 requirements:
     build:
         - python
-        - libnetcdf 4.3.*
+        - libnetcdf
         - numpy
+        - glibc >=2.19
     run:
         - python
-        - libnetcdf 4.3.*
+        - libnetcdf
         - numpy
+        - glibc >=2.19
 
 about:
     home: https://github.com/Eigenstate/vmd-python

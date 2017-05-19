@@ -8,7 +8,7 @@ vmd_src="$(dirname $0)"
 
 # Set needed variables
 echo "Setting environment variables"
-export VMDINSTALLNAME="vmd-1.9.3-python"
+export VMDINSTALLNAME="vmd-2.0.0-python"
 export VMDINSTALLBINDIR="$VMDDIR"
 export VMDINSTALLLIBRARYDIR="$VMDDIR"
 export PLUGINDIR="$VMDDIR/plugins"
@@ -30,7 +30,7 @@ echo "Linking $PLUGINDIR -> $vmd_src/vmd_src/plugins"
 ln -s $PLUGINDIR $vmd_src/vmd_src/plugins
 
 # Set the configure options
-echo "$TARGET PTHREADS COLVARS NETCDF TCL IMD PYTHON NUMPY SHARED NOSILENT" > "$vmd_src/vmd_src/configure.options"
+echo "$TARGET PTHREADS NETCDF TCL IMD PYTHON NUMPY SHARED NOSILENT STATIC" > "$vmd_src/vmd_src/configure.options"
 
 # Compile the main library
 cd $vmd_src/vmd_src
