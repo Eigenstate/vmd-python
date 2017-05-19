@@ -3258,7 +3258,6 @@ install:
 	-\$(COPY) ../Announcement  "$install_library_dir"
 	-\$(COPY) ../README        "$install_library_dir"
 	-\$(COPY) ../LICENSE       "$install_library_dir"
-	-\$(COPY) $vmd_doc_dir/ug.pdf        "$install_library_dir"/doc
 	if [ -f $install_library_dir/$config_progname ]; then \\
            \$(MOVE) "$install_library_dir/$config_progname" "$install_library_dir/OLD_$config_progname" ; \$(DELETE) "$install_library_dir/OLD_$config_progname" ; fi
 	-\$(COPY) ../$config_arch/$config_progname "$install_library_dir"
