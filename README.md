@@ -1,12 +1,15 @@
 # vmd-python
 Installable VMD as a python module
-*NEW* Support for Python 3!!!
 
-![CI status](https://anaconda.org/rbetz/vmd-python/badges/build.svg)
+*NEW*: Support for Python 3!!!
+
+![CI status](https://img.shields.io/travis/Eigenstate/vmd-python.svg)
 ![Downloads](https://anaconda.org/rbetz/vmd-python/badges/downloads.svg)
+![Conda](https://anaconda.org/rbetz/vmd-python/badges/installer/conda.svg)
+![PyPi](https://anaconda.org/rbetz/vmd-python/badges/installer/pypi.svg)
 
 ## Features
-All features of VMD from the current CVS tree, plus some
+All features of VMD from the 1.9.3 release, plus some
 optional plugins not included in binary distributions:
 
 * Read and write formal charges to MAE files
@@ -34,7 +37,7 @@ are currently not documented on the website (indicated with \*).
 * atomsel (atom selection language)
 * color
 * display
-* evaltcl (run all your old scripts)
+* evaltcl (run all your old tcl scripts)
 * graphics
 * imd
 * label
@@ -57,6 +60,23 @@ interface to the sub-modules above. Note these are case sensitive!!
 * Molecule
 
 ## Usage
+Here's a very simple example of using the VMD-python API to calculate the root-mean-square-
+fluctuation of all tyrosine residues in a loaded trajectory `molid` relative to some
+average structure `molid_avg`:
+
+    from vmd import molecule, vmdnumpy
+    import numpy as np
+    mask = vmdnumpy.atomselect(molid_avg, 0, "resname TYR")
+    ref = np.compress(mask, vmdnumpy.timestep(molid_avg, 0), axis=0)
+
+    rmsf = np.zeros(len(ref))
+    for frame in range(molecule.numframes(molid)):
+        frame = np.compress(mask, vmdnumpy.timestep(molid, f), axis=0)
+        rmsf += np.sqrt(np.sum((frame-ref)**2, axis=1))
+    rmsf /= float(molecule.numframes(molid)-minframe)
+    rmsf = np.sqrt(rmsf)
+
+
 Please refer to the [documentation](http://www.ks.uiuc.edu/Research/vmd/current/ug/node160.html)
 for description of all functions. Also note that the built in help() command in Python
 may sometimes give you more up-to-date information than the website.
@@ -90,9 +110,9 @@ Installation can take a while since it compiles VMD from source.
 ## Dependencies
 vmd-python has the following dependencies:
 
-    * libnetcdf
+    * libnetcdf >= 4.3
     * numpy
-    * python
+    * python 2.7 or 3.6
 
 ## Licensing
 
