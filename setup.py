@@ -3,13 +3,13 @@ from setuptools import setup
 
 from distutils.util import convert_path
 from distutils.command.build import build as DistutilsBuild
-from distutils.command.install import install as DistutilsInstall
 from distutils.cmd import Command
 from subprocess import check_call
 from glob import glob
 import platform
 import os
 import sys
+import re
 
 packages = ['vmd']
 
@@ -63,7 +63,13 @@ class VMDBuild(DistutilsBuild):
                                            os.environ.get("LD_LIBRARY_PATH",""))
         os.environ["NETCDFLIB"] = "-L%s/lib" % pydir
         os.environ["NETCDFINC"] = "-I%s/include" % pydir
-        os.environ["NETCDFLDFLAGS"] = "-lnetcdf"
+
+        # Get netcdfldflags from settings file
+        pattern = re.compile(r"Extra libraries:\s(.*)")
+        with open(os.path.join(pydir, "lib", "libnetcdf.settings")) as fn:
+            lines = "\n".join(fn.readlines())
+            matches = re.findall(pattern, lines)
+        os.environ["NETCDFLDFLAGS"] = "-lnetcdf %s" % matches[0] if len(matches) else ""
 
         os.environ["TCLLIB"] = "-L%s/lib" % pydir
         os.environ["TCLINC"] = "-I%s/include" % pydir
