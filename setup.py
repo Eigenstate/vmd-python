@@ -29,7 +29,6 @@ class VMDBuild(DistutilsBuild):
 
     def run(self):
         # Setup and run compilation script
-        #self.build_lib = convert_path(os.path.abspath(self.build_lib) + "/vmd")
         self.execute(self.compile, [], msg="Compiling VMD")
         # Run original build code
         DistutilsBuild.run(self)
@@ -39,17 +38,15 @@ class VMDBuild(DistutilsBuild):
     def compile(self):
         # Determine target to build
         target = self.get_vmd_build_target()
-        srcdir = convert_path(os.path.dirname(os.path.abspath(__file__)) + "/vmd")
-        builddir = convert_path(os.path.abspath(self.build_lib) + "/vmd")
-        #builddir = convert_path(os.path.abspath(self.build_lib))
-        #if not os.path.isdir(builddir): os.makedirs(builddir)
-        pydir = convert_path(sys.executable.replace("/bin/python",""))
+        srcdir = convert_path(os.path.dirname(os.path.join(__file__), "vmd"))
+        builddir = convert_path(os.path.abspath(self.build_lib) + "vmd")
+        pydir = convert_path(sys.executable.replace(os.path.join("bin", "python"), ""))
 
         self.set_environment_variables(pydir)
 
         # Execute the build
         cmd = [
-                srcdir + "/install.sh",
+                os.path.join(srcdir, "install.sh"),
                 target,
                 builddir,
                 pydir,
@@ -59,10 +56,10 @@ class VMDBuild(DistutilsBuild):
     #==========================================================================
 
     def set_environment_variables(self, pydir):
-        os.environ["LD_LIBRARY_PATH"] = "%s/lib:%s" % (pydir,
-                                           os.environ.get("LD_LIBRARY_PATH",""))
-        os.environ["NETCDFLIB"] = "-L%s/lib" % pydir
-        os.environ["NETCDFINC"] = "-I%s/include" % pydir
+        os.environ["LD_LIBRARY_PATH"] = "%s:%s" % (os.path.join(pydir, "lib"),
+                                                   os.environ.get("LD_LIBRARY_PATH",""))
+        os.environ["NETCDFLIB"] = "-L%s" % os.path.join(pydir, "lib")
+        os.environ["NETCDFINC"] = "-I%s" % os.path.join(pydir, "include")
 
         # Get netcdfldflags from settings file
         pattern = re.compile(r"Extra libraries:\s(.*)")
@@ -72,16 +69,16 @@ class VMDBuild(DistutilsBuild):
         os.environ["NETCDFLDFLAGS"] = "-lnetcdf %s" % matches[0] if len(matches) else ""
         os.environ["NETCDFDYNAMIC"] = "1"
 
-        os.environ["TCLLIB"] = "-L%s/lib" % pydir
-        os.environ["TCLINC"] = "-I%s/include" % pydir
+        os.environ["TCLLIB"] = "-L%s" % os.path.join(pydir, "lib")
+        os.environ["TCLINC"] = "-I%s" % os.path.join(pydir, "include")
         os.environ["TCLLDFLAGS"] = "-ltcl"
 
-        os.environ["SQLITELIB"] ="-L%s/lib" % pydir
-        os.environ["SQLITEINC"] ="-I%s/include" % pydir
+        os.environ["SQLITELIB"] ="-L%s" % os.path.join(pydir, "lib")
+        os.environ["SQLITEINC"] ="-I%s" % os.path.join(pydir, "include")
         os.environ["SQLITELDFLAGS"] ="-lsqlite3"
 
-        os.environ["EXPATLIB"] ="-L%s/lib" % pydir
-        os.environ["EXPATINC"] ="-I%s/include" % pydir
+        os.environ["EXPATLIB"] ="-L%s" % os.path.join(pydir, "lib")
+        os.environ["EXPATINC"] ="-I%s" % os.path.join(pydir, "include")
         os.environ["EXPATLDFLAGS"] ="-lexpat"
 
         # Ask numpy where it is
@@ -90,8 +87,8 @@ class VMDBuild(DistutilsBuild):
         os.environ["NUMPY_LIBRARY_DIR"] = numpy.get_include().replace("include","lib")
 
         from distutils import sysconfig
-        os.environ["TCL_LIBRARY_DIR"] ="%s/lib" % pydir
-        os.environ["TCL_INCLUDE_DIR"] ="%s/include" % pydir
+        os.environ["TCL_LIBRARY_DIR"] ="%s" % os.path.join(pydir, "lib")
+        os.environ["TCL_INCLUDE_DIR"] ="%s" % os.path.join(pydir, "include")
         os.environ["PYTHON_LIBRARY_DIR"] = sysconfig.get_python_lib()
         os.environ["PYTHON_INCLUDE_DIR"] = sysconfig.get_python_inc()
 
@@ -99,7 +96,7 @@ class VMDBuild(DistutilsBuild):
         libs = glob(os.path.join(pydir, "lib",
                                  "libpython%s*.so" % sysconfig.get_python_version()))
         libs = sorted(libs, key=lambda x: len(x))
-        pythonldflag = libs[-1].split('/')[-1].replace("lib", "-l").replace(".so","")
+        pythonldflag = os.path.split(libs[-1])[-1].replace("lib", "-l").replace(".so","")
         os.environ["VMDEXTRALIBS"] = " ".join([os.environ["SQLITELDFLAGS"],
                                                os.environ["EXPATLDFLAGS"],
                                                pythonldflag])
@@ -134,26 +131,6 @@ class VMDBuild(DistutilsBuild):
 
 ###############################################################################
 
-#class VMDInstall(DistutilsInstall):
-#    def initialize_options(self):
-#        DistutilsInstall.initialize_options(self)
-#
-#    def finalize_options(self):
-#        DistutilsInstall.finalize_options(self)
-##        self.set_undefined_options('build', ('build_scripts', 'build_scripts'))
-#
-#    def run(self):
-#        # Check if we have built things
-#        #print(convert_path(os.path.abspath(self.build_lib) + "/vmd.so"))
-#        #quit()
-#        #if not os.path.isfile(convert_path(os.path.abspath(self.build_lib) + "/vmd.so")):
-#        #    self.run_command('build')
-#
-#        # Run original install code
-#        DistutilsInstall.run(self)
-#
-###############################################################################
-
 class VMDTest(Command):
     user_options = []
     def initialize_options(self):
@@ -161,8 +138,9 @@ class VMDTest(Command):
     def finalize_options(self):
         pass
     def run(self):
-        import sys, subprocess, os
-        errno = subprocess.call([sys.executable, os.path.abspath('test/run_tests.py')])
+        import subprocess, os
+        errno = subprocess.call(["py.test", os.path.abspath(os.path.join("test",
+                                                                         "test_vmd.py"))])
         raise SystemExit(errno)
 
 ###############################################################################
