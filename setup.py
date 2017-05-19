@@ -38,7 +38,7 @@ class VMDBuild(DistutilsBuild):
     def compile(self):
         # Determine target to build
         target = self.get_vmd_build_target()
-        srcdir = convert_path(os.path.dirname(__file__) + "/vmd")
+        srcdir = convert_path(os.path.dirname(os.path.abspath(__file__)) + "/vmd")
         builddir = convert_path(self.build_lib + "/vmd")
         pydir = convert_path(sys.executable.replace("bin/python", ""))
 
