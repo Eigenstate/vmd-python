@@ -38,7 +38,7 @@ class VMDBuild(DistutilsBuild):
     def compile(self):
         # Determine target to build
         target = self.get_vmd_build_target()
-        srcdir = convert_path(os.path.dirname(__file__), + "/vmd")
+        srcdir = convert_path(os.path.dirname(__file__) + "/vmd")
         builddir = convert_path(self.build_lib + "/vmd")
         pydir = convert_path(sys.executable.replace("bin/python", ""))
 
@@ -46,18 +46,18 @@ class VMDBuild(DistutilsBuild):
 
         # Execute the build
         cmd = [
-                os.path.join(srcdir, "install.sh"),
-                target,
-                builddir,
-                pydir,
-              ]
+            os.path.join(srcdir, "install.sh"),
+            target,
+            builddir,
+            pydir,
+        ]
         check_call(cmd, cwd=srcdir)
 
     #==========================================================================
 
     def set_environment_variables(self, pydir):
         os.environ["LD_LIBRARY_PATH"] = "%s:%s" % (os.path.join(pydir, "lib"),
-                                                   os.environ.get("LD_LIBRARY_PATH",""))
+                                                   os.environ.get("LD_LIBRARY_PATH", ""))
         os.environ["NETCDFLIB"] = "-L%s" % os.path.join(pydir, "lib")
         os.environ["NETCDFINC"] = "-I%s" % os.path.join(pydir, "include")
 
@@ -73,13 +73,13 @@ class VMDBuild(DistutilsBuild):
         os.environ["TCLINC"] = "-I%s" % os.path.join(pydir, "include")
         os.environ["TCLLDFLAGS"] = "-ltcl"
 
-        os.environ["SQLITELIB"] ="-L%s" % os.path.join(pydir, "lib")
-        os.environ["SQLITEINC"] ="-I%s" % os.path.join(pydir, "include")
-        os.environ["SQLITELDFLAGS"] ="-lsqlite3"
+        os.environ["SQLITELIB"] = "-L%s" % os.path.join(pydir, "lib")
+        os.environ["SQLITEINC"] = "-I%s" % os.path.join(pydir, "include")
+        os.environ["SQLITELDFLAGS"] = "-lsqlite3"
 
-        os.environ["EXPATLIB"] ="-L%s" % os.path.join(pydir, "lib")
-        os.environ["EXPATINC"] ="-I%s" % os.path.join(pydir, "include")
-        os.environ["EXPATLDFLAGS"] ="-lexpat"
+        os.environ["EXPATLIB"] = "-L%s" % os.path.join(pydir, "lib")
+        os.environ["EXPATINC"] = "-I%s" % os.path.join(pydir, "include")
+        os.environ["EXPATLDFLAGS"] = "-lexpat"
 
         # Ask numpy where it is
         import numpy
@@ -87,8 +87,8 @@ class VMDBuild(DistutilsBuild):
         os.environ["NUMPY_LIBRARY_DIR"] = numpy.get_include().replace("include","lib")
 
         from distutils import sysconfig
-        os.environ["TCL_LIBRARY_DIR"] ="%s" % os.path.join(pydir, "lib")
-        os.environ["TCL_INCLUDE_DIR"] ="%s" % os.path.join(pydir, "include")
+        os.environ["TCL_LIBRARY_DIR"] = "%s" % os.path.join(pydir, "lib")
+        os.environ["TCL_INCLUDE_DIR"] = "%s" % os.path.join(pydir, "include")
         os.environ["PYTHON_LIBRARY_DIR"] = sysconfig.get_python_lib()
         os.environ["PYTHON_INCLUDE_DIR"] = sysconfig.get_python_inc()
 
@@ -96,7 +96,7 @@ class VMDBuild(DistutilsBuild):
         libs = glob(os.path.join(pydir, "lib",
                                  "libpython%s*.so" % sysconfig.get_python_version()))
         libs = sorted(libs, key=lambda x: len(x))
-        pythonldflag = os.path.split(libs[-1])[-1].replace("lib", "-l").replace(".so","")
+        pythonldflag = os.path.split(libs[-1])[-1].replace("lib", "-l").replace(".so", "")
         os.environ["VMDEXTRALIBS"] = " ".join([os.environ["SQLITELDFLAGS"],
                                                os.environ["EXPATLDFLAGS"],
                                                pythonldflag])
@@ -153,13 +153,12 @@ setup(name='vmd-python',
       url='http://github.com/Eigenstate/vmd-python',
       license='VMD License',
       zip_safe=False,
-      extras_require = { 'hoomdplugin': ["expat"] },
+      extras_require={'hoomdplugin': ["expat"]},
 
       packages=['vmd'],
-      package_data = { 'vmd' : ['libvmd.so']},
+      package_data={'vmd' : ['libvmd.so']},
       cmdclass={
           'build': VMDBuild,
           'test': VMDTest,
       },
-)
-
+     )
