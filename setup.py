@@ -70,6 +70,7 @@ class VMDBuild(DistutilsBuild):
             lines = "\n".join(fn.readlines())
             matches = re.findall(pattern, lines)
         os.environ["NETCDFLDFLAGS"] = "-lnetcdf %s" % matches[0] if len(matches) else ""
+        os.environ["NETCDFDYNAMIC"] = "1"
 
         os.environ["TCLLIB"] = "-L%s/lib" % pydir
         os.environ["TCLINC"] = "-I%s/include" % pydir
