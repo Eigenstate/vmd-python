@@ -68,8 +68,6 @@ AIX4:
 	"CCFLAGS = -w -qinlglue -qarch=com -qtune=pwr3" \
 	"CXXFLAGS = -w -qstrict -Q -qarch=com -qtune=pwr3" \
 	"LDFLAGS = -qarch=com -qtune=pwr3" \
-	"TCLLDFLAGS = -ltcl8.5" \
-	"NETCDFLDFLAGS = -lnetcdf" \
 	"AR = ar" \
 	"NM = nm -B" \
 	"RANLIB = touch" \
@@ -86,8 +84,6 @@ AIX5:
 	"CCFLAGS = -w -qinlglue -qarch=com -qtune=pwr5" \
 	"CXXFLAGS = -w -qstrict -Q -qarch=com -qtune=pwr5" \
 	"LDFLAGS = -qarch=com -qtune=pwr5" \
-	"TCLLDFLAGS = -ltcl8.5" \
-	"NETCDFLDFLAGS = -lnetcdf" \
 	"AR = ar" \
 	"NM = nm -B" \
 	"RANLIB = touch" \
@@ -104,8 +100,6 @@ AIX5_64:
 	"CCFLAGS = -w -qinlglue -q64 -qarch=com -qtune=pwr5" \
 	"CXXFLAGS = -w -qstrict -Q -q64 -qarch=com -qtune=pwr5" \
 	"LDFLAGS = -q64 -qarch=com -qtune=pwr5" \
-	"TCLLDFLAGS = -ltcl8.5" \
-	"NETCDFLDFLAGS = -lnetcdf" \
 	"AR = ar -X64" \
 	"NM = nm -B" \
 	"RANLIB = touch" \
@@ -122,8 +116,6 @@ AIX6_64:
 	"CCFLAGS = -w -qinlglue -q64 -qarch=com -qtune=pwr5" \
 	"CXXFLAGS = -w -qstrict -Q -q64 -qarch=com -qtune=pwr5" \
 	"LDFLAGS = -q64 -qarch=com -qtune=pwr5" \
-	"TCLLDFLAGS = -ltcl8.5" \
-	"NETCDFLDFLAGS = -lnetcdf" \
 	"AR = ar -X64" \
 	"NM = nm -B" \
 	"RANLIB = touch" \
@@ -139,7 +131,6 @@ ANDROIDARMV7A:
 	"DEF = -D" \
 	"CCFLAGS = -O2 -fPIC -Wall -Wno-psabi -MMD -MP -fpic -ffunction-sections -funwind-tables -fstack-protector -D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__ -march=armv7-a -msoft-float -mfpu=vfp -mthumb -Os -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -Wa,--noexecstac $(ANDROIDINCS)" \
 	"CXXFLAGS = -O2 -fPIC -Wall -Wno-psabi -MMD -MP -fpic -ffunction-sections -funwind-tables -fstack-protector -D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__ -march=armv7-a -msoft-float -mfpu=vfp -mthumb -Os -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -Wa,--noexecstac $(ANDROIDINCS)" \
-	"TCLLDFLAGS = -ltcl8.5 -ldl" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -156,8 +147,6 @@ BLUEGENEQ:
 	"CCFLAGS = -w " \
 	"CXXFLAGS = -w " \
 	"LDFLAGS = -q64 -qarch=qp -qtune=qp" \
-	"TCLLDFLAGS = -ltcl8.4" \
-	"NETCDFLDFLAGS = -lnetcdf" \
 	"AR = ar " \
 	"NM = nm -B" \
 	"RANLIB = touch" \
@@ -173,7 +162,6 @@ BLUEWATERS:
 	"DEF = -D" \
 	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
 	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
-	"TCLLDFLAGS = -ltcl8.5 -ldl" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -189,7 +177,6 @@ CRAY_XC:
 	"DEF = -D" \
 	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
 	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
-	"TCLLDFLAGS = -ltcl8.5 -ldl" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -205,7 +192,6 @@ CRAY_XK:
 	"DEF = -D" \
 	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
 	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
-	"TCLLDFLAGS = -ltcl8.5 -ldl" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -221,8 +207,6 @@ HPUX11:
 	"DEF = -D" \
 	"CCFLAGS = +O2 +DAportable -Ae +z" \
 	"CXXFLAGS = +O2 +DAportable +z" \
-	"TCLLDFLAGS = -ltcl8.5" \
-	"NETCDFLDFLAGS = -lnetcdf " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -239,8 +223,6 @@ IRIX6:
 	"CCFLAGS = -O2 -fullwarn" \
 	"CXXFLAGS = -O2 -fullwarn" \
 	"LDFLAGS = -n32 -mips3" \
-	"TCLLDFLAGS = -ltcl8.5" \
-	"NETCDFLDFLAGS = -lnetcdf" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -257,8 +239,6 @@ IRIX6_64:
 	"CCFLAGS = -O2 -fullwarn" \
 	"CXXFLAGS = -O2 -fullwarn" \
 	"LDFLAGS = -64 -mips4" \
-	"TCLLDFLAGS = -ltcl8.5" \
-	"NETCDFLDFLAGS = -lnetcdf" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -274,8 +254,6 @@ FREEBSD:
 	"DEF = -D" \
 	"CCFLAGS = -O2 -Wall -I/usr/local/include/tcl8.5" \
 	"CXXFLAGS = -O2 -Wall" \
-	"TCLLDFLAGS = -L/usr/local/lib -ltcl85" \
-	"NETCDFLDFLAGS = -lnetcdf " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -291,8 +269,6 @@ FREEBSDAMD64:
 	"DEF = -D" \
 	"CCFLAGS = -m64 -O2 -Wall -I/usr/local/include/tcl8.5" \
 	"CXXFLAGS = -m64 -O2 -Wall" \
-	"TCLLDFLAGS = -L/usr/local/lib -ltcl85" \
-	"NETCDFLDFLAGS = -lnetcdf " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -308,8 +284,6 @@ LINUX:
 	"DEF = -D" \
 	"CCFLAGS = -m32 -O2 -fPIC -Wall" \
 	"CXXFLAGS = -m32 -O2 -fPIC -Wall" \
-	"TCLLDFLAGS = -ltcl8.5 -ldl" \
-	"NETCDFLDFLAGS = -lnetcdf " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -325,8 +299,6 @@ LINUXALPHA:
 	"DEF = -D" \
 	"CCFLAGS = -O4 -arch host -tune host" \
 	"CXXFLAGS = -O4 -arch host -tune host" \
-	"TCLLDFLAGS = -ltcl8.5 -ldl" \
-	"NETCDFLDFLAGS = -lnetcdf " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -342,8 +314,6 @@ LINUXAMD64:
 	"DEF = -D" \
 	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
 	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
-	"TCLLDFLAGS = -ltcl8.5 -ldl" \
-	"NETCDFLDFLAGS = -lnetcdf " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -359,7 +329,6 @@ LINUXCARMA:
 	"DEF = -D" \
 	"CCFLAGS = -O3 -fPIC -Wall -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=vfpv3-d16 -ffast-math -fno-strict-aliasing" \
 	"CXXFLAGS = -O3 -fPIC -Wall -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=vfpv3-d16 -ffast-math -fno-strict-aliasing" \
-	"TCLLDFLAGS = -ltcl8.6 -lz -ldl -lpthread" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -375,8 +344,6 @@ LINUXPPC:
 	"DEF = -D" \
 	"CCFLAGS = -O2 -fPIC -Wall" \
 	"CXXFLAGS = -O2 -fPIC -Wall" \
-	"TCLLDFLAGS = -ltcl8.5 -ldl" \
-	"NETCDFLDFLAGS = -lnetcdf " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -392,8 +359,6 @@ LINUXPPC64:
 	"DEF = -D" \
 	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
 	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
-	"TCLLDFLAGS = -ltcl8.5 -ldl" \
-	"NETCDFLDFLAGS = " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -409,8 +374,6 @@ LINUXIA64:
 	"DEF = -D" \
 	"CCFLAGS = -O2 -fPIC -Wall" \
 	"CXXFLAGS = -O2 -fPIC -Wall" \
-	"TCLLDFLAGS = -ltcl8.5 -ldl" \
-	"NETCDFLDFLAGS = -lnetcdf " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -426,8 +389,6 @@ LINUXIA64-icc:
 	"DEF = -D" \
 	"CCFLAGS = -O2 -fPIC" \
 	"CXXFLAGS = -O2 -fPIC" \
-	"TCLLDFLAGS = -ltcl8.5 -ldl" \
-	"NETCDFLDFLAGS = -lnetcdf " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -443,8 +404,6 @@ MACOSX:
 	"DEF = -D" \
 	"CCFLAGS = -Os -Wall -fPIC -dynamic" \
 	"CXXFLAGS = -Os -Wall -fPIC -dynamic" \
-	"TCLLDFLAGS = -framework Tcl" \
-	"NETCDFLDFLAGS = -lnetcdf " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = ranlib" \
@@ -461,8 +420,6 @@ MACOSXX86:
 	"DEF = -D" \
 	"CCFLAGS = -m32 -Os -Wall -fPIC -dynamic" \
 	"CXXFLAGS = -m32 -Os -Wall -fPIC -dynamic" \
-	"TCLLDFLAGS = -framework Tcl" \
-	"NETCDFLDFLAGS = -lnetcdf " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = ranlib" \
@@ -479,7 +436,6 @@ MACOSXX86_64:
 	"DEF = -D" \
 	"CCFLAGS = -m64 -Os -Wall -fPIC -dynamic" \
 	"CXXFLAGS = -m64 -Os -Wall -fPIC -dynamic" \
-	"TCLLDFLAGS = -ltcl8.5" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = ranlib" \
@@ -496,8 +452,6 @@ NETBSD:
 	"DEF = -D" \
 	"CCFLAGS = -O2 -Wall -ansi" \
 	"CXXFLAGS = -O2 -Wall" \
-	"TCLLDFLAGS = -ltcl8.5" \
-	"NETCDFLDFLAGS = -lnetcdf " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -513,8 +467,6 @@ OPENPOWER:
 	"DEF = -D" \
 	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
 	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
-	"TCLLDFLAGS = -ltcl8.5 -ldl" \
-	"NETCDFLDFLAGS = " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -530,8 +482,6 @@ SOLARIS2:
 	"DEF = -D" \
  	"CCFLAGS = -KPIC " \
  	"CXXFLAGS = -KPIC " \
-	"TCLLDFLAGS = -ltcl8.5 -lsocket -lnsl -ldl" \
-	"NETCDFLDFLAGS = -lnetcdf -lsocket -lnsl -ldl" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -547,8 +497,6 @@ SOLARIS2_64:
 	"DEF = -D" \
  	"CCFLAGS = -KPIC " \
  	"CXXFLAGS = -KPIC " \
-	"TCLLDFLAGS = -ltcl8.5 -lsocket -lnsl -ldl" \
-	"NETCDFLDFLAGS = -lnetcdf -lsocket -lnsl -ldl" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -564,7 +512,6 @@ SOLARISX86:
 	"DEF = -D" \
  	"CCFLAGS = -KPIC " \
  	"CXXFLAGS = -KPIC " \
-	"TCLLDFLAGS = -ltcl8.5 -lsocket -lnsl -ldl" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -580,7 +527,6 @@ SOLARISX86_64:
 	"DEF = -D" \
  	"CCFLAGS = -KPIC " \
  	"CXXFLAGS = -KPIC " \
-	"TCLLDFLAGS = -ltcl8.5 -lsocket -lnsl -ldl" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -596,8 +542,6 @@ SUMMIT:
 	"DEF = -D" \
 	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
 	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
-	"TCLLDFLAGS = -ltcl8.5 -ldl" \
-	"NETCDFLDFLAGS = " \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -614,8 +558,6 @@ T3E:
 	"CCFLAGS = -O2" \
 	"CXXFLAGS = -O2" \
 	"LDFLAGS = " \
-	"TCLLDFLAGS = -ltcl8.5" \
-	"NETCDFLDFLAGS = -lnetcdf" \
 	"AR = ar" \
 	"NM = nm" \
 	"RANLIB = touch" \
@@ -631,8 +573,6 @@ TRU64:
 	"DEF = -D" \
  	"CCFLAGS = -fast" \
  	"CXXFLAGS = -fast" \
-	"TCLLDFLAGS = -ltcl8.5 -lm" \
-	"NETCDFLDFLAGS = -lnetcdf " \
 	"AR = ar" \
 	"NM = nm -B" \
 	"RANLIB = touch" \
@@ -648,7 +588,6 @@ WIN32:
 	"DEF = /D" \
 	"CCFLAGS = /O2 /G5" \
 	"CXXFLAGS = /O2 /G5" \
-	"TCLLDFLAGS = tcl85.lib" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -668,7 +607,6 @@ WIN32-debug:
 	"DEF = /D" \
 	"CCFLAGS = /ZI /Od /G5 /D\"_DEBUG\"" \
 	"CXXFLAGS = /ZI /Od /G5 /D\"_DEBUG\"" \
-	"TCLLDFLAGS = tcl85.lib" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -689,7 +627,6 @@ WIN64:
 	"DEF = /D" \
 	"CCFLAGS =  /EHsc /Wp64 /wd4996 /O2 /D\"_CRT_SECURE_NO_DEPRECATE\"" \
 	"CXXFLAGS = /EHsc /Wp64 /wd4996 /O2 /D\"_CRT_SECURE_NO_DEPRECATE\"" \
-	"TCLLDFLAGS = tcl85.lib" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
