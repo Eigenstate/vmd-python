@@ -14,10 +14,12 @@ requirements:
     build:
         - python
         - libnetcdf 4.3.*
+        - expat
         - numpy
     run:
         - python
         - libnetcdf 4.3.*
+        - expat
         - numpy
 
 about:
