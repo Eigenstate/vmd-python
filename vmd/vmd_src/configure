@@ -729,7 +729,7 @@ $tcl_include      = "-I$stock_tcl_include_dir";
 if ($config_tk) { $tcl_include .= " -I$stock_tk_include_dir"; }
 $tcl_library      = "-L$stock_tcl_library_dir";
 if ($config_tk) { $tcl_library .= " -L$stock_tk_library_dir"; }
-$tcl_libs         = "-ltcl8.5";  
+$tcl_libs         = $ENV{"TCLLDFLAGS"};
 if ($config_tk) { $tcl_libs = "-ltk8.5 -lX11 " . $tcl_libs; }
 
 @tcl_cc           = ();
@@ -2326,7 +2326,7 @@ if ($config_arch eq "LINUXAMD64") {
 
 if ($config_arch eq "LINUXCARMA") {
   # Tcl 8.6.0 is reliable on CARMA, 8.5.x is not...
-  $tcl_libs         = "-ltcl8.6";  
+  $tcl_libs         = $ENV{"TCLLDFLAGS"};
   if ($config_tk) { $tcl_libs = "-ltk8.6 -lX11 " . $tcl_libs; }
   $vmd_libs          = "$tcl_libs -lz";
 
@@ -2425,7 +2425,7 @@ if ($config_arch eq "MACOSX") {
       $fltk_libs        = "-lfltk-x11 -lX11";
       $opengl_include   = $opengl_include . " -I/usr/X11R6/include";
       $opengl_dep_libs  = "-L/usr/X11R6/lib -lGL -framework Carbon -lXext -lX11";
-      $tcl_libs         = "-ltcl8.5-x11";
+      $tcl_libs         = $ENV{"TCLLDFLAGS"};
       if ($config_tk) { $tcl_libs = "-ltk8.5-x11 -lX11 " . $tcl_libs; }
       $vmd_libs         = "$tcl_libs";
     } else {

@@ -91,6 +91,7 @@ class VMDBuild(DistutilsBuild):
             print("\nWARNING: Could not find include file '%s' in standard "
                   "include directories.\n Defaulting to: '%s'"
                   % (incfile, incdir))
+        print("   INC: %s -> %s" % (incfile, incdir))
         return incdir
 
     #==========================================================================
@@ -117,11 +118,12 @@ class VMDBuild(DistutilsBuild):
         except: pass
         libdir = os.path.split(out.decode("utf-8").split("\n")[0])[0]
         if glob(os.path.join(libdir, libfile)): # Glob allows wildcards
+            print("   LIB: %s -> %s" % (libfile, libdir))
             return libdir
 
         # See if the linker can find it, alternatively
         try:
-            out = check_output("ldconfig -p | grep libnetcdf.so$", shell=True)
+            out = check_output("ldconfig -p | grep %s$" % libfile, shell=True)
         except: pass
         libdir = os.path.split(out.decode("utf-8").split(" ")[-1])[0]
 
@@ -130,6 +132,7 @@ class VMDBuild(DistutilsBuild):
             print("WARNING: Could not find library file '%s' in standard "
                   "library directories.\n Defaulting to: '%s'"
                   % (libfile, libdir))
+        print("   LIB: %s -> %s" % (libfile, libdir))
         return libdir
 
     #==========================================================================
@@ -154,17 +157,20 @@ class VMDBuild(DistutilsBuild):
     #==========================================================================
 
     def set_environment_variables(self, pydir):
+        print("Finding libraries...")
         os.environ["LD_LIBRARY_PATH"] = "%s:%s" % (os.path.join(pydir, "lib"),
                                                    os.environ.get("LD_LIBRARY_PATH", ""))
         os.environ["INCLUDE"] = "%s:%s"  % (os.path.join(pydir, "include"),
                                             os.environ.get("INCLUDE", ""))
 
-        # Yes, all of these redundant variables are used in the build...
-        os.environ["TCL_LIBRARY_DIR"] = self._find_library_dir("libtcl.so", pydir)
+        # Ask what tk/tcl version we have and use that
+        from _tkinter import TCL_VERSION
+        os.environ["TCL_LIBRARY_DIR"] = self._find_library_dir("libtcl%s.so" % TCL_VERSION,
+                                                               pydir)
         os.environ["TCL_INCLUDE_DIR"] = self._find_include_dir("tcl.h", pydir)
         os.environ["TCLLIB"] = "-L%s" % os.environ["TCL_LIBRARY_DIR"]
         os.environ["TCLINC"] = "-I%s" % os.environ["TCL_INCLUDE_DIR"]
-        os.environ["TCLLDFLAGS"] = "-ltcl"
+        os.environ["TCLLDFLAGS"] = "-ltcl%s" % TCL_VERSION
 
         os.environ["SQLITELIB"] = "-L%s" % self._find_library_dir("libsqlite3.so", pydir)
         os.environ["SQLITEINC"] = "-I%s" % self._find_include_dir("sqlite3.h", pydir)
