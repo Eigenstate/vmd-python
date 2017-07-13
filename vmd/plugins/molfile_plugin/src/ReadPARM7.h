@@ -230,6 +230,21 @@ static int parse_parm7_charge(const char *fmt,
 }
 
 
+static int parse_parm7_atomicnumber(const char *fmt,
+    int natoms, molfile_atom_t *atoms, FILE *file) {
+  if (strncasecmp(fmt, "%FORMAT(10I8)", 13)) return 0;
+  for (int i=0; i<natoms; i++) {
+    long int j=0;
+    if (fscanf(file, "%li", &j) != 1) {
+      fprintf(stderr, "PARM7: error reading atomic number at index %d\n", i);
+      return 0;
+    }
+    atoms[i].atomicnumber = (int)j;
+  }
+  return 1;
+}
+
+
 static int parse_parm7_mass(const char *fmt,
     int natoms, molfile_atom_t *atoms, FILE *file) {
   if (strncasecmp(fmt, "%FORMAT(5E16.8)", 15)) return 0;

@@ -75,6 +75,9 @@ static int read_parm7_structure(void *mydata, int *optflags, molfile_atom_t *ato
 
     if (!strcmp(field, "ATOM_NAME")) {
       if (!parse_parm7_atoms(buf, prm->Natom, atoms, file)) break;
+    } else if (!strcmp(field, "ATOMIC_NUMBER")) {
+      *optflags |= MOLFILE_ATOMICNUMBER;
+      if (!parse_parm7_atomicnumber(buf, prm->Natom, atoms, file)) break;
     } else if (!strcmp(field, "CHARGE")) {
       *optflags |= MOLFILE_CHARGE;
       if (!parse_parm7_charge(buf, prm->Natom, atoms, file)) break;
