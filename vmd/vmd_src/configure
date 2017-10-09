@@ -1325,9 +1325,9 @@ $actc_libs        = "-lactc";
 #######################
 $netcdf_defines     = "";
 $netcdf_dir         = "$vmd_library_dir/netcdf";
-$netcdf_include     = "-I$netcdf_dir/include";
-$netcdf_library     = "-L$netcdf_dir/lib_$config_arch";
-$netcdf_libs        = "-lnetcdf";
+$netcdf_include     = $ENV{NETCDFINC};
+$netcdf_library     = $ENV{NETCDFLIB};
+$netcdf_libs        = $ENV{NETCDFLDFLAGS};
 @netcdf_cc          = ();
 @netcdf_cu          = ();
 @netcdf_ccpp        = ();
@@ -2393,13 +2393,6 @@ if ($config_arch eq "MACOSX") {
     $fltk_library     = "-L$fltk_dir/MACOSX";
     $fltk_libs        = "-lfltk -lX11";
 
-    # Set Python paths to use the system-provided Python rather than
-    # our own, since Apple MacOS X 10.4.x or newer includes Python 2.3
-    # by default.
-    $python_include     = "-F/System/Library/Frameworks";
-    $python_library     = "";
-    $python_libs        = "-framework Python -lpthread";
-
     $arch_cc          = "cc";
     $arch_ccpp        = "c++";
     $arch_depend_flag = "-MM";
@@ -2484,12 +2477,8 @@ if ($config_arch eq "MACOSXX86" || $config_arch eq "MACOSXX86_64") {
     $fltk_library     = "-L$fltk_dir/$config_arch";
     $fltk_libs        = "-lfltk -lX11";
 
-    # Set Python paths to use the system-provided Python rather than
-    # our own, since Apple MacOS X 10.4.x or newer includes Python 2.3
-    # by default.
-    $python_include     = "-F/System/Library/Frameworks";
-    $python_library     = "";
-    $python_libs        = "-framework Python -lpthread";
+    # Don't set python paths here, they're set previously and we don't
+    # necessarily want system python
 
     if ($config_lp64) {
       $arch_cc          = "cc";
@@ -2534,31 +2523,13 @@ if ($config_arch eq "MACOSXX86" || $config_arch eq "MACOSXX86_64") {
       } else {
         $opengl_dep_libs  = "-L/usr/X11R6/lib -lGL -framework Carbon -lXext -lX11";
       }
-      ##
-      ## XXX workaround a documented MacOS X linker problem when building 
-      ## things using X11+OpenGL:
-      ##   http://developer.apple.com/qa/qa2007/qa1567.html
-      ##
-      $opengl_dep_libs  .= " -dylib_file /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib:/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib";
-      $tcl_libs         = "-ltcl8.5-x11";
-      if ($config_tk) { $tcl_libs = "-ltk8.5-x11 -lX11 " . $tcl_libs; }
-      $vmd_libs          = "$tcl_libs";
     } else {
-      ##
-      ## MacOS X native builds using Tcl/Tck frameworks
-      ## 
-      ## use the Tcl/Tk frameworks provided by apple, when we use their Python
-#      $tcl_include      = "-F/System/Library/Frameworks";
-#      $tcl_library      = "-F/System/Library/Frameworks";
 
       ## use our own Tcl/Tk framework builds when not compiling with Python, 
       ## as Apple's currently shipping versions are quite buggy
       $tcl_include      = "-I$stock_tcl_include_dir";
-      if ($config_tk) { $tcl_include .= " -I$stock_tk_library_dir/Tk.framework/Versions/8.5/Headers"; }
       $tcl_library      = "-F$stock_tcl_library_dir";
-      if ($config_tk) { $tcl_library .= " -F$stock_tk_library_dir"; }
-      $tcl_libs         = "-framework Tcl";
-      if ($config_tk) { $tcl_libs = "-framework Tk " . $tcl_libs; }
+      $tcl_libs         = $ENV{TCLLDFLAGS};
 
       $vmd_include       = "$tcl_include";
       $vmd_library       = "$tcl_library";

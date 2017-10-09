@@ -79,7 +79,6 @@ class VMDBuild(DistutilsBuild):
             out = check_output(["find", "-H"]
                                 + searchdirs
                                 + ["-maxdepth", "1",
-                                   "-readable",
                                    "-name", incfile],
                                close_fds=True,
                                stderr=open(os.devnull, 'wb'))
@@ -96,19 +95,23 @@ class VMDBuild(DistutilsBuild):
 
     #==========================================================================
 
-    def _find_library_dir(self, libfile, pydir):
+    def _find_library_dir(self, libfile, pydir, omit_suffix=False):
         """
         Finds the directory containing a library file. Starts by searching
-        $LD_LIBRARY_PATH, then ld.so.conf system paths used by gcc
+        $LD_LIBRARY_PATH, then ld.so.conf system paths used by gcc.
         """
 
         # Look in directories specified by $LD_LIBRARY_PATH
         out = b""
         if "Darwin" in platform.system():
+            if not omit_suffix:
+                libfile = "%s.dylib" % libfile
             searchdirs = [d for d in os.environ.get("DYLD_LIBRARY_PATH",
                                                     "").split(":")
                           if os.path.isdir(d)]
         else:
+            if not omit_suffix:
+                libfile = "%s.so" % libfile
             searchdirs = [d for d in os.environ.get("LD_LIBRARY_PATH",
                                                     "").split(":")
                           if os.path.isdir(d)]
@@ -116,11 +119,11 @@ class VMDBuild(DistutilsBuild):
             out = check_output(["find", "-H"]
                                + searchdirs
                                + ["-maxdepth", "1",
-                                  "-readable",
                                   "-name", libfile],
                                close_fds=True,
                                stderr=open(os.devnull, 'wb'))
         except: pass
+
         libdir = os.path.split(out.decode("utf-8").split("\n")[0])[0]
         if glob(os.path.join(libdir, libfile)): # Glob allows wildcards
             print("   LIB: %s -> %s" % (libfile, libdir))
@@ -128,24 +131,28 @@ class VMDBuild(DistutilsBuild):
 
         # See if the linker can find it, alternatively
         # This only works on Linux
-        try:
-            out = check_output("ldconfig -p | grep %s$" % libfile, shell=True)
-        except: pass
-        libdir = os.path.split(out.decode("utf-8").split(" ")[-1])[0]
+        if "Linux" in platform.system():
+            try:
+                out = check_output("ldconfig -p | grep %s$" % libfile, shell=True)
+            except: pass
+            libdir = os.path.split(out.decode("utf-8").split(" ")[-1])[0]
+        else:
+            libdir = ""
 
         if not glob(os.path.join(libdir, libfile)):
-            libdir = os.path.join(pydir, "lib", libfile)
+            libdir = os.path.join(pydir, "lib")
             print("WARNING: Could not find library file '%s' in standard "
                   "library directories.\n Defaulting to: '%s'"
-                  % (libfile, libdir))
+                  % (libfile, os.path.join(libdir, libfile)))
+            quit(1)
         print("   LIB: %s -> %s" % (libfile, libdir))
         return libdir
 
     #==========================================================================
 
     def _find_netcdf(self, pydir):
-
-        libdir = self._find_library_dir("libnetcdf.settings", pydir)
+        libdir = self._find_library_dir("libnetcdf.settings", pydir,
+                                        omit_suffix=True)
         incdir = self._find_include_dir("netcdf.h", pydir)
 
         # Get netcdfldflags from settings file
@@ -168,26 +175,26 @@ class VMDBuild(DistutilsBuild):
         if "Linux" in osys or "Windows" in osys:
             os.environ["LD_LIBRARY_PATH"] = "%s:%s" % (os.path.join(pydir, "lib"),
                                                        os.environ.get("LD_LIBRARY_PATH", ""))
-            os.environ["INCLUDE"] = "%s:%s"  % (os.path.join(pydir, "include"),
-                                                os.environ.get("INCLUDE", ""))
         elif "Darwin" in osys:
             os.environ["DYLD_LIBRARY_PATH"] = "%s:%s" % (os.path.join(pydir, "lib"),
                                                          os.environ.get("DYLD_LIBRARY_PATH", ""))
+        os.environ["INCLUDE"] = "%s:%s"  % (os.path.join(pydir, "include"),
+                                               os.environ.get("INCLUDE", ""))
 
         # Ask what tk/tcl version we have and use that
         from _tkinter import TCL_VERSION
-        os.environ["TCL_LIBRARY_DIR"] = self._find_library_dir("libtcl%s.so" % TCL_VERSION,
+        os.environ["TCL_LIBRARY_DIR"] = self._find_library_dir("libtcl%s" % TCL_VERSION,
                                                                pydir)
         os.environ["TCL_INCLUDE_DIR"] = self._find_include_dir("tcl.h", pydir)
         os.environ["TCLLIB"] = "-L%s" % os.environ["TCL_LIBRARY_DIR"]
         os.environ["TCLINC"] = "-I%s" % os.environ["TCL_INCLUDE_DIR"]
         os.environ["TCLLDFLAGS"] = "-ltcl%s" % TCL_VERSION
 
-        os.environ["SQLITELIB"] = "-L%s" % self._find_library_dir("libsqlite3.so", pydir)
+        os.environ["SQLITELIB"] = "-L%s" % self._find_library_dir("libsqlite3", pydir)
         os.environ["SQLITEINC"] = "-I%s" % self._find_include_dir("sqlite3.h", pydir)
         os.environ["SQLITELDFLAGS"] = "-lsqlite3"
 
-        os.environ["EXPATLIB"] = "-L%s" % self._find_library_dir("libexpat.so", pydir)
+        os.environ["EXPATLIB"] = "-L%s" % self._find_library_dir("libexpat", pydir)
         os.environ["EXPATINC"] = "-I%s" % self._find_include_dir("expat.h", pydir)
         os.environ["EXPATLDFLAGS"] = "-lexpat"
 
@@ -205,10 +212,15 @@ class VMDBuild(DistutilsBuild):
 
         # Get python linker flag, as it may be -l3.6m or -l3.6 depending on malloc
         # this python was built against
-        pylibname = "libpython%s*.so" % sysconfig.get_python_version()
+        pylibname = "libpython%s*" % sysconfig.get_python_version()
         libs = glob(os.path.join(self._find_library_dir(pylibname, pydir), pylibname))
         libs = sorted(libs, key=lambda x: len(x))
-        pythonldflag = os.path.split(libs[-1])[-1].replace("lib", "-l").replace(".so", "")
+        pythonldflag = "-l%s" % os.path.split(libs[-1])[-1][3:]
+        if "Darwin" in osys:
+            pythonldflag = pythonldflag.replace(".dylib", "")
+        else:
+            pythonldflag = pythonldflag.replace(".so", "")
+
         os.environ["VMDEXTRALIBS"] = " ".join([os.environ["SQLITELDFLAGS"],
                                                os.environ["EXPATLDFLAGS"],
                                                pythonldflag])
@@ -226,7 +238,7 @@ class VMDBuild(DistutilsBuild):
                 target = "LINUX"
         elif "Darwin" in osys:
             if "x86_64" in mach:
-                target = "MACOSX86_64"
+                target = "MACOSXX86_64"
             elif "PowerPC" in mach:
                 target = "MACOSX"
             else:
