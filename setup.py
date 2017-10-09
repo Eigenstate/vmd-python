@@ -104,9 +104,14 @@ class VMDBuild(DistutilsBuild):
 
         # Look in directories specified by $LD_LIBRARY_PATH
         out = b""
-        searchdirs = [d for d in os.environ.get("LD_LIBRARY_PATH",
-                                                "").split(":")
-                      if os.path.isdir(d)]
+        if "Darwin" in platform.system():
+            searchdirs = [d for d in os.environ.get("DYLD_LIBRARY_PATH",
+                                                    "").split(":")
+                          if os.path.isdir(d)]
+        else:
+            searchdirs = [d for d in os.environ.get("LD_LIBRARY_PATH",
+                                                    "").split(":")
+                          if os.path.isdir(d)]
         try:
             out = check_output(["find", "-H"]
                                + searchdirs
@@ -122,6 +127,7 @@ class VMDBuild(DistutilsBuild):
             return libdir
 
         # See if the linker can find it, alternatively
+        # This only works on Linux
         try:
             out = check_output("ldconfig -p | grep %s$" % libfile, shell=True)
         except: pass
@@ -158,10 +164,15 @@ class VMDBuild(DistutilsBuild):
 
     def set_environment_variables(self, pydir):
         print("Finding libraries...")
-        os.environ["LD_LIBRARY_PATH"] = "%s:%s" % (os.path.join(pydir, "lib"),
-                                                   os.environ.get("LD_LIBRARY_PATH", ""))
-        os.environ["INCLUDE"] = "%s:%s"  % (os.path.join(pydir, "include"),
-                                            os.environ.get("INCLUDE", ""))
+        osys = platform.system()
+        if "Linux" in osys or "Windows" in osys:
+            os.environ["LD_LIBRARY_PATH"] = "%s:%s" % (os.path.join(pydir, "lib"),
+                                                       os.environ.get("LD_LIBRARY_PATH", ""))
+            os.environ["INCLUDE"] = "%s:%s"  % (os.path.join(pydir, "include"),
+                                                os.environ.get("INCLUDE", ""))
+        elif "Darwin" in osys:
+            os.environ["DYLD_LIBRARY_PATH"] = "%s:%s" % (os.path.join(pydir, "lib"),
+                                                         os.environ.get("DYLD_LIBRARY_PATH", ""))
 
         # Ask what tk/tcl version we have and use that
         from _tkinter import TCL_VERSION
