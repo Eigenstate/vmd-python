@@ -160,7 +160,8 @@ class VMDBuild(DistutilsBuild):
         with open(os.path.join(libdir, "libnetcdf.settings")) as fn:
             lines = "\n".join(fn.readlines())
             matches = re.findall(pattern, lines)
-        os.environ["NETCDFLDFLAGS"] = "-lnetcdf %s" % matches[0] if len(matches) else ""
+        os.environ["NETCDFLDFLAGS"] = "-lnetcdf %s" \
+                                      % (matches[0] if len(matches) else "")
 
         # Set appropriate environment variables
         os.environ["NETCDFLIB"] = "-L%s" % os.path.join(libdir)
@@ -215,11 +216,12 @@ class VMDBuild(DistutilsBuild):
         pylibname = "libpython%s*" % sysconfig.get_python_version()
         libs = glob(os.path.join(self._find_library_dir(pylibname, pydir), pylibname))
         libs = sorted(libs, key=lambda x: len(x))
-        pythonldflag = "-l%s" % os.path.split(libs[-1])[-1][3:]
+
+        pythonldflag = "-l%s" % os.path.split(libs[-1])[-1][3:] # Remove "lib"
         if "Darwin" in osys:
-            pythonldflag = pythonldflag.replace(".dylib", "")
+            pythonldflag = pythonldflag.partition(".dylib")[0]
         else:
-            pythonldflag = pythonldflag.replace(".so", "")
+            pythonldflag = pythonldflag.partition(".so")[0]
 
         os.environ["VMDEXTRALIBS"] = " ".join([os.environ["SQLITELDFLAGS"],
                                                os.environ["EXPATLDFLAGS"],
