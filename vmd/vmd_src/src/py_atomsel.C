@@ -10,7 +10,7 @@
  *
  *      $RCSfile: py_atomsel.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.23 $      $Date: 2016/11/28 03:05:08 $
+ *      $Revision: 1.25 $      $Date: 2017/02/03 08:19:11 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -53,7 +53,7 @@ static char *atomsel_doc = (char *)
     "atomsel( selection, molid = top, frame = now) -> new selection object\n"
     ;
 
-static void
+static void 
 atomsel_dealloc( PyAtomSelObject *obj ) {
   delete obj->atomSel;
   ((PyObject *)(obj))->ob_type->tp_free((PyObject *)obj);
@@ -63,7 +63,7 @@ static PyObject *
 atomsel_repr( PyAtomSelObject *obj ) {
   AtomSel *sel = obj->atomSel;
   char *s = new char[strlen(sel->cmdStr) + 100];
-  sprintf(s, "atomsel('%s', molid=%d, frame=%d)",
+  sprintf(s, "atomsel('%s', molid=%d, frame=%d)", 
       sel->cmdStr, sel->molid(), sel->which_frame);
 #if PY_MAJOR_VERSION >= 3
   PyObject *result = PyUnicode_FromString(s);
@@ -83,7 +83,7 @@ atomsel_str( PyAtomSelObject *obj ) {
 #endif
 }
 
-// Create a new atom selection
+// Create a new atom selection 
 static PyObject *
 atomsel_new( PyTypeObject *type, PyObject *args, PyObject *kwds ) {
 
@@ -91,10 +91,10 @@ atomsel_new( PyTypeObject *type, PyObject *args, PyObject *kwds ) {
   int molid = -1;  // if not overridden, use top molecule
   int frame = -1;  // corresponds to current frame
 
-  static char *kwlist[] = { (char *)"selection", (char *)"molid",
+  static char *kwlist[] = { (char *)"selection", (char *)"molid", 
                             (char *)"frame", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|sii", kwlist,
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|sii", kwlist, 
         &sel, &molid, &frame))
     return NULL;
 
@@ -136,7 +136,7 @@ static char *get_doc = (char *)
 
 static PyObject *atomsel_get(PyAtomSelObject *a, PyObject *keyobj) {
 
-  // FIXME: make everything in this pipeline const so that it's
+  // FIXME: make everything in this pipeline const so that it's 
   // thread-safe.
   VMDApp *app = a->app;
   AtomSel *atomSel = a->atomSel;
@@ -149,10 +149,9 @@ static PyObject *atomsel_get(PyAtomSelObject *a, PyObject *keyobj) {
 #else
   const char *attr = PyString_AsString(keyobj);
 #endif
-
   if (!attr) return NULL;
 
-  //
+  // 
   // Check for a valid attribute
   //
   SymbolTable *table = app->atomSelParser;
@@ -167,14 +166,14 @@ static PyObject *atomsel_get(PyAtomSelObject *a, PyObject *keyobj) {
     PyErr_SetString(PyExc_ValueError, "attribute is not a keyword or singleword");
     return NULL;
   }
-
-  //
+ 
+  // 
   // fetch the data
   //
 
   int *flgs = atomSel->on;
   atomsel_ctxt context(table, mol, atomSel->which_frame, attr);
-  PyObject *newlist = PyList_New(atomSel->selected);
+  PyObject *newlist = PyList_New(atomSel->selected); 
 
   if (elem->is_a == SymbolTableElement::SINGLEWORD) {
     int *tmp = new int[num_atoms];
@@ -231,7 +230,7 @@ static PyObject *atomsel_get(PyAtomSelObject *a, PyObject *keyobj) {
         elem->keyword_double(&context, num_atoms, tmp, flgs);
         int j=0;
         for (int i=0; i<num_atoms; i++) {
-          if (flgs[i])
+          if (flgs[i])  
             PyList_SET_ITEM(newlist, j++, PyFloat_FromDouble(tmp[i]));
         }
         delete [] tmp;
@@ -249,7 +248,7 @@ static char *set_doc = (char *)
 
 static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
 
-  // FIXME: make everything in this pipeline const so that it's
+  // FIXME: make everything in this pipeline const so that it's 
   // thread-safe.
   VMDApp *app = a->app;
   AtomSel *atomSel = a->atomSel;
@@ -281,7 +280,7 @@ static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
     return NULL;
   }
 
-  //
+  // 
   // check that we have been given either one value or one for each selected
   // atom
   //
@@ -304,8 +303,8 @@ static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
   }
 
   int *flgs = atomSel->on;
-
-  //
+ 
+  //  
   // set the data
   //
 
@@ -343,7 +342,7 @@ static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
     double *list = new double[num_atoms];
     if (fastval) {
       int j=0;
-      for (int i=0; i<num_atoms; i++) {
+      for (int i=0; i<num_atoms; i++) { 
         if (!flgs[i]) continue;
         float dval = (float)PyFloat_AsDouble(PySequence_Fast_GET_ITEM(fastval, j++));
         list[i] = dval;
@@ -360,9 +359,9 @@ static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
 
   } else if (elem->returns_a == SymbolTableElement::IS_STRING) {
     const char **list = new const char *[num_atoms];
-    if (fastval) {
+    if (fastval) { 
       int j=0;
-      for (int i=0; i<num_atoms; i++) {
+      for (int i=0; i<num_atoms; i++) { 
         if (!flgs[i]) continue;
 #if PY_MAJOR_VERSION >= 3
         const char *sval = PyUnicode_AsUTF8(PySequence_Fast_GET_ITEM(fastval, j++));
@@ -391,10 +390,10 @@ static PyObject *atomsel_set(PyAtomSelObject *a, PyObject *args) {
       !strcmp(attr, "resname") ||
       !strcmp(attr, "chain") ||
       !strcmp(attr, "segid") ||
-      !strcmp(attr, "segname"))
+      !strcmp(attr, "segname")) 
     app->moleculeList->add_color_names(mol->id());
 
-  mol->force_recalc(DrawMolItem::SEL_REGEN | DrawMolItem::COL_REGEN);
+  mol->force_recalc(DrawMolItem::SEL_REGEN | DrawMolItem::COL_REGEN); 
 
   Py_XDECREF(fastval);
   Py_INCREF(Py_None);
@@ -426,7 +425,7 @@ static int setframe(PyAtomSelObject *a, PyObject *frameobj, void *) {
   int frame = PyInt_AsLong(frameobj);
 #endif
   if (frame < 0 && PyErr_Occurred()) return -1;
-  if (frame != AtomSel::TS_LAST && frame != AtomSel::TS_NOW &&
+  if (frame != AtomSel::TS_LAST && frame != AtomSel::TS_NOW && 
       (frame < 0 || frame >= mol->numframes())) {
     PyErr_SetString(PyExc_ValueError, "Invalid frame");
     return -1;
@@ -466,13 +465,13 @@ static char *write_doc = (char *)
   "Write the atoms in the selection to a file of the given type.";
 
 static PyObject *py_write(PyAtomSelObject *a, PyObject *args, PyObject *kwds) {
-
+  
   AtomSel *atomSel = a->atomSel;
   DrawMolecule *mol;
   if (!(mol = get_molecule(a))) return NULL;
   const char *filetype, *filename;
   static char *kwlist[] = { (char *)"filetype", (char *)"filename", NULL };
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "ss", kwlist,
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "ss", kwlist, 
         &filetype, &filename))
     return NULL;
 
@@ -489,7 +488,7 @@ static PyObject *py_write(PyAtomSelObject *a, PyObject *args, PyObject *kwds) {
   spec.first = frame;
   spec.last = frame;
   spec.stride = 1;
-  spec.waitfor = -1;
+  spec.waitfor = FileSpec::WAIT_ALL;
   spec.selection = atomSel->on;
   int rc;
   VMDApp *app = get_vmdapp();
@@ -506,7 +505,7 @@ static PyObject *py_write(PyAtomSelObject *a, PyObject *args, PyObject *kwds) {
 }
 
 static PyObject *getbonds(PyAtomSelObject *a, void *) {
-
+   
   AtomSel *atomSel = a->atomSel;
   DrawMolecule *mol;
   if (!(mol = get_molecule(a))) return NULL;
@@ -537,7 +536,7 @@ static int setbonds(PyAtomSelObject *a, PyObject *obj, void *) {
   if (!(mol = get_molecule(a))) return -1;
 
   if (!PySequence_Check(obj) || PySequence_Size(obj) != atomSel->selected) {
-    PyErr_SetString(PyExc_ValueError,
+    PyErr_SetString(PyExc_ValueError, 
       (char *)"setbonds: atomlist and bondlist must have the same size");
     return -1;
   }
@@ -549,7 +548,7 @@ static int setbonds(PyAtomSelObject *a, PyObject *obj, void *) {
   for (int i=0; i<atomSel->num_atoms; i++) {
     if (!atomSel->on[i]) continue;
     MolAtom *atom = mol->atom(i);
-
+   
     PyObject *atomids = PySequence_Fast_GET_ITEM(fastbonds, ibond++);
     if (!PyList_Check(atomids)) continue;
     int numbonds = PyList_Size(atomids);
@@ -725,7 +724,7 @@ SYMBOL_TABLE_FUNC(functions, SymbolTableElement::FUNCTION)
 SYMBOL_TABLE_FUNC(stringfunctions, SymbolTableElement::STRINGFCTN)
 
 #undef SYMBOL_TABLE_FUNC
-
+ 
 // utility routine for parsing weight values.  Uses the sequence protocol
 // so that sequence-type structure (list, tuple) will be accepted.
 static float *parse_weight(AtomSel *sel, PyObject *wtobj) {
@@ -778,8 +777,76 @@ static PyObject *minmax(PyAtomSelObject *a, PyObject *withradii) {
     PyErr_SetString(PyExc_ValueError, measure_error(rc));
     return NULL;
   }
-  return Py_BuildValue("[f,f,f],[f,f,f]",
+  return Py_BuildValue("[f,f,f],[f,f,f]", 
       min[0], min[1], min[2], max[0], max[1], max[2]);
+}
+static char *centerperres_doc = (char *)
+  "centerperresidue(weight=None) -> (x, y, z)\n"
+  "Return a list where each element has a 3-list corresponding to the center of each residue in the selection,\n"
+  "optionally weighted by weight.";
+
+static PyObject *centerperresidue(PyAtomSelObject *a, PyObject *args, PyObject *kwds) {
+
+  AtomSel *atomSel = a->atomSel;
+  DrawMolecule *mol;
+  if (!(mol = get_molecule(a))) return NULL;
+  PyObject *weightobj = NULL;
+
+  static char *kwlist[] = { "weight", NULL };
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &weightobj))
+    return NULL;
+  float *weight = parse_weight(atomSel, weightobj);
+  if (!weight) return NULL;
+
+  float *cen = new float[3*atomSel->selected];
+  // compute center
+  int ret_val = measure_center_perresidue(a->app->moleculeList, atomSel, 
+      atomSel->coordinates(a->app->moleculeList),
+      weight, cen);
+  delete [] weight;
+  if (ret_val < 0) {
+    PyErr_SetString(PyExc_ValueError, measure_error(ret_val));
+    return NULL;
+  }
+  //Build the python list.
+  PyObject* returnlist = PyList_New(ret_val);
+  for (int i = 0; i < ret_val; i++) {
+    PyObject* returnlistelement = PyList_New(3);
+    for (int j = 0; j < 3; j++) {
+      PyList_SetItem(returnlistelement, j, Py_BuildValue("f", cen[3*i+j]));
+    }
+    PyList_SetItem(returnlist, i, returnlistelement);
+  }
+  delete [] cen;
+  return returnlist;
+}
+
+
+static char* rmsfperres_doc = (char *)
+  "rmsfperresidue([first=0, last=-1, step=1])\n"
+  " Measures the rmsf along a trajectory per residue.\n"
+  " By default, goes over all frames\n";
+
+static PyObject *py_rmsfperresidue(PyAtomSelObject *a, PyObject *args, PyObject *kwds) {
+  int first=0, last=-1, step=1;
+  static char *kwlist[] = {(char *)"first",(char *)"last",(char *)"step", NULL };
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iii", kwlist, 
+        &first, &last, &step)) { return NULL;}
+  float *rmsf = new float[a->atomSel->selected];
+  int ret_val = measure_rmsf_perresidue(a->atomSel, a->app->moleculeList, first, last, step, rmsf);
+  if (ret_val < 0) {
+    PyErr_SetString(PyExc_RuntimeError, measure_error(ret_val));
+    PyErr_Print();
+    delete [] rmsf;
+    return NULL;
+  }
+  //Build the python list.
+  PyObject* returnlist = PyList_New(ret_val);
+  for (int i = 0; i < ret_val; i++)
+    PyList_SetItem(returnlist, i, Py_BuildValue("f", rmsf[i]));
+  delete [] rmsf;
+  return returnlist;
 }
 
 static char *center_doc = (char *)
@@ -803,7 +870,7 @@ static PyObject *center(PyAtomSelObject *a, PyObject *args, PyObject *kwds) {
 
   float cen[3];
   // compute center
-  int ret_val = measure_center(atomSel,
+  int ret_val = measure_center(atomSel, 
       atomSel->coordinates(a->app->moleculeList),
       weight, cen);
   delete [] weight;
@@ -837,7 +904,32 @@ static float *parse_two_selections_return_weight(PyAtomSelObject *a,
   *othersel = sel2;
   return weight;
 }
+static char* rmsdperres_doc = (char *)
+  "rmsdperresidue(sel, weight=None)-> rms distance between selections.\n"
+  "  Selections must have the same number of atoms.\n"
+  "  Weight must be None or list of same size as selections.\n"
+  "  Returns a list comparing the RMSD for each residue within the selection.\n";
 
+static PyObject *py_rmsdperresidue(PyAtomSelObject *a, PyObject *args) {
+  AtomSel *sel2;
+  float *weight = parse_two_selections_return_weight(a, args, &sel2);
+  if (!weight) return NULL;
+
+  float *rmsd = new float[a->atomSel->selected];
+  int rc = measure_rmsd_perresidue(a->atomSel, sel2, a->app->moleculeList, a->atomSel->selected,
+      weight, rmsd);
+  delete [] weight;
+  if (rc < 0) {
+    PyErr_SetString(PyExc_ValueError, measure_error(rc));
+    return NULL;
+  }
+  //Build the python list.
+  PyObject* returnlist = PyList_New(rc);
+  for (int i = 0; i < rc; i++)
+    PyList_SetItem(returnlist, i, Py_BuildValue("f", rmsd[i]));
+  delete [] rmsd;
+  return returnlist;
+}
 static char *rmsd_doc = (char *)
   "rmsd(sel, weight=None) -> rms distance between selections.\n"
   "  Selections must have the same number of atoms.\n"
@@ -851,8 +943,30 @@ static PyObject *py_rmsd(PyAtomSelObject *a, PyObject *args) {
 
   float rmsd;
   int rc = measure_rmsd(a->atomSel, sel2, a->atomSel->selected,
-      a->atomSel->coordinates(a->app->moleculeList),
-      sel2->coordinates(a->app->moleculeList),
+      a->atomSel->coordinates(a->app->moleculeList), 
+      sel2->coordinates(a->app->moleculeList), 
+      weight, &rmsd);
+  delete [] weight;
+  if (rc < 0) {
+    PyErr_SetString(PyExc_ValueError, measure_error(rc));
+    return NULL;
+  }
+  return PyFloat_FromDouble(rmsd);
+}
+static char *rmsd_q_doc = (char *)
+  "rmsdQCP(sel, weight=None) -> rms distance between selections after optimal rotation.\n"
+  "  Selections must have the same number of atoms.\n"
+  "  Weight must be None or list of same size as selections.";
+static PyObject *py_rmsd_q(PyAtomSelObject *a, PyObject *args) {
+
+  AtomSel *sel2;
+  float *weight = parse_two_selections_return_weight(a, args, &sel2);
+  if (!weight) return NULL;
+
+  float rmsd;
+  int rc = measure_rmsd_qcp(a->app, a->atomSel, sel2, a->atomSel->selected,
+      a->atomSel->coordinates(a->app->moleculeList), 
+      sel2->coordinates(a->app->moleculeList), 
       weight, &rmsd);
   delete [] weight;
   if (rc < 0) {
@@ -869,7 +983,7 @@ static char* rmsf_doc = (char *)
 static PyObject *py_rmsf(PyAtomSelObject *a, PyObject *args, PyObject *kwds) {
   int first=0, last=-1, step=1;
   static char *kwlist[] = {(char *)"first",(char *)"last",(char *)"step", NULL };
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iii", kwlist,
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iii", kwlist, 
         &first, &last, &step)) { return NULL;}
   float *rmsf = new float[a->atomSel->selected];
   int ret_val = measure_rmsf(a->atomSel, a->app->moleculeList, first, last, step, rmsf);
@@ -925,7 +1039,7 @@ static PyObject *py_fit(PyAtomSelObject *a, PyObject *args) {
   if (!weight) return NULL;
 
   Matrix4 mat;
-  int rc = measure_fit(a->atomSel, sel2,
+  int rc = measure_fit(a->atomSel, sel2, 
       a->atomSel->coordinates(a->app->moleculeList),
       sel2->coordinates(a->app->moleculeList),
       weight, NULL, &mat);
@@ -984,8 +1098,8 @@ static PyObject *py_move(PyAtomSelObject *a, PyObject *matobj) {
 
   int err;
   if ((err = measure_move(
-          atomSel,
-          atomSel->coordinates(a->app->moleculeList),
+          atomSel, 
+          atomSel->coordinates(a->app->moleculeList), 
           mat)) != MEASURE_NOERR) {
     PyErr_SetString(PyExc_ValueError, measure_error(err));
     return NULL;
@@ -1000,7 +1114,7 @@ static char *contacts_doc = (char *)
   "Return two lists, whose corresponding elements contain atom indices\n"
   "in selection that are within cutoff of sel, but not directly bonded.\n";
 
-// Find all atoms p in sel1 and q in sel2 within the cutoff.
+// Find all atoms p in sel1 and q in sel2 within the cutoff.  
 static PyObject *contacts(PyAtomSelObject *a, PyObject *args) {
   AtomSel *sel1 = a->atomSel;
   DrawMolecule *mol;
@@ -1059,6 +1173,69 @@ static PyObject *contacts(PyAtomSelObject *a, PyObject *args) {
   return result;
 }
 
+static char *py_hbonds_doc = (char *)
+  "hbond(cutoff, maxangle, [otherselection]) -> hydrogen bond setup for the current frame\n"
+  "Return three lists, whose corresponding elements contain atom indices\n"
+  "in selection that form a hydrogen bond (acceptor, donor, and proton).\n";
+
+static PyObject *py_hbonds(PyAtomSelObject *a, PyObject *args) {
+  AtomSel *sel1 = a->atomSel;
+  DrawMolecule *mol;
+  if (!(mol = get_molecule(a))) return NULL;
+
+  PyObject *obj2 = NULL;
+  double cutoff, maxangle;
+  if (!PyArg_ParseTuple(args, "dd|O", &cutoff, &maxangle, &obj2))
+    return NULL;
+  AtomSel *sel2 = NULL;
+  if (obj2 != NULL) {
+    if (!atomsel_Check(obj2)) return NULL;
+    if (!(get_molecule((PyAtomSelObject *)obj2))) return NULL;
+    sel2 = ((PyAtomSelObject *)obj2)->atomSel;
+  }
+  const float *pos = sel1->coordinates(a->app->moleculeList);
+  if (!pos) {
+    PyErr_SetString(PyExc_ValueError, "molecule contains no coordinates");
+    return NULL;
+  }
+  int *donlist, *hydlist, *acclist;
+  int maxsize = 2 * sel1->num_atoms; //This heuristic is based on ice, where there are < 2 hydrogen bonds per atom if hydrogens are in the selection, and exactly 2 if hydrogens are not considered.
+  donlist = new int[maxsize];
+  hydlist = new int[maxsize];
+  acclist = new int[maxsize];
+  int rc = measure_hbonds((Molecule *)mol, sel1, sel2, cutoff, maxangle, donlist, hydlist, acclist, maxsize);
+  if (rc > maxsize) {
+    delete [] donlist;
+    delete [] hydlist;
+    delete [] acclist;
+    maxsize = rc;
+    donlist = new int[maxsize];
+    hydlist = new int[maxsize];
+    acclist = new int[maxsize];
+    rc = measure_hbonds((Molecule *)mol, sel1, sel2, cutoff, maxangle, donlist, hydlist, acclist, maxsize);
+  }
+  if (rc < 0) {
+    PyErr_SetString(PyExc_ValueError, "Error inside measure_hbonds");
+    return NULL;
+  }
+  PyObject *newdonlist = PyList_New(rc);
+  PyObject *newacclist = PyList_New(rc);
+  PyObject *newhydlist = PyList_New(rc);
+  for (int i = 0; i < rc; i++) {
+    PyList_SetItem(newdonlist, i, Py_BuildValue("i", donlist[i]));
+    PyList_SetItem(newacclist, i, Py_BuildValue("i", acclist[i]));
+    PyList_SetItem(newhydlist, i, Py_BuildValue("i", hydlist[i]));
+  }
+  delete [] donlist;
+  delete [] hydlist;
+  delete [] acclist;
+  PyObject *result = PyList_New(3);
+  PyList_SET_ITEM(result, 0, newdonlist);
+  PyList_SET_ITEM(result, 1, newacclist);
+  PyList_SET_ITEM(result, 2, newhydlist);
+  return result;
+}
+
 static char *sasa_doc = (char *)
     "sasa(srad, sel, ... ) -> solvent accessible surface area.\n"
     "srad gives solvent radius.\n"
@@ -1083,8 +1260,8 @@ static PyObject *sasa(PyAtomSelObject *a, PyObject *args, PyObject *keywds) {
   static char *kwlist[] = {
     "srad", "samples", "points", "restrict", NULL
   };
-  if (!PyArg_ParseTupleAndKeywords(args, keywds,
-        "f|iOO:atomsel.sasa", kwlist,
+  if (!PyArg_ParseTupleAndKeywords(args, keywds, 
+        "f|iOO:atomsel.sasa", kwlist, 
         &srad, &samples, &pointsobj, &restrictobj))
     return NULL;
 
@@ -1112,10 +1289,10 @@ static PyObject *sasa(PyAtomSelObject *a, PyObject *args, PyObject *keywds) {
   // if points are requested, fetch them
   ResizeArray<float> sasapts;
   ResizeArray<float> *sasaptsptr = pointsobj ? &sasapts : NULL;
-
+ 
   // go!
   float sasa = 0;
-  int rc = measure_sasa(sel, coords, radii, srad, &sasa,
+  int rc = measure_sasa(sel, coords, radii, srad, &sasa, 
         sasaptsptr, restrictsel, sampleptr);
   if (rc) {
     PyErr_SetString(PyExc_ValueError, measure_error(rc));
@@ -1132,9 +1309,167 @@ static PyObject *sasa(PyAtomSelObject *a, PyObject *args, PyObject *keywds) {
   // return the total SASA.
   return PyFloat_FromDouble(sasa);
 }
+#if defined(VMDCUDA)
+#include "CUDAMDFF.h"
+static char *mdffsim_doc = (char *)
+    "mdffsim(res, spacing) -> computes a density map and returns it to the caller.\n"
+    "Optional keyword arguments:\n"
+    " res is the resolution (default is 10).\n"
+    " spacing is the space between adjacent voxel points.\n"
+    "This procedure returns a list with 4 elements.\n"
+    "1.) A 1-D list of the values at each point.\n"
+    "2.) 3 elements describing the x, y, z lengths.\n"
+    "3.) 3 elements describing the position of the origin.\n"
+    "4.) 9 elements describing the deltas for each axis (x, y, and z).\n"
+    "Example useage for export to numpy:\n"
+    "    data, shape, origin, delta = asel.mdffsim(10,3)\n"
+    "    data = np.array(data)\n"
+    "    shape = np.array(shape)\n"
+    "    data = data.reshape(shape, order='F')\n"
+    "    delta = np.array(delta).reshape(3,3)\n"
+    "    delta /= shape-1;\n";
 
+static PyObject *py_mdffsim(PyAtomSelObject *a, PyObject *args, PyObject *keywds) {
+  AtomSel *sel = a->atomSel;
+  int verbose = 1;
+  float radscale;
+  double gspacing = 0;
+  double resolution = 10.0;
+  int i;
+  static char *kwlist[] = {
+    "res", "spacing", NULL
+  };
+  if (!PyArg_ParseTupleAndKeywords(args, keywds, 
+        "|dd", kwlist, 
+        &resolution, &gspacing))
+    return NULL;
+  if (gspacing < 0) {
+    PyErr_SetString(PyExc_ValueError, "Spacing must be non-negative");
+    return NULL;
+  }
+  if (resolution < 0) {
+    PyErr_SetString(PyExc_ValueError, "Resolution must be non-negative");
+    return NULL;
+  }
+  Molecule *mymol = a->app->moleculeList->mol_from_id(sel->molid());
+  if (mymol == NULL) {
+    PyErr_SetString(PyExc_ValueError, "Selection points to a deleted molecule.");
+    return NULL;
+  }
+  const float *framepos = sel->coordinates(a->app->moleculeList);
+  const float *radii = mymol->radius();
+  radscale = .2*resolution;
+
+  if (gspacing == 0) {
+    gspacing = 1.5*radscale;
+  }
+
+  int quality = 0;
+  if (resolution >= 9)
+    quality = 0;
+  else
+    quality = 3;
+
+  VolumetricData *synthvol=NULL;
+  int cuda_err = -1;
+  cuda_err = vmd_cuda_calc_density(sel, a->app->moleculeList, quality, radscale, gspacing, &synthvol, NULL, NULL, 1);
+  if (cuda_err == -1) {
+    PyErr_SetString(PyExc_ValueError, "CUDA Error, no map returned.");
+    return NULL;
+  }
+  PyObject *data = PyList_New(synthvol->xsize * synthvol->ysize * synthvol->zsize);
+  for (i = 0; i < synthvol->xsize * synthvol->ysize * synthvol->zsize; i++) {
+    PyList_SetItem(data, i, Py_BuildValue("f", synthvol->data[i]));
+  }
+  PyObject *deltas = PyList_New(9);
+  PyObject *origin = PyList_New(3);
+  PyObject *size = PyList_New(3);
+  PyList_SetItem(size, 0, Py_BuildValue("i", synthvol->xsize));
+  PyList_SetItem(size, 1, Py_BuildValue("i", synthvol->ysize));
+  PyList_SetItem(size, 2, Py_BuildValue("i", synthvol->zsize));
+  for (i = 0; i < 3; i++) {
+    PyList_SetItem(deltas, i, Py_BuildValue("d", synthvol->xaxis[i]));
+    PyList_SetItem(deltas, 3+i, Py_BuildValue("d", synthvol->yaxis[i]));
+    PyList_SetItem(deltas, 6+i, Py_BuildValue("d", synthvol->zaxis[i]));
+    PyList_SetItem(origin, i, Py_BuildValue("d", synthvol->origin[i]));
+  }
+  delete synthvol;
+  PyObject *result = PyList_New(4);
+  PyList_SET_ITEM(result, 0, data);
+  PyList_SET_ITEM(result, 1, size);
+  PyList_SET_ITEM(result, 2, origin);
+  PyList_SET_ITEM(result, 3, deltas);
+  return result;
+}
+static char *mdffcc_doc = (char *)
+    "mdffcc(volid, res, spacing) -> returns the cross-correlation between\n"
+    "the map loaded into volid and the current selection.\n"
+    " volid is the integer volumetric identifier for the comparison map.\n"
+    "Optional keyword arguments:\n"
+    " res is the resolution (default is 10).\n"
+    " spacing is the space between adjacent voxel points.\n"
+    "This procedure returns a single number for a single frame.\n";
+static PyObject *py_mdffcc(PyAtomSelObject *a, PyObject *args, PyObject *keywds) {
+  AtomSel *sel = a->atomSel;
+  int verbose = 1;
+  float radscale;
+  double gspacing = 0;
+  double resolution = 10.0;
+  float return_cc;
+  int i;
+  int volid;
+  static char *kwlist[] = {
+    "volid", "res", "spacing", NULL
+  };
+  if (!PyArg_ParseTupleAndKeywords(args, keywds, 
+        "i|dd", kwlist, 
+        &volid, &resolution, &gspacing))
+    return NULL;
+  if (gspacing < 0) {
+    PyErr_SetString(PyExc_ValueError, "Spacing must be non-negative");
+    return NULL;
+  }
+  if (resolution < 0) {
+    PyErr_SetString(PyExc_ValueError, "Resolution must be non-negative");
+    return NULL;
+  }
+  Molecule *mymol = a->app->moleculeList->mol_from_id(sel->molid());
+  if (mymol == NULL) {
+    PyErr_SetString(PyExc_ValueError, "Selection points to a deleted molecule.");
+    return NULL;
+  }
+  const VolumetricData *volmapA = NULL;
+  volmapA = mymol->get_volume_data(volid);
+  if (volmapA == NULL) {
+    PyErr_SetString(PyExc_ValueError, "Invalid volume specified. Make sure its loaded into the same molecule as the selectioN!");
+    return NULL;
+  }
+  const float *framepos = sel->coordinates(a->app->moleculeList);
+  const float *radii = mymol->radius();
+  radscale = .2*resolution;
+
+  if (gspacing == 0) {
+    gspacing = 1.5*radscale;
+  }
+
+  int quality = 0;
+  if (resolution >= 9)
+    quality = 0;
+  else
+    quality = 3;
+
+  VolumetricData *synthvol=NULL;
+  int cuda_err = -1;
+  cuda_err = vmd_cuda_compare_sel_refmap(sel, a->app->moleculeList, quality, radscale, gspacing, volmapA, NULL, NULL, NULL, &return_cc, 0.0f, 0);
+  if (cuda_err == -1) {
+    PyErr_SetString(PyExc_ValueError, "CUDA Error, no map returned.");
+    return NULL;
+  }
+  return PyFloat_FromDouble(return_cc);
+}
+#endif
 /*
- * Support for mapping protocol
+ * Support for mapping protocol 
  */
 
 static Py_ssize_t
@@ -1152,7 +1487,7 @@ atomselection_subscript( PyAtomSelObject * a, PyObject * keyobj ) {
 #endif
   if (ind < 0 && PyErr_Occurred()) return NULL;
   PyObject *result = Py_False;
-  if (ind >= 0 && ind < a->atomSel->num_atoms &&
+  if (ind >= 0 && ind < a->atomSel->num_atoms && 
       a->atomSel->on[ind]) {
     result = Py_True;
   }
@@ -1175,14 +1510,23 @@ static PyMethodDef atomselection_methods[] = {
   { "minmax", (PyCFunction)minmax, METH_VARARGS, minmax_doc },
   { "center", (PyCFunction)center, METH_VARARGS|METH_KEYWORDS, center_doc },
   { "rmsd", (PyCFunction)py_rmsd, METH_VARARGS, rmsd_doc },
+  { "rmsdQCP", (PyCFunction)py_rmsd_q, METH_VARARGS, rmsd_q_doc },
   { "rmsf", (PyCFunction)py_rmsf, METH_VARARGS|METH_KEYWORDS, rmsf_doc },
+  { "centerperresidue", (PyCFunction)centerperresidue, METH_VARARGS|METH_KEYWORDS, centerperres_doc },
+  { "rmsdperresidue", (PyCFunction)py_rmsdperresidue, METH_VARARGS, rmsdperres_doc },
+  { "rmsfperresidue", (PyCFunction)py_rmsfperresidue, METH_VARARGS, rmsfperres_doc },
   { "rgyr", (PyCFunction)py_rgyr, METH_VARARGS|METH_KEYWORDS, rgyr_doc },
   { "fit", (PyCFunction)py_fit, METH_VARARGS, fit_doc },
   { "move", (PyCFunction)py_move, METH_O, move_doc },
   { "moveby", (PyCFunction)py_moveby, METH_O, moveby_doc },
   { "contacts", (PyCFunction)contacts, METH_VARARGS, contacts_doc },
+  { "hbonds", (PyCFunction)py_hbonds, METH_VARARGS, py_hbonds_doc },
   { "sasa", (PyCFunction)sasa, METH_VARARGS | METH_KEYWORDS, sasa_doc },
-  {NULL, NULL, 0, NULL}
+#if defined(VMDCUDA)
+  { "mdffsim", (PyCFunction)py_mdffsim, METH_VARARGS|METH_KEYWORDS, mdffsim_doc },
+  { "mdffcc", (PyCFunction)py_mdffcc, METH_VARARGS|METH_KEYWORDS, mdffcc_doc },
+#endif
+  { NULL, NULL }
 };
 
 // Atom selection iterator
@@ -1198,7 +1542,7 @@ namespace {
 
   PyObject *iter_next(iterobject *it) {
     for ( ; it->index < it->a->atomSel->num_atoms; ++it->index) {
-      if (it->a->atomSel->on[it->index])
+      if (it->a->atomSel->on[it->index]) 
 #if PY_MAJOR_VERSION >= 3
         return PyLong_FromLong(it->index++);
 #else
@@ -1333,7 +1677,7 @@ PyTypeObject atomsel_type = {
   0,          /* tp_setattro */
   0,          /* tp_as_buffer */
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_CLASS, /* tp_flags */
-  atomsel_doc,       /* tp_doc */
+  atomsel_doc,       /* tp_doc */ 
   0,          /* tp_traverse */
   0,          /* tp_clear */
   0,          /* tp_richcompare */
@@ -1365,6 +1709,8 @@ PyTypeObject atomsel_type = {
 }
 
 
+
+
 static int atomsel_Check(PyObject *obj) {
   if (PyObject_TypeCheck(obj, &atomsel_type)) return 1;
   PyErr_SetString(PyExc_TypeError, "expected atomsel");
@@ -1383,7 +1729,7 @@ static PyMethodDef atomsel_methods[] = {
     "If both name and selection are None, return list of macro names.\n"
     "If selection is None, return definition for name.\n"
     "If both name and selection are given, define new macro.\n" },
-  {"delmacro", (vmdPyMethod)delmacro, METH_VARARGS,
+  {"delmacro", (vmdPyMethod)delmacro, METH_VARARGS, 
     "delmacro(name) -> Delete atom selection macro with given name." },
   {"inverse", (PyCFunction)inverse, METH_O,
     "inverse(matrix) -> Inverse of matrix returned by atomsel.fit(...)"},
@@ -1420,29 +1766,28 @@ static struct PyModuleDef atomseldef = {
     PyModuleDef_HEAD_INIT,
     "atomsel",
     module_doc,
-    -1, // global state, no sub-interpreters
+    -1,
     atomsel_methods,
 };
 #endif
-
 
 PyObject* initatomsel(void) {
 #if PY_MAJOR_VERSION >= 3
   PyObject *m = PyModule_Create(&atomseldef);
   ((PyObject*)(&atomsel_type))->ob_type = &PyType_Type;
 #else
-  PyObject *m = Py_InitModule3( "atomsel", atomsel_methods, module_doc );
+  PyObject *m = Py_InitModule3("atomsel", atomsel_methods, module_doc);
   atomsel_type.ob_type = &PyType_Type;
 #endif
 
   Py_INCREF((PyObject *)&atomsel_type);
   if (PyModule_AddObject(m, "atomsel",
       (PyObject *)&atomsel_type) !=0)
-      return NULL;
+    return NULL;
   if (PyType_Ready(&atomsel_type) < 0)
       return NULL;
 
-  // We want the atomsel class within the module to be exposed
+  // We want atomsel class within the module to be exposed
   PyObject *mod = PyObject_GetAttrString(m, "atomsel");
   return mod;
 }

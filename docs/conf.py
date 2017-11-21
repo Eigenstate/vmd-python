@@ -33,9 +33,15 @@ sys.path.insert(0, os.path.abspath("./python_headers"))
 extensions = [
     'sphinx.ext.githubpages',
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinxcontrib.napoleon',
     'sphinx.ext.coverage'
 ]
+autosummary_generate = True
+napoleon_numpy_docstring = False
+napoleon_use_rtype = False
+autodoc_default_flags = ['members', 'inherited-members']
+numpydoc_class_members_toctree = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

@@ -1,11 +1,34 @@
-.. highlight:: python
 .. _atomsel:
+.. currentmodule:: atomsel
+.. highlight:: python
 
 Atomsel
 =======
 
 This is the low-level (non object-oriented) interface to atom selection
 objects.
+
+Basic actions
+-------------
+
+To create a new atomsel:
+
+.. autosummary::
+    :toctree: api/generated/
+
+    atomsel
+
+Here are basic methods working with an atom selection object:
+
+.. autosummary::
+    :toctree: api/generated
+
+    get
+    set
+    getframe
+    setframe
+    update
+    write
 
 Attributes
 ----------
@@ -95,6 +118,38 @@ molecule. Otherwise, they're all NaN.
 - ``interpvol0`` through ``interpvol7``: Interpolated volume value at this atom
 
 
-.. automodule:: atomsel
-    :members:
-    :undoc-members:
+Fitting selections to each other
+--------------------------------
+
+These methods can be used to move selections around or calculate the differences
+between them.
+
+.. autosummary::
+    :toctree: api/generated/
+
+    fit
+    moveby
+    move
+
+Numerical calculations
+----------------------
+
+Many calculations can be performed on atomsel objects. For speed, the
+following are implemented internally in C:
+
+.. autosummary::
+    :toctree: api/generated/
+
+    center
+    centerperresidue
+    minmax
+    rmsd
+    rmsdQCP
+    rmsf
+    rgyr
+    rmsfperresidue
+    rmsdperresidue
+    contacts
+    hbond
+    sasa
+

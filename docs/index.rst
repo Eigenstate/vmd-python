@@ -54,15 +54,22 @@ VMD-Python has the following dependencies:
 - numpy
 - libexpat
 
+Built-In Functions
+------------------
+.. currentmodule:: evaltcl
+.. autosummary::
+    :toctree: api/generated/
+
+    evaltcl
+
 Modules
 -------
-- :ref:`animate`
-- :ref:`axes`
-- :ref:`atomsel`
-
-API Documentation
------------------
 .. toctree::
    :maxdepth: 2
-   :caption: Modules
+
+   animate
+   axes
+   atomsel
+   color
+   display
 

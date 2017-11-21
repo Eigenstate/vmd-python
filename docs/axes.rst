@@ -1,5 +1,6 @@
-.. highlight:: python
 .. _axes:
+.. currentmodule:: axes
+.. highlight:: python
 
 Axes
 ====
@@ -7,7 +8,9 @@ Axes
 Axes displayes how the axes are displayed in the view window.
 This module is pretty useless in vmd-python.
 
-.. automodule:: axes
-    :members:
-    :undoc-members:
+.. autosummary::
+    :toctree: api/generated/
+
+    get_location
+    set_location
 
