@@ -1,6 +1,6 @@
 package:
     name: vmd-python
-    version: "2.0.1"
+    version: "2.0.2"
 
 source:
     git_url: https://github.com/Eigenstate/vmd-python.git
@@ -13,14 +13,16 @@ build:
 requirements:
     build:
         - python
-        - libnetcdf 4.3.*
+        - libnetcdf
         - expat
         - numpy
+        - tk 8.6.*
     run:
         - python
-        - libnetcdf 4.3.*
+        - libnetcdf
         - expat
         - numpy
+        - tk 8.6.*
 
 about:
     home: https://github.com/Eigenstate/vmd-python
