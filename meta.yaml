@@ -16,13 +16,13 @@ requirements:
         - libnetcdf
         - expat
         - numpy
-        - tk 8.6.*
+        - tk 8.5.*
     run:
         - python
         - libnetcdf
         - expat
         - numpy
-        - tk 8.6.*
+        - tk 8.5.*
 
 about:
     home: https://github.com/Eigenstate/vmd-python
