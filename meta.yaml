@@ -13,13 +13,13 @@ build:
 requirements:
     build:
         - python
-        - libnetcdf
+        - libnetcdf 4.4.*
         - expat
         - numpy
         - tk 8.5.*
     run:
         - python
-        - libnetcdf
+        - libnetcdf 4.4.*
         - expat
         - numpy
         - tk 8.5.*
