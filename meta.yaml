@@ -19,11 +19,7 @@ requirements:
         - tk 8.5.*
     run:
         - python
-<<<<<<< HEAD
         - libnetcdf 4.4.*
-=======
-        - libnetcdf 4.5.*
->>>>>>> 8d168a7d93d9a55cda622c05b9f5b6c72c133a43
         - expat
         - numpy
         - tk 8.5.*
