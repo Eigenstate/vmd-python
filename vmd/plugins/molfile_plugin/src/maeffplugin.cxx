@@ -793,7 +793,7 @@ namespace {
 #define GET_STR( val_, arr_) do { get_str(val_, arr_, sizeof(arr_)); } while(0)
 
   class AtomArray : public Array {
-    int i_name, i_resname, i_resid, i_x, i_y, i_z, i_vx, i_vy, i_vz, 
+    int i_name, i_resname, i_resid, i_insertion, i_x, i_y, i_z, i_vx, i_vy, i_vz, 
         i_anum, i_chain, i_segid, i_charge;
     std::vector<molfile_atom_t> &atoms;
     std::vector<pos_t> &pos;
@@ -803,7 +803,7 @@ namespace {
   public:
     AtomArray(Handle *h_, int ct) 
     : Array(h_, ct),
-      i_name(-1), i_resname(-1), i_resid(-1), 
+      i_name(-1), i_resname(-1), i_insertion(-1), i_resid(-1), 
       i_x(-1), i_y(-1), i_z(-1), 
       i_vx(-1), i_vy(-1), i_vz(-1),
       i_anum(-1), i_chain(-1), i_segid(-1),
@@ -825,6 +825,7 @@ namespace {
         if      (attr=="m_pdb_atom_name")    i_name=i;
         else if (attr=="m_pdb_residue_name") i_resname=i;
         else if (attr=="m_residue_number")   i_resid=i;
+        else if (attr=="m_insertion_code") { i_insertion=i; h->optflags |= MOLFILE_INSERTION; }
         else if (attr=="m_x_coord")          i_x=i;
         else if (attr=="m_y_coord")          i_y=i;
         else if (attr=="m_z_coord")          i_z=i;
@@ -844,6 +845,7 @@ namespace {
       if (i_name>=0)    GET_STR(row[i_name], a.name);
       if (i_name>=0)    GET_STR(row[i_name], a.type);
       if (i_resname>=0) GET_STR(row[i_resname], a.resname);
+      if (i_insertion>=0) GET_STR(row[i_insertion], a.insertion);
       if (i_resid>=0)   get_int(row[i_resid], a.resid);
       if (i_segid>=0)   GET_STR(row[i_segid], a.segid);
       if (i_chain>=0)   GET_STR(row[i_chain], a.chain);
