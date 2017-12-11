@@ -13,7 +13,8 @@ install:
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
     - conda info -a
-    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy pytest libnetcdf expat tk=8.5.*
+    - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
+    - travis_wait conda install -n test-environment numpy pytest libnetcdf expat tk=8.5.*
     - source activate test-environment
     - python setup.py build
     - python setup.py install
