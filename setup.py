@@ -9,7 +9,6 @@ from glob import glob
 import platform
 import os
 import sys
-import re
 
 packages = ['vmd']
 
@@ -150,26 +149,6 @@ class VMDBuild(DistutilsBuild):
 
     #==========================================================================
 
-    def _find_netcdf(self, pydir):
-        libdir = self._find_library_dir("libnetcdf.settings", pydir,
-                                        omit_suffix=True)
-        incdir = self._find_include_dir("netcdf.h", pydir)
-
-        # Get netcdfldflags from settings file
-        pattern = re.compile(r"Extra libraries:\s(.*)")
-        with open(os.path.join(libdir, "libnetcdf.settings")) as fn:
-            lines = "\n".join(fn.readlines())
-            matches = re.findall(pattern, lines)
-        os.environ["NETCDFLDFLAGS"] = "-lnetcdf %s" \
-                                      % (matches[0] if len(matches) else "")
-
-        # Set appropriate environment variables
-        os.environ["NETCDFLIB"] = "-L%s" % os.path.join(libdir)
-        os.environ["NETCDFINC"] = "-I%s" % os.path.join(incdir)
-        os.environ["NETCDFDYNAMIC"] = "1"
-
-    #==========================================================================
-
     def set_environment_variables(self, pydir):
         print("Finding libraries...")
         osys = platform.system()
@@ -191,16 +170,21 @@ class VMDBuild(DistutilsBuild):
         os.environ["TCLINC"] = "-I%s" % os.environ["TCL_INCLUDE_DIR"]
         os.environ["TCLLDFLAGS"] = "-ltcl%s" % TCL_VERSION
 
+        # Sqlite (for dmsplugin)
         os.environ["SQLITELIB"] = "-L%s" % self._find_library_dir("libsqlite3", pydir)
         os.environ["SQLITEINC"] = "-I%s" % self._find_include_dir("sqlite3.h", pydir)
         os.environ["SQLITELDFLAGS"] = "-lsqlite3"
 
+        # Expat (for hoomdplugin)
         os.environ["EXPATLIB"] = "-L%s" % self._find_library_dir("libexpat", pydir)
         os.environ["EXPATINC"] = "-I%s" % self._find_include_dir("expat.h", pydir)
         os.environ["EXPATLDFLAGS"] = "-lexpat"
 
-        # Netcdf is more complicated so it has its own method
-        self._find_netcdf(pydir)
+        # Netcdf (for netcdfplugin)
+        os.environ["NETCDFLIB"] = "-L%s" % self._find_library_dir("libnetcdf", pydir)
+        os.environ["NETCDFINC"] = "-I%s" % self._find_include_dir("netcdf.h", pydir)
+        os.environ["NETCDFLDFLAGS"] = "-lnetcdf"
+        os.environ["NETCDFDYNAMIC"] = "1"
 
         # Ask numpy where it is
         import numpy
