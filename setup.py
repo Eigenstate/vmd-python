@@ -94,7 +94,7 @@ class VMDBuild(DistutilsBuild):
 
     #==========================================================================
 
-    def _find_library_dir(self, libfile, pydir, omit_suffix=False):
+    def _find_library_dir(self, libfile, pydir):
         """
         Finds the directory containing a library file. Starts by searching
         $LD_LIBRARY_PATH, then ld.so.conf system paths used by gcc.
@@ -103,14 +103,12 @@ class VMDBuild(DistutilsBuild):
         # Look in directories specified by $LD_LIBRARY_PATH
         out = b""
         if "Darwin" in platform.system():
-            if not omit_suffix:
-                libfile = "%s.dylib" % libfile
+            libfile = "%s.dylib" % libfile
             searchdirs = [d for d in os.environ.get("DYLD_LIBRARY_PATH",
                                                     "").split(":")
                           if os.path.isdir(d)]
         else:
-            if not omit_suffix:
-                libfile = "%s.so" % libfile
+            libfile = "%s.so" % libfile
             searchdirs = [d for d in os.environ.get("LD_LIBRARY_PATH",
                                                     "").split(":")
                           if os.path.isdir(d)]
@@ -143,7 +141,7 @@ class VMDBuild(DistutilsBuild):
             print("WARNING: Could not find library file '%s' in standard "
                   "library directories.\n Defaulting to: '%s'"
                   % (libfile, os.path.join(libdir, libfile)))
-            quit(1)
+            return None
         print("   LIB: %s -> %s" % (libfile, libdir))
         return libdir
 
@@ -161,14 +159,17 @@ class VMDBuild(DistutilsBuild):
         os.environ["INCLUDE"] = "%s:%s"  % (os.path.join(pydir, "include"),
                                                os.environ.get("INCLUDE", ""))
 
-        # Ask what tk/tcl version we have and use that
-        from _tkinter import TCL_VERSION
-        os.environ["TCL_LIBRARY_DIR"] = self._find_library_dir("libtcl%s" % TCL_VERSION,
-                                                               pydir)
+        # No reliable way to ask for actual available library, so try 8.5 first
+        os.environ["TCL_LIBRARY_DIR"] = self._find_library_dir("libtcl8.5", pydir)
+        os.environ["TCLLDFLAGS"] = "-ltcl8.5"
+        if os.environ["TCL_LIBRARY_DIR"] is None:
+            print("  Newer libtcl8.6 used")
+            os.environ["TCL_LIBRARY_DIR"] = self._find_library_dir("libtcl8.6", pydir)
+            os.environ["TCLLDFLAGS"] = "-ltcl8.6"
+
         os.environ["TCL_INCLUDE_DIR"] = self._find_include_dir("tcl.h", pydir)
         os.environ["TCLLIB"] = "-L%s" % os.environ["TCL_LIBRARY_DIR"]
         os.environ["TCLINC"] = "-I%s" % os.environ["TCL_INCLUDE_DIR"]
-        os.environ["TCLLDFLAGS"] = "-ltcl%s" % TCL_VERSION
 
         # Sqlite (for dmsplugin)
         os.environ["SQLITELIB"] = "-L%s" % self._find_library_dir("libsqlite3", pydir)
