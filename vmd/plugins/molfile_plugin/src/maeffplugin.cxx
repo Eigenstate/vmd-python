@@ -803,7 +803,7 @@ namespace {
   public:
     AtomArray(Handle *h_, int ct) 
     : Array(h_, ct),
-      i_name(-1), i_resname(-1), i_insertion(-1), i_resid(-1), 
+      i_name(-1), i_resname(-1), i_resid(-1), i_insertion(-1),
       i_x(-1), i_y(-1), i_z(-1), 
       i_vx(-1), i_vy(-1), i_vz(-1),
       i_anum(-1), i_chain(-1), i_segid(-1),
