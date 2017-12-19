@@ -1,6 +1,5 @@
 
-from setuptools import setup
-
+from distutils.core import setup
 from distutils.util import convert_path
 from distutils.command.build import build as DistutilsBuild
 from distutils.cmd import Command
@@ -94,7 +93,7 @@ class VMDBuild(DistutilsBuild):
 
     #==========================================================================
 
-    def _find_library_dir(self, libfile, pydir):
+    def _find_library_dir(self, libfile, pydir, fallback=True):
         """
         Finds the directory containing a library file. Starts by searching
         $LD_LIBRARY_PATH, then ld.so.conf system paths used by gcc.
@@ -133,15 +132,35 @@ class VMDBuild(DistutilsBuild):
                 out = check_output("ldconfig -p | grep %s$" % libfile, shell=True)
             except: pass
             libdir = os.path.split(out.decode("utf-8").split(" ")[-1])[0]
+
+        # For OSX, use defaults + DYLD_FALLBACK_LIBRARY_PATH
+        elif "Darwin" in platform.system():
+            searchdirs = [os.path.join(os.environ.get("HOME", ""), "lib"),
+                          os.path.join("usr", "local", "lib"),
+                          os.path.join("usr", "lib")] \
+                + os.environ.get("DYLD_FALLBACK_LIBRARY_PATH").split(":")
+            try:
+                out = check_output(["find", "-H"]
+                                   + [d for d in set(searchdirs) if os.path.isdir(d)]
+                                   + ["-maxdepth", "1",
+                                      "-name", libfile],
+                                   close_fds=True,
+                                   stderr=open(os.devnull, 'wb'))
+            except: pass
+            libdir = os.path.split(out.decode("utf-8").split("\n")[0])[0]
+            if glob(os.path.join(libdir, libfile)):
+                print("   LIB: %s -> %s" % (libfile, libdir))
+                return libdir
         else:
             libdir = ""
 
         if not glob(os.path.join(libdir, libfile)):
             libdir = os.path.join(pydir, "lib")
+            if not fallback:
+                return None
             print("WARNING: Could not find library file '%s' in standard "
                   "library directories.\n Defaulting to: '%s'"
                   % (libfile, os.path.join(libdir, libfile)))
-            return None
         print("   LIB: %s -> %s" % (libfile, libdir))
         return libdir
 
@@ -160,7 +179,8 @@ class VMDBuild(DistutilsBuild):
                                                os.environ.get("INCLUDE", ""))
 
         # No reliable way to ask for actual available library, so try 8.5 first
-        os.environ["TCL_LIBRARY_DIR"] = self._find_library_dir("libtcl8.5", pydir)
+        os.environ["TCL_LIBRARY_DIR"] = self._find_library_dir("libtcl8.5", pydir,
+                                                               fallback=False)
         os.environ["TCLLDFLAGS"] = "-ltcl8.5"
         if os.environ["TCL_LIBRARY_DIR"] is None:
             print("  Newer libtcl8.6 used")
