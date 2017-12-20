@@ -1,5 +1,5 @@
 
-from distutils.core import setup
+from setuptools import setup
 from distutils.util import convert_path
 from distutils.command.build import build as DistutilsBuild
 from distutils.cmd import Command
@@ -26,10 +26,10 @@ class VMDBuild(DistutilsBuild):
     #==========================================================================
 
     def run(self):
-        # Setup and run compilation script
-        self.execute(self.compile, [], msg="Compiling VMD")
         # Run original build code
         DistutilsBuild.run(self)
+        # Setup and run compilation script
+        self.execute(self.compile, [], msg="Compiling VMD")
 
     #==========================================================================
 
@@ -136,12 +136,12 @@ class VMDBuild(DistutilsBuild):
         # For OSX, use defaults + DYLD_FALLBACK_LIBRARY_PATH
         elif "Darwin" in platform.system():
             searchdirs = [os.path.join(os.environ.get("HOME", ""), "lib"),
-                          os.path.join("usr", "local", "lib"),
-                          os.path.join("usr", "lib")] \
-                + os.environ.get("DYLD_FALLBACK_LIBRARY_PATH", "").split(":")
+                          "/usr/local/lib", "/usr/lib"]
+            searchdirs = [d for d in set(searchdirs) if os.path.isdir(d)]
             try:
+                print("  Searching %s" % " ".join(searchdirs))
                 out = check_output(["find", "-H"]
-                                   + [d for d in set(searchdirs) if os.path.isdir(d)]
+                                   + searchdirs
                                    + ["-maxdepth", "1",
                                       "-name", libfile],
                                    close_fds=True,
@@ -179,13 +179,13 @@ class VMDBuild(DistutilsBuild):
                                                os.environ.get("INCLUDE", ""))
 
         # No reliable way to ask for actual available library, so try 8.5 first
-        os.environ["TCL_LIBRARY_DIR"] = self._find_library_dir("libtcl8.5", pydir,
-                                                               fallback=False)
+        tcllibdir = self._find_library_dir("libtcl8.5", pydir, fallback=False)
         os.environ["TCLLDFLAGS"] = "-ltcl8.5"
-        if os.environ["TCL_LIBRARY_DIR"] is None:
+        if tcllibdir is None:
             print("  Newer libtcl8.6 used")
-            os.environ["TCL_LIBRARY_DIR"] = self._find_library_dir("libtcl8.6", pydir)
+            tcllibdir = self._find_library_dir("libtcl8.6", pydir)
             os.environ["TCLLDFLAGS"] = "-ltcl8.6"
+        os.environ["TCL_LIBRARY_DIR"] = tcllibdir
 
         os.environ["TCL_INCLUDE_DIR"] = self._find_include_dir("tcl.h", pydir)
         os.environ["TCLLIB"] = "-L%s" % os.environ["TCL_LIBRARY_DIR"]
