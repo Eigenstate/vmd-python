@@ -138,7 +138,7 @@ class VMDBuild(DistutilsBuild):
             searchdirs = [os.path.join(os.environ.get("HOME", ""), "lib"),
                           os.path.join("usr", "local", "lib"),
                           os.path.join("usr", "lib")] \
-                + os.environ.get("DYLD_FALLBACK_LIBRARY_PATH").split(":")
+                + os.environ.get("DYLD_FALLBACK_LIBRARY_PATH", "").split(":")
             try:
                 out = check_output(["find", "-H"]
                                    + [d for d in set(searchdirs) if os.path.isdir(d)]
