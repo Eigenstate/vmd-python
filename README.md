@@ -119,6 +119,42 @@ Python interface, and can be pickled and have different representations. It's a 
 molecule is a module that allows loading and saving of molecules while tracking them by an
 integer index.
 
+## Dependencies
+vmd-python has the following dependencies:
+
+    * libnetcdf >= 4.3
+    * numpy
+    * python 2.7 or 3.6
+
+On Mac systems, an easy way to satisfy these dependencies is to install 
+[homebrew](https://brew.sh/) and run
+
+    brew install netcdf
+    pip install numpy
+    
+
+    
+## Installation
+Wow it is INSTALLABLE NOW! This has been really hard to get working
+so please be happy for me.
+
+Simple binary installation with conda (currently linux-x86\_64 only)
+
+    conda install -c https://conda.anaconda.org/rbetz vmd-python
+
+For other architectures, use pip:
+Easy installation with pip:
+
+    pip install -i https://pypi.anaconda.org/rbetz/simple vmd-python
+
+Or, if you download the source:
+
+    python setup.py build
+    python setup.py install
+
+Installation can take a while since it compiles VMD from source.
+
+
 ## Licensing
 
 This software is classified as a "derivative work" of the original
