@@ -1,23 +1,55 @@
 # vmd-python
-Installable VMD as a python module
-
-*NEW*: Support for Python 3!!!
 
 ![CI status](https://img.shields.io/travis/Eigenstate/vmd-python.svg)
 ![Downloads](https://anaconda.org/rbetz/vmd-python/badges/downloads.svg)
 ![Conda](https://anaconda.org/rbetz/vmd-python/badges/installer/conda.svg)
 ![PyPi](https://anaconda.org/rbetz/vmd-python/badges/installer/pypi.svg)
 
+Installable VMD as a python module
+
 ## Features
 All features of VMD from the 1.9.3 release, plus some
 optional plugins not included in binary distributions:
 
-* Read and write formal charges to MAE files
+* Read and write insertion codes in MAE files
 * DMS plugin for DESRES molecular file format
 * HOOMD plugin
-* It doesn't crash when you import it
 * Doesn't care which numpy you compile against
 * Support for Python 2 or Python 3
+
+## Installation
+
+Simple binary installation with conda (currently linux-x86\_64 only)
+
+    conda install -c https://conda.anaconda.org/rbetz vmd-python
+
+## Building from source
+
+If there is no binary available for your system, you'll have to build
+vmd-python either with pip or setuptools. Please report any issues you have
+with this process, as it's still under heavy development. I am especially
+interested in bug reports for OSX!
+
+First, make sure you have the following dependencies installed somehow and
+visible to the compiler and linker:
+
+    * netcdf >= 4.3 (on OSX: `brew install netcdf`)
+    * numpy
+    * python 2.7 or 3.6
+
+Easy installation with pip:
+
+    pip install -i https://pypi.anaconda.org/rbetz/simple vmd-python
+
+For the latest version:
+
+    git clone https://github.com/Eigenstate/vmd-python.git
+    cd vmd-python
+    python setup.py build
+    python setup.py install
+
+Installation can take a while since it compiles VMD from source.
+
 
 ### Included modules
 The following sub-modules are part of VMD. The import system
