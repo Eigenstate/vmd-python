@@ -50,8 +50,21 @@ For the latest version:
 
 Installation can take a while since it compiles VMD from source.
 
+## For Mac users
 
-### Included modules
+[Homebrew](https://brew.sh/) is an easy way to get vmd-python's dependencies.
+`brew install netcdf` is the main one.
+
+*I do not have a Mac or reliable access to one.* If you are sending an issue
+related to build errors on OSX, please be aware that I have limited ability
+to debug them.
+
+I am looking for someone to contribute binaries built on osx 32 and 64 bit.
+Please let me know if you are willing to do this and save all the other Mac
+users some build time.
+
+
+## Included modules
 The following sub-modules are part of VMD. The import system
 makes more sense now, so standard importing like `from vmd import atomsel`
 will work correctly.

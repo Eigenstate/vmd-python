@@ -1,5 +1,6 @@
 
 from setuptools import setup
+from distutils import sysconfig
 from distutils.util import convert_path
 from distutils.command.build import build as DistutilsBuild
 from distutils.cmd import Command
@@ -7,7 +8,6 @@ from subprocess import check_call, check_output
 from glob import glob
 import platform
 import os
-import sys
 
 packages = ['vmd']
 
@@ -29,16 +29,16 @@ class VMDBuild(DistutilsBuild):
         # Run original build code
         DistutilsBuild.run(self)
         # Setup and run compilation script
-        self.execute(self.compile, [], msg="Compiling VMD")
+        self.execute(self.compile_vmd, [], msg="Compiling VMD")
 
     #==========================================================================
 
-    def compile(self):
+    def compile_vmd(self):
         # Determine target to build
         target = self.get_vmd_build_target()
         srcdir = convert_path(os.path.dirname(os.path.abspath(__file__)) + "/vmd")
         builddir = convert_path(os.path.abspath(self.build_lib + "/vmd"))
-        pydir = convert_path(sys.executable.replace("bin/python", ""))
+        pydir = sysconfig.EXEC_PREFIX
 
         self.set_environment_variables(pydir)
 
@@ -53,7 +53,8 @@ class VMDBuild(DistutilsBuild):
 
     #==========================================================================
 
-    def _find_include_dir(self, incfile, pydir):
+    @staticmethod
+    def _find_include_dir(incfile, pydir=sysconfig.EXEC_PREFIX):
         """
         Finds the path containing an include file. Starts by searching
         $INCLUDE, then whatever system include paths gcc looks in.
@@ -65,7 +66,7 @@ class VMDBuild(DistutilsBuild):
                       if os.path.isdir(d)]
         # Also look in the directories gcc does
         try:
-            out = check_output("echo | gcc -E -Wp,-v - 2>&1 | grep '^\s.*'",
+            out = check_output(r"echo | gcc -E -Wp,-v - 2>&1 | grep '^\s.*'",
                                shell=True)
             out = out.decode("utf-8").strip().split("\n")
             searchdirs.extend([d.strip() for d in out if os.path.isdir(d.strip())])
@@ -75,15 +76,15 @@ class VMDBuild(DistutilsBuild):
         out = b""
         try:
             out = check_output(["find", "-H"]
-                                + searchdirs
-                                + ["-maxdepth", "1",
-                                   "-name", incfile],
+                               + searchdirs
+                               + ["-maxdepth", "1",
+                                  "-name", incfile],
                                close_fds=True,
                                stderr=open(os.devnull, 'wb'))
         except: pass
 
         incdir = os.path.split(out.decode("utf-8").split("\n")[0])[0]
-        if not glob(os.path.join(incdir, incfile)): # Glob allows fildcards
+        if not glob(os.path.join(incdir, incfile)): # Glob allows wildcards
             incdir = os.path.join(pydir, "include", incfile)
             print("\nWARNING: Could not find include file '%s' in standard "
                   "include directories.\n Defaulting to: '%s'"
@@ -93,7 +94,8 @@ class VMDBuild(DistutilsBuild):
 
     #==========================================================================
 
-    def _find_library_dir(self, libfile, pydir, fallback=True):
+    @staticmethod
+    def _find_library_dir(libfile, pydir=sysconfig.EXEC_PREFIX, fallback=True):
         """
         Finds the directory containing a library file. Starts by searching
         $LD_LIBRARY_PATH, then ld.so.conf system paths used by gcc.
@@ -166,67 +168,106 @@ class VMDBuild(DistutilsBuild):
 
     #==========================================================================
 
+    def _get_python_ldflag(self, pydir):
+        """
+        Hopefully obtains the path to and correct version for
+        whatever libpython is currently running. Some of this is inspired
+        from scikit-build's function for doing this.
+        """
+        # See if we can get it from sysconfig
+        pylibname = sysconfig.get_config_var("LIBRARY") # "libpython3.6m.a"
+        pylibdir = sysconfig.get_config_var("LIBDIR") # "~/miniconda/lib"
+        pythonldflag = os.path.splitext(pylibname)[0] if pylibdir else None
+
+        suffix = ".dylib" if "Darwin" in platform.system() else ".so"
+
+        # Check a library with appropriate extension actually exists.
+        # If not, try to find a libpython and use that
+        if pylibname is None or pylibdir is None or \
+                not os.path.isfile(os.path.join(pylibdir, pythonldflag)
+                                   + suffix):
+
+            print("Finding python location via fallback method...")
+            pylibname = "libpython%s*" % sysconfig.get_python_version()
+            candidate_libs = self._find_library_dir(pylibname)
+            libs = sorted(glob(os.path.join(candidate_libs, pylibname)),
+                          key=len)
+            pylibdir, pythonldflag = os.path.split(libs[-1])
+            # Remove trailing .so from pythonldflag
+            pythonldflag = pythonldflag[:pythonldflag.index(suffix)]
+
+        # Remove leading "lib" from pythonldflag
+        pythonldflag = pythonldflag[3:]
+
+        return "-L%s -l%s" % (pylibdir, pythonldflag)
+
+    #==========================================================================
+
     def set_environment_variables(self, pydir):
+        """
+        Sets environment variables used by the build process.
+        Tries to get relevant paths from sysconfig, and falls back
+        to the usual python directory structure.
+        """
+
         print("Finding libraries...")
         osys = platform.system()
+        addir = sysconfig.get_config_var("LIBDIR")
+        if addir is None: addir = os.path.join(pydir, "lib")
+
         if "Linux" in osys or "Windows" in osys:
-            os.environ["LD_LIBRARY_PATH"] = "%s:%s" % (os.path.join(pydir, "lib"),
+            os.environ["LD_LIBRARY_PATH"] = "%s:%s" % (addir,
                                                        os.environ.get("LD_LIBRARY_PATH", ""))
         elif "Darwin" in osys:
-            os.environ["DYLD_LIBRARY_PATH"] = "%s:%s" % (os.path.join(pydir, "lib"),
+            os.environ["DYLD_LIBRARY_PATH"] = "%s:%s" % (addir,
                                                          os.environ.get("DYLD_LIBRARY_PATH", ""))
-        os.environ["INCLUDE"] = "%s:%s"  % (os.path.join(pydir, "include"),
-                                               os.environ.get("INCLUDE", ""))
+
+        addir = sysconfig.get_config_var("INCLUDEDIR")
+        if addir is None: addir = os.path.join(pydir, "include")
+        os.environ["INCLUDE"] = "%s:%s"  % (addir,
+                                            os.environ.get("INCLUDE", ""))
 
         # No reliable way to ask for actual available library, so try 8.5 first
-        tcllibdir = self._find_library_dir("libtcl8.5", pydir, fallback=False)
+        tcllibdir = self._find_library_dir("libtcl8.5", fallback=False)
         os.environ["TCLLDFLAGS"] = "-ltcl8.5"
         if tcllibdir is None:
             print("  Newer libtcl8.6 used")
-            tcllibdir = self._find_library_dir("libtcl8.6", pydir)
+            tcllibdir = self._find_library_dir("libtcl8.6")
             os.environ["TCLLDFLAGS"] = "-ltcl8.6"
         os.environ["TCL_LIBRARY_DIR"] = tcllibdir
 
-        os.environ["TCL_INCLUDE_DIR"] = self._find_include_dir("tcl.h", pydir)
+        os.environ["TCL_INCLUDE_DIR"] = self._find_include_dir("tcl.h")
         os.environ["TCLLIB"] = "-L%s" % os.environ["TCL_LIBRARY_DIR"]
         os.environ["TCLINC"] = "-I%s" % os.environ["TCL_INCLUDE_DIR"]
 
         # Sqlite (for dmsplugin)
-        os.environ["SQLITELIB"] = "-L%s" % self._find_library_dir("libsqlite3", pydir)
-        os.environ["SQLITEINC"] = "-I%s" % self._find_include_dir("sqlite3.h", pydir)
+        os.environ["SQLITELIB"] = "-L%s" % self._find_library_dir("libsqlite3")
+        os.environ["SQLITEINC"] = "-I%s" % self._find_include_dir("sqlite3.h")
         os.environ["SQLITELDFLAGS"] = "-lsqlite3"
 
         # Expat (for hoomdplugin)
-        os.environ["EXPATLIB"] = "-L%s" % self._find_library_dir("libexpat", pydir)
-        os.environ["EXPATINC"] = "-I%s" % self._find_include_dir("expat.h", pydir)
+        os.environ["EXPATLIB"] = "-L%s" % self._find_library_dir("libexpat")
+        os.environ["EXPATINC"] = "-I%s" % self._find_include_dir("expat.h")
         os.environ["EXPATLDFLAGS"] = "-lexpat"
 
         # Netcdf (for netcdfplugin)
-        os.environ["NETCDFLIB"] = "-L%s" % self._find_library_dir("libnetcdf", pydir)
-        os.environ["NETCDFINC"] = "-I%s" % self._find_include_dir("netcdf.h", pydir)
+        os.environ["NETCDFLIB"] = "-L%s" % self._find_library_dir("libnetcdf")
+        os.environ["NETCDFINC"] = "-I%s" % self._find_include_dir("netcdf.h")
         os.environ["NETCDFLDFLAGS"] = "-lnetcdf"
         os.environ["NETCDFDYNAMIC"] = "1"
 
         # Ask numpy where it is
         import numpy
         os.environ["NUMPY_INCLUDE_DIR"] = numpy.get_include()
-        os.environ["NUMPY_LIBRARY_DIR"] = numpy.get_include().replace("include","lib")
+        os.environ["NUMPY_LIBRARY_DIR"] = numpy.get_include().replace("include",
+                                                                      "lib")
 
-        from distutils import sysconfig
         os.environ["PYTHON_LIBRARY_DIR"] = sysconfig.get_python_lib()
         os.environ["PYTHON_INCLUDE_DIR"] = sysconfig.get_python_inc()
 
         # Get python linker flag, as it may be -l3.6m or -l3.6 depending on malloc
         # this python was built against
-        pylibname = "libpython%s*" % sysconfig.get_python_version()
-        libs = glob(os.path.join(self._find_library_dir(pylibname, pydir), pylibname))
-        libs = sorted(libs, key=lambda x: len(x))
-
-        pythonldflag = "-l%s" % os.path.split(libs[-1])[-1][3:] # Remove "lib"
-        if "Darwin" in osys:
-            pythonldflag = pythonldflag.partition(".dylib")[0]
-        else:
-            pythonldflag = pythonldflag.partition(".so")[0]
+        pythonldflag = self._get_python_ldflag(pydir)
 
         os.environ["VMDEXTRALIBS"] = " ".join([os.environ["SQLITELDFLAGS"],
                                                os.environ["EXPATLDFLAGS"],
@@ -234,7 +275,13 @@ class VMDBuild(DistutilsBuild):
 
     #==========================================================================
 
-    def get_vmd_build_target(self):
+    @staticmethod
+    def get_vmd_build_target():
+        """
+        Translates python's information on machine architecture into
+        the correct build target string for VMD
+        """
+
         osys = platform.system()
         mach = platform.machine()
 

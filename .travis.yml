@@ -1,12 +1,14 @@
-language: python
+language: generic
 python:
     - "2.7"
     - "3.6"
 os:
     - linux
-      #- osx
+    - osx
+
 install:
-    - wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-MacOSX-x86_64.sh; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh; fi
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
     - hash -r
@@ -21,3 +23,4 @@ install:
 script:
     - source activate test-environment
     - python setup.py test
+
