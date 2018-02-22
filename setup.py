@@ -14,13 +14,20 @@ packages = ['vmd']
 ###############################################################################
 
 class VMDBuild(DistutilsBuild):
+    user_options = [
+        ("debug", None, "Build with debug symbols"),
+    ]
 
     def initialize_options(self):
+        self.debug = False
         DistutilsBuild.initialize_options(self)
 
     #==========================================================================
 
     def finalize_options(self):
+        if self.debug:
+            print("Building with debug symbols")
+            self.debug = True
         DistutilsBuild.finalize_options(self)
 
     #==========================================================================
@@ -272,6 +279,9 @@ class VMDBuild(DistutilsBuild):
         os.environ["VMDEXTRALIBS"] = " ".join([os.environ["SQLITELDFLAGS"],
                                                os.environ["EXPATLDFLAGS"],
                                                pythonldflag])
+
+        # Set debug variable for now if requested
+        os.environ["DEBUG"] = "DEBUG" if self.debug else ""
 
     #==========================================================================
 

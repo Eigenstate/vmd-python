@@ -2,6 +2,8 @@ language: generic
 env:
     - PYVER=2.7
     - PYVER=3.6
+    - DEBUGVER=""
+    - DEBUGVER="--debug"
 os:
     - linux
     - osx
@@ -18,7 +20,7 @@ install:
     - conda create -q -n test-environment python=$PYVER
     - travis_wait conda install -n test-environment numpy>=1.13 pytest libnetcdf expat tk=8.5.*
     - source activate test-environment
-    - python setup.py build
+    - python setup.py build $DEBUGVER
     - python setup.py install
 script:
     - source activate test-environment

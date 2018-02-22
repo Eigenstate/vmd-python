@@ -31,9 +31,9 @@ ln -s $PLUGINDIR $vmd_src/vmd_src/plugins
 
 # Set the configure options
 if [[ "$TARGET" == *"64"* ]]; then
-    echo "$TARGET PTHREADS COLVARS NETCDF TCL IMD PYTHON NUMPY SHARED NOSILENT LP64" > "$vmd_src/vmd_src/configure.options"
+    echo "$TARGET PTHREADS COLVARS NETCDF TCL IMD PYTHON NUMPY SHARED NOSILENT LP64 $DEBUG" > "$vmd_src/vmd_src/configure.options"
 else
-    echo "$TARGET PTHREADS COLVARS NETCDF TCL IMD PYTHON NUMPY SHARED NOSILENT" > "$vmd_src/vmd_src/configure.options"
+    echo "$TARGET PTHREADS COLVARS NETCDF TCL IMD PYTHON NUMPY SHARED NOSILENT $DEBUG" > "$vmd_src/vmd_src/configure.options"
 fi
 
 # Compile the main library

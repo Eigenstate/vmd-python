@@ -1139,8 +1139,10 @@ static int have_gamess(qmdata_t *data, gmsdata *gms)
       *strchr(versionstr, ' ') = '\0';
       sscanf(buffer, "%*s %*s %*s %*s %*s %*s %d", &build);
       sscanf(versionstr, "%1d%*s", &ver);
+#ifdef DEBUGGING
       printf("gamessplugin) Firefly build = %d %d\n", 
          ver,build);
+#endif
       if (ver >= 8 && build >= 6695)
         gms->version = FIREFLY8POST6695;
       else
@@ -1170,9 +1172,10 @@ static int have_gamess(qmdata_t *data, gmsdata *gms)
   }
 
   strcat(data->version_string, versionstr);
-
+#ifdef DEBUGGING
   printf("gamessplugin) Version = %s\n", 
          data->version_string);
+#endif
 
   return TRUE;
 }
@@ -1274,8 +1277,10 @@ static int get_proc_mem(qmdata_t *data, gmsdata *gms) {
     strncpy(data->memory,&word[2][0],sizeof(data->memory));
   }
 
+#ifdef DEBUGGING
   printf("gamessplugin) GAMESS used %d compute processes \n", nproc);
   printf("gamessplugin) GAMESS used %s words of memory \n", data->memory);
+#endif
 
   return TRUE;
 }
@@ -1490,7 +1495,6 @@ static int get_input_structure(qmdata_t *data, gmsdata *gms) {
                      "The Fragment Molecular Orbital (FMO) method.", 
                      NULL)) {
       gms->have_fmo = 1;
-      printf("gamessplugin) Fragment Molecular Orbital (FMO) method.\n");
     }
 
     /* We didn't find the normal input section.
@@ -1533,7 +1537,6 @@ static int get_input_structure(qmdata_t *data, gmsdata *gms) {
         printf("gamessplugin) Could not read coordinates from $FMOXYZ input!\n");
         return FALSE;
       } else {
-        printf("gamessplugin) Fragment Molecular Orbital (FMO) method.\n");
         gms->have_fmo = 1;
         data->numatoms = numatoms;
         return TRUE;
@@ -1765,7 +1768,6 @@ static int get_contrl_firefly(qmdata_t *data) {
 #endif
     data->runtype = MOLFILE_RUNTYPE_UNKNOWN;
   }
-  printf("gamessplugin) File generated via %s \n",&word[1][0]);
 
 
   /* determine SCFTYP */
@@ -1794,8 +1796,10 @@ static int get_contrl_firefly(qmdata_t *data) {
            &word[0][0]);
     return FALSE;
   }
+#ifdef DEBUGGING
   printf("gamessplugin) Type of wavefunction used %s \n",
          &word[0][0]);
+#endif
 
   /* scan for MPLEVL, LOCAL and UNITS; */
   GET_LINE(buffer, data->file);
