@@ -2389,22 +2389,6 @@ EOM
     print "Not making config.h because VMD_NO_CONFIG is set.\n";
 }
 
-########################### Make vmd_version.txt ####################
-open(OUTFILE, ">doc/vmd_version.txt") || 
-    die "Cannot open vmd_version.txt: $!\n";
- print OUTFILE ("Build version: " . $progversion . "\n");
-close(OUTFILE);
-
-########################### Make vmd_version.tex ####################
-open(OUTFILE, ">doc/vmd_version.tex") ||
-    die "Cannot open vmd_version.tex: $!\n";
- print OUTFILE ('\newcommand{\VMDNAME} {'        . "vmd"   . "}\n");
- print OUTFILE ('\newcommand{\VMDDATE} {'        . $config_date    . "}\n");
- print OUTFILE ('\newcommand{\VMDVER} {'         . $progversion    . "}\n");
- print OUTFILE ('\newcommand{\VMDAUTHORS} {'     . $authors        . "}\n");
- print OUTFILE ('\newcommand{\VMDVERSAUTHORS} {' . $versionauthors . "}\n");
-close(OUTFILE);
-
 ############ main targets  (Washington DC, Moscow, Beijing, ....) ##
 
 # '' makes the binary
