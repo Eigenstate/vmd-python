@@ -7,12 +7,15 @@ source:
     git_tag: master
 
 build:
-    preserve_egg_dir: False
-    number: 1
+    number: 0
+    script: python -m pip install --no-deps --ignore-installed .
+    skip: true # [win]
 
 requirements:
     build:
         - python
+        - pip
+        - toolchain
         - nomkl
         - libnetcdf 4.4.*
         - expat
@@ -25,8 +28,23 @@ requirements:
         - numpy >=1.13
         - tk 8.5.*
 
+test:
+    imports:
+        - vmd
+        - pytest
+    requires:
+        - pytest
+    commands:
+        - py.test --pyargs vmd
+
 about:
     home: https://github.com/Eigenstate/vmd-python
     license: VMD license
-    summary: Loadable python module for VMD functions
+    license_file: LICENSE
+    summary: "Visual Molecular Dynamics (VMD) Python bindings"
+    description: |
+        vmd-python is Visual Molecular Dynamics (VMD) built as a Python
+        extension module, with a few useability improvements.
+    doc_url: http://vmd.robinbetz.com
+    dev_url: https://github.com/Eigenstate/vmd-python
 

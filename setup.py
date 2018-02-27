@@ -1,6 +1,6 @@
 
-from setuptools import setup
 from distutils import sysconfig
+from distutils.core import setup
 from distutils.util import convert_path
 from distutils.command.build import build as DistutilsBuild
 from distutils.cmd import Command
@@ -320,15 +320,17 @@ class VMDBuild(DistutilsBuild):
 ###############################################################################
 
 class VMDTest(Command):
-    user_options = []
+    user_options = [("pytest-args=", "a", "Arguments to pass to pytest")]
+
     def initialize_options(self):
-        pass
+        self.pytest_args = ''
     def finalize_options(self):
         pass
+
     def run(self):
-        import subprocess, os
-        errno = subprocess.call(["py.test", os.path.abspath(os.path.join("test",
-                                                                         "test_vmd.py"))])
+        import shlex
+        import pytest
+        errno = pytest.main(shlex.split(self.pytest_args))
         raise SystemExit(errno)
 
 ###############################################################################
@@ -340,9 +342,6 @@ setup(name='vmd-python',
       author_email='robin@robinbetz.com',
       url='http://github.com/Eigenstate/vmd-python',
       license='VMD License',
-      zip_safe=False,
-      extras_require={'hoomdplugin': ["expat"]},
-
       packages=['vmd'],
       package_data={'vmd' : ['libvmd.so']},
       cmdclass={
