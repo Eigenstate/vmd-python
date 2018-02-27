@@ -54,7 +54,7 @@ make clean
 rm $vmd_src/vmd_src/plugins
 
 # Copy init.py file into build directory
-cp "$vmd_src/__init__.py" "$VMDDIR"
+cp "$vmd_src/vmd_src/__init__.py" "$VMDDIR"
 
 # Copy tests into build directory so they're accessible
 cp -r "$vmd_src/../test" "$VMDDIR"
