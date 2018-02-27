@@ -57,5 +57,5 @@ rm $vmd_src/vmd_src/plugins
 cp "$vmd_src/__init__.py" "$VMDDIR"
 
 # Copy tests into build directory so they're accessible
-cp -r "$vmd_src/../tests" "$VMDDIR"
+cp -r "$vmd_src/../test" "$VMDDIR"
 

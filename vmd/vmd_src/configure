@@ -2667,9 +2667,9 @@ install:
 	if [ ! -d "$install_bin_dir" ]; then \\
 		\$(MAKEDIR) "$install_bin_dir" ; \\
 	fi ; \\
-	-\$(COPY) ../Announcement  "$install_library_dir"
-	-\$(COPY) ../README        "$install_library_dir"
-	-\$(COPY) ../LICENSE       "$install_library_dir"
+	\$(COPY) ../Announcement  "$install_library_dir"
+	\$(COPY) ../README        "$install_library_dir"
+	\$(COPY) ../LICENSE       "$install_library_dir"
 	if [ -f $install_library_dir/$config_progname ]; then \\
            \$(MOVE) "$install_library_dir/$config_progname" "$install_library_dir/OLD_$config_progname" ; \$(DELETE) "$install_library_dir/OLD_$config_progname" ; fi
 	-\$(COPY) ../$config_arch/$config_progname "$install_library_dir"
