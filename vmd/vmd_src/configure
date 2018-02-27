@@ -432,7 +432,6 @@ $vmd_main_dir       = "../.";
 $vmd_src_dir        = "../src";
 $vmd_library_dir    = "../lib";
 $vmd_data_dir       = "../data";
-$vmd_doc_dir        = "../doc";
 $vmd_bin_dir        = "../bin";
 $vmd_proteins_dir   = "../proteins";
 $vmd_distrib_dir    = "../distrib";
@@ -2668,9 +2667,6 @@ install:
 	if [ ! -d "$install_bin_dir" ]; then \\
 		\$(MAKEDIR) "$install_bin_dir" ; \\
 	fi ; \\
-	if [ ! -d "$install_library_dir"/doc ]; then \\
-		\$(MAKEDIR) "$install_library_dir"/doc; \\
-	fi
 	-\$(COPY) ../Announcement  "$install_library_dir"
 	-\$(COPY) ../README        "$install_library_dir"
 	-\$(COPY) ../LICENSE       "$install_library_dir"
@@ -2690,11 +2686,6 @@ install:
 	(cd "$install_library_dir" ; \$(TAR) -xf -)
 	-\$(CD) ..; \$(TAR) -cf - plugins | \\
 	(cd "$install_library_dir" ; \$(TAR) -xf -)
-	-\$(CD) ..; \$(TAR) -cf - shaders | \\
-	(cd "$install_library_dir" ; \$(TAR) -xf -)
-	if [ -f ../$config_arch/OptiXShaders.ptx ]; then \\
-		\$(COPY) ../$config_arch/OptiXShaders.ptx "$install_library_dir/shaders"; \\
-	fi; 
 	-\$(COPY) ../data/.vmdrc ../data/.vmdsensors ../data/vmd_completion.dat "$install_library_dir"
 	\$(CD) $vmd_bin_dir ; \\
 	if [ -f run_vmd_tmp ]; then \$(DELETE) run_vmd_tmp; fi ; \\
@@ -2729,8 +2720,6 @@ veryclean: clean
 	  \$(DELETE) *.ptx *.o *.a *~ core; \\
 	  \$(DELETEDIR) $arch_template_repository; \\
 	  \$(DELETE) $config_progname
-	\$(CD) $vmd_doc_dir ; \\
-	  \$(DELETE) *~ core
 
 # The '/usr/include' stuff is to reduce checking /usr/include dates
 depend: y.tab.h
