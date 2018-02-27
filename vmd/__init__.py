@@ -14,21 +14,10 @@ __author__ = 'Robin Betz'
 
 import imp
 import os
-import sys
 from pkg_resources import resource_filename
 
 # Need to set VMDDIR environment variable for vmd.so to import
 os.environ['VMDDIR'] = resource_filename(__name__, "libvmd.so").replace("/libvmd.so","")
-
-# Need VMD python scripts accessible (for import molecule, etc)
-#sys.path.append(resource_filename(__name__, "scripts/python/VMD.py").replace("VMD.py", ""))
-
-# Need to put python installation libs in LD_LIBRARY_PATH since that is what
-# vmd.so was dynamically linked to at compile time
-# This is only during the duration of this executable
-libdir = os.path.abspath(os.path.dirname(sys.executable).replace("bin", "lib"))
-os.environ['LD_LIBRARY_PATH'] = "%s:%s" % (libdir,
-                                           os.environ.get('LD_LIBRARY_PATH', ""))
 
 # Load the library
 vmd = imp.load_dynamic(__name__, resource_filename(__name__, "libvmd.so"))
