@@ -9,24 +9,28 @@ source:
 build:
     number: 0
     script: python -m pip install --no-deps --ignore-installed .
-    skip: true # [win]
+    skip: true  # [win]
 
 requirements:
     build:
         - python
         - pip
         - toolchain
+        - perl
+        - make
         - nomkl
         - libnetcdf 4.4.*
         - expat
         - numpy >=1.13
         - tk 8.5.*
+        - gcc  # [osx]
     run:
         - python
         - libnetcdf 4.4.*
         - expat
         - numpy >=1.13
         - tk 8.5.*
+        - libgcc  # [osx]
 
 test:
     imports:
