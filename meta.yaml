@@ -1,6 +1,6 @@
 package:
     name: vmd-python
-    version: "2.0.7"
+    version: "2.0.8"
 
 source:
     git_url: https://github.com/Eigenstate/vmd-python.git
