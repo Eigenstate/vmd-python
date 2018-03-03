@@ -2054,8 +2054,13 @@ if ($config_arch eq "MACOSX") {
     $fltk_library     = "-L$fltk_dir/MACOSX";
     $fltk_libs        = "-lfltk -lX11";
 
-    $arch_cc          = "cc";
-    $arch_ccpp        = "c++";
+    if ($config_gcc) {
+        $arch_cc      = "gcc";
+        $arch_ccpp    = "g++";
+    } else {
+        $arch_cc          = "cc";
+        $arch_ccpp        = "c++";
+    }
     $arch_depend_flag = "-MM";
     if ($config_debug) {
         $arch_opt_flag    = "-fPIC -g -O -ffast-math";
@@ -2145,16 +2150,18 @@ if ($config_arch eq "MACOSXX86" || $config_arch eq "MACOSXX86_64") {
 
     # Don't set python paths here, they're set previously and we don't
     # necessarily want system python
-
-    if ($config_lp64) {
+    if ($config_gcc) {
+      $arch_cc          = "gcc";
+      $arch_ccpp        = "g++";
+    } else {
       $arch_cc          = "cc";
       $arch_ccpp        = "c++";
+    }
+    if ($config_lp64) {
       $arch_depend_flag = "-MM";
       $arch_opt_flag    = "-m64 -fPIC -ffast-math";
       $arch_copts       = "-m64 -fPIC -ffast-math";
     } else {
-      $arch_cc          = "cc";
-      $arch_ccpp        = "c++";
       $arch_depend_flag = "-MM";
       $arch_opt_flag    = "-m32 -fPIC -ffast-math";
       $arch_copts       = "-m32 -fPIC -ffast-math";

@@ -36,6 +36,12 @@ else
     echo "$TARGET PTHREADS COLVARS NETCDF TCL IMD PYTHON NUMPY SHARED NOSILENT $DEBUG" > "$vmd_src/vmd_src/configure.options"
 fi
 
+# Build with gcc on osx
+if [[ $TARGET == *"MACOSX"* ]]; then
+    echo "Building with GCC on OSX"
+    echo " GCC" >> "$vmd_src/vmd_src/configure.options"
+fi
+
 # Compile the main library
 cd $vmd_src/vmd_src
 $vmd_src/vmd_src/configure
