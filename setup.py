@@ -226,8 +226,8 @@ class VMDBuild(DistutilsBuild):
             os.environ["LD_LIBRARY_PATH"] = "%s:%s" % (addir,
                                                        os.environ.get("LD_LIBRARY_PATH", ""))
         elif "Darwin" in osys:
-            os.environ["DYLD_LIBRARY_PATH"] = "%s:%s" % (addir,
-                                                         os.environ.get("DYLD_LIBRARY_PATH", ""))
+            os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "%s:%s" \
+                % (addir, os.environ.get("DYLD_FALLBACK_LIBRARY_PATH", ""))
 
         addir = sysconfig.get_config_var("INCLUDEDIR")
         if addir is None: addir = os.path.join(pydir, "include")

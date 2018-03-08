@@ -15,7 +15,6 @@ requirements:
     build:
         - python
         - pip
-        - toolchain
         - perl
         - make
         - nomkl
@@ -23,14 +22,12 @@ requirements:
         - expat
         - numpy >=1.13
         - tk 8.5.*
-        - gcc  # [osx]
     run:
         - python
         - libnetcdf 4.4.*
         - expat
         - numpy >=1.13
         - tk 8.5.*
-        - libgcc  # [osx]
 
 test:
     imports:
