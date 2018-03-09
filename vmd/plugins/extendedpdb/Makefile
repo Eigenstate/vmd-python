@@ -1,4 +1,4 @@
-#.SILENT:
+.SILENT:
 
 VMFILES = extendedpdb.tcl pkgIndex.tcl
 VMVERSION = 1.0

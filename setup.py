@@ -78,6 +78,7 @@ class VMDBuild(DistutilsBuild):
             out = out.decode("utf-8").strip().split("\n")
             searchdirs.extend([d.strip() for d in out if os.path.isdir(d.strip())])
         except: pass
+        searchdirs.insert(0, os.path.join(pydir, "include"))
 
         # Find the actual file
         out = b""
@@ -108,7 +109,8 @@ class VMDBuild(DistutilsBuild):
         $LD_LIBRARY_PATH, then ld.so.conf system paths used by gcc.
         """
 
-        # Look in directories specified by $LD_LIBRARY_PATH
+        # Look in python installation directory, then in directories
+        # specified by $LD_LIBRARY_PATH
         out = b""
         if "Darwin" in platform.system():
             libfile = "%s.dylib" % libfile
@@ -120,6 +122,9 @@ class VMDBuild(DistutilsBuild):
             searchdirs = [d for d in os.environ.get("LD_LIBRARY_PATH",
                                                     "").split(":")
                           if os.path.isdir(d)]
+
+        searchdirs.insert(0, os.path.join(pydir, "lib"))
+
         try:
             out = check_output(["find", "-H"]
                                + searchdirs
@@ -216,23 +221,26 @@ class VMDBuild(DistutilsBuild):
         Tries to get relevant paths from sysconfig, and falls back
         to the usual python directory structure.
         """
+        # First, clear environment variables. Do this explicitly here instead
+        # of just assigning so that it is very obvious.
+        os.environ["LDFLAGS"] = ""
+        os.environ["CFLAGS"] = ""
+        os.environ["CXXFLAGS"] = ""
+        os.environ["INCLUDE"] = ""
 
         print("Finding libraries...")
-        osys = platform.system()
         addir = sysconfig.get_config_var("LIBDIR")
         if addir is None: addir = os.path.join(pydir, "lib")
 
-        if "Linux" in osys or "Windows" in osys:
-            os.environ["LD_LIBRARY_PATH"] = "%s:%s" % (addir,
-                                                       os.environ.get("LD_LIBRARY_PATH", ""))
-        elif "Darwin" in osys:
-            os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = "%s:%s" \
-                % (addir, os.environ.get("DYLD_FALLBACK_LIBRARY_PATH", ""))
+        # Linker looks for needed libraries in python directory
+        os.environ["LDFLAGS"] += " -L%s" % addir
+        # Linker looks for libraries *those* libraries need in python directory
+        os.environ["LDFLAGS"] += " -Wl,-rpath-link,%s" % addir
 
         addir = sysconfig.get_config_var("INCLUDEDIR")
         if addir is None: addir = os.path.join(pydir, "include")
-        os.environ["INCLUDE"] = "%s:%s"  % (addir,
-                                            os.environ.get("INCLUDE", ""))
+        os.environ["CFLAGS"] += " -I%s" % addir
+        os.environ["CXXFLAGS"] += " -I%s" % addir
 
         # No reliable way to ask for actual available library, so try 8.5 first
         tcllibdir = self._find_library_dir("libtcl8.5", fallback=False)

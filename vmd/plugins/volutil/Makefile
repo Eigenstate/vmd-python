@@ -67,7 +67,7 @@ ${ARCHDIR}/volutil.exe : ${VOLUTILOBJS} ${COMPILEDIR}/lib_${ARCH}/molfile/libmol
 # all other platforms
   
 ${ARCHDIR}/volutil: ${VOLUTILOBJS} ${COMPILEDIR}/lib_${ARCH}/molfile/libmolfile_plugin.a
-	${CXX} ${CXXFLAGS} ${VOLUTILOBJS} -o ${ARCHDIR}/volutil -L${COMPILEDIR}/lib_${ARCH}/molfile -lmolfile_plugin ${TCLLIB} ${TCLLDFLAGS} ${NETCDFLIB} ${NETCDFLDFLAGS} ${EXPATLIB} ${EXPATLDFLAGS} ${SQLITELIB} ${SQLITELDFLAGS} -lm
+	${CXX} ${CXXFLAGS} ${VOLUTILOBJS} -o ${ARCHDIR}/volutil -L${COMPILEDIR}/lib_${ARCH}/molfile -lmolfile_plugin ${TCLLIB} ${TCLLDFLAGS} ${NETCDFLIB} ${NETCDFLDFLAGS} ${EXPATLIB} ${EXPATLDFLAGS} ${SQLITELIB} ${SQLITELDFLAGS} -lm ${LDFLAGS}
      
 ${ARCHDIR}/volmap.o: ${SRCDIR}/volmap.C
 	${CXX} ${CXXFLAGS} ${INCDIR} -c ${SRCDIR}/volmap.C ${COPTO}${ARCHDIR}/volmap.o

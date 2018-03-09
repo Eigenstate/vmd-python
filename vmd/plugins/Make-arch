@@ -7,37 +7,11 @@
 make-arch-help:
 	@echo "Type 'make arch' where arch is one of the platforms listed below:"
 	@echo "--------------------------------------"
-	@echo " AIX4"
-	@echo " AIX5"
-	@echo " AIX5_64"
-	@echo " AIX6_64"
-	@echo " BLUEGENEQ"
-	@echo " BLUEWATERS"
-	@echo " CRAY_XC"
-	@echo " CRAY_XK"
-	@echo " FREEBSD"
-	@echo " FREEBSDAMD64"
-	@echo " HPUX11"
-	@echo " IRIX6"
-	@echo " IRIX6_64"
 	@echo " LINUX"
-	@echo " LINUXALPHA"
 	@echo " LINUXAMD64"
-	@echo " LINUXPPC"
-	@echo " LINUXPPC64"
-	@echo " LINUXIA64"
 	@echo " MACOSX"
 	@echo " MACOSXX86"
 	@echo " MACOSXX86_64"
-	@echo " NETBSD"
-	@echo " OPENPOWER"
-	@echo " SOLARIS2"
-	@echo " SOLARIS2_64"
-	@echo " SOLARISX86"
-	@echo " SOLARISX86_64"
-	@echo " SUMMIT"
-	@echo " TRU64"
-	@echo " T3E"
 	@echo " WIN32"
 	@echo " WIN32-debug"
 	@echo " WIN64"
@@ -48,257 +22,16 @@ make-arch-help:
 	@echo "  TCLINC: Include path for Tcl"
 	@echo "  TCLLIB: Library path for Tcl"
 
-##
-## Android specific configuration items
-##
-ANDROIDBINS = /Projects/collaboratory/kvandivo/ndk/toolchains/arm-linux-androideabi-4.6/prebuilt/linux-x86/bin
-ANDROIDINCS = -DANDROID -I/home/kvandivo/Proj/ndk/sources/cxx-stl/stlport/stlport -I/home/kvandivo/Proj/ndk/sources/cxx-stl/system/include -I/home/kvandivo/Proj/ndk/platforms/android-14/arch-arm/usr/include 
-ANDROIDABI = arm-linux-androideabi-
-ANDROIDLIBS = -L/home/kvandivo/Proj/ndk/platforms/android-14/arch-arm/usr/lib
-ANDROIDSYSROOT = --sysroot=/home/kvandivo/Proj/ndk/platforms/android-14/arch-arm
-
-AIX4:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = AIX4" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = xlc" \
-	"CXX = xlC" \
-	"DEF = -D" \
-	"CCFLAGS = -w -qinlglue -qarch=com -qtune=pwr3" \
-	"CXXFLAGS = -w -qstrict -Q -qarch=com -qtune=pwr3" \
-	"LDFLAGS = -qarch=com -qtune=pwr3" \
-	"AR = ar" \
-	"NM = nm -B" \
-	"RANLIB = touch" \
-	"SHLD = xlC -bM:SRE -bnoentry -bexpall -lm -qarch=com -qtune=pwr3"
-
-AIX5:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = AIX5" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = xlc" \
-	"CXX = xlC" \
-	"DEF = -D" \
-	"CCFLAGS = -w -qinlglue -qarch=com -qtune=pwr5" \
-	"CXXFLAGS = -w -qstrict -Q -qarch=com -qtune=pwr5" \
-	"LDFLAGS = -qarch=com -qtune=pwr5" \
-	"AR = ar" \
-	"NM = nm -B" \
-	"RANLIB = touch" \
-	"SHLD = xlC -bM:SRE -bnoentry -bexpall -lm -qarch=com -qtune=pwr5"
-
-AIX5_64:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = AIX5_64" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = xlc" \
-	"CXX = xlC" \
-	"DEF = -D" \
-	"CCFLAGS = -w -qinlglue -q64 -qarch=com -qtune=pwr5" \
-	"CXXFLAGS = -w -qstrict -Q -q64 -qarch=com -qtune=pwr5" \
-	"LDFLAGS = -q64 -qarch=com -qtune=pwr5" \
-	"AR = ar -X64" \
-	"NM = nm -B" \
-	"RANLIB = touch" \
-	"SHLD = xlC -bM:SRE -bnoentry -bexpall -lm -q64 -qarch=com -qtune=pwr5"
-
-AIX6_64:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = AIX6_64" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = xlc" \
-	"CXX = xlC" \
-	"DEF = -D" \
-	"CCFLAGS = -w -qinlglue -q64 -qarch=com -qtune=pwr5" \
-	"CXXFLAGS = -w -qstrict -Q -q64 -qarch=com -qtune=pwr5" \
-	"LDFLAGS = -q64 -qarch=com -qtune=pwr5" \
-	"AR = ar -X64" \
-	"NM = nm -B" \
-	"RANLIB = touch" \
-	"SHLD = xlC -bM:SRE -bnoentry -bexpall -lm -q64 -qarch=com -qtune=pwr5"
-
-ANDROIDARMV7A:
-	$(MAKE) staticlibs \
-	"ARCH = ANDROIDARMV7A" \
-	"COPTO = -fPIC -o " \
-	"LOPTO = -fPIC -o " \
-	"CC = $(ANDROIDBINS)/$(ANDROIDABI)gcc" \
-	"CXX = $(ANDROIDBINS)/$(ANDROIDABI)g++" \
-	"DEF = -D" \
-	"CCFLAGS = -O2 -fPIC -Wall -Wno-psabi -MMD -MP -fpic -ffunction-sections -funwind-tables -fstack-protector -D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__ -march=armv7-a -msoft-float -mfpu=vfp -mthumb -Os -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -Wa,--noexecstac $(ANDROIDINCS)" \
-	"CXXFLAGS = -O2 -fPIC -Wall -Wno-psabi -MMD -MP -fpic -ffunction-sections -funwind-tables -fstack-protector -D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__ -march=armv7-a -msoft-float -mfpu=vfp -mthumb -Os -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -Wa,--noexecstac $(ANDROIDINCS)" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = echo"
-
-BLUEGENEQ:
-	$(MAKE) staticlibs \
-	"ARCH = BGQ" \
-	"COPTO = -qpic -o " \
-	"LOPTO = -qpic -c -o " \
-	"CC = bgxlc_r" \
-	"CXX = bgxlC_r" \
-	"DEF = -D" \
-	"CCFLAGS = -w " \
-	"CXXFLAGS = -w " \
-	"LDFLAGS = -q64 -qarch=qp -qtune=qp" \
-	"AR = ar " \
-	"NM = nm -B" \
-	"RANLIB = touch" \
-	"SHLD = xlC -lm -q64 -qarch=qp -qtune=qp"
-
-BLUEWATERS:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = BLUEWATERS" \
-	"COPTO = -fPIC -m64 -o " \
-	"LOPTO = -fPIC -m64 -o " \
-	"CC = cc" \
-	"CXX = CC" \
-	"DEF = -D" \
-	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
-	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = gcc -shared"
-
-CRAY_XC:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = CRAY_XC" \
-	"COPTO = -fPIC -m64 -o " \
-	"LOPTO = -fPIC -m64 -o " \
-	"CC = cc" \
-	"CXX = CC" \
-	"DEF = -D" \
-	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
-	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = gcc -shared"
-
-CRAY_XK:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = CRAY_XK" \
-	"COPTO = -fPIC -m64 -o " \
-	"LOPTO = -fPIC -m64 -o " \
-	"CC = cc" \
-	"CXX = CC" \
-	"DEF = -D" \
-	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
-	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = gcc -shared"
-	
-HPUX11:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = HPUX11" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = cc" \
-	"CXX = aCC" \
-	"DEF = -D" \
-	"CCFLAGS = +O2 +DAportable -Ae +z" \
-	"CXXFLAGS = +O2 +DAportable +z" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = ld -b"
-
-IRIX6:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = IRIX6" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = cc -n32 -mips3 -KPIC" \
-	"CXX = CC -n32 -mips3 -KPIC" \
-	"DEF = -D" \
-	"CCFLAGS = -O2 -fullwarn" \
-	"CXXFLAGS = -O2 -fullwarn" \
-	"LDFLAGS = -n32 -mips3" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = cc -shared"
- 
-IRIX6_64:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = IRIX6_64" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = cc -64 -mips4 -KPIC" \
-	"CXX = CC -64 -mips4 -KPIC" \
-	"DEF = -D" \
-	"CCFLAGS = -O2 -fullwarn" \
-	"CXXFLAGS = -O2 -fullwarn" \
-	"LDFLAGS = -64 -mips4" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = cc -shared -64 -mips4"
- 
-FREEBSD:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = FREEBSD" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = gcc" \
-	"CXX = g++" \
-	"DEF = -D" \
-	"CCFLAGS = -O2 -Wall -I/usr/local/include/tcl8.5" \
-	"CXXFLAGS = -O2 -Wall" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = gcc -shared"
-
-FREEBSDAMD64:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = FREEBSD" \
-	"COPTO = -fPIC -m64 -o " \
-	"LOPTO = -fPIC -m64 -o " \
-	"CC = gcc" \
-	"CXX = g++" \
-	"DEF = -D" \
-	"CCFLAGS = -m64 -O2 -Wall -I/usr/local/include/tcl8.5" \
-	"CXXFLAGS = -m64 -O2 -Wall" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = gcc -shared"
-
 LINUX:
 	$(MAKE) dynlibs staticlibs bins \
 	"ARCH = LINUX" \
 	"COPTO = -fPIC -m32 -o " \
-	"LOPTO = -fPIC -m32 -lstdc++ -o " \
+	"LOPTO = ${LDFLAGS} -fPIC -m32 -lstdc++ -o " \
 	"CC = gcc" \
 	"CXX = g++" \
 	"DEF = -D" \
-	"CCFLAGS = -m32 -O2 -fPIC -Wall" \
-	"CXXFLAGS = -m32 -O2 -fPIC -Wall" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = gcc -shared"
-	
-LINUXALPHA:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = LINUXALPHA" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = ccc" \
-	"CXX = cxx" \
-	"DEF = -D" \
-	"CCFLAGS = -O4 -arch host -tune host" \
-	"CXXFLAGS = -O4 -arch host -tune host" \
+	"CCFLAGS = ${CFLAGS} -m32 -O2 -fPIC -Wall" \
+	"CXXFLAGS = ${CXXFLAGS} -m32 -O2 -fPIC -Wall" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
@@ -308,102 +41,28 @@ LINUXAMD64:
 	$(MAKE) dynlibs staticlibs bins \
 	"ARCH = LINUXAMD64" \
 	"COPTO = -fPIC -m64 -o " \
-	"LOPTO = -fPIC -m64 -lstdc++ -o " \
+	"LOPTO = ${LDFLAGS} -fPIC -m64 -lstdc++ -o " \
 	"CC = gcc" \
 	"CXX = g++" \
 	"DEF = -D" \
-	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
-	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
+	"CCFLAGS = ${CFLAGS} -m64 -O2 -fPIC -Wall" \
+	"CXXFLAGS = ${CXXFLAGS} -m64 -O2 -fPIC -Wall" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
 	"SHLD = gcc -shared"
 
-LINUXCARMA:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = LINUXCARMA" \
-	"COPTO = -fPIC -o " \
-	"LOPTO = -fPIC -o " \
-	"CC = gcc" \
-	"CXX = g++" \
-	"DEF = -D" \
-	"CCFLAGS = -O3 -fPIC -Wall -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=vfpv3-d16 -ffast-math -fno-strict-aliasing" \
-	"CXXFLAGS = -O3 -fPIC -Wall -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=vfpv3-d16 -ffast-math -fno-strict-aliasing" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = gcc -shared"
-	
-LINUXPPC:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = LINUXPPC" \
-	"COPTO = -fPIC -o " \
-	"LOPTO = -fPIC -lstdc++ -o " \
-	"CC = gcc" \
-	"CXX = g++" \
-	"DEF = -D" \
-	"CCFLAGS = -O2 -fPIC -Wall" \
-	"CXXFLAGS = -O2 -fPIC -Wall" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = gcc -shared"
 
-LINUXPPC64:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = LINUXPPC64" \
-	"COPTO = -fPIC -m64 -o " \
-	"LOPTO = -fPIC -m64 -o " \
-	"CC = gcc" \
-	"CXX = g++" \
-	"DEF = -D" \
-	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
-	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = gcc -shared"
-
-LINUXIA64:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = LINUXIA64" \
-	"COPTO = -fPIC -o " \
-	"LOPTO = -fPIC -o " \
-	"CC = cc" \
-	"CXX = c++" \
-	"DEF = -D" \
-	"CCFLAGS = -O2 -fPIC -Wall" \
-	"CXXFLAGS = -O2 -fPIC -Wall" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = cc -shared"
-
-LINUXIA64-icc:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = LINUXIA64" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = icc" \
-	"CXX = icpc" \
-	"DEF = -D" \
-	"CCFLAGS = -O2 -fPIC" \
-	"CXXFLAGS = -O2 -fPIC" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = icc -shared"
-	
 MACOSX:
 	$(MAKE) dynlibs staticlibs bins \
 	"ARCH = MACOSX" \
 	"COPTO = -fPIC -o " \
-	"LOPTO = -fPIC -o " \
+	"LOPTO = ${LDFLAGS} -fPIC -o " \
 	"CC = cc" \
 	"CXX = c++" \
 	"DEF = -D" \
-	"CCFLAGS = -Os -Wall -fPIC -dynamic" \
-	"CXXFLAGS = -Os -Wall -fPIC -dynamic" \
+	"CCFLAGS = ${CFLAGS} -Os -Wall -fPIC -dynamic" \
+	"CXXFLAGS = ${CXXFLAGS} -Os -Wall -fPIC -dynamic" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = ranlib" \
@@ -414,12 +73,12 @@ MACOSXX86:
 	$(MAKE) dynlibs staticlibs bins \
 	"ARCH = MACOSXX86" \
 	"COPTO = -m32 -fPIC -o " \
-	"LOPTO = -m32 -fPIC -o " \
+	"LOPTO = ${LDFLAGS} -m32 -fPIC -o " \
 	"CC = cc" \
 	"CXX = c++" \
 	"DEF = -D" \
-	"CCFLAGS = -m32 -Os -Wall -fPIC -dynamic" \
-	"CXXFLAGS = -m32 -Os -Wall -fPIC -dynamic" \
+	"CCFLAGS = ${CFLAGS} -m32 -Os -Wall -fPIC -dynamic" \
+	"CXXFLAGS = ${CXXFLAGS} -m32 -Os -Wall -fPIC -dynamic" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = ranlib" \
@@ -430,153 +89,17 @@ MACOSXX86_64:
 	$(MAKE) dynlibs staticlibs bins \
 	"ARCH = MACOSXX86_64" \
 	"COPTO = -m64 -fPIC -o " \
-	"LOPTO = -m64 -fPIC -o " \
+	"LOPTO = ${LDFLAGS} -m64 -fPIC -o " \
 	"CC = cc" \
 	"CXX = c++" \
 	"DEF = -D" \
-	"CCFLAGS = -m64 -Os -Wall -fPIC -dynamic" \
-	"CXXFLAGS = -m64 -Os -Wall -fPIC -dynamic" \
+	"CCFLAGS = ${CFLAGS} -m64 -Os -Wall -fPIC -dynamic" \
+	"CXXFLAGS = ${CXXFLAG} -m64 -Os -Wall -fPIC -dynamic" \
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = ranlib" \
 	"SHLD = c++ -bundle" \
 	"TCLSHLD = c++ -dynamiclib"
-
-NETBSD:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = NETBSD" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = gcc" \
-	"CXX = g++" \
-	"DEF = -D" \
-	"CCFLAGS = -O2 -Wall -ansi" \
-	"CXXFLAGS = -O2 -Wall" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = gcc -shared"
-
-OPENPOWER:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = OPENPOWER" \
-	"COPTO = -fPIC -m64 -o " \
-	"LOPTO = -fPIC -m64 -o " \
-	"CC = gcc" \
-	"CXX = g++" \
-	"DEF = -D" \
-	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
-	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = gcc -shared"
-
-SOLARIS2:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = SOLARIS2" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = cc -mt -fast -xarch=v8plusa" \
-	"CXX = CC -mt -fast -xarch=v8plusa" \
-	"DEF = -D" \
- 	"CCFLAGS = -KPIC " \
- 	"CXXFLAGS = -KPIC " \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = cc -mt -fast -xarch=v8plusa -G"
-
-SOLARIS2_64:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = SOLARIS2_64" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = cc -D__EXTENSIONS__ -fast -mt -xarch=v9a" \
-	"CXX = CC -D__EXTENSIONS__ -fast -mt -xarch=v9a" \
-	"DEF = -D" \
- 	"CCFLAGS = -KPIC " \
- 	"CXXFLAGS = -KPIC " \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = cc -D__EXTENSIONS__ -xarch=v9a -G"
-
-SOLARISX86:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = SOLARISX86" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = cc -mt -fast -xarch=native" \
-	"CXX = CC -mt -fast -xarch=native" \
-	"DEF = -D" \
- 	"CCFLAGS = -KPIC " \
- 	"CXXFLAGS = -KPIC " \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = cc -mt -fast -xarch=native -G"
-
-SOLARISX86_64:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = SOLARISX86_64" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = cc -D__EXTENSIONS__ -fast -mt -xarch=native64" \
-	"CXX = CC -D__EXTENSIONS__ -fast -mt -xarch=native64" \
-	"DEF = -D" \
- 	"CCFLAGS = -KPIC " \
- 	"CXXFLAGS = -KPIC " \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = cc -D__EXTENSIONS__ -xarch=native64 -G"
-
-SUMMIT:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = SUMMIT" \
-	"COPTO = -fPIC -m64 -o " \
-	"LOPTO = -fPIC -m64 -o " \
-	"CC = gcc" \
-	"CXX = g++" \
-	"DEF = -D" \
-	"CCFLAGS = -m64 -O2 -fPIC -Wall" \
-	"CXXFLAGS = -m64 -O2 -fPIC -Wall" \
-	"AR = ar" \
-	"NM = nm -p" \
-	"RANLIB = touch" \
-	"SHLD = gcc -shared"
-
-T3E:
-	$(MAKE) staticlibs \
-	"ARCH = T3E" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = cc" \
-	"CXX = CC" \
-	"DEF = -D" \
-	"CCFLAGS = -O2" \
-	"CXXFLAGS = -O2" \
-	"LDFLAGS = " \
-	"AR = ar" \
-	"NM = nm" \
-	"RANLIB = touch" \
-	"SHLD = echo"
-
-TRU64:
-	$(MAKE) dynlibs staticlibs bins \
-	"ARCH = TRU64" \
-	"COPTO = -o " \
-	"LOPTO = -o " \
-	"CC = cc" \
-	"CXX = cxx" \
-	"DEF = -D" \
- 	"CCFLAGS = -fast" \
- 	"CXXFLAGS = -fast" \
-	"AR = ar" \
-	"NM = nm -B" \
-	"RANLIB = touch" \
-	"SHLD = ld -shared"
 
 WIN32:
 	$(MAKE) dynlibs win32staticlibs win32bins \
@@ -615,7 +138,6 @@ WIN32-debug:
 		kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
 		advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib \
 		odbc32.lib odbccp32.lib ws2_32.lib wsock32.lib /OPT:REF"
-
 
 WIN64:
 	$(MAKE) dynlibs win32staticlibs win32bins \
