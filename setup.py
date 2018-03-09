@@ -235,7 +235,11 @@ class VMDBuild(DistutilsBuild):
         # Linker looks for needed libraries in python directory
         os.environ["LDFLAGS"] += " -L%s" % addir
         # Linker looks for libraries *those* libraries need in python directory
-        os.environ["LDFLAGS"] += " -Wl,-rpath-link,%s" % addir
+        if "Linux" in platform.system():
+            os.environ["LDFLAGS"] += " -Wl,-rpath-link,%s" % addir
+        elif "Darwin" in platform.system():
+            os.environ["LDFLAGS"] += " -headerpad_max_install_names"
+            os.environ["LDFLAGS"] += " -Wl,-rpath,%s" % addir
 
         addir = sysconfig.get_config_var("INCLUDEDIR")
         if addir is None: addir = os.path.join(pydir, "include")
