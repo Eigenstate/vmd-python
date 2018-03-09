@@ -344,7 +344,7 @@ class VMDTest(Command):
 ###############################################################################
 
 setup(name='vmd-python',
-      version='2.0.8',
+      version='2.0.9',
       description='Visual Molecular Dynamics Python module',
       author='Robin Betz',
       author_email='robin@robinbetz.com',
