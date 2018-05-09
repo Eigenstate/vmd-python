@@ -79,6 +79,7 @@ class VMDBuild(DistutilsBuild):
             searchdirs.extend([d.strip() for d in out if os.path.isdir(d.strip())])
         except: pass
         searchdirs.insert(0, os.path.join(pydir, "include"))
+        
         # Find the actual file
         out = b""
         try:
@@ -89,7 +90,7 @@ class VMDBuild(DistutilsBuild):
                                close_fds=True,
                                stderr=open(os.devnull, 'wb'))
         except: pass
-        print(out)
+        
         incdir = os.path.split(out.decode("utf-8").split("\n")[0])[0]
         if not glob(os.path.join(incdir, incfile)): # Glob allows wildcards
             incdir = os.path.join(pydir, "include", incfile)
