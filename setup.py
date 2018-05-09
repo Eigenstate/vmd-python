@@ -71,8 +71,6 @@ class VMDBuild(DistutilsBuild):
         # Look in directories specified by $INCLUDE
         searchdirs = [d for d in os.environ.get("INCLUDE", "").split(":")
                       if os.path.isdir(d)]
-        print(os.environ.get("INCLUDE",""))
-        print(searchdirs)
         # Also look in the directories gcc does
         try:
             out = check_output(r"echo | gcc -E -Wp,-v - 2>&1 | grep '^\s.*'",
@@ -81,7 +79,6 @@ class VMDBuild(DistutilsBuild):
             searchdirs.extend([d.strip() for d in out if os.path.isdir(d.strip())])
         except: pass
         searchdirs.insert(0, os.path.join(pydir, "include"))
-        print(searchdirs)
         # Find the actual file
         out = b""
         try:
