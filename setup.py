@@ -85,7 +85,7 @@ class VMDBuild(DistutilsBuild):
         try:
             out = check_output(["find", "-H"]
                                + searchdirs
-                               + ["-maxdepth", "1",
+                               + ["-maxdepth", "2",
                                   "-name", incfile],
                                close_fds=True,
                                stderr=open(os.devnull, 'wb'))
