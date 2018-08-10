@@ -182,7 +182,6 @@ static int read_dcdheader(fio_fd fd, int *N, int *NSET, int *ISTART,
   if ((input_integer[0]+input_integer[1]) == 84) {
     *reverseEndian=0;
     rec_scale=RECSCALE64BIT;
-
   } else if (input_integer[0] == 84 && input_integer[1] == dcdcordmagic) {
     *reverseEndian=0;
     rec_scale=RECSCALE32BIT;
