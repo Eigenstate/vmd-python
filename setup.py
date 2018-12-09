@@ -143,7 +143,7 @@ class VMDBuild(DistutilsBuild):
         # This only works on Linux
         if "Linux" in platform.system():
             try:
-                out = check_output("ldconfig -p | grep %s$" % libfile, shell=True)
+                out = check_output("ldconfig -p | grep %s$" % libfile.replace("*",".*"), shell=True)
             except: pass
             libdir = os.path.split(out.decode("utf-8").split(" ")[-1])[0]
 
