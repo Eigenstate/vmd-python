@@ -242,7 +242,7 @@ class VMDBuild(DistutilsBuild):
             # (e.g Ubuntu 11.04 or later). Developers should read 
             # https://wiki.ubuntu.com/NattyNarwhal/ToolchainTransition
             
-            #extra_ld_options=",--no-as-needed,"
+            #extra_ld_options="--no-as-needed,"
             
             os.environ["LDFLAGS"] += " -Wl,%s-rpath-link,%s" % (extra_ld_options,addir)
         elif "Darwin" in platform.system():
