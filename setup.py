@@ -143,7 +143,7 @@ class VMDBuild(DistutilsBuild):
         # This only works on Linux
         if "Linux" in platform.system():
             try:
-                out = check_output("ldconfig -p | grep %s$" % libfile, shell=True)
+                out = check_output("ldconfig -p | grep %s$" % libfile.replace("*",".*"), shell=True)
             except: pass
             libdir = os.path.split(out.decode("utf-8").split(" ")[-1])[0]
 
@@ -236,7 +236,15 @@ class VMDBuild(DistutilsBuild):
         os.environ["LDFLAGS"] += " -L%s" % addir
         # Linker looks for libraries *those* libraries need in python directory
         if "Linux" in platform.system():
-            os.environ["LDFLAGS"] += " -Wl,-rpath-link,%s" % addir
+            extra_ld_options=""
+            # Uncommnent next line if your OS linker does not include math
+            # library or other indirecly linked shared libraries by default
+            # (e.g Ubuntu 11.04 or later). Developers should read 
+            # https://wiki.ubuntu.com/NattyNarwhal/ToolchainTransition
+            
+            #extra_ld_options="--no-as-needed,"
+            
+            os.environ["LDFLAGS"] += " -Wl,%s-rpath-link,%s" % (extra_ld_options,addir)
         elif "Darwin" in platform.system():
             os.environ["LDFLAGS"] += " -headerpad_max_install_names"
             os.environ["LDFLAGS"] += " -Wl,-rpath,%s" % addir
