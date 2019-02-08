@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 2013-2014 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
 *
 *      $RCSfile: OSPRayRenderer.C
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.60 $         $Date: 2016/11/28 06:00:48 $
+*      $Revision: 1.71 $         $Date: 2019/01/17 21:38:55 $
 *
 ***************************************************************************
 * DESCRIPTION:
@@ -52,8 +52,9 @@
 #include "utilities.h"
 #include "WKFUtils.h"
 
-#if OSPRAY_VERSION_MAJOR < 1
-#error VMD requires OSPRay versions >= 1.1.2 for correct rendering of cylinders
+#if !(OSPRAY_VERSION_MAJOR >= 1 && OSPRAY_VERSION_MINOR >= 2)
+#error VMD requires OSPRay >= 1.2.0 for correct transparent AO shading
+// VMD requires OSPRay >= 1.1.2 for correct rendering of cylinders
 #endif
 
 // enable the interactive ray tracing capability
@@ -118,12 +119,12 @@ OSPRayRenderer::OSPRayRenderer(void) {
   ospModel = NULL;
   ospLightData = NULL;
 
-  destroy_scene();             // clear out geometry vectors
-
   lasterror = 0;               // begin with no error state set
   context_created = 0;         // no context yet
   buffers_allocated = 0;       // flag no buffer allocated yet
   scene_created = 0;           // scene has been created
+
+  destroy_scene();             // clear/init geometry vectors
 
   // clear timers
   time_ctx_setup = 0.0;
@@ -182,7 +183,8 @@ OSPRayRenderer::OSPRayRenderer(void) {
 OSPRayRenderer::~OSPRayRenderer(void) {
   DBG();
 
-  for (int i = 0; i < directional_lights.num(); ++i) {
+  int lcnt = ospLights.size();
+  for (int i = 0; i < lcnt; ++i) {
     delete ospLights[i];
   }
   ospLights.clear();
@@ -298,6 +300,10 @@ void OSPRayRenderer::setup_context(int w, int h) {
   }
   ospSet1f(ospRenderer, "epsilon", scene_epsilon);
 
+  // Implore OSPRay to correctly handle lighting through transparent 
+  // surfaces when AO is enabled
+  ospSet1i(ospRenderer, "aoTransparencyEnabled", 1);
+
   // Current accumulation subframe count, used as part of generating
   // AA and AO random number sequences
   // XXX set OSPRay accum count
@@ -324,10 +330,7 @@ void OSPRayRenderer::destroy_scene() {
   trimesh_n3f_v3f_cnt = 0;
   trimesh_v3f_cnt = 0;
 
-  if (!context_created)
-    return;
-
-  if (scene_created) {
+  if (context_created && scene_created) {
     // XXX destroy OSPRay objects...
     trimesh_v3f_n3f_c3f.clear();
     spheres.clear();
@@ -542,7 +545,11 @@ void OSPRayRenderer::destroy_framebuffer() {
 
   if (buffers_allocated) {
     if (ospFrameBuffer)
+#if OSPRAY_VERSION_MAJOR >= 1 && OSPRAY_VERSION_MINOR >= 6
+      ospRelease(ospFrameBuffer);
+#else
       ospFreeFrameBuffer(ospFrameBuffer);
+#endif
   }
   buffers_allocated = 0;
 }
@@ -650,26 +657,27 @@ void OSPRayRenderer::render_compile_and_validate(void) {
   config_framebuffer(width, height);
 
   //
-  // Set lights
+  // Set all lights
   //
 
-  // AO scaling factor is applied at the renderer level, but
-  // we apply the direct lighting scaling factor to the lights.
+  // The direct lighting scaling factor all of the other lights.
   float lightscale = 1.0f;
   if (ao_samples != 0)
     lightscale = ao_direct;
 
-  for (int i = 0; i < directional_lights.num(); ++i) {
-#if 1
+  for (i = 0; i < directional_lights.num(); ++i) {
+#if OSPRAY_VERSION_MAJOR >= 1 && OSPRAY_VERSION_MINOR >= 7
+    OSPLight light = ospNewLight3("distant");
+#elif OSPRAY_VERSION_MAJOR >= 1 && OSPRAY_VERSION_MINOR >= 6
+    OSPLight light = ospNewLight2("scivis", "distant");
+#elif 1
     OSPLight light = ospNewLight(ospRenderer, "distant");
 #else
     OSPLight light = ospNewLight(ospRenderer, "DirectionalLight");
 #endif
 
-    // AO scaling factor is applied at the renderer level, but
-    // we apply the direct lighting scaling factor to the lights.
+    // The direct lighting scaling factor is applied to the lights here.
     ospSet1f(light, "intensity", lightscale);
-
     ospSet3fv(light, "color", directional_lights[i].color);
 
     float lightDir[3];
@@ -682,6 +690,28 @@ void OSPRayRenderer::render_compile_and_validate(void) {
     ospCommit(light);
     ospLights.push_back(light);
   }
+
+  // AO scaling factor is applied to a special ambient light.
+  if (ao_samples != 0) {
+#if OSPRAY_VERSION_MAJOR >= 1 && OSPRAY_VERSION_MINOR >= 7
+    OSPLight light = ospNewLight3("ambient");
+#elif OSPRAY_VERSION_MAJOR >= 1 && OSPRAY_VERSION_MINOR >= 6
+    OSPLight light = ospNewLight2("scivis", "ambient");
+#else
+    OSPLight light = ospNewLight(ospRenderer, "ambient");
+#endif
+
+    // AO scaling factor is applied to the special ambient light
+    ospSet1f(light, "intensity", ao_ambient);
+    ospSet3f(light, "color", 1.0f, 1.0f, 1.0f);
+
+    ospCommit(light);
+    ospLights.push_back(light); // add AO ambient light
+  } 
+
+  //
+  // attach all lights to the scene
+  //
 #if 1
   ospLightData = ospNewData(ospLights.size(), OSP_OBJECT, &ospLights[0], 0);
 #else
@@ -706,10 +736,6 @@ void OSPRayRenderer::render_compile_and_validate(void) {
     }
     ospSet1f(ospRenderer, "aoOcclusionDistance", tmp);
   }
-
-  // AO scaling factor is applied at the renderer level, but
-  // we apply the direct lighting scaling factor to the lights.
-  ospSet1f(ospRenderer, "aoWeight", ao_ambient);
 
   float scene_epsilon = 5.e-5f;
   if (getenv("VMDOSPRAYSCENEEPSILON") != NULL) {
@@ -860,9 +886,10 @@ static void interactive_viewer_usage(void *win) {
   printf("OSPRayRenderer)      F2: override AO on/off\n");
   printf("OSPRayRenderer)      F3: override DoF on/off\n");
   printf("OSPRayRenderer)      F4: override Depth cueing on/off\n");
-#ifdef USE_REVERSE_SHADOW_RAYS
-  printf("OSPRayRenderer)      F5: enable/disable shadow ray optimizations\n");
-#endif
+// Not currently applicable to OSPRay
+// #ifdef USE_REVERSE_SHADOW_RAYS
+//   printf("OSPRayRenderer)      F5: enable/disable shadow ray optimizations\n");
+// #endif
   printf("OSPRayRenderer)     F12: toggle full-screen display on/off\n");
   printf("OSPRayRenderer)   1-9,0: override samples per update auto-FPS off\n");
   printf("OSPRayRenderer)      Up: increase DoF focal distance\n");
@@ -1604,6 +1631,10 @@ void OSPRayRenderer::render_to_glwin(const char *filename) {
           if (ao_samples != 0)
             lightscale = ao_direct;
 
+          // XXX assumes the only contents in the first part of the 
+          //     light list are directional lights.  The new AO "ambient"
+          //     light is the last light in the list now, so we can get
+          //     away with this, but refactoring is still needed here.
           for (i=0; i<directional_lights.num(); i++) {
             ospSet1f(ospLights[i], "intensity", lightscale);
 
@@ -1953,12 +1984,22 @@ void OSPRayRenderer::add_material(int matindex,
     materialcache[matindex].transmode    = transmode;
 
     // create an OSPRay material object too...
-    OSPMaterial ospMat = ospNewMaterial(ospRenderer,"RaytraceMaterial");
+#if OSPRAY_VERSION_MAJOR >= 1 && OSPRAY_VERSION_MINOR >= 5
+    OSPMaterial ospMat = ospNewMaterial2("scivis", "RaytraceMaterial");
+#else
+    OSPMaterial ospMat = ospNewMaterial(ospRenderer, "RaytraceMaterial");
+#endif
     ospSet3f(ospMat, "Ka", materialcache[matindex].ambient, materialcache[matindex].ambient, materialcache[matindex].ambient);
     ospSet3f(ospMat, "Kd", materialcache[matindex].diffuse, materialcache[matindex].diffuse, materialcache[matindex].diffuse);
     ospSet3f(ospMat, "Ks", materialcache[matindex].specular, materialcache[matindex].specular, materialcache[matindex].specular);
     ospSet1f(ospMat, "d", materialcache[matindex].opacity);
     ospSet1f(ospMat, "Ns", materialcache[matindex].shininess);
+
+    /// XXX The OSPRay path tracer supports filtered transparency 
+    ///     with a "Tf" material value, but there are noteworthy
+    ///     restrictions about energy conservation etc to worry about:
+    /// https://www.ospray.org/documentation.html#materials
+
     ospCommit(ospMat);
     materialcache[matindex].mat = ospMat;
 
@@ -2021,7 +2062,7 @@ void OSPRayRenderer::cylinder_array(Matrix4 *wtrans, float radius,
   ca.cylinders = (float *) calloc(1, cylnum * bytes_per_cylinder);
   ca.colors = (float *) calloc(1, cylnum * 4 * sizeof(float));
 
-  unsigned int i,ind4,ind6,ind7;
+  int i,ind4,ind6,ind7;
   const int rOffset = 6; // radius offset
   if (wtrans == NULL) {
     for (i=0,ind4=0,ind6=0,ind7=0; i<cylnum; i++,ind4+=4,ind6+=6,ind7+=7) {
@@ -2469,10 +2510,7 @@ void OSPRayRenderer::trimesh_c4u_n3f_v3f(Matrix4 & wtrans, unsigned char *c,
   int i, ind, ind9, ind12;
 
   const float ci2f = 1.0f / 255.0f;
-  const float cn2f = 1.0f / 127.5f;
   for (i=0,ind=0,ind9=0,ind12=0; i<numfacets; i++,ind+=3,ind9+=9,ind12+=12) {
-    float norm[9];
-
     // transform to eye coordinates
     wtrans.multpoint3d(v + ind9    , (float*) &mesh.v[ind9    ]);
     wtrans.multpoint3d(v + ind9 + 3, (float*) &mesh.v[ind9 + 3]);
@@ -2626,12 +2664,6 @@ void OSPRayRenderer::trimesh_n3f_v3f(Matrix4 & wtrans, float *uniform_color,
 
   // create and fill the OSPRay trimesh memory buffer
   int i, ind, ind9, ind12;
-
-  const rgba c = { uniform_color[0], 
-                   uniform_color[1], 
-                   uniform_color[2], 
-                   1.0f /* mat_opacity*/ };
-
 
   for (i=0,ind=0,ind9=0,ind12=0; i<numfacets; i++,ind+=3,ind9+=9,ind12+=12) {
     // transform to eye coordinates

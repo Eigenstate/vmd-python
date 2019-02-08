@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: cmd_display.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.76 $       $Date: 2016/11/28 03:05:07 $
+ *      $Revision: 1.78 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -181,7 +181,7 @@ int text_cmd_display(ClientData cd, Tcl_Interp *interp, int argc,
       return TCL_OK;
     } else if (!strupncmp(argv[2], "stereo", CMDLEN)) {
       Tcl_AppendElement(interp, 
-			app->display->stereo_name(app->display->stereo_mode()));
+                        app->display->stereo_name(app->display->stereo_mode()));
       return TCL_OK;
     } else if (!strupncmp(argv[2], "stereoswap", CMDLEN)) {
       Tcl_AppendElement(interp, app->display->stereo_swap() ? "on" : "off");
@@ -189,27 +189,27 @@ int text_cmd_display(ClientData cd, Tcl_Interp *interp, int argc,
     } else if (!strupncmp(argv[2], "stereomodes", CMDLEN)) {
       int i;
       for (i=0; i<app->display->num_stereo_modes(); i++) {
-	Tcl_AppendElement(interp, app->display->stereo_name(i));
+        Tcl_AppendElement(interp, app->display->stereo_name(i));
       }
       return TCL_OK;
     } else if (!strupncmp(argv[2], "cachemode", CMDLEN)) {
       Tcl_AppendElement(interp, 
-			app->display->cache_name(app->display->cache_mode()));
+        app->display->cache_name(app->display->cache_mode()));
       return TCL_OK;
     } else if (!strupncmp(argv[2], "cachemodes", CMDLEN)) {
       int i;
       for (i=0; i<app->display->num_cache_modes(); i++) {
-	Tcl_AppendElement(interp, app->display->cache_name(i));
+        Tcl_AppendElement(interp, app->display->cache_name(i));
       }
       return TCL_OK;
     } else if (!strupncmp(argv[2], "rendermode", CMDLEN)) {
       Tcl_AppendElement(interp, 
-			app->display->render_name(app->display->render_mode()));
+        app->display->render_name(app->display->render_mode()));
       return TCL_OK;
     } else if (!strupncmp(argv[2], "rendermodes", CMDLEN)) {
       int i;
       for (i=0; i<app->display->num_render_modes(); i++) {
-	Tcl_AppendElement(interp, app->display->render_name(i));
+        Tcl_AppendElement(interp, app->display->render_name(i));
       }
       return TCL_OK;
     } else if (!strupncmp(argv[2], "projection", CMDLEN)) {
@@ -236,12 +236,12 @@ int text_cmd_display(ClientData cd, Tcl_Interp *interp, int argc,
       Tcl_SetResult(interp,
         (char *)
         "possible parameters to 'display get' are:\n"
-	"eyesep focallength height distance antialias depthcue culling\n"
-	"stereo stereomodes stereoswap nearclip farclip\n" 
+        "eyesep focallength height distance antialias depthcue culling\n"
+        "stereo stereomodes stereoswap nearclip farclip\n" 
         "cuestart cueend cuedensity cuemode\n"
         "shadows, ambientocclusion, aoambient, aodirect\n",
         TCL_STATIC);
-	return TCL_ERROR;
+      return TCL_ERROR;
     }
     /// return TCL_OK;  // never reached
   }
@@ -355,7 +355,7 @@ int text_cmd_display(ClientData cd, Tcl_Interp *interp, int argc,
     } else if(!strupncmp(argv[1],"rendermode",CMDLEN)) {
       app->display_set_rendermode(argv[2]);
     } else if (!strupncmp(argv[1], "projection", CMDLEN) ||
-	       !strupncmp(argv[1], "proj", CMDLEN)) {
+               !strupncmp(argv[1], "proj", CMDLEN)) {
       if (!app->display_set_projection(argv[2])) {
         Tcl_AppendResult(interp, "Invalid projection: ", argv[2], NULL);
         return TCL_ERROR;
@@ -363,7 +363,7 @@ int text_cmd_display(ClientData cd, Tcl_Interp *interp, int argc,
     } else if(!strupncmp(argv[1],"update",CMDLEN)) {
       int booltmp;
       if (!strcmp(argv[2], "status")) {
-	char s[20];
+        char s[20];
         TCL_RET("%d", app->display_update_status());
       } else if (!strcmp(argv[2], "ui")) {
         app->display_update_ui();
@@ -434,8 +434,7 @@ int text_cmd_display(ClientData cd, Tcl_Interp *interp, int argc,
 
 
 int text_cmd_light(ClientData cd, Tcl_Interp *interp, int argc, 
-                     const char *argv[]) {
-
+                   const char *argv[]) {
   VMDApp *app = (VMDApp *)cd;
   Scene *scene = app->scene;
 
@@ -450,82 +449,85 @@ int text_cmd_light(ClientData cd, Tcl_Interp *interp, int argc,
       TCL_STATIC);
     return TCL_ERROR;
   }
-    if ((argc == 3 || argc == 4) && !strupncmp(argv[2], "pos", CMDLEN)) {
-      int num = atoi(argv[1]);
-      if (argc == 4) {
-        float pos[3];
-        if (!strupncmp(argv[3], "default", 8)) {
-          const float *def = scene->light_pos_default(num);
-          if (!def) return TCL_ERROR;
-          for (int i=0; i<3; i++) {
-            char buf[20];
-            sprintf(buf, "%f", def[i]);
-            Tcl_AppendElement(interp, buf);
-          }
-          return TCL_OK;
-          
-        } else if (tcl_get_vector(argv[3], pos, interp) != TCL_OK) {
-          return TCL_ERROR;
-        }
-        app->light_move(num, pos);
-        return TCL_OK;
-      } else {
-        const float *pos = scene->light_pos(num);
-        if (!pos) return TCL_ERROR;
+
+  if ((argc == 3 || argc == 4) && !strupncmp(argv[2], "pos", CMDLEN)) {
+    int num = atoi(argv[1]);
+    if (argc == 4) {
+      float pos[3];
+      if (!strupncmp(argv[3], "default", 8)) {
+        const float *def = scene->light_pos_default(num);
+        if (!def) return TCL_ERROR;
         for (int i=0; i<3; i++) {
           char buf[20];
-          sprintf(buf, "%f", pos[i]);
+          sprintf(buf, "%f", def[i]);
           Tcl_AppendElement(interp, buf);
         }
         return TCL_OK;
+        
+      } else if (tcl_get_vector(argv[3], pos, interp) != TCL_OK) {
+        return TCL_ERROR;
       }
-    }  
-    if (argc == 2 && !strupncmp(argv[1], "num", CMDLEN)) {
-      // return the number of lights
-      char tmpstring[64];
-      sprintf(tmpstring, "%d", DISP_LIGHTS);
-      Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
+      app->light_move(num, pos);
+      return TCL_OK;
+    } else {
+      const float *pos = scene->light_pos(num);
+      if (!pos) return TCL_ERROR;
+      for (int i=0; i<3; i++) {
+        char buf[20];
+        sprintf(buf, "%f", pos[i]);
+        Tcl_AppendElement(interp, buf);
+      }
       return TCL_OK;
     }
-    int n;
-    if (Tcl_GetInt(interp, argv[1], &n) != TCL_OK) {
-      Tcl_AppendResult(interp, " -- light <number> ...", NULL);
+  }  
+
+  if (argc == 2 && !strupncmp(argv[1], "num", CMDLEN)) {
+    // return the number of lights
+    char tmpstring[64];
+    sprintf(tmpstring, "%d", DISP_LIGHTS);
+    Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
+    return TCL_OK;
+  }
+  int n;
+  if (Tcl_GetInt(interp, argv[1], &n) != TCL_OK) {
+    Tcl_AppendResult(interp, " -- light <number> ...", NULL);
+    return TCL_ERROR;
+  }
+
+  if (argc == 3) {
+    if(!strupncmp(argv[2],"on",CMDLEN))
+      app->light_on(n, 1);
+    else if(!strupncmp(argv[2],"off",CMDLEN))
+      app->light_on(n, 0);
+    else if(!strupncmp(argv[2],"highlight",CMDLEN))
+      app->light_highlight(n, 1);
+    else if(!strupncmp(argv[2],"unhighlight",CMDLEN))
+      app->light_highlight(n, 0);
+    else if(!strupncmp(argv[2],"status",CMDLEN)) {
+      char tmpstring[1024];
+
+      // return the pair { is on , is highlight} as eg: {on unhighlight}
+      if (n < 0 || n >= DISP_LIGHTS) {
+        sprintf(tmpstring, "light value %d out of range", n);
+        Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
+        return TCL_ERROR;
+      }
+      sprintf(tmpstring, "%s %s", 
+        app->scene->light_active(n) ? "on" : "off",
+        app->scene->light_highlighted(n) ?  "highlight" : "unhighlight");
+      Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
+      return TCL_OK;
+    } else {
       return TCL_ERROR;
     }
-    if(argc == 3) {
-      if(!strupncmp(argv[2],"on",CMDLEN))
-        app->light_on(n, 1);
-      else if(!strupncmp(argv[2],"off",CMDLEN))
-        app->light_on(n, 0);
-      else if(!strupncmp(argv[2],"highlight",CMDLEN))
-        app->light_highlight(n, 1);
-      else if(!strupncmp(argv[2],"unhighlight",CMDLEN))
-        app->light_highlight(n, 0);
-      else if(!strupncmp(argv[2],"status",CMDLEN)) {
-        char tmpstring[1024];
+  } else if(argc == 5 && !strupncmp(argv[2],"rot",CMDLEN)) {
+    char axis = (char)(tolower(argv[3][0]));
+    float deg = (float) atof(argv[4]);
+    app->light_rotate(n, deg, axis);
 
-	// return the pair { is on , is highlight} as eg: {on unhighlight}
-        if (n < 0 || n >= DISP_LIGHTS) {
-	  sprintf(tmpstring, "light value %d out of range", n);
-          Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
-	  return TCL_ERROR;
-	}
-	sprintf(tmpstring, "%s %s", 
-		app->scene->light_active(n) ? "on" : "off",
-		app->scene->light_highlighted(n) ? 
-                  "highlight" : "unhighlight");
-        Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
-	return TCL_OK;
-      } else 
-	return TCL_ERROR;
-
-    } else if(argc == 5 && !strupncmp(argv[2],"rot",CMDLEN)) {
-      char axis = (char)(tolower(argv[3][0]));
-      float deg = (float) atof(argv[4]);
-      app->light_rotate(n, deg, axis);
-
-    } else
-      return TCL_ERROR;
+  } else {
+    return TCL_ERROR;
+  }
 
   // if here, completed successfully
   return TCL_OK;
@@ -628,40 +630,43 @@ int text_cmd_point_light(ClientData cd, Tcl_Interp *interp, int argc,
       Tcl_AppendResult(interp, " -- pointlight <number> ...", NULL);
       return TCL_ERROR;
     }
-    if(argc == 3) {
-      if(!strupncmp(argv[2],"on",CMDLEN))
+
+    if (argc == 3) {
+      if(!strupncmp(argv[2],"on", CMDLEN))
         scene->activate_adv_light(n, 1);
-      else if(!strupncmp(argv[2],"off",CMDLEN))
+      else if(!strupncmp(argv[2],"off", CMDLEN))
         scene->activate_adv_light(n, 0);
-      else if(!strupncmp(argv[2],"highlight",CMDLEN))
+      else if(!strupncmp(argv[2],"highlight", CMDLEN))
         scene->highlight_adv_light(n, 1);
-      else if(!strupncmp(argv[2],"unhighlight",CMDLEN))
+      else if(!strupncmp(argv[2],"unhighlight", CMDLEN))
         scene->highlight_adv_light(n, 0);
-      else if(!strupncmp(argv[2],"status",CMDLEN)) {
+      else if(!strupncmp(argv[2],"status", CMDLEN)) {
         char tmpstring[1024];
 
-	// return the pair { is on , is highlight} as eg: {on unhighlight}
-        if (n < 0 || n >= DISP_LIGHTS) {
-	  sprintf(tmpstring, "light value %d out of range", n);
-          Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
-	  return TCL_ERROR;
-	}
-	sprintf(tmpstring, "%s %s", 
-		app->scene->adv_light_active(n) ? "on" : "off",
-		app->scene->adv_light_highlighted(n) ? 
-                  "highlight" : "unhighlight");
+      // return the pair { is on , is highlight} as eg: {on unhighlight}
+      if (n < 0 || n >= DISP_LIGHTS) {
+        sprintf(tmpstring, "light value %d out of range", n);
         Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
-	return TCL_OK;
-      } else 
-	return TCL_ERROR;
+        return TCL_ERROR;
+      }
+      sprintf(tmpstring, "%s %s", 
+        app->scene->adv_light_active(n) ? "on" : "off",
+        app->scene->adv_light_highlighted(n) ?  "highlight" : "unhighlight");
+      Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
+      return TCL_OK;
+    } else {
+      return TCL_ERROR;
+    }
+
 #if 0
     } else if(argc == 5 && !strupncmp(argv[2],"rot",CMDLEN)) {
       char axis = (char)(tolower(argv[3][0]));
       float deg = (float) atof(argv[4]);
       app->light_rotate(n, deg, axis);
 #endif
-    } else
-      return TCL_ERROR;
+  } else {
+    return TCL_ERROR;
+  }
 
   // if here, completed successfully
   return TCL_OK;
@@ -674,30 +679,28 @@ int text_cmd_axes(ClientData cd, Tcl_Interp *interp, int argc,
   VMDApp *app = (VMDApp *)cd;
 
   if (app->axes && argc == 2) {
-    if(!strupncmp(argv[1],"location",CMDLEN)) {
+    if (!strupncmp(argv[1],"location", CMDLEN)) {
       // return the current location
       Tcl_SetResult(interp, app->axes->loc_description(app->axes->location()), TCL_VOLATILE);
       return TCL_OK;
-    } else if(!strupncmp(argv[1],"locations",CMDLEN)) {
+    } else if(!strupncmp(argv[1],"locations", CMDLEN)) {
       // return all the possible locations
       for (int ii=0; ii<app->axes->locations(); ii++) {
-	Tcl_AppendElement(interp, app->axes->loc_description(ii));
+        Tcl_AppendElement(interp, app->axes->loc_description(ii));
       }
       return TCL_OK;
     }
     // else we are at an error, so return a short list
     Tcl_AppendResult(interp, 
-		     "axes [location|locations]\n",
-		     "axes location [off|origin|lowerleft|lowerright|"
-		                          "upperleft|upperright]",
-		      NULL
-		     );
+                     "axes [location|locations]\n",
+                     "axes location [off|origin|lowerleft|lowerright|"
+                     "upperleft|upperright]",
+                     NULL);
     return TCL_ERROR;
-		     
   }
-  if(app->axes && argc == 3) {
-    if(!strupncmp(argv[1],"location",CMDLEN)) {
-      if (!app->axes_set_location(argv[2])) {
+  if (app->axes && argc == 3) {
+    if (!strupncmp(argv[1],"location", CMDLEN)) {
+      if  (!app->axes_set_location(argv[2])) {
         Tcl_AppendResult(interp, "Invalid axes location: ", argv[2], NULL);
         return TCL_ERROR;
       }
@@ -720,16 +723,16 @@ int text_cmd_stage(ClientData cd, Tcl_Interp *interp, int argc,
 
   if (argc < 2 || argc > 3) {
     int i;
-    Tcl_AppendResult(interp, (char *) "stage location <", TCL_STATIC);
+    Tcl_AppendResult(interp, (char *) "stage location <", NULL);
     for (i=0; i < stage->locations(); i++) {
       Tcl_AppendResult(interp, stage->loc_description(i), NULL);
       if (i < (stage->locations()-1))
         Tcl_AppendResult(interp, " | ", NULL);
     }
-    Tcl_AppendResult(interp, (char *) ">\n", TCL_STATIC);
-    Tcl_AppendResult(interp, (char *) "stage locations\n", TCL_STATIC);
-    Tcl_AppendResult(interp, (char *) "stage panels [ numpanels ]\n", TCL_STATIC);
-    Tcl_AppendResult(interp, (char *) "stage size [ value ]\n", TCL_STATIC);
+    Tcl_AppendResult(interp, (char *) ">\n", NULL);
+    Tcl_AppendResult(interp, (char *) "stage locations\n", NULL);
+    Tcl_AppendResult(interp, (char *) "stage panels [ numpanels ]\n", NULL);
+    Tcl_AppendResult(interp, (char *) "stage size [ value ]\n", NULL);
     return TCL_ERROR;
   }
 

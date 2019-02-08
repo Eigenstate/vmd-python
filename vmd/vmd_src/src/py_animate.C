@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_animate.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.18 $       $Date: 2016/11/28 03:05:08 $
+ *      $Revision: 1.19 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -26,12 +26,12 @@
 #include "Animation.h"
 
 // once()
-static char once_doc[] = "once() -> None\nAnimate once through all frames.";
-static PyObject *once(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)""))
-    return NULL;
+static const char once_doc[] = "Animate once through all frames.";
+static PyObject *py_once(PyObject *self, PyObject *args) {
 
-  VMDApp *app = get_vmdapp();
+  VMDApp *app;
+  if (!(app = get_vmdapp()))
+    return NULL;
   app->animation_set_style(Animation::ANIM_ONCE);
 
   Py_INCREF(Py_None);
@@ -39,12 +39,13 @@ static PyObject *once(PyObject *self, PyObject *args) {
 }
 
 // rock()
-static char rock_doc[] = "rock() -> None\nAnimate back and forth between first and last frames.";
-static PyObject *rock(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)""))
+static const char rock_doc[] = "Animate back and forth between first and last frames.";
+static PyObject *py_rock(PyObject *self, PyObject *args) {
+
+  VMDApp *app;
+  if (!(app = get_vmdapp()))
     return NULL;
 
-  VMDApp *app = get_vmdapp();
   app->animation_set_style(Animation::ANIM_ROCK);
 
   Py_INCREF(Py_None);
@@ -52,12 +53,12 @@ static PyObject *rock(PyObject *self, PyObject *args) {
 }
 
 // loop()
-static char loop_doc[] = "loop() -> None\nAnimate in a continuous loop.";
-static PyObject *loop(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)""))
-    return NULL;
+static const char loop_doc[] = "Animate in a continuous loop.";
+static PyObject *py_loop(PyObject *self, PyObject *args) {
 
-  VMDApp *app = get_vmdapp();
+  VMDApp *app;
+  if (!(app = get_vmdapp()))
+    return NULL;
   app->animation_set_style(Animation::ANIM_LOOP);
 
   Py_INCREF(Py_None);
@@ -65,27 +66,36 @@ static PyObject *loop(PyObject *self, PyObject *args) {
 }
 
 // style() : return current style name as a string
-static char style_doc[] = "style() -> string\nReturns current animation style ('rock', 'once', or 'loop').";
-static PyObject *style(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)""))
+static const char style_doc[] =
+"Returns current animation style\n\n"
+"Returns:\n"
+"    (str) style, in ['Rock', 'Once', 'Loop']";
+static PyObject *py_style(PyObject *self, PyObject *args) {
+  int stylenum;
+  VMDApp *app;
+  if (!(app = get_vmdapp()))
     return NULL;
 
-  int stylenum = get_vmdapp()->anim->anim_style();
-#if PY_MAJOR_VERSION >= 3
-  return PyUnicode_FromString(animationStyleName[stylenum]);
-#else
-  return PyString_FromString(animationStyleName[stylenum]);
-#endif
+  stylenum = app->anim->anim_style();
+  return as_pystring((char*) animationStyleName[stylenum]);
 }
 
 // goto(frame)
-static char goto_doc[] = "goto(frame) -> None\nGo to frame on the next display update.";
-static PyObject *anim_goto(PyObject *self, PyObject *args) {
+static const char goto_doc[] =
+"Display a givenframe on the next display update\n\n"
+"Args:\n"
+"    frame (int): Frame index to display";
+static PyObject *py_anim_goto(PyObject *self, PyObject *args, PyObject *kwargs) {
+  const char *kwnames[] = {"frame", NULL};
+  VMDApp *app;
   int frame;
-  if (!PyArg_ParseTuple(args, (char *)"i", &frame))
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:animate.goto",
+                                   (char**) kwnames, &frame))
     return NULL;
 
-  VMDApp *app = get_vmdapp();
+  if (!(app = get_vmdapp()))
+    return NULL;
   app->animation_set_frame(frame);
 
   Py_INCREF(Py_None);
@@ -93,12 +103,12 @@ static PyObject *anim_goto(PyObject *self, PyObject *args) {
 }
 
 // reverse()
-static char reverse_doc[] = "reverse() -> None\nStart animating in reverse.";
-static PyObject *reverse(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)""))
-    return NULL;
+static const char reverse_doc[] = "Start animating frames in reverse order.";
+static PyObject *py_reverse(PyObject *self, PyObject *args) {
 
-  VMDApp *app = get_vmdapp();
+  VMDApp *app;
+  if (!(app = get_vmdapp()))
+    return NULL;
   app->animation_set_dir(Animation::ANIM_REVERSE);
 
   Py_INCREF(Py_None);
@@ -106,12 +116,12 @@ static PyObject *reverse(PyObject *self, PyObject *args) {
 }
 
 // forward()
-static char forward_doc[] = "forward() -> None\nStart animating forward.";
-static PyObject *forward(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)""))
-    return NULL;
+static const char forward_doc[] = "Start animating frames in forward order.";
+static PyObject *py_forward(PyObject *self, PyObject *args) {
 
-  VMDApp *app = get_vmdapp();
+  VMDApp *app;
+  if (!(app = get_vmdapp()))
+    return NULL;
   app->animation_set_dir(Animation::ANIM_FORWARD);
 
   Py_INCREF(Py_None);
@@ -119,12 +129,12 @@ static PyObject *forward(PyObject *self, PyObject *args) {
 }
 
 // prev()
-static char prev_doc[] = "prev() -> None\nAnimate to the previous frame and stop.";
-static PyObject *prev(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)""))
-    return NULL;
+static const char prev_doc[] = "Animate to the previous frame and stop.";
+static PyObject *py_prev(PyObject *self, PyObject *args) {
 
-  VMDApp *app = get_vmdapp();
+  VMDApp *app;
+  if (!(app = get_vmdapp()))
+    return NULL;
   app->animation_set_dir(Animation::ANIM_REVERSE1);
 
   Py_INCREF(Py_None);
@@ -132,12 +142,12 @@ static PyObject *prev(PyObject *self, PyObject *args) {
 }
 
 // next()
-static char next_doc[] = "next() -> None\nAnimate to the next frame and stop.";
-static PyObject *next(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)""))
-    return NULL;
+static const char next_doc[] = "Animate to the next frame and stop.";
+static PyObject *py_next(PyObject *self, PyObject *args) {
 
-  VMDApp *app = get_vmdapp();
+  VMDApp *app;
+  if (!(app = get_vmdapp()))
+    return NULL;
   app->animation_set_dir(Animation::ANIM_FORWARD1);
 
   Py_INCREF(Py_None);
@@ -145,12 +155,12 @@ static PyObject *next(PyObject *self, PyObject *args) {
 }
 
 // pause()
-static char pause_doc[] = "pause() -> None\nPause the animation.";
-static PyObject *pause(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)""))
-    return NULL;
+static const char pause_doc[] = "Pause the animation.";
+static PyObject *py_pause(PyObject *self, PyObject *args) {
 
-  VMDApp *app = get_vmdapp();
+  VMDApp *app;
+  if (!(app = get_vmdapp()))
+    return NULL;
   app->animation_set_dir(Animation::ANIM_PAUSE);
 
   Py_INCREF(Py_None);
@@ -158,14 +168,30 @@ static PyObject *pause(PyObject *self, PyObject *args) {
 }
 
 // speed(value)
-static char speed_doc[] = "speed(value) -> current value\nSet animation speed; pass -1 to get current speed; returns new speed.";
-static PyObject *speed(PyObject *self, PyObject *args) {
+static const char speed_doc[] =
+"Set or get animation speed\n\n"
+"Args:\n"
+"    value (float): New value for speed, between 0 and 1, or None to query\n"
+"Returns:\n"
+"    (float) Current value for speed";
+static PyObject *py_speed(PyObject *self, PyObject *args, PyObject *kwargs) {
+
+  const char *kwnames[] = {"value", NULL};
   float value = -1.0f;
-  if (!PyArg_ParseTuple(args, (char *)"|f",&value))
+  VMDApp *app;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|f:animate.speed",
+                                   (char**) kwnames, &value))
     return NULL;
 
-  VMDApp *app = get_vmdapp();
-  if (value > 0) {
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  if (value != -1.0f) {
+    if (value < 0.0f || value > 1.0f) {
+        PyErr_SetString(PyExc_ValueError, "speed must be between 0 and 1");
+        return NULL;
+    }
     app->animation_set_speed(value);
   }
 
@@ -174,100 +200,138 @@ static PyObject *speed(PyObject *self, PyObject *args) {
 }
 
 // skip(value)
-static char skip_doc[] = "skip(value) -> new value\nSet stride for animation frames; pass -1 to get current value only;\nreturns new value.";
-static PyObject *skip(PyObject *self, PyObject *args) {
-  int value = 0;
-  if (!PyArg_ParseTuple(args, (char *)"|i",&value))
+static const char skip_doc[] =
+"Set or get stride for animation frames. A skip value of 1 shows every frame,\n"
+"a value of 2 shows every other frame, etc.\n\n"
+"Args:\n"
+"    value (int): New value for stride, or None to query\n\n"
+"Returns:\n"
+"   (int) Current value for stride";
+static PyObject *py_skip(PyObject *self, PyObject *args, PyObject *kwargs) {
+
+  const char *kwnames[] = {"value", NULL};
+  int skip = 0;
+  VMDApp *app;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i:animate.stride",
+                                   (char**) kwnames, &skip))
     return NULL;
 
-  VMDApp *app = get_vmdapp();
-  if (value > 0) {
-    app->animation_set_stride(value);
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  if (skip) {
+    if (skip < 1) {
+        PyErr_SetString(PyExc_ValueError, "skip must be 1 or greater");
+        return NULL;
+    }
+    app->animation_set_stride(skip);
   }
-#if PY_MAJOR_VERSION >= 3
-  return PyLong_FromLong(app->anim->skip());
-#else
-  return PyInt_FromLong(app->anim->skip());
-#endif
+
+  return as_pyint(app->anim->skip());
 }
 
 // is_active(molid)
-static char is_active_doc[] = "is_active(molid) -> boolean\nIs given molecule active (animateable)?";
-static PyObject *is_active(PyObject *self, PyObject *args) {
+static const char is_active_doc[] =
+"Returns whether a given molecule is active (updated during animation)\n\n"
+"Args:\n"
+"    molid (int): Molecule ID to query\n\n"
+"Returns:\n"
+"    (bool) If molecule is active";
+static PyObject *py_is_active(PyObject *self, PyObject *args, PyObject *kwargs) {
+
+  const char *kwnames[] = {"molid", NULL};
+  Molecule *mol;
+  VMDApp *app;
   int molid;
-  if (!PyArg_ParseTuple(args, (char *)"i", &molid))
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i:animate.is_active",
+                                   (char**) kwnames, &molid))
     return NULL;
 
-  VMDApp *app = get_vmdapp();
-  Molecule *mol = app->moleculeList->mol_from_id(molid);
-  if (!mol) {
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  if (!(mol = app->moleculeList->mol_from_id(molid))) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
   }
-#if PY_MAJOR_VERSION >= 3
-  return PyLong_FromLong(mol->active);
-#else
-  return PyInt_FromLong(mol->active);
-#endif
+
+  return mol->active ? Py_True : Py_False;
 }
 
 // activate(molid, bool)
-static char activate_doc[] = "activate(molid, bool) -> None\nActivate/inactivate the given molecule.";
-static PyObject *activate(PyObject *self, PyObject *args) {
+static const char activate_doc[] =
+"Set the active status of a molecule. Active molecules update their coordinate"
+" frames during animation, inactive ones do not.\n\n"
+"Args:\n"
+"    molid (int): Molecule ID to change\n"
+"    active (bool): New active status of molecule.";
+static PyObject *py_activate(PyObject *self, PyObject *args, PyObject *kwargs) {
+
+  const char *kwnames[] = {"molid", "active", NULL};
+  Molecule *mol;
+  VMDApp *app;
+  int status;
   int molid;
-  PyObject *boolobj;
-  if (!PyArg_ParseTuple(args, (char *)"iO", &molid, &boolobj))
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "iO&:animate.activate",
+                                   (char**) kwnames, &molid, convert_bool,
+                                   &status))
     return NULL;
 
-  VMDApp *app = get_vmdapp();
-  Molecule *mol = app->moleculeList->mol_from_id(molid);
-  if (!mol) {
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  if (!(mol = app->moleculeList->mol_from_id(molid))) {
     PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
     return NULL;
   }
-  app->molecule_activate(molid, PyObject_IsTrue(boolobj));
+  app->molecule_activate(molid, status);
 
   Py_INCREF(Py_None);
   return Py_None;
 }
 
 static PyMethodDef methods[] = {
-  {(char *)"once", (vmdPyMethod)once, METH_VARARGS, once_doc},
-  {(char *)"rock", (vmdPyMethod)rock, METH_VARARGS, rock_doc },
-  {(char *)"loop", (vmdPyMethod)loop, METH_VARARGS, loop_doc },
-  {(char *)"style", (vmdPyMethod)style, METH_VARARGS, style_doc },
-  {(char *)"goto", (vmdPyMethod)anim_goto, METH_VARARGS, goto_doc },
-  {(char *)"reverse", (vmdPyMethod)reverse, METH_VARARGS, reverse_doc },
-  {(char *)"forward", (vmdPyMethod)forward, METH_VARARGS, forward_doc },
-  {(char *)"prev", (vmdPyMethod)prev, METH_VARARGS, prev_doc },
-  {(char *)"next", (vmdPyMethod)next, METH_VARARGS, next_doc },
-  {(char *)"pause", (vmdPyMethod)pause, METH_VARARGS, pause_doc },
-  {(char *)"speed", (vmdPyMethod)speed, METH_VARARGS, speed_doc },
-  {(char *)"skip", (vmdPyMethod)skip, METH_VARARGS, skip_doc },
-  {(char *)"is_active", (vmdPyMethod)is_active, METH_VARARGS, is_active_doc },
-  {(char *)"activate", (vmdPyMethod)activate, METH_VARARGS, activate_doc },
-  {NULL, NULL, 0, NULL}
+  {"once", (PyCFunction) py_once, METH_NOARGS, once_doc},
+  {"rock", (PyCFunction) py_rock, METH_NOARGS, rock_doc },
+  {"loop", (PyCFunction) py_loop, METH_NOARGS, loop_doc },
+  {"style", (PyCFunction) py_style, METH_NOARGS, style_doc },
+  {"goto", (PyCFunction) py_anim_goto, METH_VARARGS | METH_KEYWORDS, goto_doc },
+  {"reverse", (PyCFunction) py_reverse, METH_NOARGS, reverse_doc },
+  {"forward", (PyCFunction) py_forward, METH_NOARGS, forward_doc },
+  {"prev", (PyCFunction) py_prev, METH_NOARGS, prev_doc },
+  {"next", (PyCFunction) py_next, METH_NOARGS, next_doc },
+  {"pause", (PyCFunction) py_pause, METH_NOARGS, pause_doc },
+  {"speed", (PyCFunction) py_speed, METH_VARARGS | METH_KEYWORDS, speed_doc },
+  {"skip", (PyCFunction) py_skip, METH_VARARGS | METH_KEYWORDS, skip_doc },
+  {"is_active", (PyCFunction) py_is_active, METH_VARARGS | METH_KEYWORDS, is_active_doc },
+  {"activate", (PyCFunction) py_activate, METH_VARARGS | METH_KEYWORDS, activate_doc },
+  {NULL, NULL}
 };
 
+static const char animate_moddoc[] =
+"Methods for controlling molecules with multiple frames loaded";
+
 #if PY_MAJOR_VERSION >= 3
-static struct PyModuleDef animatedef = {
-  PyModuleDef_HEAD_INIT,
-  "animate",
-  NULL,
-  -1, // global state, no sub-interpreters
-  methods,
-};
+  struct PyModuleDef animatedef = {
+    PyModuleDef_HEAD_INIT,
+    "animate",
+    animate_moddoc,
+    -1,
+    methods,
+  };
 #endif
 
 PyObject* initanimate() {
+  PyObject *m;
+
 #if PY_MAJOR_VERSION >= 3
-  PyObject *m = PyModule_Create(&animatedef);
+  m =  PyModule_Create(&animatedef);
 #else
-  PyObject *m = Py_InitModule((char *)"animate", methods);
+  m =  Py_InitModule3("animate", methods, animate_moddoc);
 #endif
   return m;
 }
-
-
-
 

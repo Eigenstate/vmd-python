@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: win32vmdstart.c,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.44 $      $Date: 2016/11/28 03:05:08 $
+ *      $Revision: 1.46 $      $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -153,55 +153,55 @@ int win32vmdstart(void) {
 
   strcpy(tmp, "VMDDIR=");
   strcat(tmp, str2);
-  putenv(tmp);
+  putenv(strdup(tmp));
 
   strcpy(tmp, "TCL_LIBRARY=");
   strcat(tmp, str2);
   strcat(tmp, "/scripts/tcl");
-  putenv(tmp);
+  putenv(strdup(tmp));
 
   strcpy(tmp, "TK_LIBRARY=");
   strcat(tmp, str2);
   strcat(tmp, "/scripts/tk");
-  putenv(tmp);
+  putenv(strdup(tmp));
 
   if (!getenv("PYTHONPATH")) {
     strcpy(tmp, "PYTHONPATH=");
     strcat(tmp, str2);
     strcat(tmp, "/scripts/python");
-    putenv(tmp);
+    putenv(strdup(tmp));
   } else {
     strcpy(tmp, getenv("PYTHONPATH"));
     strcat(tmp, ":");
     strcat(tmp, str2);
     strcat(tmp, "/scripts/python");
-    putenv(tmp);
+    putenv(strdup(tmp));
   }
 
   strcpy(tmp, "VMDBABELBIN=");
   strcat(tmp, str);
   strcat(tmp, "\\babel\\babel.exe");
-  putenv(tmp);
+  putenv(strdup(tmp));
 
   strcpy(tmp, "BABEL_DIR=");
   strcat(tmp, str);
   strcat(tmp, "\\babel");
-  putenv(tmp);
+  putenv(strdup(tmp));
 
   strcpy(tmp, "STRIDE_BIN=\"");
   strcat(tmp, str);
   strcat(tmp, "\\stride_WIN32.exe\"");
-  putenv(tmp);
+  putenv(strdup(tmp));
 
   strcpy(tmp, "SURF_BIN=");
   strcat(tmp, str);
   strcat(tmp, "\\surf_WIN32.exe");
-  putenv(tmp);
+  putenv(strdup(tmp));
 
   strcpy(tmp, "TACHYON_BIN=");
   strcat(tmp, str);
   strcat(tmp, "\\tachyon_WIN32.exe");
-  putenv(tmp);
+  putenv(strdup(tmp));
 
 #if defined(VMDSEPARATESTARTUP)
   strcpy(tmp, str);

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: MeasureQCP.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.21 $       $Date: 2016/11/28 04:38:26 $
+ *      $Revision: 1.27 $       $Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -30,6 +30,8 @@
 #if defined(VMDUSEAVX512)
 #define VMDQCPUSEAVX512 1
 #endif
+
+#define VMDQCPUSETHRPOOL 1
 
 #if VMDQCPUSESSE && defined(__SSE2__)
 #include <emmintrin.h>
@@ -57,11 +59,6 @@
 #include "VMDApp.h"
 #include "WKFThreads.h"
 #include "WKFUtils.h"
-
-// prototype for our version of Theobald's RMSD solver routine
-static int FastCalcRMSDAndRotation(double *rot, double *A, float *rmsd, 
-                                   double E0, int len, double minScore);
-
 
 #if VMDQCPUSEAVX512 && defined(__AVX512F__)
 
@@ -477,7 +474,7 @@ static void vecadd_acc(void) {
 #endif
 static void acc_idx2sub_tril(long N, long ind, long *J, long *I) {
   long i, j;
-  i = floor((2*N+1 - sqrt((2*N+1)*(2*N+1) - 8*ind)) / 2);
+  i = long(floor((2*N+1 - sqrt((2*N+1)*(2*N+1) - 8*ind)) / 2));
   j = ind - N*i + i*(i-1)/2 + i;
  
   *I = i;
@@ -789,16 +786,6 @@ int center_convert_soa(const AtomSel *sel, int num, const float *framepos,
   // check post-translation com 
   com_soa(cnt, soax, soay, soaz, comx, comy, comz, weight); 
   printf("center_convert_soa():  centered com: %lg %lg %lg\n", comx, comy, comz);
-
-  // translate center of mass to the origin
-  for (i=0; i<cnt; i++) {
-    soax[i] -= comx;
-    soay[i] -= comy;
-    soaz[i] -= comz;
-  }
-
-  com_soa(cnt, soax, soay, soaz, comx, comy, comz, weight); 
-  printf("center_convert_soa():  centered com: %lg %lg %lg\n", comx, comy, comz);
 #endif   
 
   return 0;
@@ -854,7 +841,8 @@ int center_convert_single_soa(const AtomSel *sel, int num,
 }
 
 
-int measure_rmsd_qcp(const AtomSel *sel1, const AtomSel *sel2,
+int measure_rmsd_qcp(VMDApp *app,
+                     const AtomSel *sel1, const AtomSel *sel2,
                      int num, const float *framepos1, const float *framepos2,
                      float *weight, float *rmsd) {
   if (!sel1 || !sel2)   return MEASURE_ERR_NOSEL;
@@ -926,22 +914,20 @@ static int sub2idx_tril(long N, long i, long j, long *ind) {
 
 // compute lower-triangular indices i,j from linear array index
 static int idx2sub_tril(long N, long ind, long *J, long *I) {
+  long i, j;
+
   if (ind > (N*(N+1)/2)) {
     return -1; // out of bounds
   }
 
-  long i, j;
-  // j = ceil(0.5*(2*N+1 - sqrt(-8*ind + 1 + 4*N*(N+1))));
-  // i = ind - (j-1)*N + j*(j-1)/2;
-
-  // i = floor((2*N+1 - sqrt((2*N+1)*(2*N+1) - 8*ind)) / 2);
   // XXX deal with ambiguous types for sqrt() on Solaris
   double tmp2np1 = 2*N+1;
-  i = floor((tmp2np1 - sqrt(tmp2np1*tmp2np1 - 8.0*ind)) / 2);
+  i = long(floor((tmp2np1 - sqrt(tmp2np1*tmp2np1 - 8.0*ind)) / 2));
+  // i = long(floor((2*N+1 - sqrt((2*N+1)*(2*N+1) - 8*ind)) / 2));
   j = ind - N*i + i*(i-1)/2 + i;
   
   *I = i;
-  *J = j;
+  *J = j+1;
 
   return 0;
 }
@@ -971,8 +957,13 @@ typedef struct {
 static void * measure_rmsdmat_qcp_thread(void *voidparms) {
   int threadid;
   qcprmsdthreadparms *parms = NULL;
+#if defined(VMDQCPUSETHRPOOL)
+  wkf_threadpool_worker_getdata(voidparms, (void **) &parms);
+  wkf_threadpool_worker_getid(voidparms, &threadid, NULL);
+#else
   wkf_threadlaunch_getdata(voidparms, (void **) &parms);
   wkf_threadlaunch_getid(voidparms, &threadid, NULL);
+#endif
 
   //
   // copy in per-thread parameters
@@ -1014,7 +1005,11 @@ printf("qcpthread[%d] running... %s\n", threadid,
   int framecount = (last - first + 1) / step;
 
   wkf_tasktile_t tile;
+#if defined(VMDQCPUSETHRPOOL)
+  while (wkf_threadpool_next_tile(voidparms, 1, &tile) != WKF_SCHED_DONE) {
+#else
   while (wkf_threadlaunch_next_tile(voidparms, 8, &tile) != WKF_SCHED_DONE) {
+#endif
     long idx;
 
     for (idx=tile.start; idx<tile.end; idx++) {
@@ -1057,6 +1052,9 @@ printf("qcpthread[%d] running... %s\n", threadid,
       // calculate the RMSD & rotational matrix
       FastCalcRMSDAndRotation(NULL, A, &rmsdmat[j*framecount + i], 
                               E0, sel->selected, -1);
+
+      // reflect the outcome of the lower triangle into the upper triangle
+      rmsdmat[i*framecount + j] = rmsdmat[j*framecount + i];
     } 
   }
 
@@ -1064,7 +1062,8 @@ printf("qcpthread[%d] running... %s\n", threadid,
 }
 
 
-int measure_rmsdmat_qcp(const AtomSel *sel, MoleculeList *mlist,
+int measure_rmsdmat_qcp(VMDApp *app,
+                        const AtomSel *sel, MoleculeList *mlist,
                         int num, float *weight, 
                         int first, int last, int step,
                         float *rmsdmat) {
@@ -1184,7 +1183,12 @@ int measure_rmsdmat_qcp(const AtomSel *sel, MoleculeList *mlist,
   tile.start=0;
   tile.end=(framecount-1)*(framecount-1)/2; // only compute off-diag elements
 
+#if defined(VMDORBUSETHRPOOL)
+  wkf_threadpool_sched_dynamic(app->thrpool, &tile);
+  rc = wkf_threadpool_launch(app->thrpool, measure_rmsdmat_qcp_thread, &parms, 1);
+#else
   wkf_threadlaunch(numprocs, &parms, measure_rmsdmat_qcp_thread, &tile);
+#endif
 #elif defined(__PGIC__) && defined(_OPENACC)
   // OpenACC variant
   rmsdmat_qcp_acc(sel->selected, padcnt, framecrdsz, framecount, crds, 
@@ -1210,9 +1214,17 @@ int measure_rmsdmat_qcp(const AtomSel *sel, MoleculeList *mlist,
       // calculate the RMSD & rotational matrix
       FastCalcRMSDAndRotation(NULL, A, &rmsdmat[j*framecount + i], 
                               E0, sel->selected, -1);
+
+      // reflect the outcome of the lower triangle into the upper triangle
+      rmsdmat[i*framecount + j] = rmsdmat[j*framecount + i];
     }
   }
 #endif
+
+  // mark all self-RMSDs with a value of 1.0
+  for (long l=0; l<framecount; l++) {
+    rmsdmat[l*framecount + l] = 1.0;
+  }
 
   double rmsdtime = wkf_timer_timenow(timer) - converttime;
 
@@ -1279,8 +1291,8 @@ int measure_rmsdmat_qcp(const AtomSel *sel, MoleculeList *mlist,
 #if defined(__PGIC__)
 #pragma acc routine seq
 #endif
-static int FastCalcRMSDAndRotation(double *rot, double *A, float *rmsd, 
-                                   double E0, int len, double minScore) {
+int FastCalcRMSDAndRotation(double *rot, double *A, float *rmsd, 
+                            double E0, int len, double minScore) {
   double Sxx, Sxy, Sxz, Syx, Syy, Syz, Szx, Szy, Szz;
   double Szz2, Syy2, Sxx2, Sxy2, Syz2, Sxz2, Syx2, Szy2, Szx2,
          SyzSzymSyySzz2, Sxx2Syy2Szz2Syz2Szy2, Sxy2Sxz2Syx2Szx2,

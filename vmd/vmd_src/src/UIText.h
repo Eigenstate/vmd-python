@@ -1,9 +1,9 @@
 /***************************************************************************
- *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
- *cr                        University of Illinois
- *cr                         All Rights Reserved
- *cr
+ *cr                                                                       
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
+ *cr                        University of Illinois                       
+ *cr                         All Rights Reserved                        
+ *cr                                                                   
  ***************************************************************************/
 
 /***************************************************************************
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: UIText.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.78 $	$Date: 2016/11/28 03:05:05 $
+ *	$Revision: 1.79 $	$Date: 2019/01/17 21:21:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -37,7 +37,7 @@ private:
   TextInterp *interp;          ///< text interpreter object
   TextInterp *tclinterp;       ///< Tcl interpreter
   TextInterp *pythoninterp;    ///< Python interpreter
-
+  
   Inform *cmdbufstr;
 
 public:
@@ -54,9 +54,9 @@ private:
 
 public:
   /// set up the interpreter environment
-  void read_init(void);
+  void read_init(void); 
 
-  /// change to the text interpreter with the given name.  Currently
+  /// change to the text interpreter with the given name.  Currently 
   /// "tcl" and "python" are supported.  Return success.
   int change_interp(const char *interpname);
 
@@ -70,11 +70,11 @@ public:
   /// was generated.
   virtual int check_event(void);
 
-  virtual int act_on_command(int, Command *);
+  virtual int act_on_command(int, Command *);  
 
 #ifdef VMDTCL
   Tcl_Interp* get_tcl_interp() {
-    if (tclinterp == NULL)
+    if (tclinterp == NULL) 
       return NULL;
 
     return ((TclTextInterp *) tclinterp)->get_interp();
@@ -84,7 +84,7 @@ public:
     return NULL;
   }
 #endif
-
+ 
 #ifdef VMDVRJUGGLER
   bool isInitialized(void);
 

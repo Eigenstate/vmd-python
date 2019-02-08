@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_material.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.26 $       $Date: 2016/11/28 03:05:08 $
+ *      $Revision: 1.27 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -27,233 +27,354 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-// listall(): list all materials
-static PyObject *listall(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)""))
+static const char listall_doc[] =
+"Lists all currently defined materials\n\n"
+"Returns:\n"
+"    (list of str): Available material names";
+static PyObject* py_listall(PyObject *self, PyObject *args)
+{
+  PyObject *newlist = NULL;
+  MaterialList *mlist;
+  VMDApp *app;
+  int i;
+
+  if (!(app = get_vmdapp()))
     return NULL;
 
-  MaterialList *mlist = get_vmdapp()->materialList;
-  PyObject *newlist = PyList_New(0);
-  for (int i=0; i<mlist->num(); i++)
-#if PY_MAJOR_VERSION >= 3
-    PyList_Append(newlist, PyUnicode_FromString(mlist->material_name(i)));
-#else
-    PyList_Append(newlist, PyString_FromString(mlist->material_name(i)));
-#endif
+  mlist = app->materialList;
+  if (!(newlist = PyList_New(0)))
+    goto failure;
+
+  // Need to avoid double counting references since PyList_Append does
+  // not steal a reference and increments the count itself
+  for (i = 0; i < mlist->num(); i++) {
+    PyObject *tmp = as_pystring(mlist->material_name(i));
+    PyList_Append(newlist, tmp);
+    Py_XDECREF(tmp);
+
+    if (PyErr_Occurred())
+      goto failure;
+  }
 
   return newlist;
+
+failure:
+  PyErr_SetString(PyExc_ValueError, "Cannot get materials");
+  Py_XDECREF(newlist);
+  return NULL;
 }
 
-// settings(name): return a dictionary object with the material settings
-static PyObject *settings(PyObject *self, PyObject *args) {
+static const char settings_doc[] =
+"Get settings that comprise the definition of a given material\n\n"
+"Args:\n"
+"    name (str): Material name to query\n"
+"Returns:\n"
+"    (dict str->str): Material properties and values";
+static PyObject* py_settings(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  const char *kwlist[] = {"name", NULL};
+  MaterialList *mlist;
+  PyObject *dict;
+  VMDApp *app;
   char *name;
-  if (!PyArg_ParseTuple(args, (char *)"s", &name))
+  int ind;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s:material.settings",
+                                   (char**) kwlist, &name))
     return NULL;
 
-  MaterialList *mlist = get_vmdapp()->materialList;
-  int ind = mlist->material_index(name);
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  mlist = app->materialList;
+  ind = mlist->material_index(name);
   if (ind < 0) {
-    PyErr_SetString(PyExc_ValueError, "No such material");
+    PyErr_Format(PyExc_ValueError, "No such material '%s'", name);
     return NULL;
   }
 
-  PyObject *dict = PyDict_New();
-  PyDict_SetItemString(dict, (char *)"ambient",
+  dict = PyDict_New();
+  PyDict_SetItemString(dict, "ambient",
     PyFloat_FromDouble(mlist->get_ambient(ind)));
-  PyDict_SetItemString(dict, (char *)"specular",
+  PyDict_SetItemString(dict, "specular",
     PyFloat_FromDouble(mlist->get_specular(ind)));
-  PyDict_SetItemString(dict, (char *)"diffuse",
+  PyDict_SetItemString(dict, "diffuse",
     PyFloat_FromDouble(mlist->get_diffuse(ind)));
-  PyDict_SetItemString(dict, (char *)"shininess",
+  PyDict_SetItemString(dict, "shininess",
     PyFloat_FromDouble(mlist->get_shininess(ind)));
-  PyDict_SetItemString(dict, (char *)"mirror",
+  PyDict_SetItemString(dict, "mirror",
     PyFloat_FromDouble(mlist->get_mirror(ind)));
-  PyDict_SetItemString(dict, (char *)"opacity",
+  PyDict_SetItemString(dict, "opacity",
     PyFloat_FromDouble(mlist->get_opacity(ind)));
-  PyDict_SetItemString(dict, (char *)"outline",
+  PyDict_SetItemString(dict, "outline",
     PyFloat_FromDouble(mlist->get_outline(ind)));
-  PyDict_SetItemString(dict, (char *)"outlinewidth",
+  PyDict_SetItemString(dict, "outlinewidth",
     PyFloat_FromDouble(mlist->get_outlinewidth(ind)));
-  PyDict_SetItemString(dict, (char *)"transmode",
-    PyFloat_FromDouble(mlist->get_transmode(ind)));
+
+  // Transmode is a boolean, so handle reference counting
+  PyDict_SetItemString(dict, "transmode",
+    mlist->get_transmode(ind) ? Py_True : Py_False);
+  Py_INCREF(PyDict_GetItemString(dict, "transmode"));
+
+  if (PyErr_Occurred()) {
+    PyErr_Format(PyExc_ValueError, "Error getting settings for material '%s'",
+                 name);
+    Py_DECREF(dict);
+    return NULL;
+  }
 
   return dict;
 }
 
-static PyObject *set_default(PyObject *self, PyObject *args) {
-  int ind;
-  if (!PyArg_ParseTuple(args, (char *)"i:material.default", &ind))
-    return NULL;
-  if (!get_vmdapp()->material_restore_default(ind)) {
-    PyErr_SetString(PyExc_ValueError, (char *)"Material has no default settings");
-    return NULL;
-  }
-  Py_INCREF(Py_None);
-  return Py_None;
-}
-
-// add('name=None', copy=None): create a new material with the given name.
-// optionally copy the given name.  If no name is given, make up a new name.
-
-static PyObject *add(PyObject *self, PyObject *args) {
-  char *name = NULL;
-  char *copy = NULL;
-  if (!PyArg_ParseTuple(args, (char *)"|ss:material.add", &name, &copy))
-    return NULL;
-
-  VMDApp *app = get_vmdapp();
-  MaterialList *mlist = app->materialList;
-  if (name) {
-    int ind = mlist->material_index(name);
-    if (ind >= 0) { // material already exists
-      PyErr_SetString(PyExc_ValueError, (char *)"Material already exists");
-      return NULL;
-    }
-  }
-  if (copy) {
-    int ind = mlist->material_index(copy);
-    if (ind < 0) { // material doesn't exist
-      PyErr_SetString(PyExc_ValueError, (char *)"Material to copy doesn't exist");
-      return NULL;
-    }
-  }
-  const char *result = app->material_add(name, copy);
-  if (!result) {
-    PyErr_SetString(PyExc_ValueError, (char *)"Unable to add material.");
-    return NULL;
-  }
-#if PY_MAJOR_VERSION >= 3
-  return PyUnicode_FromString((char *)result);
-#else
-  return PyString_FromString((char *)result);
-#endif
-}
-
-// delete('name').
-static PyObject *matdelete(PyObject *self, PyObject *args) {
-  char *name = NULL;
-  if (!PyArg_ParseTuple(args, (char *)"s:material.delete", &name))
-    return NULL;
-  VMDApp *app = get_vmdapp();
-  if (!app->material_delete(name)) {
-    PyErr_SetString(PyExc_ValueError, (char *)"Unable to delete material.");
-    return NULL;
-  }
-  Py_INCREF(Py_None);
-  return Py_None;
-}
-
-// rename(oldname, newname): change the name of an existing material
-
-static PyObject *rename(PyObject *self, PyObject *args) {
-  char *oldname, *newname;
-  if (!PyArg_ParseTuple(args, (char *)"ss:material.rename",&oldname, &newname))
-    return NULL;
-
-  VMDApp *app = get_vmdapp();
-  MaterialList *mlist = app->materialList;
-  int ind = mlist->material_index(oldname);
-  if (ind < 0) {
-    PyErr_SetString(PyExc_ValueError, "Material to change does not exist");
-    return NULL;
-  }
-  if (mlist->material_index(newname) >= 0) {
-    PyErr_SetString(PyExc_ValueError, "New name already exists");
-    return NULL;
-  }
-  if (!app->material_rename(oldname, newname)) {
-    PyErr_SetString(PyExc_ValueError, "Could not change material name");
-    return NULL;
-  }
-  Py_INCREF(Py_None);
-  return Py_None;
-}
-
-// change(name, ambient, specular, diffuse, shininess, mirror, opacity,
-//        outline, outlinewidth, transmode)
-static PyObject *change(PyObject *self, PyObject *args, PyObject *keywds) {
+static const char default_doc[] =
+"Restore the default settings of a material\n\n"
+"Args:\n"
+"    name (str): Material name to restore";
+static PyObject* py_set_default(PyObject *self, PyObject *args,
+                                PyObject *kwargs)
+{
+  const char *kwlist[] = {"name", NULL};
+  VMDApp *app;
   char *name;
-  float ambient, specular, diffuse, shininess, mirror, opacity;
-  float outline, outlinewidth, transmode;
+  int ind;
 
-  static char *kwlist[] = {
-    (char *)"name",
-    (char *)"ambient",
-    (char *)"specular",
-    (char *)"diffuse",
-    (char *)"shininess",
-    (char *)"mirror",
-    (char *)"opacity",
-    (char *)"outline",
-    (char *)"outlinewidth",
-    (char *)"transmode",
-    NULL
-  };
-
-  if (!PyArg_ParseTupleAndKeywords(args, keywds, (char *)"s|fffffffff", kwlist,
-      &name, &ambient, &specular, &diffuse, &shininess, &mirror, &opacity,
-      &outline, &outlinewidth, &transmode))
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s:material.default",
+                                   (char**) kwlist, &name))
     return NULL;
 
-  VMDApp *app = get_vmdapp();
-  MaterialList *mlist = app->materialList;
-  int ind = mlist->material_index(name);
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  // Get material index from name
+  ind = app->materialList->material_index(name);
   if (ind < 0) {
-    PyErr_SetString(PyExc_ValueError, "Material to change does not exist");
+    PyErr_Format(PyExc_ValueError, "No such material '%s'", name);
     return NULL;
   }
 
-  if (PyDict_GetItemString(keywds, (char *)"ambient"))
-    app->material_change(name, MAT_AMBIENT, ambient);
-  if (PyDict_GetItemString(keywds, (char *)"specular"))
-    app->material_change(name, MAT_SPECULAR, specular);
-  if (PyDict_GetItemString(keywds, (char *)"diffuse"))
-    app->material_change(name, MAT_DIFFUSE, diffuse);
-  if (PyDict_GetItemString(keywds, (char *)"shininess"))
-    app->material_change(name, MAT_SHININESS, shininess);
-  if (PyDict_GetItemString(keywds, (char *)"mirror"))
-    app->material_change(name, MAT_MIRROR, mirror);
-  if (PyDict_GetItemString(keywds, (char *)"opacity"))
-    app->material_change(name, MAT_OPACITY, opacity);
-  if (PyDict_GetItemString(keywds, (char *)"outline"))
-    app->material_change(name, MAT_OUTLINE, outline);
-  if (PyDict_GetItemString(keywds, (char *)"outlinewidth"))
-    app->material_change(name, MAT_OUTLINEWIDTH, outlinewidth);
-  if (PyDict_GetItemString(keywds, (char *)"transmode"))
-    app->material_change(name, MAT_TRANSMODE, transmode);
+  if (!app->material_restore_default(ind)) {
+    PyErr_Format(PyExc_ValueError, "Material '%s' has no default settings",
+                 name);
+    return NULL;
+  }
 
   Py_INCREF(Py_None);
   return Py_None;
 }
 
-// default(index) - restore default of material with given index
+static const char add_doc[] =
+"Create a new material with the given name. Optionally, copy material settings\n"
+"from an existing material. If no name is given, make up a new name\n\n"
+"Args:\n"
+"    name (str): Name of new material. If None, will be made up if copy is None\n"
+"    copy (str): Name of material to copy settings from. If None,\n"
+"        material settings will be initialized to Opaque material";
+static PyObject* py_add(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  const char *kwlist[] = {"name", "copy", NULL};
+  char *name = NULL, *copy = NULL;
+  MaterialList *mlist;
+  char *result;
+  VMDApp *app;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|zz:material.add",
+                                   (char**) kwlist, &name, &copy))
+    return NULL;
+
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  mlist = app->materialList;
+
+  // Check that material name does not yet exist
+  if (name && mlist->material_index(name) >= 0) {
+    PyErr_Format(PyExc_ValueError, "Material '%s' already exists", name);
+    return NULL;
+  }
+
+  // Check that copy material does exist
+  if (copy && mlist->material_index(copy) < 0) {
+    PyErr_Format(PyExc_ValueError, "Material to copy '%s' doesn't exist", copy);
+    return NULL;
+  }
+
+  if (!(result = (char*) app->material_add(name, copy))) {
+    PyErr_Format(PyExc_ValueError, "Unable to add material '%s'", name);
+    return NULL;
+  }
+
+  return as_pystring(result);
+}
+
+static const char del_doc[] =
+"Deletes a material with given name\n\n"
+"Args:\n"
+"    name (str): Material to delete";
+static PyObject* py_matdelete(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  const char *kwlist[] = {"name", NULL};
+  char *name = NULL;
+  VMDApp *app;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "z:material.delete",
+                                   (char**) kwlist, &name))
+    return NULL;
+
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  if (!app->material_delete(name)) {
+    PyErr_Format(PyExc_ValueError, "Unable to delete material '%s'", name);
+    return NULL;
+  }
+
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+static const char rename_doc[] =
+"Change the name of an existing material\n\n"
+"Args:\n"
+"    name (str): Name of material to change\n"
+"    newname (str): New name for material";
+static PyObject* py_rename(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  const char *kwlist[] = {"name", "newname", NULL};
+  char *oldname, *newname;
+  MaterialList *mlist;
+  VMDApp *app;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ss:material.rename",
+                                   (char**) kwlist, &oldname, &newname))
+    return NULL;
+
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  mlist = app->materialList;
+
+  // Check current material is defined
+  if (mlist->material_index(oldname) < 0) {
+    PyErr_Format(PyExc_ValueError, "Material '%s' to rename doesn't exist",
+                 oldname);
+    return NULL;
+  }
+
+  // Check new name is not yet defined
+  if (mlist->material_index(newname) >= 0) {
+    PyErr_Format(PyExc_ValueError, "New name '%s' is already a material",
+                 newname);
+    return NULL;
+  }
+
+  if (!app->material_rename(oldname, newname)) {
+    PyErr_Format(PyExc_ValueError, "Could not change material name '%s'->'%s'",
+                 oldname, newname);
+    return NULL;
+  }
+
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+static const char change_doc[] =
+"Change properties of a material. All property arguments are optional and are\n"
+"used to set the new value of each property.\n\n"
+"Args:\n"
+"    name (str): Material name to change\n"
+"    ambient (float): Ambient light of material\n"
+"    diffuse (float): Diffuse light scattering of material\n"
+"    specular (float): Amount of specular highlights from material\n"
+"    shininess (float): Shininess of material\n"
+"    mirror (float): Reflectivity of material\n"
+"    opacity (float): Opacity of material\n"
+"    outline (float): Amount of outline on material\n"
+"    outline_width (float): Width of outline on material\n"
+"    transmode (bool): If angle-modulated transparency should be used\n";
+static PyObject* py_change(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  const char *kwlist[] = {"name", "ambient", "diffuse", "specular", "shininess",
+                          "mirror", "opacity", "outline", "outlinewidth",
+                          "transmode", NULL};
+  float ambient, specular, diffuse, shininess, mirror, opacity;
+  float outline, outlinewidth;
+  MaterialList *mlist;
+  int transmode;
+  VMDApp *app;
+  char *name;
+
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|ffffffffO&:material.change",
+                                   (char**) kwlist, &name, &ambient, &diffuse,
+                                   &specular, &shininess, &mirror, &opacity,
+                                   &outline, &outlinewidth, convert_bool,
+                                   &transmode))
+    return NULL;
+
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  // Check material exists
+  mlist = app->materialList;
+  if (mlist->material_index(name) < 0) {
+    PyErr_Format(PyExc_ValueError, "Material '%s' to change does not exist",
+                 name);
+    return NULL;
+  }
+
+  if (PyDict_GetItemString(kwargs, "ambient"))
+    app->material_change(name, MAT_AMBIENT, ambient);
+  if (PyDict_GetItemString(kwargs, "specular"))
+    app->material_change(name, MAT_SPECULAR, specular);
+  if (PyDict_GetItemString(kwargs, "diffuse"))
+    app->material_change(name, MAT_DIFFUSE, diffuse);
+  if (PyDict_GetItemString(kwargs, "shininess"))
+    app->material_change(name, MAT_SHININESS, shininess);
+  if (PyDict_GetItemString(kwargs, "mirror"))
+    app->material_change(name, MAT_MIRROR, mirror);
+  if (PyDict_GetItemString(kwargs, "opacity"))
+    app->material_change(name, MAT_OPACITY, opacity);
+  if (PyDict_GetItemString(kwargs, "outline"))
+    app->material_change(name, MAT_OUTLINE, outline);
+  if (PyDict_GetItemString(kwargs, "outlinewidth"))
+    app->material_change(name, MAT_OUTLINEWIDTH, outlinewidth);
+  if (PyDict_GetItemString(kwargs, "transmode"))
+    app->material_change(name, MAT_TRANSMODE, (float) transmode);
+
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
 static PyMethodDef methods[] = {
-  {(char *)"listall", (vmdPyMethod)listall, METH_VARARGS },
-  {(char *)"settings", (vmdPyMethod)settings, METH_VARARGS },
-  {(char *)"add", (vmdPyMethod)add, METH_VARARGS },
-  {(char *)"delete", (vmdPyMethod)matdelete, METH_VARARGS },
-  {(char *)"rename", (vmdPyMethod)rename, METH_VARARGS },
-  {(char *)"change", (PyCFunction)change, METH_VARARGS | METH_KEYWORDS },
-  {(char *)"default", (vmdPyMethod)set_default, METH_VARARGS },
-  {NULL, NULL, 0, NULL}
+  {"listall", (PyCFunction)py_listall, METH_NOARGS, listall_doc},
+  {"settings", (PyCFunction)py_settings, METH_VARARGS | METH_KEYWORDS, settings_doc},
+  {"add", (PyCFunction)py_add, METH_VARARGS | METH_KEYWORDS, add_doc},
+  {"delete", (PyCFunction)py_matdelete, METH_VARARGS | METH_KEYWORDS, del_doc},
+  {"rename", (PyCFunction)py_rename, METH_VARARGS | METH_KEYWORDS, rename_doc},
+  {"change", (PyCFunction)py_change, METH_VARARGS | METH_KEYWORDS, change_doc },
+  {"default", (PyCFunction)py_set_default, METH_VARARGS | METH_KEYWORDS, default_doc },
+  {NULL, NULL}
 };
+
+static const char material_moddoc[] =
+"Methods to control the materials used to render molecules or graphics objects";
 
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef materialdef = {
-    PyModuleDef_HEAD_INIT,
-    "material",
-    NULL,
-    -1,
-    methods,
+  PyModuleDef_HEAD_INIT,
+  "material",
+  material_moddoc,
+  -1,
+  methods,
 };
 #endif
 
 PyObject* initmaterial(void) {
 #if PY_MAJOR_VERSION >= 3
-    PyObject *m = PyModule_Create(&materialdef);
+  PyObject *m = PyModule_Create(&materialdef);
 #else
-    PyObject *m = Py_InitModule((char *)"material", methods);
+  PyObject *m = Py_InitModule3("material", methods, material_moddoc);
 #endif
-    return m;
+  return m;
 }
 

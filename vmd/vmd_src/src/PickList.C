@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: PickList.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.46 $	$Date: 2016/11/28 03:05:03 $
+ *	$Revision: 1.49 $	$Date: 2019/01/17 21:21:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -86,8 +86,19 @@ void PickList::add_pickable(Pickable *p) {
 // remove the given pickable from the list; return TRUE if it was in the list
 void PickList::remove_pickable(Pickable *p) {
   int ind = pickableObjs.find(p);
-  if (ind >= 0)
+
+  // check if we have a valid Pickable index
+  if (ind >= 0) {
+    // cancel any active picking state if we're deleting the
+    // pickable that's currently active
+    if (picking() && (currPickable == p)) {
+      // reset the status variables to null out the active pick
+      currPickDim = currPickTag = (-1);
+      currPickable = NULL;
+    }
+
     pickableObjs.remove(ind);
+  }
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -243,7 +254,7 @@ int PickList::pick_end() {
 
   // use left eye settings for picking; if not stereo, will just be normal
   app->display->left();
-     
+
   currPickable->pick_end(app->pickModeList->current_pick_mode(), app->display);
  
   // clean up after setting stereo mode, but do not do buffer swap

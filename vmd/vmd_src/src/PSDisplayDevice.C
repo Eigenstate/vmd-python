@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: PSDisplayDevice.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.113 $       $Date: 2016/11/28 03:05:02 $
+ *      $Revision: 1.115 $       $Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -56,7 +56,8 @@ PSDisplayDevice::~PSDisplayDevice(void) {
 }
 
 
-void PSDisplayDevice::render(const VMDDisplayList *display_list) {
+void PSDisplayDevice::render(const VMDDisplayList *cmdList) {
+   if (!cmdList) return;
    DepthSortObject depth_obj;
    char *cmd_ptr;
    int draw;
@@ -76,7 +77,7 @@ void PSDisplayDevice::render(const VMDDisplayList *display_list) {
    transMat.push(ident);
 
    // load the display list's transformation matrix
-   super_multmatrix(display_list->mat.mat);
+   super_multmatrix(cmdList->mat.mat);
 
    // Now we need to calculate the normalized position of the light
    // so we can compute angles of surfaces to that light for shading
@@ -86,20 +87,29 @@ void PSDisplayDevice::render(const VMDDisplayList *display_list) {
    if (norm_light[0] || norm_light[1] || norm_light[2])
       vec_normalize(norm_light);
 
-   // Computer periodic images
+   // Compute periodic image transformation matrices
    ResizeArray<Matrix4> pbcImages;
-   find_pbc_images(display_list, pbcImages);
-   int nimages = pbcImages.num();
+   find_pbc_images(cmdList, pbcImages);
+   int npbcimages = pbcImages.num();
 
-   for (int pbcimage = 0; pbcimage < nimages; pbcimage++) {
+   // Retreive instance image transformation matrices
+   ResizeArray<Matrix4> instanceImages;
+   find_instance_images(cmdList, instanceImages);
+   int ninstances = instanceImages.num();
+
+   for (int pbcimage = 0; pbcimage < npbcimages; pbcimage++) {
      transMat.dup();
      super_multmatrix(pbcImages[pbcimage].mat);
+
+   for (int instanceimage = 0; instanceimage < ninstances; instanceimage++) {
+     transMat.dup();
+     super_multmatrix(instanceImages[instanceimage].mat);
 
    // Loop through the display list and add each object to our
    // depth-sort list for final rendering.
    VMDDisplayList::VMDLinkIter cmditer;
-   display_list->first(&cmditer);
-   while ((tok = display_list->next(&cmditer, cmd_ptr)) != DLASTCOMMAND) {
+   cmdList->first(&cmditer);
+   while ((tok = cmdList->next(&cmditer, cmd_ptr)) != DLASTCOMMAND) {
       draw = 0;
       nc = -1;
 
@@ -537,6 +547,9 @@ void PSDisplayDevice::render(const VMDDisplayList *display_list) {
       depth_obj.points = NULL;
 
    } // while (tok != DLASTCOMMAND)
+
+     transMat.pop();
+   } // end for() [instance images]
 
      transMat.pop();
    } // end for() [periodic images]

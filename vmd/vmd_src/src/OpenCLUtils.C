@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2007-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: OpenCLUtils.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.13 $      $Date: 2012/01/06 15:56:41 $
+ *      $Revision: 1.14 $      $Date: 2019/01/17 21:38:55 $
  *
  ***************************************************************************
  * DESCRIPTION:

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2008-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,7 +10,7 @@
  *
  *      $RCSfile: OrbitalJIT.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.1 $      $Date: 2010/04/29 15:48:35 $
+ *      $Revision: 1.2 $      $Date: 2019/01/17 21:38:55 $
  *
  ***************************************************************************
  * DESCRIPTION:

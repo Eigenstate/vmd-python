@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,13 +11,22 @@
 *
 *      $RCSfile: OptiXDisplayDevice.h
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.3 $         $Date: 2016/11/28 03:05:02 $
+*      $Revision: 1.5 $         $Date: 2019/01/17 21:21:00 $
 *
 ***************************************************************************
 * DESCRIPTION:
 *   VMD interface for NVIDIA GPU hardware video encoding APIs
 *
+*   The implementation here could in principal use either high level
+*   libraries like NvPipe or GRID, or lower level video encode APIs 
+*   like NvEnc, depending on what hardware the target platform has and
+*   whether we want to use codecs not supported by certain APIs.
+*
+*   NvPipe: 
+*     https://github.com/NVIDIA/NvPipe/blob/master/README.md
+*
 ***************************************************************************/
+
 
 #include <stdio.h>
 #include <stdlib.h>

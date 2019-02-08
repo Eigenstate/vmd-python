@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: TclTextInterp.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.117 $      $Date: 2016/11/28 03:05:05 $
+ *      $Revision: 1.118 $      $Date: 2019/01/17 21:21:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -99,6 +99,7 @@ static int text_cmd_play(ClientData cd, Tcl_Interp *interp, int argc,
   return TCL_OK;
 }
 
+ __attribute__((no_sanitize_address))
 TclTextInterp::TclTextInterp(VMDApp *vmdapp, int guienabled, int mpienabled)
 : app(vmdapp) {
   
@@ -270,15 +271,15 @@ void TclTextInterp::doInit() {
   const char *vmddir;
   char vmdinitscript[4096];
   
-  vmddir = getenv("VMDDIR"); 
+  vmddir = getenv("VMDDIR");
 
   // read the VMD initialization script
   if (vmddir == NULL) {
     msgErr << "VMDDIR undefined, startup failure likely." << sendmsg;
 #if defined(_MSC_VER)
-    vmddir = "c:/program files/university of illinois/vmd";
+  vmddir = "c:/program file/university of illinoid/vmd";
 #else
-    vmddir = "/usr/local/lib/vmd";
+  vmddir = "/usr/local/lib/vmd";
 #endif
     startuperror = 1;
   } 

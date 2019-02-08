@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: OpenGLDisplayDevice.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.202 $	$Date: 2016/11/28 03:05:02 $
+ *	$Revision: 1.210 $	$Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -38,6 +38,9 @@
 #include "Inform.h"
 #include "utilities.h"
 #include "config.h"   // VMD version strings etc
+
+#include "VMDApp.h"
+#include "VideoStream.h"
 
 // static data for this object
 static const char *glStereoNameStr[OPENGL_STEREO_MODES] =
@@ -101,6 +104,7 @@ typedef struct {
 
 #endif
 
+
 static xidevhandle * xinput_open_device(xinputhandle *handle, XID devinfo) {
   xidevhandle *xdhandle = (xidevhandle *) malloc(sizeof(xidevhandle));
   memset(xdhandle, 0, sizeof(xidevhandle));
@@ -123,6 +127,7 @@ static xidevhandle * xinput_open_device(xinputhandle *handle, XID devinfo) {
   return xdhandle;
 }
 
+
 static void xinput_close_device(xinputhandle *handle, xidevhandle *xdhandle) {
   if (handle == NULL || xdhandle == NULL)
     return;
@@ -133,10 +138,11 @@ static void xinput_close_device(xinputhandle *handle, xidevhandle *xdhandle) {
   free(xdhandle);
 }
 
+
 static int xinput_device_decode_event(xinputhandle *handle, xidevhandle *dev,
                                       XEvent *xev, spaceballevent *sballevent) {
   if (xev->type == dev->motionevent) {
-    XDeviceMotionEvent *mptr = (XDeviceMotionEvent *) xev;;
+    XDeviceMotionEvent *mptr = (XDeviceMotionEvent *) xev;
 
     // We assume that the axis mappings are in the order below,as this is
     // the axis ordering used by a few other applications as well.
@@ -168,6 +174,7 @@ static int xinput_device_decode_event(xinputhandle *handle, xidevhandle *dev,
   return 0;
 }
 
+
 static int xinput_decode_event(xinputhandle *handle, XEvent *xev,
                                spaceballevent *sballevent) {
   if (handle == NULL)
@@ -179,6 +186,7 @@ static int xinput_decode_event(xinputhandle *handle, XEvent *xev,
 
   return 0;
 }
+
 
 // enable 6DOF input devices that use XInput 
 static xinputhandle * xinput_enable(Display *dpy, Window win) {
@@ -354,9 +362,11 @@ static spaceballhandle * spaceball_enable(Display *dpy, Window win) {
   return handle;
 }
 
+
 static void spaceball_close(spaceballhandle *handle) {
   free(handle);
 }
+
 
 static int spaceball_decode_event(spaceballhandle *handle, const XEvent *xev, spaceballevent *sballevent) {
   unsigned int evtype;
@@ -400,9 +410,11 @@ static int spaceball_decode_event(spaceballhandle *handle, const XEvent *xev, sp
   return 0;
 }
 
+
 static void spaceball_init_event(spaceballevent *sballevent) {
   memset(sballevent, 0, sizeof(spaceballevent));
 }
+
 
 static void spaceball_clear_event(spaceballevent *sballevent) {
   sballevent->tx = 0;
@@ -414,6 +426,7 @@ static void spaceball_clear_event(spaceballevent *sballevent) {
   sballevent->period = 0;
   sballevent->event = 0;
 }
+
 
 static XVisualInfo * vmd_get_visual(glxdata *glxsrv, int *stereo, int *msamp, int *numsamples) {
   // we want double-buffered RGB with a Z buffer (possibly with stereo)
@@ -1328,7 +1341,8 @@ void OpenGLDisplayDevice::reshape(void) {
 #endif
 }
 
-unsigned char * OpenGLDisplayDevice::readpixels(int &xs, int &ys) {
+
+unsigned char * OpenGLDisplayDevice::readpixels_rgb3u(int &xs, int &ys) {
   unsigned char * img = NULL;
   xs = xSize;
   ys = ySize;
@@ -1346,6 +1360,115 @@ unsigned char * OpenGLDisplayDevice::readpixels(int &xs, int &ys) {
   return NULL;
 }
 
+unsigned char * OpenGLDisplayDevice::readpixels_rgba4u(int &xs, int &ys) {
+  unsigned char * img = NULL;
+  xs = xSize;
+  ys = ySize;
+
+  // fall back to normal glReadPixels() if better methods fail
+  if ((img = (unsigned char *) malloc(xs * ys * 4)) != NULL) {
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, xs, ys, GL_RGBA, GL_UNSIGNED_BYTE, img);
+    return img; 
+  }
+
+  // else bail out
+  xs = 0;
+  ys = 0;
+  return NULL;
+}
+
+
+int OpenGLDisplayDevice::drawpixels_rgba4u(unsigned char *rgba, int &xs, int &ys) {
+
+#if 0
+//  glDrawBuffer(GL_BACK);
+//  glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+//  glClearColor(0.0, 0.0, 0.0, 1.0); /* black */
+//  glClear(GL_COLOR_BUFFER_BIT);
+
+  glPushMatrix();
+  glDisable(GL_DEPTH_TEST);
+
+  glViewport(0, 0, xs, ys);
+
+  glShadeModel(GL_FLAT);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(0.0, xs, 0.0, ys, -1.0, 1.0);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glPixelZoom(1.0, 1.0);
+
+  glRasterPos2i(0, 0);
+  glDrawPixels(xs, ys, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+
+  glEnable(GL_DEPTH_TEST);
+  glPopMatrix();
+#elif 1
+//  glDrawBuffer(GL_BACK);
+//  glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+//  glClearColor(0.0, 0.0, 0.0, 1.0); /* black */
+//  glClear(GL_COLOR_BUFFER_BIT);
+
+  glPushMatrix();
+  glDisable(GL_DEPTH_TEST);
+
+  glViewport(0, 0, xs, ys);
+
+  glShadeModel(GL_FLAT);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  glOrtho(0.0, xs, 0.0, ys, -1.0, 1.0);
+  glMatrixMode(GL_MODELVIEW);
+
+  GLuint texName = 0;
+  GLfloat texborder[4] = {0.0, 0.0, 0.0, 1.0};
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glBindTexture(GL_TEXTURE_2D, texName);
+
+  /* black borders if we go rendering anything beyond texture coordinates */
+  glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, texborder);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+  glLoadIdentity();
+  glColor3f(1.0, 1.0, 1.0);
+
+#if 1
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, xs, ys, 0,
+               GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+  glEnable(GL_TEXTURE_2D);
+#endif
+
+  glBegin(GL_QUADS);
+  glTexCoord2f(0.0f, 0.0f);
+  glVertex2f(0, 0);
+  glTexCoord2f(0.0f, 1.0f);
+  glVertex2f(0, ys);
+  glTexCoord2f(1.0f, 1.0f);
+  glVertex2f(xs, ys);
+  glTexCoord2f(1.0f, 0.0f);
+  glVertex2f(xs, 0);
+  glEnd();
+
+#if 1
+  glDisable(GL_TEXTURE_2D);
+#endif
+
+  glEnable(GL_DEPTH_TEST);
+  glPopMatrix();
+#endif
+
+  update();
+
+  return 0;
+}
+
 
 // update after drawing
 void OpenGLDisplayDevice::update(int do_update) {
@@ -1355,9 +1478,26 @@ void OpenGLDisplayDevice::update(int do_update) {
                 // synchronization is done implicitly by glXSwapBuffers.
   }
 
+#if 1
+  // push latest frame into the video streaming pipeline
+  // and pump the event handling mechanism afterwards
+  if (vmdapp->uivs && vmdapp->uivs->srv_connected()) {
+    // if no frame was provided, we grab the GL framebuffer
+    int xs, ys;
+    unsigned char *img = NULL;
+    img = readpixels_rgba4u(xs, ys);
+    if (img != NULL) {
+      // srv_send_frame(img, xs * 4, xs, ys, vs_forceIframe);
+      vmdapp->uivs->video_frame_pending(img, xs, ys);
+      vmdapp->uivs->check_event();
+      free(img);
+    }
+  }
+#endif
+
 #if !defined(VMD_NANOHUB)
   // Normal contexts are double-buffered, but Nanohub uses a FBO that is not.
-  if(do_update)
+  if (do_update)
     glXSwapBuffers(glxsrv.dpy, glxsrv.windowID);
 #endif
 

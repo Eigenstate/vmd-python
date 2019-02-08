@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: OpenGLRenderer.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.463 $	$Date: 2016/11/28 03:05:02 $
+ *	$Revision: 1.467 $	$Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -2136,12 +2136,13 @@ void OpenGLRenderer::left(void) {
       break;
 
     case OPENGL_STEREO_QUADBUFFER:
-      if (ext->hasstereo)
+      if (ext->hasstereo) {
         glDrawBuffer(GL_BACK_LEFT); // Z-buffer must be cleared already
-      else  
+      } else {
         // XXX do something since we don't support non-quad buffered modes
         glViewport(0, (GLint)ySize / 2, (GLsizei)xSize, (GLsizei)ySize / 2);
-        set_persp(cureye);
+      }
+      set_persp(cureye);
       break;
 
     case OPENGL_STEREO_STENCIL_CHECKERBOARD:
@@ -2838,20 +2839,28 @@ void OpenGLRenderer::render(const VMDDisplayList *cmdList) {
     ogl_clipmode[cp] = cmdList->clipplanes[cp].mode;
   }
 
-  // Periodic boundary condition rendering begins here
-  // Make a list of all the transformations we want to perform.
-  ResizeArray<Matrix4> pbcImages;
-  find_pbc_images(cmdList, pbcImages);
-
   // initialize text offset variables.  These values should never be set in one
   // display list and applied in another, so we make them local variables here
   // rather than OpenGLRenderer state variables.
   float textoffset_x = 0, textoffset_y = 0;
 
-int nimages = pbcImages.num();
-for (int pbcimage = 0; pbcimage < nimages; pbcimage++) {
+  // Compute periodic image transformation matrices
+  ResizeArray<Matrix4> pbcImages;
+  find_pbc_images(cmdList, pbcImages);
+  int npbcimages = pbcImages.num();
+
+  // Retreive instance image transformation matrices
+  ResizeArray<Matrix4> instanceImages;
+  find_instance_images(cmdList, instanceImages);
+  int ninstances = instanceImages.num();
+
+for (int pbcimage = 0; pbcimage < npbcimages; pbcimage++) {
   glPushMatrix();
   multmatrix(pbcImages[pbcimage]);
+
+for (int instanceimage = 0; instanceimage < ninstances; instanceimage++) {
+  glPushMatrix();
+  multmatrix(instanceImages[instanceimage]);
 
   if (ogl_cachedebug) {
     msgInfo << "Rendering scene: cache enable=" << ogl_cacheenabled 
@@ -3296,6 +3305,78 @@ for (int pbcimage = 0; pbcimage < nimages; pbcimage++) {
         }
 #endif
 
+        }
+        break;
+
+      case DCUBEARRAY: 
+        {
+          DispCmdLatticeCubeArray *ca = (DispCmdLatticeCubeArray *)cmdptr;
+          int i, ind;
+          float * centers;
+          float * radii;
+          float * colors;
+          ca->getpointers(centers, radii, colors);
+
+          // Render the cube 
+          // coordinates of unit cube
+          GLfloat v0[] = {-1.0, -1.0, -1.0}; 
+          GLfloat v1[] = { 1.0, -1.0, -1.0}; 
+          GLfloat v2[] = {-1.0,  1.0, -1.0}; 
+          GLfloat v3[] = { 1.0,  1.0, -1.0}; 
+          GLfloat v4[] = {-1.0, -1.0,  1.0}; 
+          GLfloat v5[] = { 1.0, -1.0,  1.0}; 
+          GLfloat v6[] = {-1.0,  1.0,  1.0}; 
+          GLfloat v7[] = { 1.0,  1.0,  1.0}; 
+      
+          ind = 0;
+          for (i=0; i<ca->numcubes; i++) {
+            glPushMatrix();
+            glTranslatef(centers[ind], centers[ind + 1], centers[ind + 2]); 
+            glScalef(radii[i], radii[i], radii[i]);
+            glColor3fv(&colors[ind]);
+
+            // Draw the unit cube
+            glBegin(GL_QUADS);
+              glNormal3f(0.0f, 0.0f, 1.0f);
+              glVertex3fv((GLfloat *) v0); /* -Z face */
+              glVertex3fv((GLfloat *) v1);
+              glVertex3fv((GLfloat *) v3);
+              glVertex3fv((GLfloat *) v2);
+
+              glNormal3f(0.0f, 0.0f, 1.0f);
+              glVertex3fv((GLfloat *) v4); /* +Z face */
+              glVertex3fv((GLfloat *) v5);
+              glVertex3fv((GLfloat *) v7);
+              glVertex3fv((GLfloat *) v6);
+
+              glNormal3f(0.0f, -1.0f, 0.0f);
+              glVertex3fv((GLfloat *) v0); /* -Y face */
+              glVertex3fv((GLfloat *) v1);
+              glVertex3fv((GLfloat *) v5);
+              glVertex3fv((GLfloat *) v4);
+
+              glNormal3f(0.0f, -1.0f, 0.0f);
+              glVertex3fv((GLfloat *) v2); /* +Y face */
+              glVertex3fv((GLfloat *) v3);
+              glVertex3fv((GLfloat *) v7);
+              glVertex3fv((GLfloat *) v6);
+
+              glNormal3f(1.0f, 0.0f, 0.0f);
+              glVertex3fv((GLfloat *) v0); /* -X face */
+              glVertex3fv((GLfloat *) v2);
+              glVertex3fv((GLfloat *) v6);
+              glVertex3fv((GLfloat *) v4);
+
+              glNormal3f(1.0f, 0.0f, 0.0f);
+              glVertex3fv((GLfloat *) v1); /* +X face */
+              glVertex3fv((GLfloat *) v3);
+              glVertex3fv((GLfloat *) v7);
+              glVertex3fv((GLfloat *) v5);
+            glEnd();
+            glPopMatrix();
+            ind += 3; // next sphere
+          }
+          OGLERR;
         }
         break;
 
@@ -4241,6 +4322,10 @@ for (int pbcimage = 0; pbcimage < nimages; pbcimage++) {
       glCallList(ogl_cachedid); // call the display list we previously cached
     }
   }
+
+
+  glPopMatrix();
+} // end loop over instance images
 
   glPopMatrix();
 } // end loop over periodic images

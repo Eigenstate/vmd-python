@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: TclVolMap.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.117 $	$Date: 2016/11/28 03:05:05 $
+ *	$Revision: 1.122 $	$Date: 2019/01/23 21:33:54 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -223,7 +223,7 @@ static int vmd_volmap_ils(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Int
       Tcl_GetDoubleFromObj(interp, objv[arg+1], &cutoff);
       if (cutoff <= 0.) {
         Tcl_AppendResult(interp, "volmap ils: cutoff must be positive. (-cutoff)", NULL);
-        bailout = true;	break;
+        bailout = true; break;
       }
       arg++;
     }
@@ -246,11 +246,11 @@ static int vmd_volmap_ils(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Int
       Tcl_Obj **listObj;
       if (Tcl_ListObjGetElements(interp, objv[arg+1], &nprobecoor, &listObj) != TCL_OK) {
         Tcl_AppendResult(interp, " volmap ils: bad syntax in probecoor!", NULL);
-        bailout = true;	break;
+        bailout = true; break;
       }
       if (!nprobecoor) {
         Tcl_AppendResult(interp, " volmap ils: Empty probecoor list!", NULL);
-        bailout = true;	break;
+        bailout = true; break;
       }
 
       probe_coords = new float[3L*nprobecoor];
@@ -260,18 +260,18 @@ static int vmd_volmap_ils(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Int
         int j, ndim = 0;
         if (Tcl_ListObjGetElements(interp, listObj[i], &ndim, &coorObj) != TCL_OK) {
           Tcl_AppendResult(interp, " volmap ils: bad syntax in probecoor!", NULL);
-          bailout = true;	break;
+          bailout = true; break;
         }
 
         if (ndim!=3) {
           Tcl_AppendResult(interp, " volmap ils: need three values for each probecoor vector", NULL);
-          bailout = true;	break;
+          bailout = true; break;
         }
       
         for (j=0; j<3; j++) {
           if (Tcl_GetDoubleFromObj(interp, coorObj[j], &tmp) != TCL_OK) {
             Tcl_AppendResult(interp, " volmap ils: non-numeric in probecoor", NULL);
-            bailout = true;	break;
+            bailout = true; break;
           }
           probe_coords[3L*i+j] = (float)tmp;
         }
@@ -284,7 +284,7 @@ static int vmd_volmap_ils(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Int
       Tcl_Obj **listObj;
       if (Tcl_ListObjGetElements(interp, objv[arg+1], &nprobevdw, &listObj) != TCL_OK) {
         Tcl_AppendResult(interp, " volmap ils: bad syntax in probevdw", NULL);
-        bailout = true;	break;
+        bailout = true; break;
       }
 
       probe_vdweps  = new float[nprobevdw];
@@ -296,23 +296,23 @@ static int vmd_volmap_ils(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Int
         int ndim = 0;
         if (Tcl_ListObjGetElements(interp, listObj[i], &ndim, &vdwObj) != TCL_OK) {
           Tcl_AppendResult(interp, " volmap ils: bad syntax in probevdw", NULL);
-          bailout = true;	break;
+          bailout = true; break;
         }
 
         if (ndim!=2) {
           Tcl_AppendResult(interp, " volmap ils: Need two probevdw values (eps, rmin) for each atom", NULL);
-          bailout = true;	break;
+          bailout = true; break;
         }
       
         if (Tcl_GetDoubleFromObj(interp, vdwObj[0], &tmp) != TCL_OK) {
           Tcl_AppendResult(interp, " volmap ils: Non-numeric in probevdw (eps)", NULL);
-          bailout = true;	break;
+          bailout = true; break;
         }
         probe_vdweps[i] = (float)tmp;
         
         if (Tcl_GetDoubleFromObj(interp, vdwObj[1], &tmp) != TCL_OK) {
           Tcl_AppendResult(interp, " volmap ils: Non-numeric in probevdw (rmin)", NULL);
-          bailout = true;	break;
+          bailout = true; break;
         }
         probe_vdwrmin[i] = (float)tmp;        
       }
@@ -326,7 +326,7 @@ static int vmd_volmap_ils(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Int
       Tcl_Obj **listObj;
       if (Tcl_ListObjGetElements(interp, objv[arg+1], &nprobecharge, &listObj) != TCL_OK) {
         Tcl_AppendResult(interp, " volmap ils: bad syntax in probecharge", NULL);
-        bailout = true;	break;
+        bailout = true; break;
       }
 
       probe_charge = new float[nprobecharge];
@@ -446,8 +446,7 @@ static int vmd_volmap_ils(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Int
   if (!bailout) {
     if (probesel) {
       if (nprobecoor) {
-        Tcl_AppendResult(interp, "volmap ils: Must specify either -probesel or -probecoor not both.",
-                         NULL);
+        Tcl_AppendResult(interp, "volmap ils: Must specify either -probesel or -probecoor not both.", NULL);
         bailout = true;
       }
       
@@ -659,8 +658,8 @@ static int vmd_volmap_ils(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Int
       for (j=0; j<probesel->num_atoms; j++) { 
         if (!probesel->on[j]) continue; //atom is not selected
 
-	vec_copy(&coor[3L*j], &conformers[i*3L*num_probe_atoms+3L*k]);
-	k++;
+        vec_copy(&coor[3L*j], &conformers[i*3L*num_probe_atoms+3L*k]);
+        k++;
       }
     }
   }
@@ -712,6 +711,8 @@ static int vmd_volmap_new_fromtype(VMDApp *app, int argc, Tcl_Obj * const objv[]
   // 1. Figure out which map type we are dealing with:
   enum {UNDEF_MAP, DENS_MAP, INTERP_MAP, DIST_MAP, OCCUP_MAP, MASK_MAP,
         CPOTENTIAL_MAP, CPOTENTIALMSM_MAP } maptype=UNDEF_MAP;
+
+  int ret_val = 0;
 
   char *maptype_string=Tcl_GetString(objv[0]); 
 
@@ -930,16 +931,38 @@ static int vmd_volmap_new_fromtype(VMDApp *app, int argc, Tcl_Obj * const objv[]
   }
  
   // parse weights
-  int ret_val=0;
   float *weights = NULL;
+  char *weight_string = NULL;
+  int weight_mutable = 1;
   if (accept_weight) {
-    weights = new float[sel->selected];
+    weights = new float[sel->num_atoms];
+    if (arg_weight) {
+      weight_string = Tcl_GetStringFromObj(objv[arg_weight], NULL);
+      if (!weight_string || !strcmp(weight_string, "none")) {
+        ret_val = atomsel_default_weights(sel, weights);
+        weight_string = NULL;
+      } else {
+        // Check if the argument is a VMD attribute
+        int fctn = get_attribute_index(app, weight_string);
+        if (fctn >= 0) {
+          ret_val = get_weights_from_attribute(app, sel, weight_string,
+                                               weights);
+          if (ret_val == MEASURE_ERR_BADWEIGHTPARM) {
+            Tcl_AppendResult(interp,
+                             "weight attribute must have floating point values",
+                             NULL);
+          }
+        } else {
+          ret_val = get_weights_from_tcl_list(interp, app, sel,
+                                              objv[arg_weight], weights);
+          weight_string = NULL;
+          weight_mutable = 0; // The Tcl list will not change
+        }
+      }
+    } else {
+      ret_val = atomsel_default_weights(sel, weights);
+    }
 
-    if (arg_weight) 
-      ret_val = tcl_get_weights(interp, app, sel, objv[arg_weight], weights);
-    else
-      ret_val = tcl_get_weights(interp, app, sel, NULL, weights);
-    
     if (ret_val < 0) {
       Tcl_AppendResult(interp, "volmap: ", measure_error(ret_val), NULL);
       delete [] weights;
@@ -955,7 +978,9 @@ static int vmd_volmap_new_fromtype(VMDApp *app, int argc, Tcl_Obj * const objv[]
   // init the map creator objects and set default filenames
   switch(maptype) {
     case DENS_MAP: 
-      volcreate = new VolMapCreateDensity(app, sel, (float)resolution, weights, (float)radius_factor);
+      volcreate = new VolMapCreateDensity(app, sel, (float)resolution,
+                                          weights, weight_string,
+                                          weight_mutable, (float)radius_factor);
       if (!filebase) {
         filebase = new char[strlen("density_out.dx")+1];
         strcpy(filebase, "density_out.dx");
@@ -963,7 +988,9 @@ static int vmd_volmap_new_fromtype(VMDApp *app, int argc, Tcl_Obj * const objv[]
       break;
 
     case INTERP_MAP: 
-      volcreate = new VolMapCreateInterp(app, sel, (float)resolution, weights);
+      volcreate = new VolMapCreateInterp(app, sel, (float)resolution,
+                                         weights, weight_string,
+                                         weight_mutable);
       if (!filebase) {
         filebase = new char[strlen("interp_out.dx")+1];
         strcpy(filebase, "interp_out.dx");
@@ -1064,13 +1091,14 @@ static int vmd_volmap_new_fromtype(VMDApp *app, int argc, Tcl_Obj * const objv[]
       return TCL_ERROR;
     }
     
-    // Export volmap to a file:
+    // Export volmap to a DX file:
     if (export_to_file || export_molecule < 0) {
       // add .dx suffix to filebase if it is missing
       filename = new char[strlen(filebase)+16];
-      strcpy(filename,filebase);
+      strcpy(filename, filebase);
       char *suffix = strrchr(filename, '.');
-      if (!strcmp(suffix,".dx")) *suffix = '\0';
+      if ((suffix != NULL) && !strcmp(suffix,".dx")) 
+        *suffix = '\0';
       strcat(filename, ".dx");
       volcreate->write_map(filename);
       delete[] filename;
@@ -1274,7 +1302,7 @@ static int vmd_volmap_compare(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl
   sprintf(tmpstr, "max value = %12g  |  %12g", max1, max2);
   msgInfo << tmpstr << sendmsg;
   msgInfo << sendmsg;
-  sprintf(tmpstr, "# differing elements = %d/%d", numdiff, vol1->gridsize());
+  sprintf(tmpstr, "# differing elements = %d/%ld", numdiff, vol1->gridsize());
   msgInfo << tmpstr << sendmsg;
   msgInfo << "max difference:" << sendmsg;
   sprintf(tmpstr, "   map1[%d] = %g   map2[%d] = %g   diff = %g",

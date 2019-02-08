@@ -1,9 +1,9 @@
 /***************************************************************************
- *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
- *cr                        University of Illinois
- *cr                         All Rights Reserved
- *cr
+ *cr                                                                       
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
+ *cr                        University of Illinois                       
+ *cr                         All Rights Reserved                        
+ *cr                                                                   
  ***************************************************************************/
 
 /***************************************************************************
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: UIText.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.195 $	$Date: 2016/11/28 03:05:05 $
+ *	$Revision: 1.198 $	$Date: 2019/01/17 21:21:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -154,7 +154,7 @@ void UIText::read_from_file(const char *fname) {
   }
 
   if (_isInitialized) {
-    // && interp){   // prevent segfault when this is called during init
+    // && interp){   // prevent segfault when this is called during init 
     //    msgInfo  << "interp not null;" << sendmsg;
     interp->evalFile(fname);
   } else {
@@ -168,7 +168,7 @@ void UIText::read_from_file(const char *fname) {
 // check for an event; return TRUE if we found an event; FALSE otherwise
 int UIText::check_event(void) {
 
-  // no tk event handling when building as a shared object
+  // no tk event handling when building as a shared object 
   // for embedding in python.
 #if defined(VMD_SHARED)
   return FALSE;
@@ -180,7 +180,8 @@ int UIText::check_event(void) {
   // Tcl when Tkinter widgets have been created, we crash and burn as Tk
   // is not thread safe.
   // If Python was not able to update Tk, possibly because Tkinter was not
-  // found, then use the Tcl interpreter.
+  // found, then use the Tcl interpreter. 
+  tclinterp->doTkUpdate();
   if (!pythoninterp || (pythoninterp && !pythoninterp->doTkUpdate())) {
     if (tclinterp) {
       tclinterp->doTkUpdate();
@@ -190,10 +191,22 @@ int UIText::check_event(void) {
     }
   }
   interp->doEvent();
-  return TRUE;
+  return TRUE; 
 }
 
+
 int UIText::act_on_command(int cmdtype, Command *cmd) {
+  int action=1;
+
+#if defined(VMDNVTX)
+  // log command in profiler, if possible
+  int profile_pushed=0;
+  if (cmd->has_text(cmdbufstr)) {
+    profile_pushed=1;
+    PROFILE_PUSH_RANGE(cmdbufstr->text(), 1); 
+  }
+#endif
+
   if (tclinterp) {
     // log command, if possible
     if (cmd->has_text(cmdbufstr)) {
@@ -206,21 +219,29 @@ int UIText::act_on_command(int cmdtype, Command *cmd) {
       cmdbufstr->reset();
     }
   }
+
   if (cmdtype == Command::INTERP_EVENT) {
     // downcast to InterpEvent
-    InterpEvent *event = (InterpEvent *)cmd;
+    InterpEvent *event = (InterpEvent *)cmd;  
     if (tclinterp)
       event->do_callback(tclinterp);
     // ACK!  This used be "else if (pythoninterp)", which means python
-    // callbacks never get called if you build with Tcl.
+    // callbacks never get called if you build with Tcl.  
     if (pythoninterp)
       event->do_callback(pythoninterp);
-
   } else {
-    return 0;  // no action taken
+    action=0;    // no action taken
   }
-  return 1;    // used the command
+
+#if defined(VMDNVTX)
+  if (profile_pushed) {
+    PROFILE_POP_RANGE(); // ensure we perform matching pop operation 
+  }
+#endif
+
+  return action; // return whether we used the command or not
 }
+
 
 int UIText::change_interp(const char *interpname) {
   if (!interpname) return FALSE;
@@ -234,7 +255,7 @@ int UIText::change_interp(const char *interpname) {
       // try for Python
       interpname = "python";
     }
-  }
+  } 
   // fall through to Python if no Tcl interpreter is available
   if (!strupcmp(interpname, "python")) {
     if (pythoninterp) {
@@ -247,7 +268,7 @@ int UIText::change_interp(const char *interpname) {
       clearerr(stdin);
       return TRUE;
     } else {
-#if defined(VMDPYTHON)
+#if defined(VMDPYTHON) 
       pythoninterp = new PythonTextInterp(app);
       if (pythoninterp) {
         msgInfo << "Text interpreter now Python" << sendmsg;

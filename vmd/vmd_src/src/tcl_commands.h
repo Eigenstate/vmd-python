@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: tcl_commands.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.26 $       $Date: 2016/11/28 03:05:08 $
+ *      $Revision: 1.29 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -48,8 +48,10 @@ extern int text_cmd_sleep(ClientData, Tcl_Interp *, int, const char *[]);
 extern int text_cmd_log(ClientData, Tcl_Interp *, int, const char *[]);
 extern int text_cmd_gopython(ClientData, Tcl_Interp *, int, const char *[]);
 extern int text_cmd_collab(ClientData, Tcl_Interp *, int, const char *argv[]);
+extern int text_cmd_videostream(ClientData, Tcl_Interp *, int, const char *[]);
 extern int text_cmd_vmdbench(ClientData, Tcl_Interp *, int, const char *[]);
 extern int text_cmd_parallel(ClientData, Tcl_Interp *, int, const char *[]);
+extern int text_cmd_profile(ClientData, Tcl_Interp *, int, const char *[]);
 // XXX hack for getting around Swift/T issues
 extern int swift_mpi_init(Tcl_Interp *);
 

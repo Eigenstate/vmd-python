@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: util_simd.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.4 $	$Date: 2016/11/28 04:01:05 $
+ *	$Revision: 1.13 $	$Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -107,10 +107,12 @@ static int is_Nbyte_aligned(const void *ptr, int N) {
 }
 #endif
 
+#if (defined(VMDUSESSE) && defined(__SSE2__)) || (defined(VMDUSEVSX) && defined(__VSX__)) || (defined(VMDUSEAVX) && defined(__AVX__))
 // Aligment test routine for x86 16-byte SSE vector instructions
 static int is_16byte_aligned(const void *ptr) {
   return (((myintptrtype) ptr) == (((myintptrtype) ptr) & (~0xf)));
 }
+#endif
 
 #if defined(VMDUSEAVX)
 // Aligment test routine for x86 32-byte AVX vector instructions
@@ -541,13 +543,235 @@ int analyze_selection_aligned(int n, const int *on,
 }
 
 
+// Compute min/max/mean values for a 16-byte-aligned array of floats
+void minmaxmean_1fv_aligned(const float *f, long n, 
+                            float *fmin, float *fmax, float *fmean) {
+  if (n < 1) {
+    *fmin = 0.0f;
+    *fmax = 0.0f;
+    *fmean = 0.0f;
+    return;
+  }
+
+#if defined(VMDUSEAVX) && defined(__AVX__)
+  long i=0;
+  float min1 = f[0];
+  float max1 = f[0];
+  double mean1 = f[0];
+  
+  // roll up to the first 32-byte-aligned array index
+  for (i=0; ((i<n) && !is_32byte_aligned(&f[i])); i++) {
+    if (f[i] < min1) min1 = f[i];
+    if (f[i] > max1) max1 = f[i];
+    mean1 += f[i];
+  }
+
+  // AVX vectorized min/max loop
+  __m256 min8 = _mm256_set1_ps(min1);
+  __m256 max8 = _mm256_set1_ps(max1);
+  __m256d mean4d = _mm256_set1_pd(0.0);
+
+  // do groups of 64 elements
+  for (; i<(n-63); i+=64) {
+    __m256 f8 = _mm256_load_ps(&f[i]); // assume 32-byte aligned array!
+    min8 = _mm256_min_ps(min8, f8);
+    max8 = _mm256_max_ps(max8, f8);
+    __m256 mean8 = f8;
+    f8 = _mm256_load_ps(&f[i+8]); // assume 32-byte aligned array!
+    min8 = _mm256_min_ps(min8, f8);
+    max8 = _mm256_max_ps(max8, f8);
+    mean8 = _mm256_add_ps(mean8, f8);
+    f8 = _mm256_load_ps(&f[i+16]); // assume 32-byte aligned array!
+    min8 = _mm256_min_ps(min8, f8);
+    max8 = _mm256_max_ps(max8, f8);
+    mean8 = _mm256_add_ps(mean8, f8);
+    f8 = _mm256_load_ps(&f[i+24]); // assume 32-byte aligned array!
+    min8 = _mm256_min_ps(min8, f8);
+    max8 = _mm256_max_ps(max8, f8);
+    mean8 = _mm256_add_ps(mean8, f8);
+
+    f8 = _mm256_load_ps(&f[i+32]); // assume 32-byte aligned array!
+    min8 = _mm256_min_ps(min8, f8);
+    max8 = _mm256_max_ps(max8, f8);
+    mean8 = _mm256_add_ps(mean8, f8);
+    f8 = _mm256_load_ps(&f[i+40]); // assume 32-byte aligned array!
+    min8 = _mm256_min_ps(min8, f8);
+    max8 = _mm256_max_ps(max8, f8);
+    mean8 = _mm256_add_ps(mean8, f8);
+    f8 = _mm256_load_ps(&f[i+48]); // assume 32-byte aligned array!
+    min8 = _mm256_min_ps(min8, f8);
+    max8 = _mm256_max_ps(max8, f8);
+    mean8 = _mm256_add_ps(mean8, f8);
+    f8 = _mm256_load_ps(&f[i+56]); // assume 32-byte aligned array!
+    min8 = _mm256_min_ps(min8, f8);
+    max8 = _mm256_max_ps(max8, f8);
+    mean8 = _mm256_add_ps(mean8, f8);
+
+    // sum mean8 into double-precision accumulator mean4d,
+    // converting from single to double-precision, and 
+    // appropriately shuffling the high and low subwords
+    // so all four elements are accumulated
+    mean4d = _mm256_add_pd(mean4d, _mm256_cvtps_pd(_mm256_extractf128_ps(mean8, 0)));
+    mean4d = _mm256_add_pd(mean4d, _mm256_cvtps_pd(_mm256_extractf128_ps(mean8, 1)));
+  }
+
+  // sum the mean4d against itself so all elements have the total,
+  // write out the lower element, and sum it into mean1
+  __m256d pairs4d = _mm256_hadd_pd(mean4d, mean4d);
+  mean4d = _mm256_add_pd(pairs4d, 
+                         _mm256_permute2f128_pd(pairs4d, pairs4d, 0x01));
+#if defined(__AVX2__)
+  mean1 +=  _mm256_cvtsd_f64(mean4d); 
+#else
+  double tmp;
+  _mm_storel_pd(&tmp, _mm256_castpd256_pd128(mean4d));
+  mean1 += tmp;
+#endif
+
+  // finish last elements off
+  for (; i<n; i++) {
+    __m256 f8 = _mm256_set1_ps(f[i]);
+    min8 = _mm256_min_ps(min8, f8);
+    max8 = _mm256_max_ps(max8, f8);
+    mean1 += f[i];
+  }
+
+  // compute min/max among the final 4-element vectors by shuffling
+  // and and reducing the elements within the vectors
+  float t0, t1;
+  t0 = fmin_m128(_mm256_extractf128_ps(min8, 0));
+  t1 = fmin_m128(_mm256_extractf128_ps(min8, 1));
+  *fmin = (t0 < t1) ? t0 : t1;
+
+  t0 = fmax_m128(_mm256_extractf128_ps(max8, 0));
+  t1 = fmax_m128(_mm256_extractf128_ps(max8, 1));
+  *fmax = (t0 > t1) ? t0 : t1;
+  *fmean = mean1 / n; 
+#elif defined(VMDUSESSE) && defined(__SSE2__) && (defined(__GNUC__) || defined(__INTEL_COMPILER))
+  // XXX clang is broken /wrt _mm_set_pd1()
+  long i=0;
+  float min1 = f[0];
+  float max1 = f[0];
+  double mean1 = f[0];
+  
+  // roll up to the first 16-byte-aligned array index
+  for (i=0; ((i<n) && !is_16byte_aligned(&f[i])); i++) {
+    if (f[i] < min1) min1 = f[i];
+    if (f[i] > max1) max1 = f[i];
+    mean1 += f[i];
+  }
+
+  // SSE vectorized min/max loop
+  __m128 min4 = _mm_set_ps1(min1);
+  __m128 max4 = _mm_set_ps1(max1);
+#if (defined(ARCH_MACOSXX86) || defined(ARCH_MACOSXX86_64))
+  __m128d mean2d = _mm_cvtps_pd(_mm_set_ps1(0.0f)); // XXX MacOS X workaround
+#else
+  __m128d mean2d = _mm_set_pd1(0.0); // XXX clang misses this
+#endif
+
+  // do groups of 32 elements
+  for (; i<(n-31); i+=32) {
+    __m128 f4 = _mm_load_ps(&f[i]); // assume 16-byte aligned array!
+    min4 = _mm_min_ps(min4, f4);
+    max4 = _mm_max_ps(max4, f4);
+    __m128 mean4 = f4;
+    f4 = _mm_load_ps(&f[i+4]); // assume 16-byte aligned array!
+    min4 = _mm_min_ps(min4, f4);
+    max4 = _mm_max_ps(max4, f4);
+    mean4 = _mm_add_ps(mean4, f4);
+    f4 = _mm_load_ps(&f[i+8]); // assume 16-byte aligned array!
+    min4 = _mm_min_ps(min4, f4);
+    max4 = _mm_max_ps(max4, f4);
+    mean4 = _mm_add_ps(mean4, f4);
+    f4 = _mm_load_ps(&f[i+12]); // assume 16-byte aligned array!
+    min4 = _mm_min_ps(min4, f4);
+    max4 = _mm_max_ps(max4, f4);
+    mean4 = _mm_add_ps(mean4, f4);
+
+    f4 = _mm_load_ps(&f[i+16]); // assume 16-byte aligned array!
+    min4 = _mm_min_ps(min4, f4);
+    max4 = _mm_max_ps(max4, f4);
+    mean4 = _mm_add_ps(mean4, f4);
+    f4 = _mm_load_ps(&f[i+20]); // assume 16-byte aligned array!
+    min4 = _mm_min_ps(min4, f4);
+    max4 = _mm_max_ps(max4, f4);
+    mean4 = _mm_add_ps(mean4, f4);
+    f4 = _mm_load_ps(&f[i+24]); // assume 16-byte aligned array!
+    min4 = _mm_min_ps(min4, f4);
+    max4 = _mm_max_ps(max4, f4);
+    mean4 = _mm_add_ps(mean4, f4);
+    f4 = _mm_load_ps(&f[i+28]); // assume 16-byte aligned array!
+    min4 = _mm_min_ps(min4, f4);
+    max4 = _mm_max_ps(max4, f4);
+    mean4 = _mm_add_ps(mean4, f4);
+
+    // sum mean4 into double-precision accumulator mean2d,
+    // converting from single to double-precision, and 
+    // appropriately shuffling the high and low subwords
+    // so all four elements are accumulated
+    mean2d = _mm_add_pd(mean2d, _mm_cvtps_pd(mean4));
+    mean2d = _mm_add_pd(mean2d, _mm_cvtps_pd(_mm_shuffle_ps(mean4, mean4, _MM_SHUFFLE(3, 2, 3, 2))));
+  }
+
+  // do groups of 4 elements
+  for (; i<(n-3); i+=4) {
+    __m128 f4 = _mm_load_ps(&f[i]); // assume 16-byte aligned array!
+    min4 = _mm_min_ps(min4, f4);
+    max4 = _mm_max_ps(max4, f4);
+
+    // sum f4 into double-precision accumulator mean2d,
+    // converting from single to double-precision, and 
+    // appropriately shuffling the high and low subwords
+    // so all four elements are accumulated
+    mean2d = _mm_add_pd(mean2d, _mm_cvtps_pd(f4));
+    mean2d = _mm_add_pd(mean2d, _mm_cvtps_pd(_mm_shuffle_ps(f4, f4, _MM_SHUFFLE(3, 2, 3, 2))));
+  }
+
+  // sum the mean2d against itself so both elements have the total,
+  // write out the lower element, and sum it into mean1
+  mean2d = _mm_add_pd(mean2d, _mm_shuffle_pd(mean2d, mean2d, 1));
+  double tmp;
+  _mm_storel_pd(&tmp, mean2d);
+  mean1 += tmp;
+
+  // finish last elements off
+  for (; i<n; i++) {
+    __m128 f4 = _mm_set_ps1(f[i]);
+    min4 = _mm_min_ps(min4, f4);
+    max4 = _mm_max_ps(max4, f4);
+    mean1 += f[i];
+  }
+
+  // compute min/max among the final 4-element vectors by shuffling
+  // and and reducing the elements within the vectors
+  *fmin = fmin_m128(min4);
+  *fmax = fmax_m128(max4);
+  *fmean = mean1 / n; 
+#else
+  // scalar min/max/mean loop
+  float min1 = f[0];
+  float max1 = f[0];
+  double mean1 = f[0];
+  for (long i=1; i<n; i++) {
+    if (f[i] < min1) min1 = f[i];
+    if (f[i] > max1) max1 = f[i];
+    mean1 += f[i];
+  }
+  *fmin = min1;
+  *fmax = max1;
+  *fmean = mean1 / n; 
+#endif
+}
+
+
 // Compute min/max values for a 16-byte-aligned array of floats
-void minmax_1fv_aligned(const float *f, int n, float *fmin, float *fmax) {
+void minmax_1fv_aligned(const float *f, long n, float *fmin, float *fmax) {
   if (n < 1)
     return;
 
 #if defined(VMDUSESSE) && defined(__SSE2__)
-  int i=0;
+  long i=0;
   float min1 = f[0];
   float max1 = f[0];
 
@@ -609,7 +833,7 @@ void minmax_1fv_aligned(const float *f, int n, float *fmin, float *fmax) {
   *fmin = fmin_m128(min4);
   *fmax = fmax_m128(max4);
 #elif defined(VMDUSEVSX) && defined(__VSX__)
-  int i=0;
+  long i=0;
   float min1 = f[0];
   float max1 = f[0];
 
@@ -652,7 +876,7 @@ void minmax_1fv_aligned(const float *f, int n, float *fmin, float *fmax) {
   *fmin = min1;
   *fmax = max1;
 #elif defined(VMDUSENEON) && defined(__ARM_NEON__)
-  int i=0;
+  long i=0;
   float min1 = f[0];
   float max1 = f[0];
 
@@ -718,7 +942,7 @@ void minmax_1fv_aligned(const float *f, int n, float *fmin, float *fmax) {
   // scalar min/max loop
   float min1 = f[0];
   float max1 = f[0];
-  for (int i=1; i<n; i++) {
+  for (long i=1; i<n; i++) {
     if (f[i] < min1) min1 = f[i];
     if (f[i] > max1) max1 = f[i];
   }
@@ -730,7 +954,7 @@ void minmax_1fv_aligned(const float *f, int n, float *fmin, float *fmax) {
 
 // Compute min/max values for a 16-byte-aligned array of float3s
 // input value n3 is the number of 3-element vectors to process
-void minmax_3fv_aligned(const float *f, const int n3, float *fmin, float *fmax) {
+void minmax_3fv_aligned(const float *f, const long n3, float *fmin, float *fmax) {
   float minx, maxx, miny, maxy, minz, maxz;
   const long end = n3*3L;
 
@@ -830,8 +1054,8 @@ void minmax_3fv_aligned(const float *f, const int n3, float *fmin, float *fmax) 
 
 // Compute min/max values for a 16-byte-aligned array of float3s
 // input value n3 is the number of 3-element vectors to process
-int minmax_selected_3fv_aligned(const float *f, const int *on, const int n3, 
-                                const int firstsel, const int lastsel,
+int minmax_selected_3fv_aligned(const float *f, const int *on, const long n3, 
+                                const long firstsel, const long lastsel,
                                 float *fmin, float *fmax) {
   float minx, maxx, miny, maxy, minz, maxz;
 
@@ -844,7 +1068,7 @@ int minmax_selected_3fv_aligned(const float *f, const int *on, const int n3,
   miny=maxy=f[i*3L+1];
   minz=maxz=f[i*3L+2];
 
-  int end=lastsel+1;
+  long end=lastsel+1;
 
 // printf("Starting array alignment: on[%d]: %p f[%d]: %p\n",
 //        i, &on[i], i*3L, &f[i*3L]);

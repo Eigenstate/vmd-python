@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: SDLOpenGLDisplayDevice.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.38 $	$Date: 2016/11/28 03:05:04 $
+ *	$Revision: 1.40 $	$Date: 2019/01/17 21:21:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -307,7 +307,7 @@ void OpenGLDisplayDevice::reshape(void) {
   }
 }
 
-unsigned char * OpenGLDisplayDevice::readpixels(int &x, int &y) {
+unsigned char * OpenGLDisplayDevice::readpixels_rgb3u(int &x, int &y) {
   unsigned char * img;
 
   x = xSize;
@@ -316,6 +316,23 @@ unsigned char * OpenGLDisplayDevice::readpixels(int &x, int &y) {
   if ((img = (unsigned char *) malloc(x * y * 3)) != NULL) {
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(0, 0, x, y, GL_RGB, GL_UNSIGNED_BYTE, img);
+  } else {
+    x = 0;
+    y = 0;
+  } 
+
+  return img; 
+}
+
+unsigned char * OpenGLDisplayDevice::readpixels_rgba4u(int &x, int &y) {
+  unsigned char * img;
+
+  x = xSize;
+  y = ySize;
+
+  if ((img = (unsigned char *) malloc(x * y * 4)) != NULL) {
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, x, y, GL_RGBA, GL_UNSIGNED_BYTE, img);
   } else {
     x = 0;
     y = 0;

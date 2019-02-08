@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: RayShadeDisplayDevice.h,v $
  *      $Author: johns $        $Locker:  $                $State: Exp $
- *      $Revision: 1.28 $      $Date: 2016/11/28 03:05:04 $
+ *      $Revision: 1.30 $      $Date: 2019/01/17 21:21:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -28,7 +28,6 @@
 /// FileRenderer subclass to exports VMD scenes to Rayshade scene format
 class RayShadeDisplayDevice : public FileRenderer {
 private:
-  char *ray_filename;                     ///< output file name
   void write_cindexmaterial(int, int);    ///< write colors, materials etc.
   void write_colormaterial(float *, int); ///< write colors, materials etc.
   float scale_fix(float);                 /// fix scaling in a hackish manner

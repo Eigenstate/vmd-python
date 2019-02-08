@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
 *
 *      $RCSfile: OptiXDisplayDevice.h
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.22 $         $Date: 2016/11/28 03:05:02 $
+*      $Revision: 1.25 $         $Date: 2019/01/17 21:21:00 $
 *
 ***************************************************************************
 * DESCRIPTION:
@@ -41,6 +41,22 @@
 *   2016 IEEE International Parallel and Distributed Processing
 *   Symposium Workshops (IPDPSW), pp. 1048-1057, 2016.
 *   http://dx.doi.org/10.1109/IPDPSW.2016.121
+*
+*  "Omnidirectional Stereoscopic Projections for VR"
+*   John E. Stone.
+*   In, William R. Sherman, editor, 
+*   VR Developer Gems, Taylor and Francis / CRC Press, Chapter 24, 2019.
+*
+*  "Interactive Ray Tracing Techniques for
+*   High-Fidelity Scientific Visualization"
+*   John E. Stone.
+*   In, Eric Haines and Tomas Akenine-Möller, editors,
+*   Ray Tracing Gems, Apress, 2019.
+*
+*  "A Planetarium Dome Master Camera"
+*   John E. Stone.
+*   In, Eric Haines and Tomas Akenine-Möller, editors,
+*   Ray Tracing Gems, Apress, 2019.
 *
 * Portions of this code are derived from Tachyon:
 *   "An Efficient Library for Parallel Ray Tracing and Animation"

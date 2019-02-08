@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
 *
 *      $RCSfile: OptiXDisplayDevice.h
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.102 $         $Date: 2016/11/28 03:05:02 $
+*      $Revision: 1.115 $         $Date: 2019/01/17 21:21:00 $
 *
 ***************************************************************************
 * DESCRIPTION:
@@ -42,6 +42,22 @@
 *   Symposium Workshops (IPDPSW), pp. 1048-1057, 2016.
 *   http://dx.doi.org/10.1109/IPDPSW.2016.121
 *
+*  "Omnidirectional Stereoscopic Projections for VR"
+*   John E. Stone.
+*   In, William R. Sherman, editor,
+*   VR Developer Gems, Taylor and Francis / CRC Press, Chapter 24, 2019.
+*
+*  "Interactive Ray Tracing Techniques for
+*   High-Fidelity Scientific Visualization"
+*   John E. Stone.
+*   In, Eric Haines and Tomas Akenine-Möller, editors,
+*   Ray Tracing Gems, Apress, 2019.
+*
+*  "A Planetarium Dome Master Camera"
+*   John E. Stone.
+*   In, Eric Haines and Tomas Akenine-Möller, editors,
+*   Ray Tracing Gems, Apress, 2019.
+*
 * Portions of this code are derived from Tachyon:
 *   "An Efficient Library for Parallel Ray Tracing and Animation"
 *   John E. Stone.  Master's Thesis, University of Missouri-Rolla,
@@ -64,6 +80,19 @@
 #include "Matrix4.h"
 #include "ResizeArray.h"
 #include "WKFUtils.h"
+
+class VMDApp;
+
+// Compile-time flag for collection and reporting of ray statistics
+#if 0
+#define ORT_RAYSTATS 1
+#endif
+
+// Compile-time flag to enable the use of RTX hardware ray tracing
+// acceleration APIs in OptiX
+#if OPTIX_VERSION >= 50200
+#define ORT_USERTXAPIS 1
+#endif
 
 // #define VMDOPTIX_VCA_TABSZHACK 1
 #ifdef VMDOPTIX_VCA_TABSZHACK
@@ -139,15 +168,21 @@ public:
   enum BGMode { RT_BACKGROUND_TEXTURE_SOLID=0,
                 RT_BACKGROUND_TEXTURE_SKY_SPHERE=1,
                 RT_BACKGROUND_TEXTURE_SKY_ORTHO_PLANE=2 };
-  enum RayType { RT_RAY_TYPE_RADIANCE=0,   ///< normal radiance rays
-                 RT_RAY_TYPE_SHADOW=1,     ///< shadow probe/AO rays
-                 RT_RAY_TYPE_COUNT=2 };    ///< total count of ray types
+  enum RayType { RT_RAY_TYPE_RADIANCE=0,      ///< normal radiance rays
+                 RT_RAY_TYPE_SHADOW=1,        ///< shadow probe/AO rays
+                 RT_RAY_TYPE_COUNT=2 };       ///< total count of ray types
   enum RayGen  { RT_RAY_GEN_CLEAR_ACCUMULATION_BUFFER=0,
-                 RT_RAY_GEN_ACCUMULATE=1,  ///< a render pass to accum buf
-                 RT_RAY_GEN_COPY_FINISH=2, ///< copy accum buf to framebuffer
-                 RT_RAY_GEN_COUNT=3 };     ///< total count of ray gen pgms
+                 RT_RAY_GEN_ACCUMULATE=1,     ///< a render pass to accum buf
+                 RT_RAY_GEN_COPY_FINISH=2,    ///< copy accum buf to framebuffer
+#if defined(ORT_RAYSTATS)
+                 RT_RAY_GEN_CLEAR_RAYSTATS=3, ///< clear raystats buffers
+                 RT_RAY_GEN_COUNT=4 };        ///< total count of ray gen pgms
+#else
+                 RT_RAY_GEN_COUNT=3 };        ///< total count of ray gen pgms
+#endif
 
 private:
+  VMDApp *app;                            ///< VMDApp ptr for video streaming
   void *remote_device;                    ///< remote rendering device/cluster
   Verbosity verbose;                      ///< console perf/debugging output
   int width;                              ///< image width in pixels
@@ -168,6 +203,9 @@ private:
   RTcontext ctx;                          ///< OptiX main context
   RTresult lasterror;                     ///< Last OptiX error code if any
 
+#if defined(ORT_USERTXAPIS)
+  int hwtri_enabled;                      ///< OptiX HW triangle API enabled
+#endif
   int buffers_allocated;                  ///< flag for buffer state
   int buffers_progressive;                ///< progressive API flag
   RTbuffer framebuffer;                   ///< output image buffer
@@ -175,6 +213,13 @@ private:
   RTbuffer accumulation_buffer;           ///< intermediate GPU-local accum buf
   RTvariable accumulation_buffer_v;       ///< accum buffer variable
   RTvariable accum_count_v;               ///< accumulation subframe count 
+#if defined(ORT_RAYSTATS)
+  // the ray stats buffers get cleared when clearing the accumulation buffer
+  RTbuffer raystats1_buffer;              ///< intermediate GPU-local stat buf
+  RTvariable raystats1_buffer_v;          ///< ray stats buffer variable
+  RTbuffer raystats2_buffer;              ///< intermediate GPU-local stat buf
+  RTvariable raystats2_buffer_v;          ///< ray stats buffer variable
+#endif
 
   int clipview_mode;                      ///< VR fade+clipping sphere/plane
   RTvariable clipview_mode_v;             ///< VR fade+clipping sphere/plane
@@ -183,20 +228,18 @@ private:
   float clipview_end;                     ///< VR fade+clipping sphere/plane
   RTvariable clipview_end_v;              ///< VR fade+clipping sphere/plane
 
-  float anim_interp;                      ///< XXX global interpolation value
-  RTvariable anim_interp_v;               ///< XXX used for animation [0:1]
-
   int headlight_mode;                     ///< VR HMD headlight
   RTvariable headlight_mode_v;            ///< VR HMD headlight
 
 #if defined(VMDOPTIX_LIGHTUSEROBJS)
   RTvariable dir_light_list_v;            ///< list of directional lights
   RTvariable pos_light_list_v;            ///< list of positional lights
-#endif
+#else
   RTvariable dir_lightbuffer_v;           ///< list of directional lights
   RTbuffer dir_lightbuffer;               ///< list of directional lights
   RTvariable pos_lightbuffer_v;           ///< list of positional lights
   RTbuffer pos_lightbuffer;               ///< list of positional lights
+#endif
 
   RTvariable ao_ambient_v;                ///< AO ambient lighting scalefactor
   float ao_ambient;                       ///< AO ambient lighting scalefactor
@@ -208,6 +251,10 @@ private:
   RTprogram exception_pgm;                ///< exception handling program
 
   int set_accum_raygen_pgm(CameraProjection &proj, int stereo_on, int dof_on);
+
+#if defined(ORT_RAYSTATS)
+  RTprogram clear_raystats_buffers_pgm;        ///< clear raystats buffers
+#endif
 
   RTprogram clear_accumulation_buffer_pgm;     ///< clear accum buf
   RTprogram draw_accumulation_buffer_pgm;      ///< copy accum to framebuffer
@@ -244,7 +291,15 @@ private:
   RTprogram ray_gen_pgm_orthographic_stereo_dof; ///< ortho cam (stereo)
 
   RTprogram closest_hit_pgm_general;             ///< fully general shader
+#if defined(ORT_USE_TEMPLATE_SHADERS)
   RTprogram closest_hit_pgm_special[ORTMTABSZ];  ///< template-specialized fctns
+#endif
+#if defined(ORT_USERTXAPIS)
+  RTprogram closest_hit_pgm_general_hwtri;       ///< general RTX tri shader
+#if defined(ORT_USE_TEMPLATE_SHADERS)
+  RTprogram closest_hit_pgm_special_hwtri[ORTMTABSZ];  ///< template-specialized fctns
+#endif
+#endif
 
   RTprogram any_hit_pgm_opaque;            ///< shadows for opaque objects
   RTprogram any_hit_pgm_transmission;      ///< shadows w/ filtering
@@ -256,7 +311,15 @@ private:
 
 
   RTmaterial material_general;             ///< fully-general material
+#if defined(ORT_USE_TEMPLATE_SHADERS)
   RTmaterial material_special[ORTMTABSZ];  ///< 2^8 specialized materials
+#endif
+#if defined(ORT_USERTXAPIS)
+  RTmaterial material_general_hwtri;       ///< RTX tri material
+#if defined(ORT_USE_TEMPLATE_SHADERS)
+  RTmaterial material_special_hwtri[ORTMTABSZ];  ///< 2^8 specialized materials
+#endif
+#endif
   int material_special_counts[ORTMTABSZ];  ///< usage count in current scene
 
 
@@ -313,6 +376,12 @@ private:
   int scene_created;
   RTgeometrygroup geometrygroup;          ///< node containing geom instances
   RTacceleration  acceleration;           ///< AS for scene geomgroup
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware-accelerated triangles API
+  RTgeometrygroup geometrytrianglesgroup; ///< hardware triangles group
+  RTacceleration  trianglesacceleration;  ///< AS for hardware triangles
+#endif
+
   RTgroup         root_group;             ///< root node for entire scene
   RTacceleration  root_acceleration;      ///< AS for root node 
   RTvariable      root_object_v;          ///< top level of scene graph 
@@ -326,6 +395,7 @@ private:
   RTvariable progressive_enabled_v;     ///< progressive rendering flag
 
   RTvariable max_depth_v;               ///< max ray recursion depth
+  RTvariable max_trans_v;               ///< max transmission ray depth
 
   RTvariable radiance_ray_type_v;       ///< index of active radiance ray type
   RTvariable shadow_ray_type_v;         ///< index of active shadow ray type
@@ -354,7 +424,9 @@ private:
   float cam_dof_focal_dist;             ///< DoF focal distance
   float cam_dof_fnumber;                ///< DoF f/stop number
 
+#if 0
   RTvariable camera_projection_v;       ///< camera projection mode
+#endif
   CameraProjection camera_projection;   ///< camera projection mode
 
   int ext_aa_loops;                     ///< Multi-pass AA iterations
@@ -405,9 +477,14 @@ private:
   ResizeArray<ort_positional_light> positional_lights;   ///< list of positional lights
 
   // keep track of all of the OptiX objects we create on-the-fly...
+  ResizeArray<RTbuffer> bufferlist;                  ///< list of all buffers
   ResizeArray<RTgeometry> geomlist;                  ///< list of all geom bufs
   ResizeArray<RTgeometryinstance> geominstancelist;  ///< list of all instances
-  ResizeArray<RTbuffer> bufferlist;                  ///< list of all buffers
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware-accelerated triangles API
+  ResizeArray<RTgeometrytriangles> geomtriangleslist;
+  ResizeArray<RTgeometryinstance> geomtrianglesinstancelist;
+#endif
 
   void append_objects(RTbuffer buf, RTgeometry geom, 
                       RTgeometryinstance instance) {
@@ -416,9 +493,25 @@ private:
     geominstancelist.append(instance);
   }
 
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware-accelerated triangles API
+  void append_objects(RTbuffer nbuf, RTbuffer cbuf,
+                      RTgeometrytriangles geom_hwtri, 
+                      RTgeometryinstance instance_hwtri) {
+    bufferlist.append(nbuf);
+    bufferlist.append(cbuf);
+    geomtriangleslist.append(geom_hwtri);
+    geomtrianglesinstancelist.append(instance_hwtri);
+  }
+
+  void append_buffer(RTbuffer buf) {
+    bufferlist.append(buf);
+  }
+#endif
+
 
 public:
-  OptiXRenderer(void *remote_cluster_dev);
+  OptiXRenderer(VMDApp *vmdapp, void *remote_cluster_dev);
   ~OptiXRenderer(void);
 
 #if OPTIX_VERSION >= 3080
@@ -511,7 +604,7 @@ public:
                     float specular, float shininess, float reflectivity,
                     float opacity, float outline, float outlinewidth, 
                     int transmode);
-  void set_material(RTgeometryinstance instance, int matindex, float *uniform_color);
+  void set_material(RTgeometryinstance instance, int matindex, float *uniform_color, int hwtri=0);
 
   void clear_all_lights() { 
     directional_lights.clear(); 
@@ -533,10 +626,11 @@ public:
   void destroy_framebuffer(void);
 
   void render_compile_and_validate(void);
-  void render_to_file(const char *filename); 
+  void render_to_file(const char *filename, int writealpha); 
 #if defined(VMDOPTIX_INTERACTIVE_OPENGL)
-  void render_to_glwin(const char *filename);
+  void render_to_glwin(const char *filename, int writealpha);
 #endif
+  void render_to_videostream(const char *filename, int writealpha);
 
   void destroy_scene(void);
   void destroy_context(void);
@@ -559,26 +653,79 @@ public:
                           float *centers, float *radii, float *colors, 
                           int matindex);
 
+
+  // 
+  // Triangle mesh geometry
+  //   Beginning with OptiX 5.2 and Turing-class GPUs, VMD uses the new
+  //   NVIDIA RTX hardware-accelerated triangle APIs.  In combination with
+  //   general OptiX software improvements, the Turing GPUs implement 
+  //   hardware-accelerated BVH traversal, BVH-embedded storage of
+  //   triangle meshes, and hardware-accelerated triangle intersection.
+  //   In combination, these advances can provide a factor of ~8x
+  //   performance gain compared with the classic OptiX APIs running on 
+  //   Volta-class hardware.
+  // 
+#if defined(ORT_USERTXAPIS)
+  void tricolor_list_hwtri(Matrix4 & wtrans, int numtris, float *vnc, int matindex);
+#endif
   void tricolor_list(Matrix4 & wtrans, int numtris, float *vnc, int matindex);
 
+
+#if defined(ORT_USERTXAPIS)
+  void trimesh_c4n3v3_hwtri(Matrix4 & wtrans, int numverts,
+                            float *cnv, int numfacets, int * facets, 
+                            int matindex);
+#endif
   void trimesh_c4n3v3(Matrix4 & wtrans, int numverts,
                       float *cnv, int numfacets, int * facets, int matindex);
 
+
+#if defined(ORT_USERTXAPIS)
+  void trimesh_c4u_n3b_v3f_hwtri(Matrix4 & wtrans, unsigned char *c, char *n, 
+                                 float *v, int numfacets, int matindex);
+#endif
   void trimesh_c4u_n3b_v3f(Matrix4 & wtrans, unsigned char *c, char *n, 
                            float *v, int numfacets, int matindex);
 
+
+#if defined(ORT_USERTXAPIS)
+  void trimesh_c4u_n3f_v3f_hwtri(Matrix4 & wtrans, unsigned char *c, 
+                                 float *n, float *v, int numfacets, 
+                                 int matindex);
+#endif
   void trimesh_c4u_n3f_v3f(Matrix4 & wtrans, unsigned char *c, 
                            float *n, float *v, int numfacets, int matindex);
 
+
+#if defined(ORT_USERTXAPIS)
+  void trimesh_n3b_v3f_hwtri(Matrix4 & wtrans, float *uniform_color, 
+                             char *n, float *v, int numfacets, int matindex);
+#endif
   void trimesh_n3b_v3f(Matrix4 & wtrans, float *uniform_color, 
                        char *n, float *v, int numfacets, int matindex);
 
+
+#if defined(ORT_USERTXAPIS)
+  void trimesh_n3f_v3f_hwtri(Matrix4 & wtrans, float *uniform_color, 
+                             float *n, float *v, int numfacets, int matindex);
+#endif
   void trimesh_n3f_v3f(Matrix4 & wtrans, float *uniform_color, 
                        float *n, float *v, int numfacets, int matindex);
 
+
+#if defined(ORT_USERTXAPIS)
+  void trimesh_v3f_hwtri(Matrix4 & wtrans, float *uniform_color, 
+                         float *v, int numfacets, int matindex);
+#endif
   void trimesh_v3f(Matrix4 & wtrans, float *uniform_color, 
                    float *v, int numfacets, int matindex);
 
+
+#if defined(ORT_USERTXAPIS)
+  void tristrip_hwtri(Matrix4 & wtrans, int numverts, const float * cnv,
+                      int numstrips, const int *vertsperstrip,
+                      const int *facets, int matindex);
+#endif
   void tristrip(Matrix4 & wtrans, int numverts, const float * cnv,
                 int numstrips, const int *vertsperstrip,
                 const int *facets, int matindex);

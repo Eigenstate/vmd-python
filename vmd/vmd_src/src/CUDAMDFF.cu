@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2007-2014 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: CUDAMDFF.cu,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.75 $      $Date: 2015/04/07 20:41:26 $
+ *      $Revision: 1.79 $      $Date: 2019/01/17 21:38:54 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -28,11 +28,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cuda.h>
-#include <float.h> // FLT_MAX etc
-
+#if CUDART_VERSION >= 9000
+#include <cuda_fp16.h> // need to explicitly include for CUDA 9.0
+#endif
 #if CUDART_VERSION < 4000
 #error The VMD MDFF feature requires CUDA 4.0 or later
 #endif
+
+#include <float.h> // FLT_MAX etc
+
 
 #include "Inform.h"
 #include "utilities.h"
@@ -588,6 +592,43 @@ inline __device__ float calc_cc(float sums_ref, float sums_synth,
 }
 
 
+
+// #define VMDUSESHUFFLE 1
+#if defined(VMDUSESHUFFLE) && __CUDA_ARCH__ >= 300 && CUDART_VERSION >= 9000
+// New warp shuffle-based CC sum reduction for Kepler and later GPUs.
+inline __device__ void cc_sumreduction(int tid, int totaltb, 
+                                float4 &total_cc_sums,
+                                float &total_lcc,
+                                int &total_lsize,
+                                float4 *tb_cc_sums,
+                                float *tb_lcc,
+                                int *tb_lsize) {
+  total_cc_sums = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+  total_lcc = 0.0f;
+  total_lsize = 0;
+
+  // use precisely one warp to do the final reduction
+  if (tid < warpSize) {
+    for (int i=tid; i<totaltb; i+=warpSize) {
+      total_cc_sums += tb_cc_sums[i];
+      total_lcc     += tb_lcc[i];
+      total_lsize   += tb_lsize[i];
+    }
+
+    // perform intra-warp parallel reduction...
+    // general loop version of parallel sum-reduction
+    for (int mask=warpSize/2; mask>0; mask>>=1) {
+      total_cc_sums.x += __shfl_xor_sync(0xffffffff, total_cc_sums.x, mask);
+      total_cc_sums.y += __shfl_xor_sync(0xffffffff, total_cc_sums.y, mask);
+      total_cc_sums.z += __shfl_xor_sync(0xffffffff, total_cc_sums.z, mask);
+      total_cc_sums.w += __shfl_xor_sync(0xffffffff, total_cc_sums.w, mask);
+      total_lcc     += __shfl_xor_sync(0xffffffff, total_lcc, mask);
+      total_lsize   += __shfl_xor_sync(0xffffffff, total_lsize, mask);
+    }
+  }
+}
+#else
+// shared memory based CC sum reduction 
 inline __device__ void cc_sumreduction(int tid, int totaltb, 
                                 float4 &total_cc_sums,
                                 float &total_lcc,
@@ -629,6 +670,7 @@ inline __device__ void cc_sumreduction(int tid, int totaltb,
   total_lcc = tb_lcc[0];
   total_lsize = tb_lsize[0];
 }
+#endif
 
 
 inline __device__ void thread_cc_sum(float ref, float density,
@@ -750,6 +792,92 @@ __global__ static void gaussdensity_cc(int totaltb,
   }
 
 
+#if defined(VMDUSESHUFFLE) && __CUDA_ARCH__ >= 300 && CUDART_VERSION >= 9000
+  // all threads write their local sums to shared memory...
+  __shared__ float2 tb_cc_means_s[TOTALBLOCKSZ];
+  __shared__ float2 tb_cc_squares_s[TOTALBLOCKSZ];
+  __shared__ float tb_lcc_s[TOTALBLOCKSZ];
+  __shared__ int tb_lsize_s[TOTALBLOCKSZ];
+
+  tb_cc_means_s[tid] = thread_cc_means;
+  tb_cc_squares_s[tid] = thread_cc_squares;
+  tb_lcc_s[tid] = thread_lcc;
+  tb_lsize_s[tid] = thread_lsize;
+  __syncthreads(); // all threads must hit syncthreads call...
+
+  // use precisely one warp to do the thread-block-wide reduction
+  if (tid < warpSize) {
+    float2 tmp_cc_means = make_float2(0.0f, 0.0f);
+    float2 tmp_cc_squares = make_float2(0.0f, 0.0f);
+    float tmp_lcc = 0.0f;
+    int tmp_lsize = 0;
+    for (int i=tid; i<TOTALBLOCKSZ; i+=warpSize) {
+      tmp_cc_means   += tb_cc_means_s[i];
+      tmp_cc_squares += tb_cc_squares_s[i];
+      tmp_lcc        += tb_lcc_s[i];
+      tmp_lsize      += tb_lsize_s[i];
+    }
+
+    // perform intra-warp parallel reduction...
+    // general loop version of parallel sum-reduction
+    for (int mask=warpSize/2; mask>0; mask>>=1) {
+      tmp_cc_means.x   += __shfl_xor_sync(0xffffffff, tmp_cc_means.x, mask);
+      tmp_cc_means.y   += __shfl_xor_sync(0xffffffff, tmp_cc_means.y, mask);
+      tmp_cc_squares.x += __shfl_xor_sync(0xffffffff, tmp_cc_squares.x, mask);
+      tmp_cc_squares.y += __shfl_xor_sync(0xffffffff, tmp_cc_squares.y, mask);
+      tmp_lcc          += __shfl_xor_sync(0xffffffff, tmp_lcc, mask);
+      tmp_lsize        += __shfl_xor_sync(0xffffffff, tmp_lsize, mask);
+    }
+
+    // write per-thread-block partial sums to global memory,
+    // if a per-thread-block CC output array is provided, write the 
+    // local CC for this thread block out, and finally, check if we 
+    // are the last thread block to finish, and finalize the overall
+    // CC results for the entire grid of thread blocks.
+    if (tid == 0) {   
+      unsigned int bid = blockIdx.z * gridDim.x * gridDim.y +
+                         blockIdx.y * gridDim.x + blockIdx.x;
+
+      tb_cc_sums[bid] = make_float4(tmp_cc_means.x, tmp_cc_means.y,
+                                    tmp_cc_squares.x, tmp_cc_squares.y);
+      tb_lcc[bid]     = tmp_lcc;
+      tb_lsize[bid]   = tmp_lsize;
+
+      if (tb_CC != NULL) {
+        float cc = calc_cc(tb_cc_means_s[0].x, tb_cc_means_s[0].y,
+                           tb_cc_squares_s[0].x, tb_cc_squares_s[0].y,
+                           tb_lsize_s[0], tb_lcc_s[0]);
+
+        // write local per-thread-block CC to global memory
+        tb_CC[bid]   = cc;
+      }
+
+      __threadfence();
+
+      unsigned int value = atomicInc(&tbcatomic[0], totaltb);
+      isLastBlockDone = (value == (totaltb - 1));
+    }
+  }
+  __syncthreads();
+
+  if (isLastBlockDone) {
+    float4 total_cc_sums;
+    float total_lcc;
+    int total_lsize;
+    cc_sumreduction(tid, totaltb, total_cc_sums, total_lcc, total_lsize,
+                    tb_cc_sums, tb_lcc, tb_lsize); 
+
+    if (tid == 0) {
+      tb_cc_sums[totaltb] = total_cc_sums;
+      tb_lcc[totaltb] = total_lcc;
+      tb_lsize[totaltb] = total_lsize;
+    }
+ 
+    reset_atomic_counter(&tbcatomic[0]);
+  }
+
+#else
+
   // all threads write their local sums to shared memory...
   __shared__ float2 tb_cc_means_s[TOTALBLOCKSZ];
   __shared__ float2 tb_cc_squares_s[TOTALBLOCKSZ];
@@ -794,6 +922,7 @@ __global__ static void gaussdensity_cc(int totaltb,
     }
     __syncthreads(); // all threads must hit syncthreads call...
   }
+//#endif
 
   // write per-thread-block partial sums to global memory,
   // if a per-thread-block CC output array is provided, write the 
@@ -847,6 +976,7 @@ __global__ static void gaussdensity_cc(int totaltb,
     }
 #endif
   }
+#endif
 }
 
 

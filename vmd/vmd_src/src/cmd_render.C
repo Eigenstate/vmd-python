@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: cmd_render.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.43 $       $Date: 2016/11/28 03:05:07 $
+ *      $Revision: 1.47 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -53,8 +53,8 @@ int text_cmd_render(ClientData cd, Tcl_Interp *interp, int argc,
     } else if (!strupncmp(argv[1], "default", CMDLEN)) { 
       const char *opt = app->filerender_default_option(argv[2]);
       if (!opt) {
-        Tcl_AppendResult(interp, "render:\n",
-        "No rendering method '", argv[2], "' available.", NULL);
+        Tcl_AppendResult(interp, "render:\n", "No rendering method '", 
+                         argv[2], "' available.", NULL);
         return TCL_ERROR;
       }
       Tcl_AppendResult(interp, opt, NULL);
@@ -151,9 +151,10 @@ int text_cmd_render(ClientData cd, Tcl_Interp *interp, int argc,
         Tcl_AppendElement(interp, app->filerender_cur_format(argv[2]));
         return TCL_OK;
       }
-      if (app->filerender_set_format(argv[2], argv[3])) return TCL_OK;
-      Tcl_AppendResult(interp, 
-          "Unable to set render output format to ", argv[3], NULL);
+      if (app->filerender_set_format(argv[2], argv[3]))
+        return TCL_OK;
+      Tcl_AppendResult(interp, "Unable to set render output format to ", 
+                       argv[3], NULL);
       return TCL_ERROR;
 
     } else {
@@ -196,12 +197,11 @@ int text_cmd_render(ClientData cd, Tcl_Interp *interp, int argc,
 int text_cmd_tkrender(ClientData cd, Tcl_Interp *interp, int argc,
                       const char *argv[]) {
   if (!Tcl_PkgPresent(interp, "Tk", TK_VERSION, 0)) {
-    Tcl_SetResult(interp, "Tk not available.", TCL_STATIC);
+    Tcl_SetResult(interp, (char *) "Tk not available.", TCL_STATIC);
     return TCL_ERROR;
   }
   if (argc != 2) {
-    Tcl_SetResult(interp, "tkrender usage:\ntkrender <photo handle>\n",
-        TCL_STATIC);
+    Tcl_SetResult(interp, (char *) "tkrender usage:\ntkrender <photo handle>\n", TCL_STATIC);
     return TCL_ERROR;
   }
   Tk_PhotoHandle handle = Tk_FindPhoto(interp, argv[1]);
@@ -213,12 +213,11 @@ int text_cmd_tkrender(ClientData cd, Tcl_Interp *interp, int argc,
   int xs=0, ys=0;
   DisplayDevice *display = ((VMDApp *)cd)->display;
   display->update(TRUE);
-  unsigned char *img = display->readpixels(xs, ys);
+  unsigned char *img = display->readpixels_rgb3u(xs, ys);
   display->update(TRUE);
 
   if (!img) {
-    Tcl_SetResult(interp, "Error reading pixel data from display device.",
-        TCL_STATIC);
+    Tcl_SetResult(interp, (char *) "Error reading pixel data from display device.", TCL_STATIC);
     return TCL_ERROR;
   }
 

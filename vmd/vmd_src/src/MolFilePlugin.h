@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: MolFilePlugin.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.40 $      $Date: 2016/11/28 03:05:01 $
+ *      $Revision: 1.45 $      $Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -60,31 +60,28 @@ public:
 
   int can_read_structure() const  { return plugin->read_structure != NULL; }
   int can_read_bonds() const      { return plugin->read_bonds != NULL; }
+  int can_read_pagealigned_timesteps() const { 
+#if vmdplugin_ABIVERSION > 17
+    return plugin->read_timestep_pagealign_size != NULL; 
+#else
+    return 0;
+#endif
+  }
   int can_read_timesteps() const  { return plugin->read_next_timestep != NULL;}
   int can_read_graphics() const   { return plugin->read_rawgraphics != NULL; }
   int can_read_volumetric() const { return plugin->read_volumetric_metadata != NULL; }
   int can_read_metadata() const   { return plugin->read_molecule_metadata != NULL; }
-#if vmdplugin_ABIVERSION > 9
-  // XXX new plugin ABI routines
   int can_read_qm() const         { return plugin->read_qm_metadata != NULL; }
   int can_read_qm_timestep()      { return plugin->read_timestep != NULL; }
   int can_read_angles()           { return plugin->read_angles != NULL; }
-#endif
-#if vmdplugin_ABIVERSION > 10
   int can_read_timestep_metadata() { return plugin->read_timestep_metadata != NULL; }
-#endif
-#if vmdplugin_ABIVERSION > 11
   int can_read_qm_timestep_metadata() { return plugin->read_qm_timestep_metadata != NULL; }
-#endif
 
   int can_write_structure() const { return plugin->write_structure != NULL; }
   int can_write_bonds() const     { return plugin->write_bonds != NULL; }
   int can_write_timesteps() const { return plugin->write_timestep != NULL; }
-#if vmdplugin_ABIVERSION > 9
-  // XXX new plugin ABI routines
   int can_write_angles()           { return plugin->read_angles != NULL; }
   int can_write_volumetric() const { return plugin->write_volumetric_data != NULL; }
-#endif
 
   int init_read(const char *file);        ///< open file for reading; 
                                           ///< read natoms.  Return 0
@@ -107,7 +104,21 @@ public:
   /// bonds are found then the molecular topology is recalculated as well.
   int read_optional_structure(Molecule *m, int filebonds);
 
-  Timestep *next(Molecule *m);           ///< next timestep
+  /// Query the molfile plugin to determine whether or not memory
+  /// allocations used for atomic coordinates and PBC unit cell information
+  /// need to be aligned to a particular virtual memory or filesystem 
+  /// page size boundary to facilitate kernel-bypass unbuffered I/O,
+  /// e.g., as used by jsplugin.
+  /// This API should be called prior to the first call to read a timestep.
+  /// The required page alignment size (in bytes) is returned to the caller.
+  /// If this API has not been called, then the molfile plugin should revert 
+  /// to standard kernel-buffered I/O and suffer the associated performance 
+  /// loss. If a page-aligned allocation is not required for the file 
+  /// being read, the plugin will return an alignment size of 1.
+  /// On error, a value of -1 will be returned.
+  int read_timestep_pagealign_size(void);
+
+  Timestep *next(Molecule *m, int ts_pagealign_sz=1); ///< next timestep
   int skip(Molecule *m);                 ///< skip over a step; return 0 on success.
 
   /// Read raw graphics data into the given molecule
@@ -120,10 +131,8 @@ public:
   /// Read file metadata into molecule.  Return 0 on success.
   int read_metadata(Molecule *);
 
-#if vmdplugin_ABIVERSION > 9
   /// Read QM data into molecule.  Return 0 on success.
   int read_qm_data(Molecule *);
-#endif
 
   int init_write(const char *file, int natoms);
 
@@ -134,10 +143,8 @@ public:
   int write_structure(Molecule *, const int *sel);
   int write_timestep(const Timestep *, const int *sel); 
 
-#if vmdplugin_ABIVERSION > 9
   /// Write volumetric data
   int write_volumetric(Molecule *, int set);
-#endif
 
 };
 

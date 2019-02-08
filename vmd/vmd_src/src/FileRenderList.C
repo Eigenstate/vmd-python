@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: FileRenderList.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.93 $	$Date: 2016/11/28 03:04:59 $
+ *	$Revision: 1.96 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -101,6 +101,8 @@ FileRenderList::FileRenderList(VMDApp *vmdapp) : app(vmdapp) {
 #endif
 
 #if defined(VMDLIBOPTIX)
+  // ensure special member variables are cleared
+  cluster_dev = NULL;
   if (!getenv("VMDNOOPTIX")) {
     int optixdevcount=OptiXRenderer::device_count();
 
@@ -119,7 +121,6 @@ FileRenderList::FileRenderList(VMDApp *vmdapp) : app(vmdapp) {
     // check for user-supplied remote VCA rendering cluster URL, user, passwd,
     // if all three are set, we attach to the remote cluster and if successful,
     // the remote connection is used during OptiX context initialization.
-    cluster_dev = NULL;
 
 #if defined(VMDOPTIX_PROGRESSIVEAPI)
     const char *vca_url  = getenv("VMDOPTIX_CLUSTER");
@@ -145,9 +146,13 @@ FileRenderList::FileRenderList(VMDApp *vmdapp) : app(vmdapp) {
       }
 
       add(new OptiXDisplayDevice(vmdapp, 0, cluster_dev));
-#if defined(VMDOPENGL) && defined(VMDOPTIX_INTERACTIVE_OPENGL)
+
+      // Even if we have no GUI, then we now add interactive renderer
+      // to be able to support remote rendering via video streaming
+      // from clusters, supercomputers, etc.  The renderer launch code
+      // will determine whether or not to launch a GUI-based interactive
+      // renderer or a renderer intended solely for video streaming.
       add(new OptiXDisplayDevice(vmdapp, 1, cluster_dev));
-#endif
     }
   }
 #endif

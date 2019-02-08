@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -147,11 +147,13 @@ static void depthcue_cb(Fl_Widget *w, void *) {
     ((Fl_Menu_ *)w)->mvalue()->value());
 }
 
+#if !defined(VMDLEANGUI)
 static void culling_cb(Fl_Widget *w, void *) {
   VMDApp *app = (VMDApp *)(w->user_data());
   app->display_set_culling(
     ((Fl_Menu_ *)w)->mvalue()->value());
 }
+#endif
 
 static void fps_cb(Fl_Widget *w, void *) {
   VMDApp *app = (VMDApp *)(w->user_data());
@@ -204,11 +206,13 @@ static void stereoswap_cb(Fl_Widget *w, void *v) {
   }
 }
 
+#if !defined(VMDLEANGUI)
 static void cachemode_cb(Fl_Widget *w, void *v) {
   Fl_Menu_ *m = (Fl_Menu_ *)w;
   VMDApp *app = (VMDApp *)v;
   app->display_set_cachemode(m->text());
 }
+#endif
 
 static void rendermode_cb(Fl_Widget *w, void *v) {
   Fl_Menu_ *m = (Fl_Menu_ *)w;
@@ -475,6 +479,35 @@ static int cbdata[] = {
   0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22
 };
 
+
+enum DispMenu {
+   DM_RESETVIEW=0,
+   DM_STOPROTATION,
+   DM_PERSPECTIVE,   
+   DM_ORTHOGRAPHIC,
+   DM_ANTIALIASING,
+   DM_DEPTHCUEING,
+#if !defined(VMDLEANGUI)
+   DM_CULLING,
+#endif
+   DM_FPS,
+   DM_LIGHT0,
+   DM_LIGHT1,
+   DM_LIGHT2,
+   DM_LIGHT3,
+   DM_AXES,
+   DM_BACKGROUND,
+   DM_STAGE,
+   DM_STEREO,
+   DM_STEREOEYESWAP,
+#if !defined(VMDLEANGUI)
+   DM_CACHEMODE,
+#endif
+   DM_RENDERMODE,
+   DM_DISPSETTINGS,
+   DM_LASTMENUITEM
+};
+
 static const Fl_Menu_Item init_display_menuitems[] = {
   {"Reset View", '=', resetview_cb},
   {"Stop Rotation", 0, stoprotation_cb, NULL, FL_MENU_DIVIDER},
@@ -482,7 +515,9 @@ static const Fl_Menu_Item init_display_menuitems[] = {
   {"Orthographic", 0, proj_cb, NULL, FL_MENU_RADIO | FL_MENU_DIVIDER},
   {"Antialiasing", 0, aa_cb, NULL, FL_MENU_TOGGLE  | FL_MENU_INACTIVE},
   {"Depth Cueing", 0, depthcue_cb, NULL, FL_MENU_TOGGLE | FL_MENU_INACTIVE},
+#if !defined(VMDLEANGUI)
   {"Culling", 0, culling_cb, NULL, FL_MENU_TOGGLE | FL_MENU_INACTIVE},
+#endif
   {"FPS Indicator", 0, fps_cb, NULL, FL_MENU_TOGGLE | FL_MENU_DIVIDER},
   {"Light 0", 0, light_cb, cbdata+0, FL_MENU_TOGGLE},
   {"Light 1", 0, light_cb, cbdata+1, FL_MENU_TOGGLE},
@@ -493,7 +528,9 @@ static const Fl_Menu_Item init_display_menuitems[] = {
   {"Stage",   0, NULL, NULL, FL_SUBMENU_POINTER | FL_MENU_DIVIDER},
   {"Stereo",  0, NULL, NULL, FL_SUBMENU_POINTER},
   {"Stereo Eye Swap",  0, NULL, NULL, FL_SUBMENU_POINTER | FL_MENU_DIVIDER},
+#if !defined(VMDLEANGUI)
   {"Cachemode", 0, NULL, NULL, FL_SUBMENU_POINTER},
+#endif
   {"Rendermode", 0, NULL, NULL, FL_SUBMENU_POINTER | FL_MENU_DIVIDER},
   {"Display Settings...", 0, menu_cb, (void *)"display"},
   {0}
@@ -745,45 +782,63 @@ void MainFltkMenu::update_mousemode(Command *cmd) {
 }
 
 void MainFltkMenu::update_dispmode() {
+  // XXX the implementation here is ugly because older FLTK APIs
+  // lack the value(int) methods, and we can only call set/clear().
+  // With FLTK 1.3.x we could instead do things somewhat more cleanly,
+  // display_menuitems[DM_ANTIALIASING].value((app->display->aa_enabled()!=0));
+
+  // match the active projection string and set radio button state
   const char *projname = app->display->get_projection();
-  for (int ii=2; ii<=3; ii++) {
+  for (int ii=DM_PERSPECTIVE; ii<=DM_ORTHOGRAPHIC; ii++) {
     if (!strupcmp(projname, display_menuitems[ii].label())) {
       display_menuitems[ii].setonly();
       break;
     }
   }
+
+  // update antialiasing on/off state
   if (app->display->aa_enabled()) 
-    display_menuitems[4].set();
+    display_menuitems[DM_ANTIALIASING].set();
   else
-    display_menuitems[4].clear();
+    display_menuitems[DM_ANTIALIASING].clear();
 
+  // update depth cueing on/off state
   if (app->display->cueing_enabled()) 
-    display_menuitems[5].set();
+    display_menuitems[DM_DEPTHCUEING].set();
   else
-    display_menuitems[5].clear();
+    display_menuitems[DM_DEPTHCUEING].clear();
 
+#if !defined(VMDLEANGUI)
+  // update backface culling on/off state
   if (app->display->culling_enabled()) 
-    display_menuitems[6].set();
+    display_menuitems[DM_CULLING].set();
   else
-    display_menuitems[6].clear();
+    display_menuitems[DM_CULLING].clear();
+#endif
 
+  // update display FPS on/off state
   if (app->fps->displayed()) 
-    display_menuitems[7].set();
+    display_menuitems[DM_FPS].set();
   else
-    display_menuitems[7].clear();
+    display_menuitems[DM_FPS].clear();
 
+  // update light 0,1,2,3 on/off states
   for (int j=0; j<4; j++)
     if (app->scene->light_active(j))
-      display_menuitems[8+j].set();
+      display_menuitems[DM_LIGHT0+j].set();
     else
-      display_menuitems[8+j].clear();
+      display_menuitems[DM_LIGHT0+j].clear();
 
+  // set active submenu states for axes, background, stage,
+  // stereo mode, stereo eye swap, display list caching, and rendering mode
   axes_menuitems[app->axes->location()].setonly();
   backgroundmode_menuitems[app->scene->background_mode()].setonly();
   stage_menuitems[app->stage->location()].setonly();
   stereo_menuitems[app->display->stereo_mode()].setonly();
   stereoswap_menuitems[app->display->stereo_swap()].setonly();
+#if !defined(VMDLEANGUI)
   cachemode_menuitems[app->display->cache_mode()].setonly();
+#endif
   rendermode_menuitems[app->display->render_mode()].setonly();
 } 
     
@@ -896,9 +951,11 @@ MainFltkMenu::MainFltkMenu(VMDApp *vmdapp)
   display_menuitems = new Fl_Menu_Item[menulen];
   for (j=0; j<menulen; j++)
     display_menuitems[j] = init_display_menuitems[j];
-  if (app->display->aa_available()) display_menuitems[4].activate();
-  if (app->display->cueing_available()) display_menuitems[5].activate();
-  if (app->display->culling_available()) display_menuitems[6].activate();
+  if (app->display->aa_available()) display_menuitems[DM_ANTIALIASING].activate();
+  if (app->display->cueing_available()) display_menuitems[DM_DEPTHCUEING].activate();
+#if !defined(VMDLEANGUI)
+  if (app->display->culling_available()) display_menuitems[DM_CULLING].activate();
+#endif
   
   menulen = app->axes->locations();
   axes_menuitems_storage = new Fl_Menu_Item[menulen+2]; 
@@ -910,7 +967,7 @@ MainFltkMenu::MainFltkMenu(VMDApp *vmdapp)
     axes_menuitems[j] = item;
   }
   axes_menuitems[menulen] = nullitem;
-  display_menuitems[12].user_data(axes_menuitems);
+  display_menuitems[DM_AXES].user_data(axes_menuitems);
 
   menulen = 2;
   backgroundmode_menuitems_storage = new  Fl_Menu_Item[menulen+2];
@@ -925,7 +982,7 @@ MainFltkMenu::MainFltkMenu(VMDApp *vmdapp)
     backgroundmode_menuitems[1] = item;
   }
   backgroundmode_menuitems[menulen] = nullitem;
-  display_menuitems[13].user_data(backgroundmode_menuitems);
+  display_menuitems[DM_BACKGROUND].user_data(backgroundmode_menuitems);
  
   menulen = app->stage->locations();
   stage_menuitems_storage = new Fl_Menu_Item[menulen+2]; 
@@ -936,7 +993,7 @@ MainFltkMenu::MainFltkMenu(VMDApp *vmdapp)
     stage_menuitems[j] = item;
   }
   stage_menuitems[menulen] = nullitem;
-  display_menuitems[14].user_data(stage_menuitems);
+  display_menuitems[DM_STAGE].user_data(stage_menuitems);
   
   menulen = app->display->num_stereo_modes();
   stereo_menuitems_storage = new Fl_Menu_Item[menulen+2]; 
@@ -947,7 +1004,7 @@ MainFltkMenu::MainFltkMenu(VMDApp *vmdapp)
     stereo_menuitems[j] = item;
   }
   stereo_menuitems[menulen] = nullitem;
-  display_menuitems[15].user_data(stereo_menuitems);
+  display_menuitems[DM_STEREO].user_data(stereo_menuitems);
 
   menulen = 2;
   stereoswap_menuitems_storage = new Fl_Menu_Item[menulen+2]; 
@@ -959,8 +1016,9 @@ MainFltkMenu::MainFltkMenu(VMDApp *vmdapp)
     stereoswap_menuitems[j] = item;
   }
   stereoswap_menuitems[menulen] = nullitem;
-  display_menuitems[16].user_data(stereoswap_menuitems);
+  display_menuitems[DM_STEREOEYESWAP].user_data(stereoswap_menuitems);
 
+#if !defined(VMDLEANGUI)
   menulen = app->display->num_cache_modes();
   cachemode_menuitems_storage = new Fl_Menu_Item[menulen+2]; 
   cachemode_menuitems_storage[0] = nullitem;
@@ -970,7 +1028,8 @@ MainFltkMenu::MainFltkMenu(VMDApp *vmdapp)
     cachemode_menuitems[j] = item;
   }
   cachemode_menuitems[menulen] = nullitem;
-  display_menuitems[17].user_data(cachemode_menuitems);
+  display_menuitems[DM_CACHEMODE].user_data(cachemode_menuitems);
+#endif
   
   menulen = app->display->num_render_modes();
   rendermode_menuitems_storage = new Fl_Menu_Item[menulen+2]; 
@@ -981,7 +1040,7 @@ MainFltkMenu::MainFltkMenu(VMDApp *vmdapp)
     rendermode_menuitems[j] = item;
   }
   rendermode_menuitems[menulen] = nullitem;
-  display_menuitems[18].user_data(rendermode_menuitems);
+  display_menuitems[DM_RENDERMODE].user_data(rendermode_menuitems);
 
   update_dispmode();
 
@@ -1214,7 +1273,9 @@ MainFltkMenu::~MainFltkMenu() {
   delete[] stage_menuitems_storage;
   delete[] stereo_menuitems_storage;
   delete[] stereoswap_menuitems_storage;
+#if !defined(VMDLEANGUI)
   delete[] cachemode_menuitems_storage;
+#endif
   delete[] rendermode_menuitems_storage;
   delete[] mouse_menuitems_storage;
   delete[] browserpopup_menuitems;

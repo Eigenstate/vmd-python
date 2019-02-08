@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -21,6 +21,8 @@ class Fl_Int_Input;
 class Fl_Check_Button;
 class Fl_Counter;
 class Fl_Button;
+
+#define VMDLEANGUI 1
 
 typedef enum {MENU_ALWAYS_ON=0, MENU_NEED_SEL=1, MENU_NEED_UNIQUE_SEL=3} MenuBehavior;
 
@@ -43,7 +45,9 @@ private:
   Fl_Menu_Item *stage_menuitems;
   Fl_Menu_Item *stereo_menuitems;
   Fl_Menu_Item *stereoswap_menuitems;
+#if !defined(VMDLEANGUI)
   Fl_Menu_Item *cachemode_menuitems;
+#endif
   Fl_Menu_Item *rendermode_menuitems;
   Fl_Menu_Item *mouse_menuitems;
   Fl_Menu_Item *browserpopup_menuitems;
@@ -55,7 +59,9 @@ private:
   Fl_Menu_Item *stereo_menuitems_storage;
   Fl_Menu_Item *stereoswap_menuitems_storage;
   Fl_Menu_Item *rendermode_menuitems_storage;
+#if !defined(VMDLEANGUI)
   Fl_Menu_Item *cachemode_menuitems_storage;
+#endif
   Fl_Menu_Item *mouse_menuitems_storage;
         
   Fl_Slider *frameslider;

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Timestep.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.68 $	$Date: 2016/11/28 03:05:05 $
+ *	$Revision: 1.71 $	$Date: 2019/01/17 21:21:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -28,12 +28,9 @@
 #include "Inform.h"
 #include "utilities.h"
 
-/* Set the maximum direct I/O aligned block size we are willing to support */
-#define TS_MAX_BLOCKIO 4096
-
-/* allocate memory and return a pointer that is aligned on a given   */
-/* byte boundary, to be used for page- or sector-aligned I/O buffers */
-/* We use this since posix_memalign() is not widely available...     */
+// allocate memory and return a pointer that is aligned on a given
+// byte boundary, to be used for page- or sector-aligned I/O buffers
+// We use this since posix_memalign() is not widely available...
 #if 1 
 /* sizeof(unsigned long) == sizeof(void*) */
 #define myintptrtype unsigned long
@@ -55,17 +52,19 @@ static void *alloc_aligned_ptr(size_t sz, size_t blocksz, void **unalignedptr) {
 
 
 ///  constructor  
-Timestep::Timestep(int n) {
+Timestep::Timestep(int n, int pagealignsz) {
   for(int i=0; i < TSENERGIES; energy[i++] = 0.0);
   num = n;
-#if defined(TS_MAX_BLOCKIO)
-  pos = (float *) alloc_aligned_ptr(3L*num*sizeof(float), 
-                                    TS_MAX_BLOCKIO, (void**) &pos_ptr);
-#else
-  pos_ptr = new float[3L * num]
-  pos=pos_ptr;
-#endif
-  vel = NULL;
+  page_align_sz = pagealignsz;
+
+  if (page_align_sz > 1) {
+    pos = (float *) alloc_aligned_ptr(3L*num*sizeof(float), 
+                                      page_align_sz, (void**) &pos_ptr);
+  } else {
+    pos_ptr = (float *) calloc(1, 3L*num*sizeof(float));
+    pos=pos_ptr;
+  }
+  vel   = NULL;
   force = NULL;
   user  = NULL;
   user2 = NULL;
@@ -82,17 +81,18 @@ Timestep::Timestep(int n) {
 /// copy constructor
 Timestep::Timestep(const Timestep& ts) {
   num = ts.num;
+  page_align_sz = ts.page_align_sz;
 
-#if defined(TS_MAX_BLOCKIO)
   // If we supprot block-based direct I/O, we must use memory buffers
   // that are padded to a full block size, and  
-  pos = (float *) alloc_aligned_ptr(3L*num*sizeof(float), 
-                                    TS_MAX_BLOCKIO, (void**) &pos_ptr);
-#else
-  pos_ptr = new float[3L * num]
-  pos=pos_ptr;
-#endif
-  memcpy(pos, ts.pos, 3L*num*sizeof(float));
+  if (page_align_sz > 1) {
+    pos = (float *) alloc_aligned_ptr(3L*num*sizeof(float), 
+                                      page_align_sz, (void**) &pos_ptr);
+  } else {
+    pos_ptr = (float *) calloc(1, 3L*num*sizeof(float));
+    pos=pos_ptr;
+  }
+  memcpy(pos, ts.pos, 3L*num*sizeof(float)); // copy only payload data
 
   if (ts.force) {
     force = new float[3L * num];
@@ -158,12 +158,8 @@ Timestep::Timestep(const Timestep& ts) {
 Timestep::~Timestep() {
   delete [] force;
   delete [] vel;
-#if defined(TS_MAX_BLOCKIO)
   if (pos_ptr)
     free(pos_ptr);
-#else
-  delete [] pos_ptr;
-#endif
   delete [] user;
   delete [] user2;
   delete [] user3;
@@ -171,6 +167,7 @@ Timestep::~Timestep() {
   if (qm_timestep) 
     delete qm_timestep;
 }
+
 
 // reset coords and related items to 0
 void Timestep::zero_values() {
@@ -182,6 +179,7 @@ void Timestep::zero_values() {
   for(int i=0; i < TSENERGIES; energy[i++] = 0.0);
   timesteps=0;
 }
+
 
 void Timestep::get_transform_vectors(float A[3], float B[3], float C[3]) const
 {
@@ -219,6 +217,7 @@ void Timestep::get_transform_vectors(float A[3], float B[3], float C[3]) const
   vec_zero(C); C[0] = Cx; C[1] = Cy; C[2] = Cz;
 }
 
+
 void Timestep::get_transforms(Matrix4 &a, Matrix4 &b, Matrix4 &c) const {
   float A[3], B[3], C[3];
   get_transform_vectors(A, B, C);
@@ -226,6 +225,7 @@ void Timestep::get_transforms(Matrix4 &a, Matrix4 &b, Matrix4 &c) const {
   b.translate(B);
   c.translate(C);
 }
+
 
 void Timestep::get_transform_from_cell(const int *cell, Matrix4 &mat) const {
   float A[3], B[3], C[3];

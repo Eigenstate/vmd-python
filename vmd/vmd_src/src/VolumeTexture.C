@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: VolumeTexture.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.20 $      $Date: 2016/11/28 03:05:06 $
+ *      $Revision: 1.23 $      $Date: 2019/01/17 21:21:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -39,7 +39,7 @@ VolumeTexture::~VolumeTexture() {
   if (texmap) vmd_dealloc(texmap);
 }
 
-void VolumeTexture::setGridData(const VolumetricData *voldata) {
+void VolumeTexture::setGridData(VolumetricData *voldata) {
   if (v == voldata) return;
   v = voldata;
   if (texmap) {
@@ -50,18 +50,22 @@ void VolumeTexture::setGridData(const VolumetricData *voldata) {
   texid = 0;
 }
 
-int VolumeTexture::allocateTextureMap(int npixels) {
+int VolumeTexture::allocateTextureMap(long ntexels) {
   texid = 0;
   if (texmap) {
     vmd_dealloc(texmap);
     texmap = NULL;
   }
-  texmap = (unsigned char *) vmd_alloc(npixels*3L*sizeof(unsigned char));
+  long sz = ntexels*3L*sizeof(unsigned char);
+  texmap = (unsigned char *) vmd_alloc(sz);
   if (texmap == NULL) {
     msgErr << "Texture map allocation failed, out of memory?" << sendmsg;
+    msgErr << "Texture map texel count: " << ntexels << sendmsg;
+    msgErr << "Failed allocation of size: " << sz / (1024L*1024L) 
+           << "MB" <<sendmsg;
     return FALSE;
   }
-  memset(texmap, 0, npixels*3L*sizeof(unsigned char));
+  memset(texmap, 0, ntexels*3L*sizeof(unsigned char));
   texid = VMDApp::get_texserialnum();
   return TRUE;
 }
@@ -71,7 +75,7 @@ void VolumeTexture::generatePosTexture() {
   size[0] = size[1] = size[2] = 32; 
   int x, y, z;
   long addr, addr2;
-  long num = size[0]*size[1]*size[2];
+  long num = num_texels();
 
   if (!allocateTextureMap(num)) return;
 
@@ -128,7 +132,7 @@ void VolumeTexture::generateIndexTexture() {
   size[0] = size[1] = size[2] = 32; 
   int x, y, z;
   long addr, addr2, addr3, index;
-  long num = size[0]*size[1]*size[2];
+  long num = num_texels();
   unsigned char coltable[3 * 4096];
 
   if (!allocateTextureMap(num)) return;
@@ -170,7 +174,7 @@ void VolumeTexture::generateChargeTexture(float vmin, float vmax) {
   for (int i=0; i<3; i++) {
     size[i] = nextpower2(size[i]);
   }
-  long num = size[0]*size[1]*size[2];
+  long num = num_texels();
   if (!allocateTextureMap(num)) return;
 
   vrange = vmax - vmin;
@@ -223,7 +227,7 @@ void VolumeTexture::generateHSVTexture(float vmin, float vmax) {
   for (int i=0; i<3; i++) {
     size[i] = nextpower2(size[i]);
   }
-  long num = size[0]*size[1]*size[2];
+  long num = num_texels();
   if (!allocateTextureMap(num)) return;
 
   // build a fast color lookup table
@@ -283,7 +287,7 @@ void VolumeTexture::generateColorScaleTexture(float vmin, float vmax, const Scen
   for (int i=0; i<3; i++) {
     size[i] = nextpower2(size[i]);
   }
-  long num = size[0]*size[1]*size[2];
+  long num = num_texels();
   if (!allocateTextureMap(num)) return;
 
   vrange = vmax - vmin;
@@ -331,13 +335,15 @@ void VolumeTexture::generateContourLineTexture(float densityperline, float linew
   long addr, addr2;
   float xp, yp, zp;
 
+  float datamin, datamax;
+  v->datarange(datamin, datamax);
 printf("Contour lines...\n");
-printf("range / densityperline: %f\n", log(v->datamax - v->datamin) / densityperline);
+printf("range / densityperline: %f\n", log(datamax - datamin) / densityperline);
 
   size[0] = nextpower2(v->xsize*2);
   size[1] = nextpower2(v->ysize*2);
   size[2] = nextpower2(v->zsize*2);
-  long num = size[0]*size[1]*size[2];
+  long num = num_texels();
   if (!allocateTextureMap(num)) return;
 
   // map volume data scalars to contour line colors

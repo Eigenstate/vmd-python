@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: cmd_tool.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.34 $	$Date: 2016/11/28 03:05:07 $
+ *	$Revision: 1.36 $	$Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -191,12 +191,12 @@ int text_cmd_tool(ClientData cd, Tcl_Interp *interp, int argc,
     int i=0;
     Tool *tool;
 
-    if(argc==3) {  // default to 0
+    if (argc==3) {  // default to 0
       if (Tcl_GetInt(interp, argv[2], &i) != TCL_OK)
         return TCL_ERROR;
     }
     tool = vmdGlobal.uiVR->gettool(i);
-    if(tool==NULL) {
+    if (tool==NULL) {
       Tcl_AppendResult(interp, "No such tool.", NULL);
       return TCL_ERROR;
     }
@@ -206,20 +206,19 @@ int text_cmd_tool(ClientData cd, Tcl_Interp *interp, int argc,
 
     const float *pos = tool->position();
     const Matrix4 *rot = tool->orientation();
-    if(pos==NULL) {
+    if (pos==NULL) {
       Tcl_AppendResult(interp, "Tool has no position!", NULL);
       return TCL_ERROR;
     }
       
-    sprintf(buf,"Postion: %.2f %.2f %.2f\n"
-	    "Orientation: %.2f %.2f %.2f\n"
-	    "             %.2f %.2f %.2f\n"
-	    "             %.2f %.2f %.2f\n",
-	    pos[0],pos[1],pos[2],
-	    rot->mat[4*0+0],rot->mat[4*0+1],rot->mat[4*0+2],
-	    rot->mat[4*1+0],rot->mat[4*1+1],rot->mat[4*1+2],
-	    rot->mat[4*2+0],rot->mat[4*2+1],rot->mat[4*2+2]);
-
+    sprintf(buf, "Postion: %.2f %.2f %.2f\n"
+                 "Orientation: %.2f %.2f %.2f\n"
+                 "             %.2f %.2f %.2f\n"
+                 "             %.2f %.2f %.2f\n",
+            pos[0],pos[1],pos[2],
+            rot->mat[4*0+0],rot->mat[4*0+1],rot->mat[4*0+2],
+            rot->mat[4*1+0],rot->mat[4*1+1],rot->mat[4*1+2],
+            rot->mat[4*2+0],rot->mat[4*2+1],rot->mat[4*2+2]);
     Tcl_AppendResult(interp,buf, NULL);
 
     int j=0;
@@ -228,9 +227,8 @@ int text_cmd_tool(ClientData cd, Tcl_Interp *interp, int argc,
     float scale;
 
     offset = tool->getoffset();
-    if(offset==NULL) {
-      Tcl_AppendResult(interp, "tool info:\n",
-        "NULL Offset...?\n", NULL); 
+    if (offset==NULL) {
+      Tcl_AppendResult(interp, "tool info:\n", "NULL Offset...?\n", NULL); 
       return TCL_ERROR;
     }
 
@@ -244,22 +242,19 @@ int text_cmd_tool(ClientData cd, Tcl_Interp *interp, int argc,
     }
 
     sprintf(buf,"Scale: %.2f\n"
-	    "Offset: %.2f %.2f %.2f\n"
-	    "USL: %s\n", scale, offset[0],
-	    offset[1], offset[2], (const char *)buf2);
-
+            "Offset: %.2f %.2f %.2f\n"
+            "USL: %s\n", scale, offset[0],
+            offset[1], offset[2], (const char *)buf2);
     Tcl_AppendResult(interp,buf, NULL);
-
     return TCL_OK;
   }
-
 #endif  
 
   /* Assigning a representation to a tool */
   if(!strupncmp(argv[1], "rep", CMDLEN)) {
     if (argc != 3 && argc != 5) {
       Tcl_AppendResult(interp, "tool rep usage:\n",
-        "Usage: tool rep toolnum [molid repnum]", NULL); 
+                       "Usage: tool rep toolnum [molid repnum]", NULL); 
       return TCL_ERROR;
     }
     int toolnum, molid, repnum;
@@ -306,13 +301,13 @@ int text_cmd_tool(ClientData cd, Tcl_Interp *interp, int argc,
       int on=-1;
       if (Tcl_GetBoolean(interp, argv[2], &on) != TCL_OK)
         return TCL_ERROR;
-      if(on!=-1) {
-	cmdQueue->runcommand(new CmdToolCallback(on));
-	return TCL_OK;
+      if (on!=-1) {
+        cmdQueue->runcommand(new CmdToolCallback(on));
+        return TCL_OK;
       }
     }
     Tcl_AppendResult(interp," tool callback usage:\n",
-		     "Usage: tool callback on/off [<toolid>]",NULL);
+                     "Usage: tool callback on/off [<toolid>]",NULL);
     return TCL_ERROR;
   }
     

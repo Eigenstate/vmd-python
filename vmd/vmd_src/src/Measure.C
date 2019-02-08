@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: Measure.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.145 $       $Date: 2016/11/28 03:05:01 $
+ *      $Revision: 1.149 $       $Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -151,6 +151,45 @@ int measure_sumweights(const AtomSel *sel, int numweights,
   return MEASURE_NOERR;
 }
 
+extern int measure_center_perresidue(MoleculeList *mlist, const AtomSel *sel, const float *framepos,
+                   const float *weight, float *com) {
+  if (!sel)      return MEASURE_ERR_NOSEL;
+  if (!framepos) return MEASURE_ERR_NOFRAMEPOS;
+  if (!weight)   return MEASURE_ERR_NOWEIGHT;
+  if (!com)      return MEASURE_ERR_NOCOM;
+
+  Molecule *mol = mlist->mol_from_id(sel->molid());
+  int residue = mol->atom(sel->firstsel)->uniq_resid;
+  int rescount = 0;
+  int i, j = 0;
+  float x=0, y=0, z=0, w=0;
+  for (i=sel->firstsel; i<=sel->lastsel; i++) {
+    if (sel->on[i]) {
+      if (residue != mol->atom(i)->uniq_resid) {
+        com[3*rescount    ] = x / w;
+        com[3*rescount + 1] = y / w;
+        com[3*rescount + 2] = z / w;
+        residue = mol->atom(i)->uniq_resid;
+        rescount++;
+        x = 0;
+        y = 0;
+        z = 0;
+        w = 0;
+      }
+      float tw = weight[j];
+      w += tw;
+      x += tw * framepos[3*i  ];
+      y += tw * framepos[3*i+1];
+      z += tw * framepos[3*i+2];
+      j++;
+    }
+  }
+  com[3*rescount    ] = x / w;
+  com[3*rescount + 1] = y / w;
+  com[3*rescount + 2] = z / w;
+  rescount++;
+  return rescount;
+}
 
 // compute the center of mass
 // return -5 if total weight == 0, otherwise 0 for success.
@@ -161,17 +200,18 @@ int measure_center(const AtomSel *sel, const float *framepos,
   if (!weight)   return MEASURE_ERR_NOWEIGHT;
   if (!com)      return MEASURE_ERR_NOCOM;   
 
+  // use double precision floating point in case we have a large selection
   int i, j;
-  float x, y, z, w;
+  double x, y, z, w;
   j=0;
   w=x=y=z=0;
   for (i=sel->firstsel; i<=sel->lastsel; i++) {
     if (sel->on[i]) {
       float tw = weight[j];
-      w += tw;
-      x += tw * framepos[3L*i  ];
-      y += tw * framepos[3L*i+1];
-      z += tw * framepos[3L*i+2];
+      w += double(tw);
+      x += double(tw * framepos[3L*i  ]);
+      y += double(tw * framepos[3L*i+1]);
+      z += double(tw * framepos[3L*i+2]);
       j++;
     }
   }
@@ -180,9 +220,13 @@ int measure_center(const AtomSel *sel, const float *framepos,
     return MEASURE_ERR_BADWEIGHTSUM;
   }
 
-  com[0] = x / w;
-  com[1] = y / w;
-  com[2] = z / w;
+  x/=w;
+  y/=w;
+  z/=w;
+
+  com[0] = float(x);
+  com[1] = float(y);
+  com[2] = float(z);
 
   return MEASURE_NOERR;
 }
@@ -286,6 +330,48 @@ int measure_minmax(int num, const int *on, const float *framepos,
   return MEASURE_NOERR;
 }
 
+/*I'm going to assume that *avpos points to an array the length of 3*sel. The return
+value will indicate the ACTUAL number of residues in the selection,
+which tells the caller how many values should be in the returned list, or a number
+less than zero on error.
+*/
+int measure_avpos_perresidue(const AtomSel *sel, MoleculeList *mlist, 
+                         int start, int end, int step, float *avpos)  {
+  //Get the per-atom average position. We'll be accumulating on this array.
+  int retval = measure_avpos(sel, mlist, start, end, step, avpos);
+  if (retval != MEASURE_NOERR) {
+    return retval;
+  }
+  Molecule *mol = mlist->mol_from_id(sel->molid());
+  int residue = mol->atom(sel->firstsel)->uniq_resid;
+  int rescount = 0;
+  int ressize = 0;
+  float accumulate[3] = {0.0,0.0,0.0};
+  int j = 0, k, i;
+  for (i = sel->firstsel; i <= sel->lastsel; i++) {
+    if (sel->on[i]) {
+      if (residue != mol->atom(i)->uniq_resid) {
+        for (k = 0; k < 3; k++) {
+          avpos[3*rescount + k] = accumulate[k] / ressize;
+          accumulate[k] = 0.0;
+        }
+        residue = mol->atom(i)->uniq_resid;
+        ressize = 0;
+        rescount++;
+      }
+      for (k = 0; k < 3; k++) {
+        accumulate[k] += avpos[3*j + k];
+      }
+      j++;
+      ressize++;
+    }
+  }
+  for (k = 0; k < 3; k++) {
+    avpos[3*rescount + k] = accumulate[k] / ressize;
+  }
+  rescount++;
+  return rescount;
+}
 
 // Calculate average position of selected atoms over selected frames
 extern int measure_avpos(const AtomSel *sel, MoleculeList *mlist, 
@@ -426,6 +512,130 @@ extern int measure_dipole(const AtomSel *sel, MoleculeList *mlist,
 }
 
 
+extern int measure_hbonds(Molecule *mol, AtomSel *sel1, AtomSel *sel2, double cutoff, double maxangle, int *donlist, int *hydlist, int *acclist, int maxsize) {
+  int hbondcount = 0;
+  const float *pos = sel1->coordinates(mol->app->moleculeList);
+  const int *A = sel1->on;
+  const int *B = sel2 ? sel2->on : sel1->on;
+  GridSearchPair *pairlist = vmd_gridsearch2(pos, sel1->num_atoms, A, B, (float) cutoff, sel1->num_atoms * 27);
+  GridSearchPair *p, *tmp;
+  float donortoH[3], Htoacceptor[3];
+  
+  for (p=pairlist; p != NULL; p=tmp) {
+    MolAtom *a1 = mol->atom(p->ind1); 
+    MolAtom *a2 = mol->atom(p->ind2); 
+    
+    // neither the donor nor acceptor may be hydrogens
+    if (mol->atom(p->ind1)->atomType == ATOMHYDROGEN ||
+        mol->atom(p->ind2)->atomType == ATOMHYDROGEN) {
+      tmp = p->next;
+      free(p);
+      continue;
+    } 
+    if (!a1->bonded(p->ind2)) {
+      int b1 = a1->bonds;
+      int b2 = a2->bonds;
+      const float *coor1 = pos + 3*p->ind1;
+      const float *coor2 = pos + 3*p->ind2;
+      int k;
+      // first treat sel1 as donor
+      for (k=0; k<b1; k++) {
+        const int hindex = a1->bondTo[k];
+        if (mol->atom(hindex)->atomType == ATOMHYDROGEN) {         
+          const float *hydrogen = pos + 3*hindex;
+          vec_sub(donortoH,hydrogen,coor1);
+          vec_sub(Htoacceptor,coor2,hydrogen);
+          if (angle(donortoH, Htoacceptor)  < maxangle ) {
+            if (hbondcount < maxsize) {
+              donlist[hbondcount] = p->ind1;
+              acclist[hbondcount] = p->ind2;
+              hydlist[hbondcount] = hindex;
+            }
+            hbondcount++;
+          }
+        }
+      }
+      // if only one atom selection was given, treat sel2 as a donor as well
+      if (!sel2) {
+        for (k=0; k<b2; k++) {
+          const int hindex = a2->bondTo[k];
+          if (mol->atom(hindex)->atomType == ATOMHYDROGEN) {
+            const float *hydrogen = pos + 3*hindex;
+            vec_sub(donortoH,hydrogen,coor2);
+            vec_sub(Htoacceptor,coor1,hydrogen);
+            if (angle(donortoH, Htoacceptor)  < maxangle ) {
+              if (hbondcount < maxsize) {
+                donlist[hbondcount] = p->ind2;
+                acclist[hbondcount] = p->ind1;
+                hydlist[hbondcount] = hindex;
+              }
+              hbondcount++;
+            }
+          }
+        }
+      } 
+    }
+    tmp = p->next;
+    free(p);
+  }
+  return hbondcount;
+}
+
+int measure_rmsf_perresidue(const AtomSel *sel, MoleculeList *mlist, 
+                        int start, int end, int step, float *rmsf) {
+  if (!sel)                     return MEASURE_ERR_NOSEL;
+  if (sel->num_atoms == 0)      return MEASURE_ERR_NOATOMS;
+
+  Molecule *mymol = mlist->mol_from_id(sel->molid());
+  int maxframes = mymol->numframes();
+
+  // accept value of -1 meaning "all" frames
+  if (end == -1)
+    end = maxframes-1;
+
+  if (maxframes == 0 || start < 0 || start > end ||
+      end >= maxframes || step <= 0)
+    return MEASURE_ERR_BADFRAMERANGE;
+
+  int i;
+  for (i=0; i<sel->selected; i++)
+    rmsf[i] = 0.0f;
+
+  int rc; 
+  float *avpos = new float[3*sel->selected];
+  //rc will be the number of residues.
+  rc = measure_avpos_perresidue(sel, mlist, start, end, step, avpos);
+  if (rc <= 0) {
+    delete [] avpos;
+    return rc;
+  }
+  
+  int frame, avcount;
+  float *center = new float[3*rc];
+  float *weights = new float[sel->selected];
+  for (i = 0; i < sel->selected; i++) {
+    weights[i] = 1.0;
+  }
+  // calculate per-residue variance here. Its a simple calculation, since we have measure_center_perresidue.
+  for (avcount=0,frame=start; frame<=end; avcount++,frame+=step) {
+    const float *framepos = (mymol->get_frame(frame))->pos;
+    measure_center_perresidue(mlist, sel, framepos, weights, center);
+    for (i = 0; i < rc; i++) {
+      rmsf[i] += distance2(&avpos[3*i], &center[3*i]);
+    }
+  }
+  delete [] center;
+  delete [] weights;
+
+  float avinv = 1.0f / (float) avcount;
+  for (i=0; i<rc; i++) {
+    rmsf[i] = sqrtf(rmsf[i] * avinv);
+  }
+
+  delete [] avpos;
+  return rc;
+}
+
 // Calculate RMS fluctuation of selected atoms over selected frames
 extern int measure_rmsf(const AtomSel *sel, MoleculeList *mlist, 
                         int start, int end, int step, float *rmsf) {
@@ -520,6 +730,88 @@ int measure_rgyr(const AtomSel *sel, MoleculeList *mlist, const float *weight,
   return MEASURE_NOERR;
 }
 
+/*I'm going to assume that *rmsd points to an array the length of sel1. The return
+value will indicate the ACTUAL number of residues in the selection (specifically sel1),
+which tells the caller how many values should be in the returned list, or a number
+less than zero on error.
+*/
+int measure_rmsd_perresidue(const AtomSel *sel1, const AtomSel *sel2, MoleculeList *mlist,
+                 int num,
+                 float *weight, float *rmsd) {
+  if (!sel1 || !sel2)   return MEASURE_ERR_NOSEL;
+  if (sel1->selected < 1 || sel2->selected < 1) return MEASURE_ERR_NOSEL;
+  if (!weight || !rmsd) return MEASURE_ERR_NOWEIGHT;
+
+  // the number of selected atoms must be the same
+  if (sel1->selected != sel2->selected) return MEASURE_ERR_MISMATCHEDCNT;
+
+  // need to know how to traverse the list of weights
+  // there could be 1 weight per atom (sel_flg == 1) or 
+  // 1 weight per selected atom (sel_flg == 0)
+  int sel_flg;
+  if (num == sel1->num_atoms) {
+    sel_flg = 1; // using all elements
+  } else {
+    sel_flg = 0; // using elements from selection
+  }
+
+  // temporary variables
+  float tmp_w;
+  int w_index = 0;              // the term in the weight field to use
+  int sel1ind = sel1->firstsel; // start from the first selected atom
+  int sel2ind = sel2->firstsel; // start from the first selected atom
+  float wsum = 0;
+  float twsum = 0;
+  float rmsdsum = 0;
+  const float *framepos1 = sel1->coordinates(mlist);
+  const float *framepos2 = sel2->coordinates(mlist);
+  Molecule *mol = mlist->mol_from_id(sel1->molid());
+
+
+  int count = sel1->selected;
+  int residue = mol->atom(sel1ind)->uniq_resid;
+  int rescount = 0;
+  while (count-- > 0) {
+    // find next 'on' atom in sel1 and sel2
+    // loop is safe since we already stop the on count > 0 above
+    while (!sel1->on[sel1ind])
+      sel1ind++;
+    while (!sel2->on[sel2ind])
+      sel2ind++;
+    if (residue != mol->atom(sel1ind)->uniq_resid) {
+      rmsd[rescount] = sqrtf(rmsdsum / wsum);
+      rmsdsum = 0;
+      twsum += wsum;
+      wsum = 0;
+      residue = mol->atom(sel1ind)->uniq_resid;
+      rescount++;
+    }
+    // the weight offset to use depends on how many terms there are
+    if (sel_flg == 0) {
+      tmp_w = weight[w_index++];
+    } else {
+      tmp_w = weight[sel1ind]; // use the first selection for the weights
+    }
+
+    // sum the calculated rmsd and weight values
+    rmsdsum += tmp_w * distance2(framepos1 + 3*sel1ind, framepos2 + 3*sel2ind);
+    wsum += tmp_w;
+
+    // and advance to the next atom pair
+    sel1ind++;
+    sel2ind++;
+  }
+  twsum += wsum;
+  // check weight sum
+  if (twsum == 0) {
+    return MEASURE_ERR_BADWEIGHTSUM;
+  }
+
+  // finish the rmsd calcs
+  rmsd[rescount++] = sqrtf(rmsdsum / wsum);
+
+  return rescount; // and say rmsd is OK
+}
 
 /// measure the rmsd given a selection and weight term
 //  1) if num == sel.selected ; assumes there is one weight per 

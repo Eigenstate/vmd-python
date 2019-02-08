@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2008-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,7 +10,7 @@
  *
  *      $RCSfile: OrbitalJIT.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.3 $      $Date: 2010/06/11 21:47:01 $
+ *      $Revision: 1.5 $      $Date: 2019/01/17 21:38:55 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -116,12 +116,9 @@ int orbital_jit_generate(int jitlanguage,
       "                          float grid_z, \n"
       "                          int density, \n"
       "                          float * orbitalgrid) {\n"
-      "  unsigned int xindex  = __umul24(blockIdx.x, blockDim.x)\n"
-      "                         + threadIdx.x;\n"
-      "  unsigned int yindex  = __umul24(blockIdx.y, blockDim.y)\n"
-      "                         + threadIdx.y;\n"
-      "  unsigned int outaddr = __umul24(gridDim.x, blockDim.x) * yindex\n"
-      "                         + xindex;\n"
+      "  unsigned int xindex  = blockIdx.x * blockDim.x + threadIdx.x;\n"
+      "  unsigned int yindex  = blockIdx.y * blockDim.y + threadIdx.y;\n"
+      "  unsigned int outaddr = gridDim.x * blockDim.x * yindex + xindex;\n"
     );
   } else if (jitlanguage == ORBITAL_JIT_OPENCL) {
     fprintf(ofp, 

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *  $RCSfile: ParseTree.C,v $
  *  $Author: johns $		$Locker:  $		$State: Exp $
- *  $Revision: 1.147 $		$Date: 2016/11/28 03:05:03 $
+ *  $Revision: 1.150 $		$Date: 2019/02/07 21:50:48 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -367,7 +367,7 @@ static void same_int(symbol_data *tmp, symbol_data *tmp2, int num,
         flgs[i] = 0;
     }
   }
-  delete [] int_table;
+  free(int_table);
 }
 
 static void same_double(symbol_data *tmp, symbol_data *tmp2, int num, 
@@ -946,38 +946,55 @@ void ParseTree::eval_k_nearest(atomparser_node *node, int num, int *flgs) {
 
   /* evaluate subselection */
   std::vector<int> others(num);
-  for (i=0; i<num; ++i) others[i] = 1;
+  for (i=0; i<num; ++i) 
+    others[i] = 1;
+
   if (eval(node->left, num, &others[0])) {
     msgErr << "eval of a 'within' returned data when it shouldn't have." << sendmsg;
     return;
   }
 
   /* make sure we have something in other */
-  for (i=0; i<num; i++) if (others[i]) break;
+  for (i=0; i<num; i++) {
+    if (others[i]) 
+      break;
+  }
   if (i==num) {
-    memset(flgs,0,num*sizeof(*flgs));
+    memset(flgs, 0, num*sizeof(*flgs));
     return;
   }
 
   std::vector<PointDistance> distances;
+  int numdists=0;
   for (i=0; i<num; i++) {
-    if (others[i] || !flgs[i]) continue;
+    if (others[i] || !flgs[i]) 
+      continue;
 #if 1
     float d2=1e37f;
 #else
     float d2=std::numeric_limits<float>::max();
 #endif
     for (int j=0; j<num; j++) {
-      if (!others[j]) continue;
+      if (!others[j]) 
+        continue;
+
       float d2_j=distance2(ts->pos+3L*i, ts->pos+3L*j);
-      if (d2_j<d2) d2=d2_j;
+      if (d2_j<d2) 
+        d2=d2_j;
     }
+
     distances.push_back(PointDistance(d2,i));
+    numdists++;
   }
+
   std::sort(distances.begin(), distances.end());
   int n=N;
-  if (n>distances.size()) n=distances.size();
-  memset(flgs,0,num*sizeof(*flgs));
+
+  // XXX avoid signed vs. unsigned comparisons
+  // if (n>distances.size()) n=distances.size();
+  if (n>numdists) 
+    n=numdists;
+  memset(flgs, 0, num*sizeof(*flgs));
   for (i=0; i<n; i++) {
     flgs[distances[i].i]=1;
   }

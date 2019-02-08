@@ -1,11 +1,16 @@
 // -*- c++ -*-
 
+// This file is part of the Collective Variables module (Colvars).
+// The original version of Colvars and its updates are located at:
+// https://github.com/colvars/colvars
+// Please update all Colvars source files before making any changes.
+// If you wish to distribute your changes, please submit them to the
+// Colvars repository at GitHub.
+
 #ifndef COLVARMODULE_H
 #define COLVARMODULE_H
 
-#ifndef COLVARS_VERSION
-#define COLVARS_VERSION "2016-10-26"
-#endif
+#include "colvars_version.h"
 
 #ifndef COLVARS_DEBUG
 #define COLVARS_DEBUG false
@@ -34,23 +39,16 @@ You can browse the class hierarchy or the list of source files.
 #define FILE_ERROR      (1<<4)
 #define MEMORY_ERROR    (1<<5)
 #define FATAL_ERROR     (1<<6) // Should be set, or not, together with other bits
-#define DELETE_COLVARS  (1<<7) // Instruct the caller to delete cvm
+//#define DELETE_COLVARS  (1<<7) // Instruct the caller to delete cvm
 #define COLVARS_NO_SUCH_FRAME (1<<8) // Cannot load the requested frame
 
 #include <iostream>
 #include <iomanip>
-#include <string>
-#include <cstring>
-#include <sstream>
 #include <fstream>
-#include <cmath>
+#include <sstream>
+#include <string>
 #include <vector>
 #include <list>
-
-#ifdef NAMD_VERSION
-// use Lustre-friendly wrapper to POSIX write()
-#include "fstream_namd.h"
-#endif
 
 class colvarparse;
 class colvar;
@@ -75,7 +73,16 @@ private:
   /// Impossible to initialize the main object without arguments
   colvarmodule();
 
+  /// Integer representing the version string (allows comparisons)
+  int version_int;
+
 public:
+
+  /// Get the version number (higher = more recent)
+  int version_number() const
+  {
+    return version_int;
+  }
 
   friend class colvarproxy;
   // TODO colvarscript should be unaware of colvarmodule's internals
@@ -83,6 +90,21 @@ public:
 
   /// Defining an abstract real number allows to switch precision
   typedef  double    real;
+
+  /// Override std::pow with a product for n integer
+  static inline real integer_power(real const &x, int const n)
+  {
+    // Original code: math_special.h in LAMMPS
+    double yy, ww;
+    if (x == 0.0) return 0.0;
+    int nn = (n > 0) ? n : -n;
+    ww = x;
+    for (yy = 1.0; nn != 0; nn >>= 1, ww *=ww) {
+      if (nn & 1) yy *= ww;
+    }
+    return (n > 0) ? yy : 1.0/yy;
+  }
+
   /// Residue identifier
   typedef  int       residue_id;
 
@@ -109,7 +131,7 @@ public:
 
   /// Module-wide error state
   /// see constants at the top of this file
-protected:
+private:
 
   static int errorCode;
 
@@ -145,21 +167,48 @@ public:
     return it;
   }
 
-  /// If true, get it_restart from the state file; if set to false,
-  /// the MD program is providing it
-  bool it_restart_from_state_file;
-
   /// \brief Finite difference step size (if there is no dynamics, or
   /// if gradients need to be tested independently from the size of
   /// dt)
   static real debug_gradients_step_size;
 
-  /// Prefix for all output files for this run
-  static std::string output_prefix;
+private:
 
+  /// Prefix for all output files for this run
+  std::string cvm_output_prefix;
+
+public:
+  /// Accessor for the above
+  static inline std::string &output_prefix()
+  {
+    colvarmodule *cv = colvarmodule::main();
+    return cv->cvm_output_prefix;
+  }
+
+private:
 
   /// Array of collective variables
-  static std::vector<colvar *>     colvars;
+  std::vector<colvar *> colvars;
+
+  /// Array of collective variables
+  std::vector<colvar *> colvars_active;
+
+  /// Collective variables to be calculated on different threads;
+  /// colvars with multple items (e.g. multiple active CVCs) are duplicated
+  std::vector<colvar *> colvars_smp;
+  /// Indexes of the items to calculate for each colvar
+  std::vector<int> colvars_smp_items;
+
+  /// Array of named atom groups
+  std::vector<atom_group *> named_atom_groups;
+public:
+  /// Register a named atom group into named_atom_groups
+  inline void register_named_atom_group(atom_group * ag) {
+    named_atom_groups.push_back(ag);
+  }
+
+  /// Array of collective variables
+  std::vector<colvar *> *variables();
 
   /* TODO: implement named CVCs
   /// Array of named (reusable) collective variable components
@@ -170,26 +219,31 @@ public:
   }
   */
 
+  /// Collective variables with the active flag on
+  std::vector<colvar *> *variables_active();
+
   /// Collective variables to be calculated on different threads;
   /// colvars with multple items (e.g. multiple active CVCs) are duplicated
-  std::vector<colvar *> colvars_smp;
+  std::vector<colvar *> *variables_active_smp();
+
   /// Indexes of the items to calculate for each colvar
-  std::vector<int> colvars_smp_items;
+  std::vector<int> *variables_active_smp_items();
 
   /// Array of collective variable biases
-  static std::vector<colvarbias *> biases;
-  /// \brief Number of ABF biases initialized (in normal conditions
-  /// should be 1)
-  static size_t n_abf_biases;
-  /// \brief Number of metadynamics biases initialized (in normal
-  /// conditions should be 1)
-  static size_t n_meta_biases;
-  /// \brief Number of restraint biases initialized (no limit on the
-  /// number)
-  static size_t n_rest_biases;
-  /// \brief Number of histograms initialized (no limit on the
-  /// number)
-  static size_t n_histo_biases;
+  std::vector<colvarbias *> biases;
+
+  /// Energy of built-in and scripted biases, summed per time-step
+  real total_bias_energy;
+
+private:
+
+  /// Array of active collective variable biases
+  std::vector<colvarbias *> biases_active_;
+
+public:
+
+  /// Array of active collective variable biases
+  std::vector<colvarbias *> *biases_active();
 
   /// \brief Whether debug output should be enabled (compile-time option)
   static inline bool debug()
@@ -198,10 +252,7 @@ public:
   }
 
   /// \brief How many objects are configured yet?
-  inline size_t size() const
-  {
-    return colvars.size() + biases.size();
-  }
+  size_t size() const;
 
   /// \brief Constructor \param config_name Configuration file name
   /// \param restart_name (optional) Restart file name
@@ -223,8 +274,14 @@ public:
   /// \brief Parse a "clean" config string (no comments)
   int parse_config(std::string &conf);
 
+  /// Get the configuration string read so far (includes comments)
+  std::string const & get_config() const;
 
   // Parse functions (setup internal data based on a string)
+
+  /// Allow reading from Windows text files using using std::getline
+  /// (which can still be used when the text is produced by Colvars itself)
+  static std::istream & getline(std::istream &is, std::string &line);
 
   /// Parse the few module's global parameters
   int parse_global_params(std::string const &conf);
@@ -235,13 +292,48 @@ public:
   /// Parse and initialize collective variable biases
   int parse_biases(std::string const &conf);
 
+  /// \brief Add new configuration during parsing (e.g. to implement
+  /// back-compatibility); cannot be nested, i.e. conf should not contain
+  /// anything that triggers another call
+  int append_new_config(std::string const &conf);
+
+private:
+
+  /// Configuration string read so far by the module (includes comments)
+  std::string config_string;
+
+  /// Auto-generated configuration during parsing (e.g. to implement
+  /// back-compatibility)
+  std::string extra_conf;
+
   /// Parse and initialize collective variable biases of a specific type
   template <class bias_type>
-  int parse_biases_type(std::string const &conf, char const *keyword, size_t &bias_count);
+  int parse_biases_type(std::string const &conf, char const *keyword);
 
   /// Test error condition and keyword parsing
   /// on error, delete new bias
   bool check_new_bias(std::string &conf, char const *key);
+
+public:
+
+  /// Return how many variables are defined
+  size_t num_variables() const;
+
+  /// Return how many variables have this feature enabled
+  size_t num_variables_feature(int feature_id) const;
+
+  /// Return how many biases are defined
+  size_t num_biases() const;
+
+  /// Return how many biases have this feature enabled
+  size_t num_biases_feature(int feature_id) const;
+
+  /// Return how many biases of this type are defined
+  size_t num_biases_type(std::string const &type) const;
+
+  /// Return the names of time-dependent biases with forces enabled (ABF,
+  /// metadynamics, etc)
+  std::vector<std::string> const time_dependent_biases() const;
 
 private:
   /// Useful wrapper to interrupt parsing if any error occurs
@@ -263,12 +355,6 @@ public:
   /// (Re)initialize the output trajectory and state file (does not write it yet)
   int setup_output();
 
-#ifdef NAMD_VERSION
-  typedef ofstream_namd ofstream;
-#else
-  typedef std::ofstream ofstream;
-#endif
-
   /// Read the input restart file
   std::istream & read_restart(std::istream &is);
   /// Write the output restart file
@@ -276,7 +362,7 @@ public:
 
   /// Open a trajectory file if requested (and leave it open)
   int open_traj_file(std::string const &file_name);
-  /// Close it
+  /// Close it (note: currently unused)
   int close_traj_file();
   /// Write in the trajectory file
   std::ostream & write_traj(std::ostream &os);
@@ -285,9 +371,9 @@ public:
 
   /// Write all trajectory files
   int write_traj_files();
-  /// Write all restart files
-  int write_restart_files();
-  /// Write all FINAL output files
+  /// Write a state file useful to resume the simulation
+  int write_restart_file(std::string const &out_name);
+  /// Write all other output files
   int write_output_files();
   /// Backup a file before writing it
   static int backup_file(char const *filename);
@@ -297,6 +383,9 @@ public:
 
   /// Look up a colvar by name; returns NULL if not found
   static colvar * colvar_by_name(std::string const &name);
+
+  /// Look up a named atom group by name; returns NULL if not found
+  static atom_group * atom_group_by_name(std::string const &name);
 
   /// Load new configuration for the given bias -
   /// currently works for harmonic (force constant and/or centers)
@@ -332,6 +421,9 @@ public:
 
   /// Perform analysis
   int analyze();
+
+  /// Carry out operations needed before next step is run
+  int end_of_step();
 
   /// \brief Read a collective variable trajectory (post-processing
   /// only, not called at runtime)
@@ -396,13 +488,10 @@ public:
   static void log(std::string const &message);
 
   /// Print a message to the main log and exit with error code
-  static void fatal_error(std::string const &message);
+  static int fatal_error(std::string const &message);
 
   /// Print a message to the main log and set global error code
-  static void error(std::string const &message, int code = COLVARS_ERROR);
-
-  /// Print a message to the main log and exit normally
-  static void exit(std::string const &message);
+  static int error(std::string const &message, int code = COLVARS_ERROR);
 
   // Replica exchange commands.
   static bool replica_enabled();
@@ -415,70 +504,50 @@ public:
   /// \brief Get the distance between two atomic positions with pbcs handled
   /// correctly
   static rvector position_distance(atom_pos const &pos1,
-                                    atom_pos const &pos2);
-
-
-  /// \brief Get the square distance between two positions (with
-  /// periodic boundary conditions handled transparently)
-  ///
-  /// Note: in the case of periodic boundary conditions, this provides
-  /// an analytical square distance (while taking the square of
-  /// position_distance() would produce leads to a cusp)
-  static real position_dist2(atom_pos const &pos1,
-                              atom_pos const &pos2);
-
-  /// \brief Get the closest periodic image to a reference position
-  /// \param pos The position to look for the closest periodic image
-  /// \param ref_pos (optional) The reference position
-  static void select_closest_image(atom_pos &pos,
-                                    atom_pos const &ref_pos);
-
-  /// \brief Perform select_closest_image() on a set of atomic positions
-  ///
-  /// After that, distance vectors can then be calculated directly,
-  /// without using position_distance()
-  static void select_closest_images(std::vector<atom_pos> &pos,
-                                     atom_pos const &ref_pos);
-
+                                   atom_pos const &pos2);
 
   /// \brief Names of groups from a Gromacs .ndx file to be read at startup
-  static std::list<std::string> index_group_names;
+  std::list<std::string> index_group_names;
 
   /// \brief Groups from a Gromacs .ndx file read at startup
-  static std::list<std::vector<int> > index_groups;
+  std::list<std::vector<int> > index_groups;
 
   /// \brief Read a Gromacs .ndx file
-  static int read_index_file(char const *filename);
+  int read_index_file(char const *filename);
 
-
-  /// \brief Create atoms from a file \param filename name of the file
-  /// (usually a PDB) \param atoms array of the atoms to be allocated
-  /// \param pdb_field (optiona) if "filename" is a PDB file, use this
-  /// field to determine which are the atoms to be set
+  /// \brief Select atom IDs from a file (usually PDB) \param filename name of
+  /// the file \param atoms array into which atoms read from "filename" will be
+  /// appended \param pdb_field (optional) if the file is a PDB and this
+  /// string is non-empty, select atoms for which this field is non-zero
+  /// \param pdb_field_value (optional) if non-zero, select only atoms whose
+  /// pdb_field equals this
   static int load_atoms(char const *filename,
                         atom_group &atoms,
                         std::string const &pdb_field,
-                        double const pdb_field_value = 0.0);
+                        double pdb_field_value = 0.0);
 
-  /// \brief Load the coordinates for a group of atoms from a file
-  /// (PDB or XYZ)
+  /// \brief Load coordinates for a group of atoms from a file (PDB or XYZ);
+  /// if "pos" is already allocated, the number of its elements must match the
+  /// number of entries in "filename" \param filename name of the file \param
+  /// pos array of coordinates \param atoms group containing the atoms (used
+  /// to obtain internal IDs) \param pdb_field (optional) if the file is a PDB
+  /// and this string is non-empty, select atoms for which this field is
+  /// non-zero \param pdb_field_value (optional) if non-zero, select only
+  /// atoms whose pdb_field equals this
   static int load_coords(char const *filename,
-                         std::vector<atom_pos> &pos,
-                         const std::vector<int> &indices,
+                         std::vector<rvector> *pos,
+                         atom_group *atoms,
                          std::string const &pdb_field,
-                         double const pdb_field_value = 0.0);
+                         double pdb_field_value = 0.0);
 
   /// \brief Load the coordinates for a group of atoms from an
   /// XYZ file
   static int load_coords_xyz(char const *filename,
-                              std::vector<atom_pos> &pos,
-                              const std::vector<int> &indices);
+                             std::vector<rvector> *pos,
+                             atom_group *atoms);
 
   /// Frequency for collective variables trajectory output
   static size_t cv_traj_freq;
-
-  /// \brief True if only analysis is performed and not a run
-  static bool   b_analysis;
 
   /// Frequency for saving output restarts
   static size_t restart_out_freq;
@@ -500,21 +569,21 @@ protected:
   std::string cv_traj_name;
 
   /// Collective variables output trajectory file
-  colvarmodule::ofstream cv_traj_os;
+  std::ostream *cv_traj_os;
 
   /// Appending to the existing trajectory file?
   bool cv_traj_append;
 
-  /// Output restart file
-  colvarmodule::ofstream restart_out_os;
+  /// Write labels at the next iteration
+  bool cv_traj_write_labels;
 
-protected:
+private:
 
   /// Counter for the current depth in the object hierarchy (useg e.g. in output)
-  static size_t depth_s;
+  size_t depth_s;
 
   /// Thread-specific depth
-  static std::vector<size_t> depth_v;
+  std::vector<size_t> depth_v;
 
 public:
 
@@ -545,6 +614,10 @@ public:
   /// from the hosting program; it is static in order to be accessible
   /// from static functions in the colvarmodule class
   static colvarproxy *proxy;
+
+  /// \brief Access the one instance of the Colvars module
+  static colvarmodule *main();
+
 };
 
 
@@ -552,16 +625,14 @@ public:
 typedef colvarmodule cvm;
 
 
-#include "colvartypes.h"
-
 
 std::ostream & operator << (std::ostream &os, cvm::rvector const &v);
 std::istream & operator >> (std::istream &is, cvm::rvector &v);
 
 
 template<typename T> std::string cvm::to_str(T const &x,
-                                              size_t const &width,
-                                              size_t const &prec) {
+                                             size_t const &width,
+                                             size_t const &prec) {
   std::ostringstream os;
   if (width) os.width(width);
   if (prec) {
@@ -572,9 +643,10 @@ template<typename T> std::string cvm::to_str(T const &x,
   return os.str();
 }
 
+
 template<typename T> std::string cvm::to_str(std::vector<T> const &x,
-                                              size_t const &width,
-                                              size_t const &prec) {
+                                             size_t const &width,
+                                             size_t const &prec) {
   if (!x.size()) return std::string("");
   std::ostringstream os;
   if (prec) {
@@ -594,83 +666,5 @@ template<typename T> std::string cvm::to_str(std::vector<T> const &x,
   return os.str();
 }
 
-
-#include "colvarproxy.h"
-
-
-inline cvm::real cvm::unit_angstrom()
-{
-  return proxy->unit_angstrom();
-}
-
-inline cvm::real cvm::boltzmann()
-{
-  return proxy->boltzmann();
-}
-
-inline cvm::real cvm::temperature()
-{
-  return proxy->temperature();
-}
-
-inline cvm::real cvm::dt()
-{
-  return proxy->dt();
-}
-
-// Replica exchange commands
-inline bool cvm::replica_enabled() {
-  return proxy->replica_enabled();
-}
-inline int cvm::replica_index() {
-  return proxy->replica_index();
-}
-inline int cvm::replica_num() {
-  return proxy->replica_num();
-}
-inline void cvm::replica_comm_barrier() {
-  return proxy->replica_comm_barrier();
-}
-inline int cvm::replica_comm_recv(char* msg_data, int buf_len, int src_rep) {
-  return proxy->replica_comm_recv(msg_data,buf_len,src_rep);
-}
-inline int cvm::replica_comm_send(char* msg_data, int msg_len, int dest_rep) {
-  return proxy->replica_comm_send(msg_data,msg_len,dest_rep);
-}
-
-
-inline void cvm::request_total_force()
-{
-  proxy->request_total_force(true);
-}
-
-inline void cvm::select_closest_image(atom_pos &pos,
-                                       atom_pos const &ref_pos)
-{
-  proxy->select_closest_image(pos, ref_pos);
-}
-
-inline void cvm::select_closest_images(std::vector<atom_pos> &pos,
-                                        atom_pos const &ref_pos)
-{
-  proxy->select_closest_images(pos, ref_pos);
-}
-
-inline cvm::rvector cvm::position_distance(atom_pos const &pos1,
-                                            atom_pos const &pos2)
-{
-  return proxy->position_distance(pos1, pos2);
-}
-
-inline cvm::real cvm::position_dist2(cvm::atom_pos const &pos1,
-                                      cvm::atom_pos const &pos2)
-{
-  return proxy->position_dist2(pos1, pos2);
-}
-
-inline cvm::real cvm::rand_gaussian(void)
-{
-  return proxy->rand_gaussian();
-}
 
 #endif

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: OpenGLPbufferDisplayDevice.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.22 $	$Date: 2016/11/30 06:35:29 $
+ *	$Revision: 1.27 $	$Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -36,6 +36,7 @@
 #include "utilities.h"
 #include "config.h"   // VMD version strings etc
 #include "VMDApp.h"
+#include "VideoStream.h" 
 
 // Request a Pbuffer just larger than standard Ultra-HD "4K" resolution
 #define DEF_PBUFFER_XRES 4096
@@ -621,6 +622,31 @@ OpenGLPbufferDisplayDevice::~OpenGLPbufferDisplayDevice(void) {
 
 #if defined(VMDEGLPBUFFER)
 
+// static helper fctn to convert error state into a human readable mesg string
+static const char* vmd_get_egl_errorstring(void) {    
+  EGLint errcode = eglGetError();
+  switch (errcode) {
+    case EGL_SUCCESS:              return "No error"; break;
+    case EGL_NOT_INITIALIZED:      return "EGL not initialized"; break;
+    case EGL_BAD_ACCESS:           return "EGL bad access"; break;
+    case EGL_BAD_ALLOC:            return "EGL bad alloc"; break;
+    case EGL_BAD_ATTRIBUTE:        return "EGL bad attribute"; break;
+    case EGL_BAD_CONTEXT:          return "EGL bad context"; break;
+    case EGL_BAD_CONFIG:           return "EGL bad config"; break;
+    case EGL_BAD_CURRENT_SURFACE:  return "EGL bad cur context"; break;
+    case EGL_BAD_DISPLAY:          return "EGL bad display"; break;
+    case EGL_BAD_SURFACE:          return "EGL bad surface"; break;
+    case EGL_BAD_MATCH:            return "EGL bad match"; break;
+    case EGL_BAD_PARAMETER:        return "EGL bad parameter"; break;
+    case EGL_BAD_NATIVE_PIXMAP:    return "EGL bad native pixmap"; break;
+    case EGL_BAD_NATIVE_WINDOW:    return "EGL bad native window"; break;
+    case EGL_CONTEXT_LOST:         return "EGL context lost"; break;
+    default:
+      return "Unrecognized EGL error"; break;
+  }
+}
+
+
 // create a new window and set it's characteristics
 int OpenGLPbufferDisplayDevice::egl_open_window(char *nm, int *size, int *loc,
                                                 int argc, char** argv) {
@@ -674,6 +700,7 @@ int OpenGLPbufferDisplayDevice::egl_open_window(char *nm, int *size, int *loc,
   EGLint eglmaj, eglmin;
   if (eglInitialize(eglsrv.dpy, &eglmaj, &eglmin) == EGL_FALSE) {
     msgErr << "Exiting due to EGL initialization failure." << sendmsg;
+    msgErr << "  " << vmd_get_egl_errorstring() << sendmsg;
     return 0; 
   } 
   msgInfo << "EGL version " << eglmaj << "." << eglmin << sendmsg;
@@ -681,33 +708,90 @@ int OpenGLPbufferDisplayDevice::egl_open_window(char *nm, int *size, int *loc,
   int fbc = vmd_get_egl_fbconfig(&eglsrv, &ext->hasstereo, &ext->hasmultisample, &ext->nummultisamples);
   if (!fbc) {
     msgErr << "Exiting due to EGL config failure." << sendmsg;
+    msgErr << "  " << vmd_get_egl_errorstring() << sendmsg;
     return 0; 
   }
 
   EGLint vid;
   if (eglGetConfigAttrib(eglsrv.dpy, eglsrv.conf, EGL_NATIVE_VISUAL_ID, &vid) == EGL_FALSE) {
     msgErr << "Exiting due to eglGetConfigAttrib() failure." << sendmsg;
+    msgErr << "  " << vmd_get_egl_errorstring() << sendmsg;
     return 0; 
   }
 
   // bind to OpenGL API since some implementations don't do this by default
   if (eglBindAPI(EGL_OPENGL_API) == EGL_FALSE) {
     msgErr << "Exiting due to EGL OpenGL binding failure." << sendmsg;
+    msgErr << "  " << vmd_get_egl_errorstring() << sendmsg;
     return 0; 
   }
 
   eglsrv.ctx = eglCreateContext(eglsrv.dpy, eglsrv.conf, EGL_NO_CONTEXT, NULL);
 
-  static const EGLint pbuffer_attribs[] = {
+  // create the size we ask for, or fail
+  static const EGLint pbuffer_fixedsz_attribs[] = {
     EGL_WIDTH, DEF_PBUFFER_XRES,
     EGL_HEIGHT, DEF_PBUFFER_YRES,
     EGL_NONE,
   };
 
+  // if we don't get the size we ask for, try for the max size and
+  // then tell VMD what it ended up being.  We probably need a sanity
+  // check in the case we get a really lame small size buffer back.
+  static const EGLint pbuffer_defsz_attribs[] = {
+    EGL_WIDTH, DEF_PBUFFER_XRES,
+    EGL_HEIGHT, DEF_PBUFFER_YRES,
+    EGL_LARGEST_PBUFFER, EGL_TRUE,
+    EGL_NONE,
+  };
+
+  // Try for a HUGE size and then tell VMD what it ended up being.  
+  static const EGLint pbuffer_maxsz_attribs[] = {
+    EGL_WIDTH, 10000,
+    EGL_HEIGHT, 10000,
+    EGL_LARGEST_PBUFFER, EGL_TRUE,
+    EGL_NONE,
+  };
+
+  // Demonstrate bugs in implementations that don't do the right thing
+  // with the EGL_LARGEST_BUFFER parameter
+  static const EGLint pbuffer_hugesz_attribs[] = {
+    EGL_WIDTH, 30000,
+    EGL_HEIGHT, 30000,
+    EGL_LARGEST_PBUFFER, EGL_TRUE,
+    EGL_NONE,
+  };
+
+  EGLint const *pbuffer_attrs = pbuffer_defsz_attribs;
+  if (getenv("VMDEGLUSEFIXEDSZ") != NULL) {
+    pbuffer_attrs = pbuffer_fixedsz_attribs;
+  }
+  if (getenv("VMDEGLUSEMAXSZ") != NULL) {
+    pbuffer_attrs = pbuffer_maxsz_attribs;
+  }
+  if (getenv("VMDEGLUSEHUGESZ") != NULL) {
+    pbuffer_attrs = pbuffer_hugesz_attribs;
+  }
+
+  eglsrv.surf = eglCreatePbufferSurface(eglsrv.dpy, eglsrv.conf, pbuffer_attrs);
+  if (eglsrv.surf == EGL_NO_SURFACE) {
+    msgErr << "Exiting due to EGL Pbuffer surface creation failure." << sendmsg;
+    msgErr << "  " << vmd_get_egl_errorstring() << sendmsg;
+    return 0; 
+  }
+
+  EGLint surface_xsize, surface_ysize;
+  if ((eglQuerySurface(eglsrv.dpy, eglsrv.surf, EGL_WIDTH, &surface_xsize) != EGL_TRUE) ||
+      (eglQuerySurface(eglsrv.dpy, eglsrv.surf, EGL_HEIGHT, &surface_ysize) != EGL_TRUE)) {
+    msgErr << "Exiting due to EGL Pbuffer surface dimensions query failure." << sendmsg;
+    msgErr << "  " << vmd_get_egl_errorstring() << sendmsg;
+    return 0; 
+  }
+
   // set maximum allowable rendered image size for the Pbuffer
   // that was actually allocated, which may be smaller than we hoped...
-  PbufferMaxXsz = DEF_PBUFFER_XRES;
-  PbufferMaxYsz = DEF_PBUFFER_YRES;
+  PbufferMaxXsz = surface_xsize;
+  PbufferMaxYsz = surface_ysize;
 
   msgInfo << "OpenGL Pbuffer size: " 
           << PbufferMaxXsz << "x"
@@ -726,8 +810,14 @@ int OpenGLPbufferDisplayDevice::egl_open_window(char *nm, int *size, int *loc,
     ySize = PbufferMaxYsz;
   }
 
-  eglsrv.surf = eglCreatePbufferSurface(eglsrv.dpy, eglsrv.conf, pbuffer_attribs);
-  eglMakeCurrent(eglsrv.dpy, eglsrv.surf, eglsrv.surf, eglsrv.ctx);
+  EGLBoolean ctxstatus = EGL_FALSE;
+  ctxstatus = eglMakeCurrent(eglsrv.dpy, eglsrv.surf, eglsrv.surf, eglsrv.ctx);
+  if (ctxstatus != EGL_TRUE) {
+    msgErr << "Exiting due to EGL failure during eglMakeCurrent()." << sendmsg;
+    msgErr << "  " << vmd_get_egl_errorstring() << sendmsg;
+    return 0;
+  }
+
 
   EGLint Context_RendererType=0;
   eglQueryContext(eglsrv.dpy, eglsrv.ctx, EGL_CONTEXT_CLIENT_TYPE, &Context_RendererType);
@@ -968,7 +1058,7 @@ void OpenGLPbufferDisplayDevice::reshape(void) {
 }
 
 
-unsigned char * OpenGLPbufferDisplayDevice::readpixels(int &xs, int &ys) {
+unsigned char * OpenGLPbufferDisplayDevice::readpixels_rgb3u(int &xs, int &ys) {
   unsigned char * img = NULL;
   xs = xSize;
   ys = ySize;
@@ -986,6 +1076,24 @@ unsigned char * OpenGLPbufferDisplayDevice::readpixels(int &xs, int &ys) {
   return NULL;
 }
 
+unsigned char * OpenGLPbufferDisplayDevice::readpixels_rgba4u(int &xs, int &ys) {
+  unsigned char * img = NULL;
+  xs = xSize;
+  ys = ySize;
+
+  // fall back to normal glReadPixels() if better methods fail
+  if ((img = (unsigned char *) malloc(xs * ys * 4)) != NULL) {
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, xs, ys, GL_RGBA, GL_UNSIGNED_BYTE, img);
+    return img; 
+  }
+
+  // else bail out
+  xs = 0;
+  ys = 0;
+  return NULL;
+}
+
 
 // update after drawing
 void OpenGLPbufferDisplayDevice::update(int do_update) {
@@ -994,6 +1102,23 @@ void OpenGLPbufferDisplayDevice::update(int do_update) {
                 // this gives much better results than if the 
                 // synchronization is done implicitly by glXSwapBuffers.
   }
+
+#if 1
+  // push latest frame into the video streaming pipeline
+  // and pump the event handling mechanism afterwards
+  if (vmdapp->uivs && vmdapp->uivs->srv_connected()) {
+    // if no frame was provided, we grab the GL framebuffer
+    int xs, ys;
+    unsigned char *img = NULL;
+    img = readpixels_rgba4u(xs, ys);
+    if (img != NULL) {
+      // srv_send_frame(img, xs * 4, xs, ys, vs_forceIframe);
+      vmdapp->uivs->video_frame_pending(img, xs, ys);
+      vmdapp->uivs->check_event();
+      free(img);
+    }
+  }
+#endif
 
 #if defined(VMDEGLPBUFFER)
 #if 1

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: P_Tool.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.82 $	$Date: 2016/11/28 03:05:03 $
+ *	$Revision: 1.84 $	$Date: 2019/01/24 04:57:13 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -249,10 +249,11 @@ int Tool::assign_rep(int mol, int rep) {
   // get the total mass
   sel_total_mass=0;
   const float *mass = m->mass();
-  for(int i=0;i<sel->num_atoms;i++)
-    if(sel->on[i]) {
+  for (int i=sel->firstsel; i<=sel->lastsel; i++) {
+    if (sel->on[i]) {
       sel_total_mass += mass[i];
     }
+  }
 
   // kill the highlight
   if (app->pickList) {
@@ -261,8 +262,7 @@ int Tool::assign_rep(int mol, int rep) {
   return TRUE;
 }
  
-int Tool::get_targeted_atom(int *molret, int *atomret) const
-{
+int Tool::get_targeted_atom(int *molret, int *atomret) const {
   if (targeted_rep != NULL) return 0; // must be an atom
   if (targeted_molecule == -1) return 0; // must be targeted
   *molret = targeted_molecule;
@@ -303,7 +303,7 @@ int Tool::target(int target_type, float *mpos, int just_checking) {
       // Loop over each atom in the selection to get the COM.
       float com[3] = {0,0,0};
       const float *amass = m->mass();
-      for (int i=0; i<sel->num_atoms; i++) {
+      for (int i=sel->firstsel; i<=sel->lastsel; i++) {
         if (sel->on[i]) {
 	  float mass = amass[i];
 	  float *p = ts->pos + 3*i;
@@ -399,13 +399,14 @@ void Tool::tug(const float *theforce) {
     const AtomSel *sel = m->component(
       app->molrep_get_by_name(targeted_molecule, targeted_rep))->atomSel;
     const float *amass = m->mass();
-    for(int i=0;i<sel->num_atoms;i++) 
-      if(sel->on[i]) {
+    for (int i=sel->firstsel; i<=sel->lastsel; i++) {
+      if (sel->on[i]) {
 	float mass = amass[i];
 	float atomforce[3];
 	vec_scale(atomforce,mass/sel_total_mass,force);
 	m->addForce(i, atomforce);
       }
+    }
   }
   else {
     // otherwise just pull with a simple force

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: BaseMolecule.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.144 $	$Date: 2016/11/28 03:04:58 $
+ *	$Revision: 1.148 $	$Date: 2019/01/17 21:20:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -35,6 +35,7 @@
 #include "Residue.h"
 #include "Timestep.h"
 #include "Fragment.h"
+#include "Matrix4.h"
 #include "intstack.h"
 
 #ifdef VMDWITHCARBS
@@ -101,6 +102,9 @@ public:
   int currentMaxPathLength;           ///< limit on length of paths joining rings
 #endif
 
+  // Molecule instance transformation matrices, not including self
+  ResizeArray<Matrix4> instances;     ///< list of instance transform matrices
+
   // Extra molecular dynamics structure info not normally needed for
   // anything but structure building tasks
   ResizeArray<int> angles;            ///< list of angles
@@ -112,6 +116,7 @@ public:
   // If the name is unassigned then the values can be taken to be zero.
   NameList<float *> extraflt;         ///< optional floating point data
   NameList<int *> extraint;           ///< optional integer data
+  NameList<unsigned char *> extraflg; ///< optional bitwise flags
 
   // more structure topology handling info. assign names to FF types.
   ResizeArray<int> angleTypes;        ///< type of angle
@@ -144,7 +149,8 @@ public:
                ANGLES=0x0400,
                CTERMS=0x0800, 
             BONDTYPES=0x1000,
-           ANGLETYPES=0x2000 };
+           ANGLETYPES=0x2000,
+            ATOMFLAGS=0x4000 };
   
   int datasetflags;
   void set_dataset_flag(int flag) { 
@@ -163,6 +169,9 @@ public:
   float *charge() { return extraflt.data("charge"); }
   float *beta() { return extraflt.data("beta");   }
   float *occupancy() { return extraflt.data("occupancy"); }
+
+  // per-atom flags array
+  unsigned char *flags() { return extraflg.data("flags"); }
 
   /// methods for querying the min/max atom radii, used by the
   /// the QuickSurf representation
@@ -446,6 +455,14 @@ public:
   void analyze(void);
 
   //
+  // interfaces to add/query/delete instance transformation matrices
+  //
+  void add_instance(Matrix4 & inst) { instances.append(inst); }
+  int num_instances(void) { return instances.num(); }
+  void clear_instances(void) { instances.clear(); }
+
+
+  //
   // query info about the molecule
   //
   int id(void) const { return ID; } ///< return id number of this molecule
@@ -492,6 +509,9 @@ public:
   void add_volume_data(const char *name, const double *o, 
     const double *xa, const double *ya, const double *za, int x, int y, int z,
     float *voldata); 
+
+  /// remove a volumetric data object from a molecule
+  void remove_volume_data(int idx);
 
   int num_volume_data(); ///< return number of volume data sets in molecule 
   const VolumetricData *get_volume_data(int); ///< return requested data set

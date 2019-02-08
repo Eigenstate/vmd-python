@@ -1,9 +1,9 @@
 /***************************************************************************
- *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
- *cr                        University of Illinois
- *cr                         All Rights Reserved
- *cr
+ *cr                                                                       
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
+ *cr                        University of Illinois                       
+ *cr                         All Rights Reserved                        
+ *cr                                                                   
  ***************************************************************************/
 
 /***************************************************************************
@@ -11,12 +11,12 @@
  *
  *	$RCSfile: ResizeArray.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.52 $	$Date: 2016/11/28 03:05:04 $
+ *	$Revision: 1.53 $	$Date: 2019/01/17 21:21:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
  *   Automatically-adjusting single-dim array template.
- *
+ * 
  * LICENSE:
  *   UIUC Open Source License
  *   http://www.ks.uiuc.edu/Research/vmd/plugins/pluginlicense.html
@@ -57,10 +57,10 @@ private:
 
       // shallow copy data to a newly allocated block since we can't
       // use realloc() due to potential use of shared memory
-      T *newdata = allocate(newsize);
+      T *newdata = allocate(newsize); 
       memcpy(newdata, data, currSize * sizeof(T));
-      deallocate(data);
-
+      deallocate(data); 
+    
       // save new values
       data = newdata;
       sz = newsize;
@@ -71,18 +71,18 @@ public:
   /// Constructor
   /// The first argument is the initial internal size of the array, i.e. the
   /// initial number of elements for which to allocate memory (although the
-  /// initial external size of the array will be zero).
+  /// initial external size of the array will be zero).  
   ResizeArray(long s = 3L) {
     currSize = 0;
     sz = (s > 0 ? s : 10L);
-    data = allocate(sz);
+    data = allocate(sz); 
   }
 
   ~ResizeArray() {
     deallocate(data);
   }
-
-  long num(void) const { return currSize; } ///< current size of array
+  
+  long num(void) const { return currSize; } ///< current size of array 
   T& operator[](long N) { return data[N]; } ///< unchecked accessor, for speed
   T const& operator[](long N) const { return data[N]; } ///< a const version of above
 
@@ -104,10 +104,10 @@ public:
 
       // shallow copy data to a newly allocated block since we can't
       // use realloc() due to potential use of shared memory
-      T *newdata = allocate(newsize);
+      T *newdata = allocate(newsize); 
       memcpy(newdata, data, currSize * sizeof(T));
-      deallocate(data);
-
+      deallocate(data); 
+    
       // save new values
       data = newdata;
       sz = newsize;
@@ -147,7 +147,7 @@ public:
   void appendN(const T& val, long addN) {
     extend(addN);
     long j;
-    for (j=0; j<addN; j++)
+    for (j=0; j<addN; j++)  
       data[currSize++] = val;
   }
 
@@ -192,7 +192,7 @@ public:
 
 
   /// add nine new elements, e.g. v0+v1+v2, vertex+normal+color,
-  /// to the end of the array.
+  /// to the end of the array.  
   void append9(const T *vals) {
     extend(9);
     data[currSize++] = vals[0];
@@ -211,7 +211,7 @@ public:
   void appendlist(const T *vals, long addN) {
     extend(addN);
     long j;
-    for (j=0; j<addN; j++)
+    for (j=0; j<addN; j++)  
       data[currSize++] = vals[j];
   }
 
@@ -227,7 +227,7 @@ public:
   /// remove the last item from the array, unchecked for speed
   T& pop() {
     currSize--;
-    return data[currSize];
+    return data[currSize]; 
   }
 
   /// delete entire array by defining size to be empty
@@ -238,7 +238,7 @@ public:
   /// truncate the array by defining the size to be N items less
   void truncatelastn(long N) {
     currSize -= N;
-    if (currSize < 0)
+    if (currSize < 0) 
       currSize=0;
   }
 
@@ -246,12 +246,12 @@ public:
   /// found.  Return the index if found, (-1) otherwise.
   long find(const T& val) {
     long i;
-
+  
     for(i=0; i < currSize; i++) {
-      if(data[i] == val)
+      if(data[i] == val) 
         return i;
     }
-
+  
     return -1;
   }
 };

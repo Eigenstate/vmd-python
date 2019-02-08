@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2007-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: CUDAQuickSurf.cu,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.81 $      $Date: 2016/04/20 04:57:46 $
+ *      $Revision: 1.86 $      $Date: 2019/01/17 21:38:55 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -22,6 +22,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cuda.h>
+#if CUDART_VERSION >= 9000
+#include <cuda_fp16.h>  // need to explicitly include for CUDA 9.0
+#endif
 
 #if CUDART_VERSION < 4000
 #error The VMD QuickSurf feature requires CUDA 4.0 or later
@@ -130,14 +133,14 @@ inline __device__ void convert_color(float3 & cf, uchar4 cu) {
 #define GUNROLL      1
 #endif
 
-#if __CUDA_ARCH__ >= 300
 #define MAXTHRDENS  ( GBLOCKSZX * GBLOCKSZY * GBLOCKSZZ )
-#define MINBLOCKDENS 1
+#if __CUDA_ARCH__ >= 600
+#define MINBLOCKDENS 16
+#elif __CUDA_ARCH__ >= 300
+#define MINBLOCKDENS 16
 #elif __CUDA_ARCH__ >= 200
-#define MAXTHRDENS  ( GBLOCKSZX * GBLOCKSZY * GBLOCKSZZ )
 #define MINBLOCKDENS 1
 #else
-#define MAXTHRDENS  ( GBLOCKSZX * GBLOCKSZY * GBLOCKSZZ )
 #define MINBLOCKDENS 1
 #endif
 
@@ -150,7 +153,7 @@ inline __device__ void convert_color(float3 & cf, uchar4 cu) {
 //
 template<class DENSITY, class VOLTEX>
 __global__ static void 
-// __launch_bounds__ ( MAXTHRDENS, MINBLOCKDENS )
+__launch_bounds__ ( MAXTHRDENS, MINBLOCKDENS )
 gaussdensity_fast_tex_norm(int natoms,
                       const float4 * RESTRICT sorted_xyzr, 
                       const float4 * RESTRICT sorted_color, 
@@ -217,6 +220,8 @@ gaussdensity_fast_tex_norm(int natoms,
     for (yab=yabmin; yab<=yabmax; yab++) {
       for (xab=xabmin; xab<=xabmax; xab++) {
         int abcellidx = zab * acplanesz + yab * acncells.x + xab;
+        // this biggest latency hotspot in the kernel, if we could improve
+        // packing of the grid cell map, we'd likely improve performance 
         uint2 atomstartend = cellStartEnd[abcellidx];
         if (atomstartend.x != GRID_CELL_EMPTY) {
           unsigned int atomid;
@@ -296,7 +301,7 @@ gaussdensity_fast_tex_norm(int natoms,
 
 
 __global__ static void 
-// __launch_bounds__ ( MAXTHRDENS, MINBLOCKDENS )
+__launch_bounds__ ( MAXTHRDENS, MINBLOCKDENS )
 gaussdensity_fast_tex3f(int natoms,
                         const float4 * RESTRICT sorted_xyzr, 
                         const float4 * RESTRICT sorted_color, 
@@ -363,6 +368,8 @@ gaussdensity_fast_tex3f(int natoms,
     for (yab=yabmin; yab<=yabmax; yab++) {
       for (xab=xabmin; xab<=xabmax; xab++) {
         int abcellidx = zab * acplanesz + yab * acncells.x + xab;
+        // this biggest latency hotspot in the kernel, if we could improve
+        // packing of the grid cell map, we'd likely improve performance 
         uint2 atomstartend = cellStartEnd[abcellidx];
         if (atomstartend.x != GRID_CELL_EMPTY) {
           unsigned int atomid;
@@ -550,16 +557,19 @@ gaussdensity_fast(int natoms,
 
 // per-GPU handle with various memory buffer pointers, etc.
 typedef struct {
+  cudaDeviceProp deviceProp; ///< GPU hw properties
+  int dev;                   ///< CUDA device ID
+  int verbose;               ///< emit verbose debugging/timing info
+
   /// max grid sizes and attributes the current allocations will support
-  int verbose;
-  long int natoms;
-  int colorperatom;
-  int acx;
-  int acy;
-  int acz;
-  int gx;
-  int gy;
-  int gz;
+  long int natoms;           ///< total atom count
+  int colorperatom;          ///< flag indicating color-per-atom array
+  int acx;                   ///< accel grid X dimension
+  int acy;                   ///< accel grid Y dimension
+  int acz;                   ///< accel grid Z dimension
+  int gx;                    ///< density grid X dimension
+  int gy;                    ///< density grid Y dimension
+  int gz;                    ///< density grid Z dimension
 
   CUDAMarchingCubes *mc;     ///< Marching cubes class used to extract surface
 
@@ -574,23 +584,34 @@ typedef struct {
   unsigned int *atomHash_d;  ///<  
   uint2 *cellStartEnd_d;     ///< cell start/end indices 
 
-  void *safety;
-  float3 *v3f_d;
-  float3 *n3f_d;
-  float3 *c3f_d;
-  char3 *n3b_d;
-  uchar4 *c4u_d;
+  void *safety;              ///< Thrust/CUB sort/scan workspace allocation
+
+  float3 *v3f_d;             ///< device vertex array allocation
+  float3 *n3f_d;             ///< device fp32 normal array allocation
+  float3 *c3f_d;             ///< device fp32 color array allocation
+  char3 *n3b_d;              ///< device 8-bit char normal array allocation
+  uchar4 *c4u_d;             ///< device 8-bit uchar color array allocation
 } qsurf_gpuhandle;
 
 
 CUDAQuickSurf::CUDAQuickSurf() {
   voidgpu = calloc(1, sizeof(qsurf_gpuhandle));
+  qsurf_gpuhandle *gpuh = (qsurf_gpuhandle *) voidgpu;
+
   if (getenv("VMDQUICKSURFVERBOSE") != NULL) {
-    qsurf_gpuhandle *gpuh = (qsurf_gpuhandle *) voidgpu;
     gpuh->verbose = 1;
     int tmp = atoi(getenv("VMDQUICKSURFVERBOSE"));
     if (tmp > 0)
       gpuh->verbose = tmp;
+  }
+
+  if (cudaGetDevice(&gpuh->dev) != cudaSuccess) {
+    gpuh->dev = -1; // flag GPU as unusable
+  }
+
+  if (cudaGetDeviceProperties(&gpuh->deviceProp, gpuh->dev) != cudaSuccess) {
+    cudaError_t err = cudaGetLastError(); // eat error so next CUDA op succeeds
+    gpuh->dev = -1; // flag GPU as unusable
   }
 }
 
@@ -908,6 +929,24 @@ int CUDAQuickSurf::calc_surf(long int natoms, const float *xyzr_f,
                              VMDDisplayList *cmdList) {
   qsurf_gpuhandle *gpuh = (qsurf_gpuhandle *) voidgpu;
 
+  // if there were any problems when the constructor tried to get
+  // GPU hardware capabilities, we consider it to be unusable for all time.
+  if (gpuh->dev < 0)
+    return -1;
+
+  // This code currently requires compute capability 2.x or greater.
+  // We absolutely depend on hardware broadcasts for 
+  // global memory reads by multiple threads reading the same element,
+  // and the code more generally assumes the Fermi L1 cache and prefers
+  // to launch 3-D grids where possible. 
+  if (gpuh->deviceProp.major < 2) {
+    return -1;
+  }
+
+  // start timing...
+  wkf_timerhandle globaltimer = wkf_timer_create();
+  wkf_timer_start(globaltimer);
+
   int vtexsize = 0;
   const VolTexFormat voltexformat = RGB4U; // XXX caller may want to set this
   switch (voltexformat) {
@@ -921,46 +960,10 @@ int CUDAQuickSurf::calc_surf(long int natoms, const float *xyzr_f,
   }
 
   float4 *colors = (float4 *) colors_f;
-  int3 volsz = make_int3(numvoxels[0], numvoxels[1], numvoxels[2]);
-
   int chunkmaxverts=0;
   int chunknumverts=0; 
   int numverts=0;
   int numfacets=0;
-
-  wkf_timerhandle globaltimer = wkf_timer_create();
-  wkf_timer_start(globaltimer);
-
-  cudaError_t err;
-  cudaDeviceProp deviceProp;
-  int dev;
-  if (cudaGetDevice(&dev) != cudaSuccess) {
-    wkf_timer_destroy(globaltimer);
-    return -1;
-  }
- 
-  memset(&deviceProp, 0, sizeof(cudaDeviceProp));
-  
-  if (cudaGetDeviceProperties(&deviceProp, dev) != cudaSuccess) {
-    wkf_timer_destroy(globaltimer);
-    err = cudaGetLastError(); // eat error so next CUDA op succeeds
-    return -1;
-  }
-
-  // This code currently requires compute capability 1.3 or 2.x
-  // because we absolutely depend on hardware broadcasts for 
-  // global memory reads by multiple threads reading the same element,
-  // and the code more generally assumes the Fermi L1 cache and prefers
-  // to launch 3-D grids where possible.  The current code will run on 
-  // GT200 with reasonable performance so we allow it currently.  More
-  // testing will be needed to determine if laptop integrated 
-  // GT200 devices are truly fast enough to outrun quad core CPUs or
-  // if we should trigger CPU fallback on devices with smaller SM counts.
-  if ((deviceProp.major < 2) &&
-      ((deviceProp.major == 1) && (deviceProp.minor < 3))) {
-    wkf_timer_destroy(globaltimer);
-    return -1;
-  }
 
   // compute grid spacing for the acceleration grid
   float acgridspacing = gausslim * radscale * maxrad;
@@ -972,6 +975,7 @@ int CUDAQuickSurf::calc_surf(long int natoms, const float *xyzr_f,
   // Allocate output arrays for the gaussian density map and 3-D texture map
   // We test for errors carefully here since this is the most likely place
   // for a memory allocation failure due to the size of the grid.
+  int3 volsz = make_int3(numvoxels[0], numvoxels[1], numvoxels[2]);
   int3 chunksz = volsz;
   int3 slabsz = volsz;
 
@@ -1124,13 +1128,9 @@ int CUDAQuickSurf::calc_surf(long int natoms, const float *xyzr_f,
     if (colorperatom)
       Gsz.z = (curslab.z+(Bsz.z*GTEXUNROLL)-1) / (Bsz.z * GTEXUNROLL);
 
-    // For SM 2.x, we can run the entire slab in one pass by launching
+    // For SM >= 2.x, we can run the entire slab in one pass by launching
     // a 3-D grid of thread blocks.
-    // If we are running on SM 1.x, we can only launch 1-D grids so we
-    // must loop over planar grids until we have processed the whole slab.
     dim3 Gszslice = Gsz;
-    if (deviceProp.major < 2)
-      Gszslice.z = 1;
 
     if (gpuh->verbose > 1) {
       printf("CUDA device %d, grid size %dx%dx%d\n", 
@@ -1390,7 +1390,7 @@ printf("  ... bbe: %.2f %.2f %.2f\n", gorigin.x+bbox.x, gorigin.y+bbox.y, gorigi
 
   // catch any errors that may have occured so that at the very least,
   // all of the subsequent resource deallocation calls will succeed
-  err = cudaGetLastError();
+  cudaError_t err = cudaGetLastError();
 
   wkf_timer_stop(globaltimer);
   double totalruntime = wkf_timer_time(globaltimer);
@@ -1407,8 +1407,7 @@ printf("  ... bbe: %.2f %.2f %.2f\n", gorigin.x+bbox.x, gorigin.y+bbox.y, gorigi
     printf("  GPU generated %d vertices, %d facets, in %d passes\n", 
            numverts, numfacets, chunkcount);
     printf("  GPU time (%s): %.3f [sort: %.3f density %.3f mcubes: %.3f copy: %.3f]\n", 
-           (deviceProp.major == 1 && deviceProp.minor == 3) ? "SM 1.3" : "SM 2.x",
-           totalruntime, sorttime, densitytime, mctime, copytime);
+           "SM >= 2.x", totalruntime, sorttime, densitytime, mctime, copytime);
   }
 
   return 0;

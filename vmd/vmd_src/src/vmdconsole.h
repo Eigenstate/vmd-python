@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,14 +11,14 @@
  *
  *      $RCSfile: vmdconsole.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.9 $       $Date: 2016/11/28 03:05:08 $
+ *      $Revision: 1.10 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
  *
- * vmd console redirector
+ * vmd console redirector 
  * (c) 2006-2009 Axel Kohlmeyer <akohlmey@cmm.chem.upenn.edu>
- *
+ * 
  ***************************************************************************/
 
 /* common definitions for the vmdconsole plugin */
@@ -87,7 +87,7 @@ extern int vmdcon_fputs(const int lvl, const char *text);
 
 /* insert text into an existing text widget.
  * returns NULL on success, or an error message on failure. */
-extern const char *tcl_vmdcon_insert(void *interp, const char *w_path,
+extern const char *tcl_vmdcon_insert(void *interp, const char *w_path, 
                                      const char *mark, const char *text);
 
 /* synchronize tcl variable for vmdcon status */

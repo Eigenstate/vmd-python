@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -9,7 +9,13 @@
 #ifndef VMDTKINTERMENU_H
 #define VMDTKINTERMENU_H
 
+#if defined(__APPLE__)
+// use the Apple-provided Python framework
+#include "Python/Python.h"
+#else
 #include "Python.h"
+#endif
+
 #include "VMDMenu.h"
 
 /// VMDMenu subclass to manage Tkinter extension menus added by the user

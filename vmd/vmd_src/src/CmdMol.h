@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: CmdMol.h,v $
  *      $Author: johns $        $Locker:  $                $State: Exp $
- *      $Revision: 1.73 $      $Date: 2016/11/28 03:04:58 $
+ *      $Revision: 1.75 $      $Date: 2019/01/17 21:20:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -388,6 +388,20 @@ public:
   CmdMolNumPeriodic(int mol, int rep, int n)
     : Command(MOL_NUMPERIODIC), whichMol(mol), repn(rep), nimages(n) {}
 };
+
+
+/// Set which instance images are displayed for the selected representation
+class CmdMolShowInstances : public Command {
+protected:
+  virtual void create_text();
+public:
+  const int whichMol;
+  const int repn;
+  const int instances;
+  CmdMolShowInstances(int mol, int rep, int theinstances)
+    : Command(MOL_SHOWPERIODIC), whichMol(mol), repn(rep), instances(theinstances) {}
+};
+
 
 
 /// Set the color scale min/max range for the selected representation

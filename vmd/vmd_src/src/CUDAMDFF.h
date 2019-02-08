@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2007-2014 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: CUDAMDFF.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.3 $      $Date: 2014/12/30 02:33:59 $
+ *      $Revision: 1.4 $      $Date: 2019/01/17 21:38:54 $
  *
  ***************************************************************************
  * DESCRIPTION:

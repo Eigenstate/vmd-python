@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: FileRenderer.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.125 $	$Date: 2016/11/28 03:05:00 $
+ *	$Revision: 1.127 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -362,6 +362,8 @@ protected:
   virtual void point_array_lit(int num, float size, 
                                float *xyz, float *norm, float *colors);
 
+  /// draw a lattice cube array
+  virtual void cube_array(int num, float *centers, float *radii, float *colors);
 
   /// draw a sphere
   virtual void sphere(float * xyzr);
@@ -376,6 +378,42 @@ protected:
     // draw as two triangles, with correct winding order etc
     triangle(a, b, c, norm, norm, norm);
     triangle(a, c, d, norm, norm, norm);
+  }
+
+  /// draw an axis-aligned lattice site cube 
+  virtual void cube(float * xyzr) {
+    // coordinates of unit cube
+    float v0[] = {-1.0, -1.0, -1.0}; 
+    float v1[] = { 1.0, -1.0, -1.0}; 
+    float v2[] = {-1.0,  1.0, -1.0}; 
+    float v3[] = { 1.0,  1.0, -1.0}; 
+    float v4[] = {-1.0, -1.0,  1.0}; 
+    float v5[] = { 1.0, -1.0,  1.0}; 
+    float v6[] = {-1.0,  1.0,  1.0}; 
+    float v7[] = { 1.0,  1.0,  1.0}; 
+
+    float n0[] = {0, 0,  1};
+    float n1[] = {0, 0,  1};
+    float n2[] = {0, -1, 0};
+    float n3[] = {0, -1, 0};
+    float n4[] = {1, 0, 0};
+    float n5[] = {1, 0, 0};
+
+    vec_triad(v0, xyzr, xyzr[3], v0);
+    vec_triad(v1, xyzr, xyzr[3], v1);
+    vec_triad(v2, xyzr, xyzr[3], v2);
+    vec_triad(v3, xyzr, xyzr[3], v3);
+    vec_triad(v4, xyzr, xyzr[3], v4);
+    vec_triad(v5, xyzr, xyzr[3], v5);
+    vec_triad(v6, xyzr, xyzr[3], v6);
+    vec_triad(v7, xyzr, xyzr[3], v7);
+
+    square(n0, v0, v1, v3, v2);
+    square(n1, v4, v5, v7, v6);
+    square(n2, v0, v1, v5, v4);
+    square(n3, v2, v3, v7, v6);
+    square(n4, v0, v2, v6, v4);
+    square(n5, v1, v3, v7, v5);
   }
 
 

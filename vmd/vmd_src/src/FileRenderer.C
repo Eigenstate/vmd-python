@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: FileRenderer.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.178 $	$Date: 2016/11/28 03:05:00 $
+ *	$Revision: 1.181 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -332,20 +332,29 @@ void FileRenderer::render(const VMDDisplayList *cmdList) {
   }
   start_clipgroup();
 
-  // Compute periodic images
-  ResizeArray<Matrix4> pbcImages;
-  find_pbc_images(cmdList, pbcImages);
-
   // initialize text offset variables.  These values should never be
   // set in one display list and applied in another, so we reset the
   // variables to zero here at the start of each display list.
   textoffset_x = 0;
   textoffset_y = 0;
 
-int nimages = pbcImages.num();
-for (int pbcimage = 0; pbcimage < nimages; pbcimage++) {
+  // Compute periodic image transformation matrices
+  ResizeArray<Matrix4> pbcImages;
+  find_pbc_images(cmdList, pbcImages);
+  int npbcimages = pbcImages.num();
+
+  // Retreive instance image transformation matrices
+  ResizeArray<Matrix4> instanceImages;
+  find_instance_images(cmdList, instanceImages);
+  int ninstances = instanceImages.num();
+
+for (int pbcimage = 0; pbcimage < npbcimages; pbcimage++) {
  transMat.dup();
  super_multmatrix(pbcImages[pbcimage].mat);
+
+for (int instanceimage = 0; instanceimage < ninstances; instanceimage++) {
+ transMat.dup();
+ super_multmatrix(instanceImages[instanceimage].mat);
 
   VMDDisplayList::VMDLinkIter cmditer;
   cmdList->first(&cmditer);
@@ -385,6 +394,17 @@ for (int pbcimage = 0; pbcimage < nimages; pbcimage++) {
       sphere_array(sa->numspheres, sa->sphereres, centers, radii, colors);
       }
       break;
+
+#ifdef VMDLATTICECUBES
+    case DCUBEARRAY:     
+      {
+      DispCmdLatticeCubeArray *ca = (DispCmdLatticeCubeArray *)cmdptr;
+      float *centers, *radii, *colors;
+      ca->getpointers(centers, radii, colors);
+      cube_array(ca->numcubes, centers, radii, colors);
+      }
+      break;
+#endif
 
     case DLINE:    // plot a line
       // don't draw degenerate lines of zero length
@@ -667,8 +687,13 @@ for (int pbcimage = 0; pbcimage < nimages; pbcimage++) {
 #endif
     } // end of switch statement
   } // while (tok != DLASTCOMMAND)
+
+ transMat.pop();
+} // end of loop over instance images
+
  transMat.pop();
 } // end of loop over periodic images
+
   end_clipgroup();
 }
 
@@ -1275,6 +1300,26 @@ void FileRenderer::sphere_array(int spnum, int spres,
 
     super_set_color(nearest_index(colors[ind], colors[ind+1], colors[ind+2]));
     sphere(xyzr);
+    ind += 3; // next sphere
+  }
+}
+
+
+// render a bunch of cubes that share the same material properties,
+// differing only in their individual positions, radii (half side length), 
+// and colors.
+void FileRenderer::cube_array(int cbnum, float *centers, float *radii, float *colors) {
+  int i, ind;
+  ind = 0;
+  for (i=0; i<cbnum; i++) {
+    float xyzr[4];
+    xyzr[0]=centers[ind    ];
+    xyzr[1]=centers[ind + 1];
+    xyzr[2]=centers[ind + 2];
+    xyzr[3]=radii[i];
+
+    super_set_color(nearest_index(colors[ind], colors[ind+1], colors[ind+2]));
+    cube(xyzr);
     ind += 3; // next sphere
   }
 }

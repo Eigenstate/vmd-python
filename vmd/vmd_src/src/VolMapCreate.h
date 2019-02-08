@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: VolMapCreate.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.91 $       $Date: 2016/11/28 03:05:06 $
+ *      $Revision: 1.93 $       $Date: 2019/01/23 21:33:54 $
  *
  **************************************************************************/
 
@@ -106,13 +106,17 @@ public:
 class VolMapCreateDensity : public VolMapCreate {
 protected:
   float *weight;
+  char const *weight_string;
+  int weight_mutable;
   int compute_init();
   int compute_frame(int frame, float *voldata);
   float radius_scale; // mult. factor for atomic radii
   
 public:
-  VolMapCreateDensity(VMDApp *app, AtomSel *sel, float res, float *the_weight, float the_radscale) : VolMapCreate(app, sel, res) {
+  VolMapCreateDensity(VMDApp *app, AtomSel *sel, float res, float *the_weight, char const *the_weight_string, int the_weight_mutable, float the_radscale) : VolMapCreate(app, sel, res) {
     weight = the_weight;
+    weight_string = the_weight_string;
+    weight_mutable = the_weight_mutable;
     // number of random points to use for each atom's gaussian distr.
     radius_scale = the_radscale;
   }
@@ -122,12 +126,16 @@ public:
 class VolMapCreateInterp : public VolMapCreate {
 protected:
   float *weight;
+  char const *weight_string;
+  int weight_mutable;
   int compute_init();
   int compute_frame(int frame, float *voldata);
 
 public:
-  VolMapCreateInterp(VMDApp *app, AtomSel *sel, float res, float *the_weight) : VolMapCreate(app, sel, res) {
+  VolMapCreateInterp(VMDApp *app, AtomSel *sel, float res, float *the_weight, char const *the_weight_string, int the_weight_mutable) : VolMapCreate(app, sel, res) {
     weight = the_weight;
+    weight_string = the_weight_string;
+    weight_mutable = the_weight_mutable;
   }
 };
 

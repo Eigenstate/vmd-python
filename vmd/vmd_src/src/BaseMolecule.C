@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: BaseMolecule.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.266 $	$Date: 2016/11/28 03:54:26 $
+ *	$Revision: 1.272 $	$Date: 2019/01/17 21:20:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -107,12 +107,18 @@ BaseMolecule::~BaseMolecule(void) {
   for (i=0; i<volumeList.num(); i++) {
     delete volumeList[i];
   }
+
+  // delete optional per-atom fields
   for (i=0; i<extraflt.num(); i++) {
     delete [] extraflt.data(i);
   }
   for (i=0; i<extraint.num(); i++) {
     delete [] extraint.data(i);
   }
+  for (i=0; i<extraflg.num(); i++) {
+    delete [] extraflg.data(i);
+  }
+
   if (qm_data)
     delete qm_data;
 }
@@ -143,6 +149,7 @@ int BaseMolecule::init_atoms(int n) {
     // querying a non-existent field with extra*.data("fielddoesntexist")
     extraflt.add_name("NULL", NULL);
     extraint.add_name("NULL", NULL);
+    extraflg.add_name("NULL", NULL);
 
     // initialize "default" extra data fields.
     extraflt.add_name("beta", new float[nAtoms]);
@@ -150,6 +157,11 @@ int BaseMolecule::init_atoms(int n) {
     extraflt.add_name("charge", new float[nAtoms]);
     extraflt.add_name("mass", new float[nAtoms]);
     extraflt.add_name("radius", new float[nAtoms]);
+
+    // initialize default per-atom flags
+    extraflg.add_name("flags", new unsigned char[nAtoms]);
+
+    // initialize "default" extra floating point data fields.
     for (i=0; i<extraflt.num(); i++) {
       void *data = extraflt.data(i);
       if (data != NULL) 
@@ -162,6 +174,16 @@ int BaseMolecule::init_atoms(int n) {
       if (data != NULL)
         memset(data, 0, long(nAtoms)*sizeof(int));
     }
+
+    // initialize "default" extra flags data fields.
+    for (i=0; i<extraflg.num(); i++) {
+      void *data = extraflg.data(i);
+
+      // 8 per-atom flags per unsigned char
+      if (data != NULL)
+        memset(data, 0, long(nAtoms)*sizeof(unsigned char));
+    }
+
     return TRUE;
   }
   if (n != nAtoms) {
@@ -601,9 +623,9 @@ float BaseMolecule::default_mass(const char *nm) {
       case 'P' : val = 30.97376f; break;
       case 'S' : val = 32.06000f; break;
     }
-    if      (toupper(nm[0] == 'C') && toupper(nm[1] == 'L')) val = 35.453f;
-    else if (toupper(nm[0] == 'N') && toupper(nm[1] == 'A')) val = 22.989770f;
-    else if (toupper(nm[0] == 'M') && toupper(nm[1] == 'G')) val = 24.3050f;
+    if      ((toupper(nm[0]) == 'C') && (toupper(nm[1]) == 'L')) val = 35.453f;
+    else if ((toupper(nm[0]) == 'N') && (toupper(nm[1]) == 'A')) val = 22.989770f;
+    else if ((toupper(nm[0]) == 'M') && (toupper(nm[1]) == 'G')) val = 24.3050f;
   }
 
   return val;
@@ -2466,23 +2488,25 @@ void BaseMolecule::add_volume_data(const char *name, const float *o,
   // the memory required for the volume gradients (4x the scalar grid memory)
   // Color texture maps require another 0.75x the original scalar grid size.
   msgInfo << "   Grid size: " << x << "x" << y << "x" << z << "  (" 
-          << (int) (4.0 * (x*y*z * sizeof(float)) / (1024.0 * 1024.0)) << " MB)" 
+          << (int) (4.0 * (vdata->gridsize() * sizeof(float)) / (1024.0 * 1024.0)) << " MB)" 
           << sendmsg;
 
-  msgInfo << "   Total voxels: " << x*y*z << sendmsg;
+  msgInfo << "   Total voxels: " << vdata->gridsize() << sendmsg;
 
+  float datamin, datamax;
+  vdata->datarange(datamin, datamax);
 #if 1
   char minstr[1024];
   char maxstr[1024];
   char rangestr[1024];
-  sprintf(minstr, "%g", vdata->datamin);
-  sprintf(maxstr, "%g", vdata->datamax);
-  sprintf(rangestr, "%g", (vdata->datamax - vdata->datamin));
+  sprintf(minstr, "%g", datamin);
+  sprintf(maxstr, "%g", datamax);
+  sprintf(rangestr, "%g", (datamax - datamin));
   msgInfo << "   Min: " << minstr << "  Max: " << maxstr 
           << "  Range: " << rangestr << sendmsg;
 #else
-  msgInfo << "   Min: " << vdata->datamin << "  Max: " << vdata->datamax 
-          << "  Range: " << (vdata->datamax - vdata->datamin) << sendmsg;
+  msgInfo << "   Min: " << datamin << "  Max: " << datamax 
+          << "  Range: " << (datamax - datamin) << sendmsg;
 #endif
 
   if (grad) {
@@ -2511,13 +2535,15 @@ void BaseMolecule::add_volume_data(const char *name, const double *o,
   // the memory required for the volume gradients (4x the scalar grid memory)
   // Color texture maps require another 0.75x the original scalar grid size.
   msgInfo << "   Grid size: " << x << "x" << y << "x" << z << "  (" 
-          << (int) (4.0 * (x*y*z * sizeof(float)) / (1024.0 * 1024.0)) << " MB)" 
+          << (int) (4.0 * (vdata->gridsize() * sizeof(float)) / (1024.0 * 1024.0)) << " MB)" 
           << sendmsg;
 
-  msgInfo << "   Total voxels: " << x*y*z << sendmsg;
+  msgInfo << "   Total voxels: " << vdata->gridsize() << sendmsg;
 
-  msgInfo << "   Min: " << vdata->datamin << "  Max: " << vdata->datamax 
-          << "  Range: " << (vdata->datamax - vdata->datamin) << sendmsg;
+  float datamin, datamax;
+  vdata->datarange(datamin, datamax);
+  msgInfo << "   Min: " << datamin << "  Max: " << datamax 
+          << "  Range: " << (datamax - datamin) << sendmsg;
 
   msgInfo << "   Computing volume gradient map for smooth shading" << sendmsg;
   vdata->compute_volume_gradient(); // calc gradients for smooth vertex normals
@@ -2525,6 +2551,14 @@ void BaseMolecule::add_volume_data(const char *name, const double *o,
   volumeList.append(vdata);
 
   msgInfo << "Added volume data, name=" << vdata->name << sendmsg;
+}
+
+
+void BaseMolecule::remove_volume_data(int idx) { 
+  if (idx >= 0 && idx < volumeList.num()) {
+    delete volumeList[idx];    
+    volumeList.remove(idx);
+  }
 }
 
 

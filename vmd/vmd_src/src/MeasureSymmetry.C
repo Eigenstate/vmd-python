@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: MeasureSymmetry.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.63 $	$Date: 2016/11/28 03:05:01 $
+ *	$Revision: 1.65 $	$Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -117,7 +117,7 @@ static double myerfc(double x) {
 
 
 // Forward declarations of helper functions
-static inline bool coplanar(const float *normal1, const float *normal2, float tol);
+// static inline bool coplanar(const float *normal1, const float *normal2, float tol);
 static inline bool collinear(const float *axis1, const float *axis2, float tol);
 static inline bool orthogonal(const float *axis1, const float *axis2, float tol);
 static inline bool behind_plane(const float *normal, const float *coor);
@@ -3935,10 +3935,11 @@ void Symmetry::draw_transformed_mol(Matrix4 rot) {
 
 /***********  HELPER FUNCTIONS  ************/
 
-
+#if 0
 static inline bool coplanar(const float *normal1, const float *normal2, float tol) {
   return collinear(normal1, normal2, tol);
 }
+#endif
 
 static inline bool collinear(const float *axis1, const float *axis2, float tol) {
   if (fabs(dot_prod(axis1, axis2)) > tol) return 1;

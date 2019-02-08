@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolItemOrbital.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.49 $	$Date: 2016/11/28 03:04:59 $
+ *	$Revision: 1.51 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -49,6 +49,8 @@ void DrawMolItem::draw_orbital(int density, int wavefnctype, int wavefncspin,
 
   // only recalculate the orbital grid if necessary
   int regenorbital=1;
+  int useorbgridfromrep = -1;  // XXX repID with an existing grid we can reuse 
+
   if (density != orbgridisdensity ||
       wavefnctype != waveftype ||
       wavefncspin != wavefspin ||
@@ -58,7 +60,47 @@ void DrawMolItem::draw_orbital(int density, int wavefnctype, int wavefncspin,
       orbvol == NULL || 
       needRegenerate & MOL_REGEN ||
       needRegenerate & SEL_REGEN) {
-    regenorbital=1;
+
+#if defined(VMDENABLEORBITALGRIDBACKDOOR)
+    //
+    // XXX hack to look for an existing orbital grid we can reuse as-is...
+    //
+    // This search loop allows the molecular orbital representations 
+    // within the same molecule to reuse any existing
+    // rep's molecular orbital grid if the orbital ID and various 
+    // grid-specific parameters are all compatible.  This optimization
+    // short-circuits the need for a rep to compute its own grid if
+    // any other rep already has what it needs.  For large QM/MM scenes,
+    // this optimization can be worth as much as a 2X speedup when
+    // orbital computation dominates animation performance.
+    int repcnt = mol->repList.num();
+    int r;
+    for (r=0; r<repcnt && useorbgridfromrep < 0; r++) {
+      DrawMolItem *dmi = mol->repList[r];
+      if (dmi->repNumber != repNumber) {
+        AtomRep *ar = dmi->atomRep;
+        if (ar->method() == AtomRep::ORBITAL) {
+          if (orbid == dmi->gridorbid &&
+              wavefnctype == dmi->waveftype &&
+              wavefncspin == dmi->wavefspin &&
+              wavefncexcitation == dmi->wavefexcitation &&
+              gridspacing == dmi->orbgridspacing &&
+              density == dmi->orbgridisdensity &&
+              dmi->orbvol != NULL) {
+//            printf("Rep[%d]: orbid %d,  rep[%d]: %d\n", repNumber, orbid, r, dmi->gridorbid);
+            useorbgridfromrep=r;
+            delete orbvol;
+            orbvol = dmi->orbvol; // XXX watch out when borrowing orbvol!
+          }
+        }
+      }
+    }
+
+    if (useorbgridfromrep >= 0)
+      regenorbital=0;
+    else  
+#endif 
+      regenorbital=1;
   }
 
   double motime=0, voltime=0, gradtime=0;
@@ -197,6 +239,12 @@ void DrawMolItem::draw_orbital(int density, int wavefnctype, int wavefncspin,
         draw_volume_isosurface_trimesh(orbvol, isovalue, stepsize);
         break;
     }
+  }
+
+  // XXX if we reused the orbital grid from another rep, we have to 
+  //     null out orbvol so we don't try and free another reps memory later...
+  if (useorbgridfromrep >= 0) {
+    orbvol = NULL; // XXX watch out, un-copy the pointer to the borrowed grid
   }
 
   if (regenorbital) {

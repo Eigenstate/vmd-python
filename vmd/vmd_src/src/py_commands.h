@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_commands.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.41 $       $Date: 2016/11/28 03:05:08 $
+ *      $Revision: 1.42 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -20,18 +20,25 @@
 
 #ifndef PY_COMMANDS_H
 #define PY_COMMANDS_H
-#include "Python.h"
 
-// Compatability header for python 2.6+ to python 3
-#if PY_MAJOR_VERSION < 3
-#include "bytesobject.h"
+#if defined(__APPLE__)
+// use the Apple-provided Python framework
+#include "Python/Python.h"
+#else
+#include "Python.h"
+#endif
+
+#if (PY_MAJOR_VERSION == 2) && (PY_MINOR_VERSION < 5)
+#define CAST_HACK (char *)
+#else
+#define CAST_HACK
 #endif
 
 class VMDApp;
 class Timestep;
 class AtomSel;
 
-// store/retrieve the VMDApp instance from the __builtins__ module.
+// store/retrieve the VMDApp instance from the __builtins__ module. 
 extern VMDApp *get_vmdapp();
 void set_vmdapp(VMDApp *);
 
@@ -40,6 +47,16 @@ void set_vmdapp(VMDApp *);
 // return 1 on success, 0 on error
 extern int py_array_from_obj(PyObject *obj, float *arr);
 
+// Turn PyObject to and from strings or ints, with ifdefs for python 2/3
+char* as_charptr(PyObject *target);
+PyObject* as_pystring(const char *target);
+int is_pystring(const PyObject *target);
+PyObject* as_pyint(int target);
+int as_int(PyObject *target);
+int is_pyint(PyObject *target);
+int valid_molid(int molid, VMDApp *app);
+int py_get_vector(PyObject *matobj, int n, float *vec);
+int convert_bool(PyObject *obj, void *boolval);
 
 // Get the timestep corresponding to the given molid and frame.
 // If molid is -1, the top molecule will be used.
@@ -51,14 +68,17 @@ Timestep *parse_timestep(VMDApp *app, int molid, int frame);
 
 // Return the underlying AtomSel object.  Raise PyError and return
 // NULL on failure if the object is not an instance of atomsel.
-// Does not check if the molid referenced by the underlying AtomSel
+// Does not check if the molid referenced by the underlying AtomSel 
 // is still valid.
 AtomSel * atomsel_AsAtomSel( PyObject *obj );
 
-extern PyObject* initaxes();
+// Atomsel type
+extern PyTypeObject Atomsel_Type;
+
+
 extern PyObject* initanimate();
-extern PyObject* initatomselection();
 extern PyObject* initatomsel();
+extern PyObject* initaxes();
 extern PyObject* initcolor();
 extern PyObject* initdisplay();
 extern PyObject* initgraphics();
@@ -71,20 +91,22 @@ extern PyObject* initmouse();
 extern PyObject* initrender();
 extern PyObject* inittrans();
 extern PyObject* initvmdmenu();
+extern PyObject* initvmdcallbacks();
 extern PyObject* initmeasure();
 extern PyObject* inittopology();
+extern PyObject* initselection();
 
 #ifdef VMDNUMPY
 extern PyObject* initvmdnumpy();
 #endif
 
-// use this typedef so that we can define our Python methods as static
-// functions, then cast them to the proper type, rather than declaring the
-// functions extern "C", which can lead to namespace collision.
+// Contains submodule initialization functions with submodule names
+// Each initialization function returns a PyObject*
+struct _py3_inittab {
+    const char *name;
+    PyObject* (*initfunc)(void);
+};
 
-extern "C" {
-  typedef PyObject *(*vmdPyMethod)(PyObject *, PyObject *);
-}
-
+extern _py3_inittab py_initializers[];
 #endif
 

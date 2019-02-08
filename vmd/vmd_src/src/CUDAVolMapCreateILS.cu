@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2008-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,7 +10,7 @@
  *
  *      $RCSfile: CUDAVolMapCreateILS.cu,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.50 $      $Date: 2014/05/27 15:31:50 $
+ *      $Revision: 1.52 $      $Date: 2019/01/17 21:38:55 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -230,8 +230,7 @@ __global__ static void cuda_find_distance_exclusions(
   const int bidz = blockIdx.y / nblocky + mzblockoffset;
 
   // block ID, flat index
-  // XXX assume first mult is within 24-bits
-  const int bid = (__umul24(bidz,nblocky) + bidy)*nblockx + bidx;
+  const int bid = (bidz * nblocky + bidy)*nblockx + bidx;
 
   // thread ID, flat index
   const int tid = (((threadIdx.z<<BSHIFT) + threadIdx.y)<<BSHIFT) + threadIdx.x;
@@ -244,9 +243,8 @@ __global__ static void cuda_find_distance_exclusions(
   // can optimize from above for case when mzblocks = 1
 
   // block ID, flat index
-  // XXX assume first mult is within 24-bits
   const int bid
-    = (__umul24(mzblockoffset,gridDim.y) + blockIdx.y)*gridDim.x + blockIdx.x;
+    = (mzblockoffset * gridDim.y + blockIdx.y)*gridDim.x + blockIdx.x;
 
   // thread ID, flat index
   const int tid = (((threadIdx.z<<BSHIFT) + threadIdx.y)<<BSHIFT) + threadIdx.x;
@@ -266,8 +264,7 @@ __global__ static void cuda_find_distance_exclusions(
   const int jb = (int) floorf(py * const_by_1);  // thread block
   const int kb = (int) floorf(pz * const_bz_1);
 
-  // XXX assume first mult is within 24-bits
-  const int binid = (__umul24(kb,nby) + jb)*nbx + ib;  // flat index of my bin
+  const int binid = (kb * nby + jb)*nbx + ib;    // flat index of my bin
 
   int n, nb;
 
@@ -351,8 +348,7 @@ __global__ static void cuda_find_energy_exclusions(
   const int bidz = blockIdx.y / nblocky + mzblockoffset;
 
   // block ID, flat index
-  // XXX assume first mult is within 24-bits
-  const int bid = (__umul24(bidz,nblocky) + bidy)*nblockx + bidx;
+  const int bid = (bidz * nblocky + bidy)*nblockx + bidx;
 
   // thread ID, flat index
   const int tid = (((threadIdx.z<<BSHIFT) + threadIdx.y)<<BSHIFT) + threadIdx.x;
@@ -365,9 +361,8 @@ __global__ static void cuda_find_energy_exclusions(
   // can optimize from above for case when mzblocks = 1
 
   // block ID, flat index
-  // XXX assume first mult is within 24-bits
   const int bid
-    = (__umul24(mzblockoffset,gridDim.y) + blockIdx.y)*gridDim.x + blockIdx.x;
+    = (mzblockoffset * gridDim.y + blockIdx.y)*gridDim.x + blockIdx.x;
 
   // thread ID, flat index
   const int tid = (((threadIdx.z<<BSHIFT) + threadIdx.y)<<BSHIFT) + threadIdx.x;
@@ -420,8 +415,7 @@ __global__ static void cuda_find_energy_exclusions(
   const int jb = (int) floorf(py * const_by_1);  // thread block
   const int kb = (int) floorf(pz * const_bz_1);
 
-  // XXX assume first mult is within 24-bits
-  const int binid = (__umul24(kb,nby) + jb)*nbx + ib;  // flat index of my bin
+  const int binid = (kb * nby + jb)*nbx + ib;    // flat index of my bin
 
   int n, nb;
 
@@ -530,8 +524,7 @@ __global__ static void cuda_occupancy_monoatom(
   const int bidz = blockIdx.y / nblocky + mzblockoffset;
 
   // block ID, flat index
-  // XXX assume first mult is within 24-bits
-  const int bid = (__umul24(bidz,nblocky) + bidy)*nblockx + bidx;
+  const int bid = (bidz * nblocky + bidy)*nblockx + bidx;
 
   // thread ID, flat index
   const int tid = (((threadIdx.z<<BSHIFT) + threadIdx.y)<<BSHIFT) + threadIdx.x;
@@ -544,9 +537,8 @@ __global__ static void cuda_occupancy_monoatom(
   // can optimize from above for case when mzblocks = 1
 
   // block ID, flat index
-  // XXX assume first mult is within 24-bits
   const int bid
-    = (__umul24(mzblockoffset,gridDim.y) + blockIdx.y)*gridDim.x + blockIdx.x;
+    = (mzblockoffset * gridDim.y + blockIdx.y)*gridDim.x + blockIdx.x;
 
   // thread ID, flat index
   const int tid = (((threadIdx.z<<BSHIFT) + threadIdx.y)<<BSHIFT) + threadIdx.x;
@@ -595,8 +587,7 @@ __global__ static void cuda_occupancy_monoatom(
   const int jb = (int) floorf(py * const_by_1);  // thread block
   const int kb = (int) floorf(pz * const_bz_1);
 
-  // XXX assume first mult is within 24-bits
-  const int binid = (__umul24(kb,nby) + jb)*nbx + ib;  // flat index of my bin
+  const int binid = (kb * nby + jb)*nbx + ib;    // flat index of my bin
 
   int n, nb;
 
@@ -715,8 +706,7 @@ __global__ static void cuda_occupancy_multiatom(
   const int bidz = blockIdx.y / nblocky + mzblockoffset;
 
   // block ID, flat index
-  // XXX assume first mult is within 24-bits
-  const int bid = (__umul24(bidz,nblocky) + bidy)*nblockx + bidx;
+  const int bid = (bidz * nblocky + bidy)*nblockx + bidx;
 
   // thread ID, flat index
   const int tid = (((threadIdx.z<<BSHIFT) + threadIdx.y)<<BSHIFT) + threadIdx.x;
@@ -729,9 +719,8 @@ __global__ static void cuda_occupancy_multiatom(
   // can optimize from above for case when mzblocks = 1
 
   // block ID, flat index
-  // XXX assume first mult is within 24-bits
   const int bid
-    = (__umul24(mzblockoffset,gridDim.y) + blockIdx.y)*gridDim.x + blockIdx.x;
+    = (mzblockoffset * gridDim.y + blockIdx.y)*gridDim.x + blockIdx.x;
 
   // thread ID, flat index
   const int tid = (((threadIdx.z<<BSHIFT) + threadIdx.y)<<BSHIFT) + threadIdx.x;
@@ -834,8 +823,7 @@ __global__ static void cuda_occupancy_multiatom(
   const int jb = (int) floorf(py * const_by_1);  // thread block
   const int kb = (int) floorf(pz * const_bz_1);
 
-  // XXX assume first mult is within 24-bits
-  const int binid = (__umul24(kb,nby) + jb)*nbx + ib;  // flat index of my bin
+  const int binid = (kb * nby + jb)*nbx + ib;    // flat index of my bin
 
   int n, nb;
   int m;
@@ -874,8 +862,7 @@ __global__ static void cuda_occupancy_multiatom(
   const int num_extra_slots = const_num_extras << BIN_SLOTSHIFT;
 
   // number of floats from conformers to move into shared memory
-  // product is within 24-bits
-  const int total_shmem_copy = __umul24((3*NCONFPERLOOP),const_num_probes);
+  const int total_shmem_copy = 3*NCONFPERLOOP * const_num_probes;
 
   // loop over all conformers
   for (m = 0;  m < const_num_conformers;  m += NCONFPERLOOP) {
@@ -898,7 +885,7 @@ __global__ static void cuda_occupancy_multiatom(
       const int nleft = (total_shmem_copy & 31);
 
       // skip over previously computed conformers (3*const_num_probes*m)
-      const int skip = __umul24((const_num_probes + twice_num_probes), m);
+      const int skip = (const_num_probes + twice_num_probes) * m;
 
       int off = 0;
       for (nc = 0;  nc < npass;  nc++, off += 32) {

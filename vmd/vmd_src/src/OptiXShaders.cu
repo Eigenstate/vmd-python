@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2013-2014 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
 *
 *      $RCSfile: OptiXShaders.cu,v $
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.141 $         $Date: 2016/11/04 06:12:40 $
+*      $Revision: 1.163 $         $Date: 2019/01/17 21:38:55 $
 *
 ***************************************************************************
 * DESCRIPTION:
@@ -63,8 +63,6 @@
 #include <optixu/optixu_aabb_namespace.h>
 #include "OptiXShaders.h"
 
-// #define SC15ANIMSPHERESHACK 1
-
 // Runtime-based RT output coloring
 //#define ORT_TIME_COLORING 1
 // normalize runtime color by max acceptable pixel runtime 
@@ -83,8 +81,10 @@
 // are particularly obvious in shadowing for direct lighting.
 // Since changing the scene epsilon even to large values does not 
 // always cure the problem, this workaround is still required.
-#define ORT_USE_RAY_STEP 1
-#define ORT_RAY_STEP     N*scene_epsilon*4.0f
+#define ORT_USE_RAY_STEP       1
+#define ORT_TRANS_USE_INCIDENT 1
+#define ORT_RAY_STEP           N*scene_epsilon*4.0f
+#define ORT_RAY_STEP2          ray.direction*scene_epsilon*4.0f
 
 // reverse traversal of any-hit rays for shadows/AO
 //
@@ -102,17 +102,13 @@
 #define REVERSE_RAY_STEP       (scene_epsilon*10.0f)
 #define REVERSE_RAY_LENGTH     3.0f
 
+
+// Macros to enable particular ray-geometry intersection variants that
+// optimize for speed, or some combination of speed and accuracy
+#define ORT_USE_SPHERES_HEARNBAKER 1
+
+
 using namespace optix;
-
-// "*" operator
-inline __host__ __device__ float3 operator*(char4 a, float b) {
-  return make_float3(b * a.x, b * a.y, b * a.z);
-}
-
-inline __host__ __device__ float3 operator*(uchar4 a, float b) {
-  return make_float3(b * a.x, b * a.y, b * a.z);
-}
-
 
 //
 // TEA, a tiny encryption algorithm.
@@ -152,11 +148,20 @@ rtDeclareVariable(unsigned int, progressiveSubframeIndex, rtSubframeIndex, );
 rtDeclareVariable(unsigned int, accumCount, , );
 rtDeclareVariable(int, progressive_enabled, , );
 
+#if defined(ORT_RAYSTATS)
+// input/output ray statistics buffer
+rtBuffer<uint4, 2> raystats1_buffer; // x=prim, y=shad-dir, z=shad-ao, w=miss
+rtBuffer<uint4, 2> raystats2_buffer; // x=trans, y=trans-skip, z=?, w=refl
+#endif
+
 // epsilon value to use to avoid self-intersection 
 rtDeclareVariable(float, scene_epsilon, , );
 
-// max ray recursion depth...
+// max ray recursion depth
 rtDeclareVariable(int, max_depth, , );
+
+// max number of transparent surfaces (max_trans <= max_depth)
+rtDeclareVariable(int, max_trans, , );
 
 // XXX global interpolation coordinate for experimental  animated 
 // representations that loop over some fixed sequence of motion 
@@ -220,16 +225,33 @@ rtDeclareVariable(rtObject, root_shadower, , );
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(float, t_hit, rtIntersectionDistance, );
 //rtDeclareVariable(float3, texcoord, attribute texcoord, );
+
+//
+// Classic API
+//
 rtDeclareVariable(float3, geometric_normal, attribute geometric_normal, );
 rtDeclareVariable(float3, shading_normal, attribute shading_normal, );
-
 // object color assigned at intersection time
 rtDeclareVariable(float3, obj_color, attribute obj_color, );
 
+#if defined(ORT_USERTXAPIS)
+//
+// OptiX RTX hardware triangle API
+//
+rtDeclareVariable(float2, barycentrics, attribute rtTriangleBarycentrics, );
+rtBuffer<uint4> normalBuffer; // packed normals: ng [n0 n1 n2]
+rtBuffer<uchar4> colorBuffer; // unsigned char color representation
+rtDeclareVariable(int, has_vertex_normals, , );
+rtDeclareVariable(int, has_vertex_colors, , );
+#endif
+
+
 struct PerRayData_radiance {
-  float3 result;
-  float importance;
-  int depth;
+  float3 result;     // final shaded surface color
+  float alpha;       // alpha value to back-propagate to framebuffer
+  float importance;  // importance of recursive ray tree
+  int depth;         // current recursion depth
+  int transcnt;      // transmission ray surface count/depth
 };
 
 struct PerRayData_shadow {
@@ -249,14 +271,14 @@ rtBuffer<DirectionalLight> dir_lights;
 rtBuffer<DirectionalLight> pos_lights;
 #endif
 
-
 //
 // convert float3 rgb data to uchar4 with alpha channel set to 255.
 //
 static __device__ __inline__ uchar4 make_color_rgb4u(const float3& c) {
   return make_uchar4(static_cast<unsigned char>(__saturatef(c.x)*255.99f),  
                      static_cast<unsigned char>(__saturatef(c.y)*255.99f),  
-                     static_cast<unsigned char>(__saturatef(c.z)*255.99f),  255u);
+                     static_cast<unsigned char>(__saturatef(c.z)*255.99f),  
+                     255u);
 }
 
 //
@@ -280,6 +302,10 @@ RT_PROGRAM void miss_solid_bg() {
   // Fog overrides the background color if we're using
   // Tachyon radial fog, but not for OpenGL style fog.
   prd_radiance.result = scene_bg_color;
+  prd_radiance.alpha = 0.0f; // alpha of background is 0.0f;
+#if defined(ORT_RAYSTATS)
+  raystats1_buffer[launch_index].w++; // increment miss counter
+#endif
 }
 
 
@@ -294,6 +320,10 @@ RT_PROGRAM void miss_gradient_bg_sky_sphere() {
   float3 col = val * scene_bg_color_grad_top + 
                (1.0f - val) * scene_bg_color_grad_bot; 
   prd_radiance.result = col;
+  prd_radiance.alpha = 0.0f; // alpha of background is 0.0f;
+#if defined(ORT_RAYSTATS)
+  raystats1_buffer[launch_index].w++; // increment miss counter
+#endif
 }
 
 
@@ -308,6 +338,10 @@ RT_PROGRAM void miss_gradient_bg_sky_plane() {
   float3 col = val * scene_bg_color_grad_top + 
                (1.0f - val) * scene_bg_color_grad_bot; 
   prd_radiance.result = col;
+  prd_radiance.alpha = 0.0f; // alpha of background is 0.0f;
+#if defined(ORT_RAYSTATS)
+  raystats1_buffer[launch_index].w++; // increment miss counter
+#endif
 }
 
 
@@ -492,10 +526,21 @@ __device__ void clip_ray_by_plane(optix::Ray &ray, const float4 plane) {
 
 
 //
+// Clear the raystats buffers to zeros
+//
+#if defined(ORT_RAYSTATS)
+RT_PROGRAM void clear_raystats_buffers() {
+  raystats1_buffer[launch_index] = make_uint4(0, 0, 0, 0); // clear ray counters to zero
+  raystats2_buffer[launch_index] = make_uint4(0, 0, 0, 0); // clear ray counters to zero
+}
+#endif
+
+
+//
 // Clear the accumulation buffer to zeros
 //
 RT_PROGRAM void clear_accumulation_buffer() {
-  accumulation_buffer[launch_index] = make_float4(0.0f,0.0f,0.0f,0.0f);
+  accumulation_buffer[launch_index] = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 
@@ -536,10 +581,12 @@ RT_PROGRAM void draw_accumulation_buffer_stub() {
 //
 // Ray gen accumulation buffer helper routines
 //
-static void __inline__ __device__ accumulate_color(float3 &col) {
+static void __inline__ __device__ accumulate_color(float3 &col, 
+                                                   float alpha = 1.0f) {
 #if defined(VMDOPTIX_PROGRESSIVEAPI)
   if (progressive_enabled) {
     col *= accumulation_normalization_factor;
+    alpha *= accumulation_normalization_factor;
 
 #if OPTIX_VERSION < 3080
     // XXX prior to OptiX 3.8, a hard-coded gamma correction was required
@@ -551,14 +598,14 @@ static void __inline__ __device__ accumulate_color(float3 &col) {
 #endif
 
     // for optix-vca progressive mode accumulation is handled in server code
-    accumulation_buffer[launch_index]  = make_float4(col, 1.0f);
+    accumulation_buffer[launch_index]  = make_float4(col, alpha);
   } else {
     // For batch mode we accumulate ourselves
-    accumulation_buffer[launch_index] += make_float4(col, 1.0f);
+    accumulation_buffer[launch_index] += make_float4(col, alpha);
   }
 #else
   // For batch mode we accumulate ourselves
-  accumulation_buffer[launch_index] += make_float4(col, 1.0f);
+  accumulation_buffer[launch_index] += make_float4(col, alpha);
 #endif
 }
 
@@ -737,8 +784,12 @@ void vmd_camera_cubemap_general() {
     PerRayData_radiance prd;
     prd.importance = 1.f;
     prd.depth = 0;
+    prd.transcnt = max_trans;
     optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
     rtTrace(root_object, ray, prd);
+#if defined(ORT_RAYSTATS)
+    raystats1_buffer[launch_index].x++; // increment primary ray counter
+#endif
     col += prd.result; 
   }
 
@@ -766,35 +817,149 @@ RT_PROGRAM void vmd_camera_cubemap_stereo_dof() {
 }
 
 
+
+static __device__ __inline__
+void dof_ray2(const float3 &ray_org_orig, float3 &ray_org,
+             const float3 &ray_dir_orig, float3 &ray_dir,
+             const float3 &up, const float3 &right,
+             unsigned int &randseed) {
+  float3 focuspoint = ray_org_orig +
+                      (ray_dir_orig * cam_dof_focal_dist);
+  float2 dofjxy;
+  jitter_disc2f(randseed, dofjxy, cam_dof_aperture_rad);
+  ray_org = ray_org_orig + dofjxy.x*right + dofjxy.y*up;
+  ray_dir = normalize(focuspoint - ray_org);
+}
+
+
+
+static __host__ __device__ __inline__
+float3 eyeshift2(float3 ray_origin,  // original non-stereo eye origin
+                float eyesep,       // interocular dist, world coords
+                int whicheye,       // left/right eye flag
+                float3 DcrossQ) {   // ray dir x audience "up" dir
+  float shift = 0.0;
+  switch (whicheye) {
+    case -1: 
+      shift = -0.5f * eyesep; // shift ray origin left
+      break;
+
+    case 1:
+      shift = 0.5f * eyesep; // shift ray origin right
+      break; 
+             
+    case 0:
+   default:  
+      shift = 0.0; // monoscopic projection
+      break;
+  }
+  
+  return ray_origin + shift * DcrossQ;
+} 
+
+static __device__ __inline__
+int dome_ray2(float fov,            // FoV in radians
+             float2 vp_sz,         // viewport size
+             float2 i,             // pixel/point in image plane
+             float3 &raydir,       // returned ray direction
+             float3 &updir,        // up, aligned w/ longitude line
+             float3 &rightdir) {   // right, aligned w/ latitude line
+  float thetamax = 0.5f * fov;     // half-FoV in radians
+  float2 radperpix = fov / vp_sz;  // calc radians/pixel in X/Y
+  float2 m = vp_sz * 0.5f;         // calc viewport center/midpoint
+  float2 p = (i - m) * radperpix;  // calc azimuth, theta components
+  float theta = hypotf(p.x, p.y);  // hypotf() ensures best accuracy
+  if (theta < thetamax) {
+    if (theta == 0) {
+      // At the dome center, azimuth is undefined and we must avoid
+      // division by zero, so we set the ray direction to the zenith
+      raydir = make_float3(0, 0, 1);
+      updir = make_float3(0, 1, 0);
+      rightdir = make_float3(1, 0, 0);
+    } else {
+      // Normal case, calc+combine azimuth and elevation components
+      float sintheta, costheta;
+      sincosf(theta, &sintheta, &costheta);
+      raydir    = make_float3(sintheta * p.x / theta,
+                              sintheta * p.y / theta,
+                              costheta);
+      updir     = make_float3(-costheta * p.x / theta,
+                              -costheta * p.y / theta,
+                              sintheta);
+      rightdir  = make_float3(p.y / theta, -p.x / theta, 0);
+    }
+
+    return 1; // point in image plane is within FoV
+  }
+
+  raydir = make_float3(0, 0, 0); // outside of FoV
+  updir = rightdir = raydir;
+  return 0; // point in image plane is outside FoV
+}
+
+
+
 //
 // Camera ray generation code for planetarium dome display
 // Generates a fisheye style frame with ~180 degree FoV
 // 
+static __device__ __inline__
+int dome_ray_dir(float fov,          // FoV in radians
+                 float2 vp_sz,       // viewport size
+                 float2 i,           // pixel/point in image plane
+                 float3 &raydir,     // returned ray direction
+                 float3 &updir,      // up, aligned w/ vertical longitude line
+                 float3 &rightdir) { // right, aligned w/ horiz latitude line
+  float thetamax = 0.5f * fov;       // half-FoV in radians, beyond is black
+  float2 radperpix = fov / vp_sz;    // calc radians/pixel factors in X/Y
+  float2 m = vp_sz * 0.5f;           // calc viewport center/midpoint
+  float2 p = (i - m) * radperpix;    // calc azimuth and theta components
+  float theta = hypotf(p.x, p.y);    // hypotf() ensures best accuracy
+  if (theta < thetamax) {
+    if (theta == 0) {
+      // At the center of the dome, azimuth is undefined and we must avoid
+      // division by zero, so we set the ray direction to the zenith
+      raydir = make_float3(0, 0, 1);
+      updir = make_float3(0, 1, 0);
+      rightdir = make_float3(1, 0, 0);
+    } else {
+      // Normal case, calc+combine azimuth and elevation components
+      float sintheta, costheta;
+      sincosf(theta, &sintheta, &costheta);
+      raydir    = make_float3(sintheta * p.x / theta,
+                              sintheta * p.y / theta,
+                              costheta);
+      updir     = make_float3(-costheta * p.x / theta,
+                              -costheta * p.y / theta,
+                              sintheta);
+      rightdir  = make_float3(p.y / theta, -p.x / theta, 0);
+    }
+
+    return 1; // point in image plane is within FoV
+  }
+
+  raydir = make_float3(0, 0, 0); // outside of FoV
+  updir = rightdir = raydir;
+  return 0; // point in image plane is outside FoV
+}
+
+
 template<int STEREO_ON, int DOF_ON>
 static __device__ __inline__
 void vmd_camera_dome_general() {
-#if defined(ORT_TIME_COLORING)
-  clock_t t0 = clock(); // start per-pixel RT timer
-#endif
-
-  // Stereoscopic rendering is provided by rendering in an over/under
-  // format with the right eye image into the top half of a double-high 
-  // framebuffer, and the left eye into the lower half.  The subsequent 
-  // OpenGL drawing code can trivially unpack and draw the two images 
-  // with simple pointer offset arithmetic.
   uint viewport_sz_y, viewport_idx_y;
   float eyeshift;
   if (STEREO_ON) {
     // render into a double-high framebuffer when stereo is enabled
     viewport_sz_y = launch_dim.y >> 1;
     if (launch_index.y >= viewport_sz_y) {
-      // right image
-      viewport_idx_y = launch_index.y - viewport_sz_y;
-      eyeshift =  0.5f * cam_stereo_eyesep;
-    } else {
       // left image
-      viewport_idx_y = launch_index.y;
+      viewport_idx_y = launch_index.y - viewport_sz_y;
       eyeshift = -0.5f * cam_stereo_eyesep;
+    } else {
+      // right image
+      viewport_idx_y = launch_index.y;
+      eyeshift =  0.5f * cam_stereo_eyesep;
     }
   } else {
     // render into a normal size framebuffer if stereo is not enabled
@@ -803,8 +968,129 @@ void vmd_camera_dome_general() {
     eyeshift = 0.0f;
   }
 
-  float fov = 180.0f * cam_zoom;             // dome FoV in degrees 
-  float rmax = 0.5 * fov * (M_PIf / 180.0f); // half FoV in radians
+  float3 col = make_float3(0.0f);
+  float alpha = 0.0f;
+
+  float2 viewport_idx = make_float2(launch_index.x, viewport_idx_y);
+  float fov = 3.1415926f; // 180 degrees
+  float3 ray_direction, up_direction, right_direction;
+  float3 ray_origin = cam_pos;
+
+  unsigned int randseed = tea<4>(launch_dim.x*(launch_index.y)+launch_index.x, subframe_count());
+
+#if 1
+  if (!dome_ray2(fov, 
+                    make_float2(launch_dim.x, viewport_sz_y), viewport_idx, 
+                    ray_direction, up_direction, right_direction)) {
+#else
+  if (!dome_ray_dir(fov, 
+                    make_float2(launch_dim.x, viewport_sz_y), viewport_idx, 
+                    ray_direction, up_direction, right_direction)) {
+#endif
+    col = make_float3(0, 0, 0);
+    accumulate_color(col, 1.0f);
+    return;
+  }
+
+  ray_direction = cam_U*ray_direction.x + 
+                  cam_V*ray_direction.y + 
+                  cam_W*ray_direction.z;
+
+  up_direction = cam_U*up_direction.x + 
+                  cam_V*up_direction.y + 
+                  cam_W*up_direction.z;
+
+  right_direction = cam_U*right_direction.x + 
+                    cam_V*right_direction.y + 
+                    cam_W*right_direction.z;
+  
+  if (STEREO_ON) {
+#if 1
+    // normalize, or not, if we want to avoid backward stereo at the pole
+    ray_origin = eyeshift2(ray_origin, cam_stereo_eyesep, 0, 
+                          cross(ray_direction, cam_W));
+#else
+    // normalize, or not, if we want to avoid backward stereo at the pole
+    ray_origin += eyeshift * cross(ray_direction, cam_W);
+#endif
+  }
+
+  if (DOF_ON) {
+#if 1
+    dof_ray2(ray_origin, ray_origin, ray_direction, ray_direction,
+             up_direction, right_direction, randseed);
+#else
+    dof_ray(ray_origin, ray_origin, ray_direction, ray_direction,
+            randseed, up_direction, right_direction);
+#endif
+  }
+
+  // trace the new ray...
+  PerRayData_radiance prd;
+  prd.importance = 1.f;
+  prd.alpha = 1.f;
+  prd.depth = 0;
+  prd.transcnt = max_trans;
+  optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+  rtTrace(root_object, ray, prd);
+#if defined(ORT_RAYSTATS)
+  raystats1_buffer[launch_index].x++; // increment primary ray counter
+#endif
+  col += prd.result;
+  alpha += prd.alpha;
+
+  accumulate_color(col, alpha);
+}
+
+
+template<int STEREO_ON, int DOF_ON>
+static __device__ __inline__
+void vmd_camera_dome_general_orig() {
+#if defined(ORT_TIME_COLORING)
+  clock_t t0 = clock(); // start per-pixel RT timer
+#endif
+
+  // Stereoscopic rendering is provided by rendering in an over/under
+  // format with the left eye image into the top half of a double-high 
+  // framebuffer, and the right eye into the lower half.  The subsequent 
+  // OpenGL drawing code can trivially unpack and draw the two images 
+  // with simple pointer offset arithmetic.
+  uint viewport_sz_y, viewport_idx_y;
+  float eyeshift;
+  if (STEREO_ON) {
+    // render into a double-high framebuffer when stereo is enabled
+    viewport_sz_y = launch_dim.y >> 1;
+    if (launch_index.y >= viewport_sz_y) {
+      // left image
+      viewport_idx_y = launch_index.y - viewport_sz_y;
+      eyeshift = -0.5f * cam_stereo_eyesep;
+    } else {
+      // right image
+      viewport_idx_y = launch_index.y;
+      eyeshift =  0.5f * cam_stereo_eyesep;
+    }
+  } else {
+    // render into a normal size framebuffer if stereo is not enabled
+    viewport_sz_y = launch_dim.y;
+    viewport_idx_y = launch_index.y;
+    eyeshift = 0.0f;
+  }
+
+// XXX eliminate fov scaling related to viewport height factors,
+//     we should add an explicit fov control for this camera
+//  float fov = 180.0f * cam_zoom;             // dome FoV in degrees 
+  float fov = 180.0f;                          // dome FoV in degrees 
+
+  // half FoV in radians, pixels beyond this distance are outside
+  // of the field of view of the projection, and are set black
+  float rmax = 0.5 * fov * (M_PIf / 180.0f);
+
+  // The dome angle from center of the projection is proportional 
+  // to the image-space distance from the center of the viewport.
+  // viewport_sz contains the viewport size, radperpix contains the
+  // radians/pixel scaling factors in X/Y, and viewport_mid contains
+  // the midpoint coordinate of the viewpoint used to compute the 
+  // distance from center.
   float2 viewport_sz = make_float2(launch_dim.x, viewport_sz_y);
   float2 radperpix = (M_PIf / 180.0f) * fov / viewport_sz;
   float2 viewport_mid = viewport_sz * 0.5f;
@@ -812,21 +1098,26 @@ void vmd_camera_dome_general() {
   unsigned int randseed = tea<4>(launch_dim.x*(launch_index.y)+launch_index.x, subframe_count());
 
   float3 col = make_float3(0.0f);
+  float alpha = 0.0f;
   for (int s=0; s<aa_samples; s++) {
+    // compute the jittered image plane sample coordinate
     float2 jxy;  
     jitter_offset2f(randseed, jxy);
-
     float2 viewport_idx = make_float2(launch_index.x, viewport_idx_y) + jxy;
+
+    // compute the ray angles in X/Y and total angular distance from center
     float2 rd = (viewport_idx - viewport_mid) * radperpix;
     float rangle = hypotf(rd.x, rd.y); 
 
-    // pixels outside the dome are set to black
+    // pixels outside the dome FoV are treated as black by not
+    // contributing to the color accumulator
     if (rangle < rmax) {
       float3 ray_direction;
       float3 ray_origin = cam_pos;
 
-      // handle center of dome where azimuth is undefined
       if (rangle == 0) {
+        // handle center of dome where azimuth is undefined by 
+        // setting the ray direction to the zenith
         ray_direction = normalize(cam_W);
       } else {
         float rasin, racos;
@@ -835,7 +1126,11 @@ void vmd_camera_dome_general() {
         ray_direction = normalize(cam_U*rsin*rd.x + cam_V*rsin*rd.y + cam_W*racos);
 
         if (STEREO_ON) {
+#if 1
+
+#else
           ray_origin += eyeshift * cross(ray_direction, cam_V);
+#endif
         }
 
         if (DOF_ON) {
@@ -850,17 +1145,23 @@ void vmd_camera_dome_general() {
       // trace the new ray...
       PerRayData_radiance prd;
       prd.importance = 1.f;
+      prd.alpha = 1.f;
       prd.depth = 0;
+      prd.transcnt = max_trans;
       optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
       rtTrace(root_object, ray, prd);
+#if defined(ORT_RAYSTATS)
+      raystats1_buffer[launch_index].x++; // increment primary ray counter
+#endif
       col += prd.result;
+      alpha += prd.alpha;
     }
   }
 
 #if defined(ORT_TIME_COLORING)
   accumulate_time_coloring(col, t0);
 #else
-  accumulate_color(col);
+  accumulate_color(col, alpha);
 #endif
 }
 
@@ -959,8 +1260,12 @@ void vmd_camera_equirectangular_general() {
     PerRayData_radiance prd;
     prd.importance = 1.f;
     prd.depth = 0;
+    prd.transcnt = max_trans;
     optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
     rtTrace(root_object, ray, prd);
+#if defined(ORT_RAYSTATS)
+    raystats1_buffer[launch_index].x++; // increment primary ray counter
+#endif
     col += prd.result;
   }
 
@@ -1085,8 +1390,12 @@ void vmd_camera_oculus_rift_general() {
     PerRayData_radiance prd;
     prd.importance = 1.f;
     prd.depth = 0;
+    prd.transcnt = max_trans;
     optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
     rtTrace(root_object, ray, prd);
+#if defined(ORT_RAYSTATS)
+    raystats1_buffer[launch_index].x++; // increment primary ray counter
+#endif
     col += prd.result; 
   }
 
@@ -1160,20 +1469,12 @@ void vmd_camera_perspective_general() {
 
   unsigned int randseed = tea<4>(launch_dim.x*(viewport_idx_y)+launch_index.x, subframe_count());
 
-#if defined(SC15ANIMSPHERESHACK)
-  int subframecount = subframe_count();
-#endif
   float3 col = make_float3(0.0f);
+  float alpha = 0.0f;
   float3 ray_origin = eyepos;
   for (int s=0; s<aa_samples; s++) {
     float2 jxy;  
     jitter_offset2f(randseed, jxy);
-
-#if defined(SC15ANIMSPHERESHACK)
-    // don't jitter the first sample, since when using an HMD we often run
-    // with only one sample per pixel unless the user wants higher fidelity
-    jxy *= (subframecount > 0 || s > 0);
-#endif
 
     jxy = jxy * viewportscale * aspect * 2.f + d;
     float3 ray_direction = normalize(jxy.x*cam_U + jxy.y*cam_V + cam_W);
@@ -1187,16 +1488,22 @@ void vmd_camera_perspective_general() {
     // trace the new ray...
     PerRayData_radiance prd;
     prd.importance = 1.f;
+    prd.alpha = 1.f;
     prd.depth = 0;
+    prd.transcnt = max_trans;
     optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
     rtTrace(root_object, ray, prd);
+#if defined(ORT_RAYSTATS)
+    raystats1_buffer[launch_index].x++; // increment primary ray counter
+#endif
     col += prd.result; 
+    alpha += prd.alpha;
   }
 
 #if defined(ORT_TIME_COLORING)
   accumulate_time_coloring(col, t0);
 #else
-  accumulate_color(col);
+  accumulate_color(col, alpha);
 #endif
 }
 
@@ -1268,6 +1575,7 @@ void vmd_camera_orthographic_general() {
   unsigned int randseed = tea<4>(launch_dim.x*(viewport_idx_y)+launch_index.x, subframe_count());
 
   float3 col = make_float3(0.0f);
+  float alpha = 0.0f;
   float3 ray_direction = view_direction;
   for (int s=0; s<aa_samples; s++) {
     float2 jxy;  
@@ -1284,16 +1592,22 @@ void vmd_camera_orthographic_general() {
     // trace the new ray...
     PerRayData_radiance prd;
     prd.importance = 1.f;
+    prd.alpha = 1.f;
     prd.depth = 0;
+    prd.transcnt = max_trans;
     optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
     rtTrace(root_object, ray, prd);
+#if defined(ORT_RAYSTATS)
+    raystats1_buffer[launch_index].x++; // increment primary ray counter
+#endif
     col += prd.result; 
+    alpha += prd.alpha;
   }
 
 #if defined(ORT_TIME_COLORING)
   accumulate_time_coloring(col, t0);
 #else
-  accumulate_color(col);
+  accumulate_color(col, alpha);
 #endif
 }
 
@@ -1449,14 +1763,15 @@ static __device__ float3 shade_ambient_occlusion(float3 hit, float3 N, float aoi
 #endif
 #if defined(ORT_USE_RAY_STEP) 
     ambray = make_Ray(hit + ORT_RAY_STEP, dir, shadow_ray_type, scene_epsilon, ao_maxdist);
-//    ambray = make_Ray(hit + ORT_RAY_STEP, dir, shadow_ray_type, scene_epsilon, RT_DEFAULT_MAX);
 #else
     ambray = make_Ray(hit, dir, shadow_ray_type, scene_epsilon, ao_maxdist);
-//    ambray = make_Ray(hit, dir, shadow_ray_type, scene_epsilon, RT_DEFAULT_MAX);
 #endif
 
     shadow_prd.attenuation = make_float3(1.0f);
     rtTrace(root_shadower, ambray, shadow_prd);
+#if defined(ORT_RAYSTATS)
+    raystats1_buffer[launch_index].z++; // increment AO shadow ray counter
+#endif
     inten += ndotambl * shadow_prd.attenuation;
   } 
 
@@ -1501,6 +1816,9 @@ static __device__ __inline__ void shade_light(float3 &result,
     shadow_ray = make_Ray(hit_point + ORT_RAY_STEP, L, shadow_ray_type, scene_epsilon, shadow_tmax);
 
     rtTrace(root_shadower, shadow_ray, shadow_prd);
+#if defined(ORT_RAYSTATS)
+    raystats1_buffer[launch_index].y++; // increment shadow ray counter
+#endif
     light_attenuation = shadow_prd.attenuation;
   }
 
@@ -1566,6 +1884,56 @@ static __device__ void shader_template(float3 p_obj_color, float3 N,
   if (FOG_ON && fog_mode != 0) {
     fogmod = fog_coord(hit_point);
   }
+
+#if 1
+  // XXX we really shouldn't have to do this, but it fixes shading 
+  //     on really bad geometry that can arise from marching cubes 
+  //     extraction on very noisy cryo-EM and cryo-ET maps
+  float Ntest = N.x + N.y + N.z;
+  if (isnan(Ntest) || isinf(Ntest)) {
+    // add depth cueing / fog if enabled
+    if (FOG_ON && fogmod < 1.0f) {
+      result = fog_color(fogmod, result);
+    }
+    return;
+  }
+#endif
+
+#if 1
+  // don't render transparent surfaces if we've reached the max count
+  // this implements the same logic as the -trans_max_surfaces argument
+  // in the CPU version of Tachyon.
+  if ((p_opacity < 1.0f) && (prd.transcnt < 1)) {
+    // shoot a transmission ray
+    PerRayData_radiance new_prd;
+    new_prd.importance = prd.importance * (1.0f - p_opacity);
+    new_prd.alpha = 1.0f;
+    new_prd.result = scene_bg_color;
+    new_prd.depth = prd.depth; // don't increment recursion depth
+    new_prd.transcnt = prd.transcnt - 1;
+    if (new_prd.importance >= 0.001f && 
+        new_prd.depth <= max_depth) {
+#if defined(ORT_USE_RAY_STEP)
+#if defined(ORT_TRANS_USE_INCIDENT)
+      // step the ray in the incident ray direction
+      Ray trans_ray = make_Ray(hit_point + ORT_RAY_STEP2, ray.direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+#else
+      // step the ray in the direction opposite the surface normal (going in)
+      // rather than out, for transmission rays...
+      Ray trans_ray = make_Ray(hit_point - ORT_RAY_STEP, ray.direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+#endif
+#else
+      Ray trans_ray = make_Ray(hit_point, ray.direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+#endif
+      rtTrace(root_object, trans_ray, new_prd);
+#if defined(ORT_RAYSTATS)
+      raystats2_buffer[launch_index].x++; // increment trans ray counter
+#endif
+    }
+    prd.result = new_prd.result;
+    return; // early-exit
+  }
+#endif
 
   // execute the object's texture function
   float3 col = p_obj_color; // XXX no texturing implemented yet
@@ -1639,6 +2007,7 @@ static __device__ void shader_template(float3 p_obj_color, float3 N,
     PerRayData_radiance new_prd;
     new_prd.importance = prd.importance * p_reflectivity;
     new_prd.depth = prd.depth + 1;
+    new_prd.transcnt = prd.transcnt;
 
     // shoot a reflection ray
     if (new_prd.importance >= 0.001f && new_prd.depth <= max_depth) {
@@ -1649,6 +2018,9 @@ static __device__ void shader_template(float3 p_obj_color, float3 N,
       Ray refl_ray = make_Ray(hit_point, refl_dir, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
 #endif
       rtTrace(root_object, refl_ray, new_prd);
+#if defined(ORT_RAYSTATS)
+      raystats2_buffer[launch_index].w++; // increment refl ray counter
+#endif
       result += p_reflectivity * new_prd.result;
     }
   }
@@ -1692,19 +2064,31 @@ static __device__ void shader_template(float3 p_obj_color, float3 N,
     // shoot a transmission ray
     PerRayData_radiance new_prd;
     new_prd.importance = prd.importance * (1.0f - alpha);
+    new_prd.alpha = 1.0f;
     new_prd.result = scene_bg_color;
     new_prd.depth = prd.depth + 1;
-    if (new_prd.importance >= 0.001f && new_prd.depth <= max_depth) {
+    new_prd.transcnt = prd.transcnt - 1;
+    if (new_prd.importance >= 0.001f && 
+        new_prd.depth <= max_depth) {
 #if defined(ORT_USE_RAY_STEP)
+#if defined(ORT_TRANS_USE_INCIDENT)
+      // step the ray in the incident ray direction
+      Ray trans_ray = make_Ray(hit_point + ORT_RAY_STEP2, ray.direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+#else
       // step the ray in the direction opposite the surface normal (going in)
       // rather than out, for transmission rays...
       Ray trans_ray = make_Ray(hit_point - ORT_RAY_STEP, ray.direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+#endif
 #else
       Ray trans_ray = make_Ray(hit_point, ray.direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
 #endif
       rtTrace(root_object, trans_ray, new_prd);
+#if defined(ORT_RAYSTATS)
+      raystats2_buffer[launch_index].x++; // increment trans ray counter
+#endif
     }
     result += (1.0f - alpha) * new_prd.result;
+    prd.alpha = alpha + (1.0f - alpha) * new_prd.alpha; 
   }
 
   // add depth cueing / fog if enabled
@@ -1742,13 +2126,17 @@ RT_PROGRAM void any_hit_opaque() {
 // Any hit program required for shadow filtering through transparent materials
 RT_PROGRAM void any_hit_transmission() {
   // use a VERY simple shadow filtering scheme based on opacity
-  prd_shadow.attenuation = make_float3(1.0f - opacity);
+  prd_shadow.attenuation *= make_float3(1.0f - opacity);
 
   // check to see if we've hit 100% shadow or not
-  if (fmaxf(prd_shadow.attenuation) < 0.001f )
+  if (fmaxf(prd_shadow.attenuation) < 0.001f) {
     rtTerminateRay();
-  else
+  } else {
+#if defined(ORT_RAYSTATS)
+    raystats2_buffer[launch_index].y++; // increment trans ray skip counter
+#endif
     rtIgnoreIntersection();
+  }
 }
 
 
@@ -1771,20 +2159,85 @@ RT_PROGRAM void any_hit_clip_sphere() {
   prd_shadow.attenuation = make_float3(1.0f - (clipalpha * opacity));
 
   // check to see if we've hit 100% shadow or not
-  if (fmaxf(prd_shadow.attenuation) < 0.001f )
+  if (fmaxf(prd_shadow.attenuation) < 0.001f) {
     rtTerminateRay();
-  else
+  } else {
+#if defined(ORT_RAYSTATS)
+    raystats2_buffer[launch_index].y++; // increment trans ray skip counter
+#endif
     rtIgnoreIntersection();
+  }
 }
+
 
 
 // normal calc routine needed only to simplify the macro to produce the
 // complete combinatorial expansion of template-specialized 
 // closest hit radiance functions 
-static __inline__ __device__ float3 calc_ffworld_normal() {
-  float3 world_shading_normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, shading_normal));
-  float3 world_geometric_normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, geometric_normal));
+static __inline__ __device__ float3 calc_ffworld_normal(const float3 &Nshading, const float3 &Ngeometric) {
+  float3 world_shading_normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, Nshading));
+  float3 world_geometric_normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, Ngeometric));
   return faceforward(world_shading_normal, -ray.direction, world_geometric_normal);
+}
+
+
+template<int HWTRIANGLES> static __device__ __inline__ 
+float3 get_intersection_normal() {
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware triangle API
+  if (HWTRIANGLES) {
+    const unsigned int primIdx = rtGetPrimitiveIndex();
+    const float3 Ng = unpackNormal(normalBuffer[primIdx].x);
+    float3 Ns;
+    if (has_vertex_normals) {
+      const float3& n0 = unpackNormal(normalBuffer[primIdx].y);
+      const float3& n1 = unpackNormal(normalBuffer[primIdx].z);
+      const float3& n2 = unpackNormal(normalBuffer[primIdx].w);
+      Ns = optix::normalize(n0 * (1.0f - barycentrics.x - barycentrics.y) +
+                            n1 * barycentrics.x + 
+                            n2 * barycentrics.y);
+    } else {
+      Ns = Ng;
+    }
+    return calc_ffworld_normal(Ns, Ng);
+  } else {
+    // classic OptiX APIs and non-triangle geometry
+    return calc_ffworld_normal(shading_normal, geometric_normal);
+  } 
+#else
+  // classic OptiX APIs and non-triangle geometry
+  return calc_ffworld_normal(shading_normal, geometric_normal);
+#endif
+}
+
+
+template<int HWTRIANGLES> static __device__ __inline__ 
+float3 get_intersection_color() {
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware triangle API
+  if (HWTRIANGLES) {
+    if (has_vertex_colors) {
+      const float ci2f = 1.0f / 255.0f;
+      const unsigned int primIdx = rtGetPrimitiveIndex();
+      const float3 c0 = colorBuffer[3 * primIdx + 0] * ci2f;
+      const float3 c1 = colorBuffer[3 * primIdx + 1] * ci2f;
+      const float3 c2 = colorBuffer[3 * primIdx + 2] * ci2f;
+
+      // interpolate triangle color from barycentrics
+      return (c0 * (1.0f - barycentrics.x - barycentrics.y) +
+              c1 * barycentrics.x + 
+              c2 * barycentrics.y);
+    } else {
+      return uniform_color; // return uniform mesh color
+    }
+  } else {
+    // classic OptiX APIs and non-triangle geometry
+    return obj_color; // return object color determined during intersection
+  }
+#else
+  // classic OptiX APIs and non-triangle geometry
+  return obj_color; // return object color determined during intersection
+#endif
 }
 
 
@@ -1792,10 +2245,21 @@ static __inline__ __device__ float3 calc_ffworld_normal() {
 // intended for shader debugging and comparison with the original
 // Tachyon full_shade() code.
 RT_PROGRAM void closest_hit_radiance_general() {
-  shader_template<0, 0, 1, 1, 1, 1, 1, 1>(obj_color, calc_ffworld_normal(), 
+  shader_template<1, 1, 1, 1, 1, 1, 1, 1>(get_intersection_color<0>(),
+                                          get_intersection_normal<0>(), 
                                           Ka, Kd, Ks, phong_exp, Krefl, opacity,
                                           outline, outlinewidth, transmode);
 }
+
+#if defined(ORT_USERTXAPIS)
+// OptiX RTX hardware triangle API
+RT_PROGRAM void closest_hit_radiance_general_hwtri() {
+  shader_template<1, 1, 1, 1, 1, 1, 1, 1>(get_intersection_color<1>(),
+                                          get_intersection_normal<1>(), 
+                                          Ka, Kd, Ks, phong_exp, Krefl, opacity,
+                                          outline, outlinewidth, transmode);
+}
+#endif
 
 
 //
@@ -2018,13 +2482,48 @@ RT_PROGRAM void ring_array_color_bounds(int primIdx, float result[6]) {
 
 
 
-//
-// Sphere array primitive
-//
-RT_PROGRAM void sphere_array_intersect(int primIdx) {
-  float3 center = sphere_buffer[primIdx].center;
-  float radius = sphere_buffer[primIdx].radius;
+#if defined(ORT_USE_SPHERES_HEARNBAKER)
 
+// Ray-sphere intersection method with improved floating point precision
+// for cases where the sphere size is small relative to the distance
+// from the camera to the sphere.  This implementation is based on
+// Eq. 10-72, p.603 of "Computer Graphics with OpenGL", 3rd Ed.,
+// by Donald Hearn and Pauline Baker, 2004.  Shown in Eq. 10, p.639
+// in the 4th edition of the book (Hearn, Baker, Carithers).
+static __host__ __device__ __inline__
+void sphere_intersect_hearn_baker2(float3 center, float radius,
+                                   const float3 &spcolor) {
+  float3 deltap = center - ray.origin;
+  float ddp = dot(ray.direction, deltap);
+  float3 remedyTerm = deltap - ddp * ray.direction;
+  float disc = radius*radius - dot(remedyTerm, remedyTerm);
+  if (disc >= 0.0f) {
+    float disc_root = sqrtf(disc);
+    float t1 = ddp - disc_root;
+    float t2 = ddp + disc_root;
+
+    if (rtPotentialIntersection(t1)) {
+      shading_normal = geometric_normal = (t1*ray.direction - deltap) / radius;
+      obj_color = spcolor;
+      rtReportIntersection(0);
+    }
+
+    if (rtPotentialIntersection(t2)) {
+      shading_normal = geometric_normal = (t2*ray.direction - deltap) / radius;
+      obj_color = spcolor;
+      rtReportIntersection(0);
+    }
+  }
+}
+
+#else
+
+//
+// Ray-sphere intersection using standard geometric solution approach
+//
+static __host__ __device__ __inline__
+void sphere_intersect_classic(float3 center, float radius,
+                              const float3 &spcolor) {
   float3 V = center - ray.origin;
   float b = dot(V, ray.direction);
   float disc = b*b + radius*radius - dot(V, V);
@@ -2037,27 +2536,45 @@ RT_PROGRAM void sphere_array_intersect(int primIdx) {
     float t1 = b - disc;
     if (rtPotentialIntersection(t1)) {
       shading_normal = geometric_normal = (t1*ray.direction - V) / radius;
-      obj_color = uniform_color; // uniform color for the entire object
+      obj_color = spcolor;
       rtReportIntersection(0);
     }
 #else
     float t2 = b + disc;
     if (rtPotentialIntersection(t2)) {
       shading_normal = geometric_normal = (t2*ray.direction - V) / radius;
-      float3 offset = shading_normal * scene_epsilon;
-      obj_color = uniform_color; // uniform color for the entire object
+      obj_color = spcolor;
       rtReportIntersection(0);
     }
 
     float t1 = b - disc;
     if (rtPotentialIntersection(t1)) {
       shading_normal = geometric_normal = (t1*ray.direction - V) / radius;
-      obj_color = uniform_color; // uniform color for the entire object
+      obj_color = spcolor;
       rtReportIntersection(0);
     }
 #endif
   }
 }
+
+#endif
+
+
+//
+// Sphere array primitive
+//
+RT_PROGRAM void sphere_array_intersect(int primIdx) {
+  float3 center = sphere_buffer[primIdx].center;
+  float radius = sphere_buffer[primIdx].radius;
+
+  // uniform color for the entire object
+#if defined(ORT_USE_SPHERES_HEARNBAKER)
+  sphere_intersect_hearn_baker2(center, radius, uniform_color);
+#else
+  sphere_intersect_classic(center, radius, uniform_color);
+#endif
+}
+
 
 RT_PROGRAM void sphere_array_bounds(int primIdx, float result[6]) {
   const float3 cen = sphere_buffer[primIdx].center;
@@ -2077,69 +2594,16 @@ RT_PROGRAM void sphere_array_bounds(int primIdx, float result[6]) {
 // Color-per-sphere sphere array 
 //
 RT_PROGRAM void sphere_array_color_intersect(int primIdx) {
-#if defined(SC15ANIMSPHERESHACK)
-  if (anim_interp >= 0.0f) {
-#if 0
-    // XXX hack to allow animation of field lines particle advection 
-    // scene for prototype of SC15 demo
-    if (primIdx != int(anim_interp * 60.0f)) {
-      return; // no intersection, pretend it's not there...
-    }
-#elif 0
-    // XXX hack to allow animation of field lines particle advection 
-    // scene for prototype of SC15 demo
-    if ((primIdx + int(anim_interp * 60.0f)) % 60) {
-      return; // no intersection, pretend it's not there...
-    }
-#else
-    // XXX hack to allow animation of field lines particle advection 
-    // scene for prototype of SC15 demo
-    float scal = 80.0f;
-    float ub = anim_interp * scal;
-    float lb = ub - 1.0f;
-    float wrapidx = fmodf(1.0f * primIdx, scal);
-    if (wrapidx >= ub || wrapidx <= lb) {
-      return; // no intersection, pretend it's not there...
-    }
-#endif
-  }
-#endif
-
   float3 center = sphere_color_buffer[primIdx].center;
   float radius = sphere_color_buffer[primIdx].radius;
 
-  float3 V = center - ray.origin;
-  float b = dot(V, ray.direction);
-  float disc = b*b + radius*radius - dot(V, V);
-  if (disc > 0.0f) {
-    disc = sqrtf(disc);
-
-//#define FASTONESIDEDSPHERES 1
-#if defined(FASTONESIDEDSPHERES)
-    // only calculate the nearest intersection, for speed
-    float t1 = b - disc;
-    if (rtPotentialIntersection(t1)) {
-      shading_normal = geometric_normal = (t1*ray.direction - V) / radius;
-      obj_color = sphere_color_buffer[primIdx].color;
-      rtReportIntersection(0);
-    }
+#if defined(ORT_USE_SPHERES_HEARNBAKER)
+  sphere_intersect_hearn_baker2(center, radius, sphere_color_buffer[primIdx].color);
 #else
-    float t2 = b + disc;
-    if (rtPotentialIntersection(t2)) {
-      shading_normal = geometric_normal = (t2*ray.direction - V) / radius;
-      obj_color = sphere_color_buffer[primIdx].color;
-      rtReportIntersection(0);
-    }
-
-    float t1 = b - disc;
-    if (rtPotentialIntersection(t1)) {
-      shading_normal = geometric_normal = (t1*ray.direction - V) / radius;
-      obj_color = sphere_color_buffer[primIdx].color;
-      rtReportIntersection(0);
-    }
+  sphere_intersect_classic(center, radius, sphere_color_buffer[primIdx].color);
 #endif
-  }
 }
+
 
 RT_PROGRAM void sphere_array_color_bounds(int primIdx, float result[6]) {
   const float3 cen = sphere_color_buffer[primIdx].center;
@@ -2153,6 +2617,7 @@ RT_PROGRAM void sphere_array_color_bounds(int primIdx, float result[6]) {
     aabb->invalidate();
   }
 }
+
 
 
 //
@@ -2401,7 +2866,8 @@ RT_PROGRAM void trimesh_v3f_bounds(int primIdx, float result[6]) {
                     OUTLINE_##moutl,                                     \
                     REFL_##mrefl,                                        \
                     TRANS_##mtrans >                                     \
-                    (obj_color, calc_ffworld_normal(),                   \
+                    (get_intersection_color<0>(),                        \
+                     get_intersection_normal<0>(),                       \
                      Ka, Kd, Ks, phong_exp, Krefl,                       \
                      opacity, outline, outlinewidth, transmode);         \
   }

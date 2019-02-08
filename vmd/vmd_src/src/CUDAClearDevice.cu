@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2007-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: CUDAClearDevice.cu,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.14 $      $Date: 2014/08/20 17:15:50 $
+ *      $Revision: 1.15 $      $Date: 2019/01/17 21:38:54 $
  *
  ***************************************************************************
  * DESCRIPTION:

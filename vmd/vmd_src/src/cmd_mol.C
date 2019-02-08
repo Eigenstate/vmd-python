@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: cmd_mol.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.123 $       $Date: 2016/11/28 03:05:07 $
+ *      $Revision: 1.133 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -182,12 +182,12 @@ static void print_mol_summary(Tcl_Interp *interp, VMDApp *app, int molid) {
   // everything except molecule name is bounded in size
   char *buf = new char[strlen(app->molecule_name(molid))+50];
   sprintf(buf, "%s  Atoms:%d  Frames (C): %d(%d)  Status:%c%c%c%c\n",
-      app->molecule_name(molid), app->molecule_numatoms(molid),
-      app->molecule_numframes(molid), app->molecule_frame(molid),
-      (app->molecule_is_active(molid) ? 'A' : 'a'),
-      (app->molecule_is_displayed(molid) ? 'D' : 'd'),
-      (app->molecule_is_fixed(molid) ? 'F' : 'f'),
-      (molid == app->molecule_top() ? 'T' : 't'));
+          app->molecule_name(molid), app->molecule_numatoms(molid),
+          app->molecule_numframes(molid), app->molecule_frame(molid),
+          (app->molecule_is_active(molid) ? 'A' : 'a'),
+          (app->molecule_is_displayed(molid) ? 'D' : 'd'),
+          (app->molecule_is_fixed(molid) ? 'F' : 'f'),
+          (molid == app->molecule_top() ? 'T' : 't'));
   Tcl_AppendResult(interp, buf, NULL);
   delete [] buf;
 }
@@ -198,28 +198,27 @@ static void print_arep_summary(Tcl_Interp *interp, VMDApp *app, int molid,
   if (i < 0 || i >= app->num_molreps(molid)) return;
   char buf[100];
   sprintf(buf, "%d: %s, %d atoms selected.\n", 
-      i, (app->molecule_is_displayed(molid) ? " on" : "off"), 
-      app->molrep_numselected(molid, i));
+          i, (app->molecule_is_displayed(molid) ? " on" : "off"), 
+          app->molrep_numselected(molid, i));
   Tcl_AppendResult(interp, buf, NULL);
   Tcl_AppendResult(interp, "  Coloring method: ", 
-      app->molrep_get_color(molid, i), "\n", NULL);
+                   app->molrep_get_color(molid, i), "\n", NULL);
   Tcl_AppendResult(interp, "   Representation: ", 
-      app->molrep_get_style(molid, i), "\n", NULL);
+                   app->molrep_get_style(molid, i), "\n", NULL);
   Tcl_AppendResult(interp, "        Selection: ", 
-      app->molrep_get_selection(molid, i), "\n", NULL);
+                   app->molrep_get_selection(molid, i), "\n", NULL);
 }
 
 static void cmd_mol_list(Tcl_Interp *interp, VMDApp *app, const char *moltxt) {
-  
   IdList idList;
   if (idList.find(interp, app, moltxt) > 1) {
-    Tcl_AppendResult(interp, "Molecule Status Overview:\n" , NULL);
-    Tcl_AppendResult(interp, "-------------------------\n" , NULL);
+    Tcl_AppendResult(interp, "Molecule Status Overview:\n", NULL);
+    Tcl_AppendResult(interp, "-------------------------\n", NULL);
     for (int i=0; i < idList.num(); i++)
       print_mol_summary(interp, app, idList[i]);
   } else if (idList.num() == 1) {
     Tcl_AppendResult(interp, "Status of molecule ", 
-        app->molecule_name(idList[0]), ":\n", NULL);
+                     app->molecule_name(idList[0]), ":\n", NULL);
     print_mol_summary(interp, app, idList[0]);
     char buf[50];
     sprintf(buf, "Atom representations: %d\n", app->num_molreps(idList[0]));
@@ -278,7 +277,8 @@ static void cmd_mol_usage(Tcl_Interp *interp) {
     "  showperiodic <molid> <repid> [flags] -- Get or set periodic image display\n",
     "  numperiodic <molid> <repid> <n>    -- Get or set number of periodic images\n",
     "  showrep <molid> <repid> [on|off]   -- Turn selected rep on or off\n",
-    "  volmove <molid> <matrix> [<volID>] -- transform volumetric data\n",
+    "  voldelete <molid> <volID> -- delete volumetric data\n",
+    "  volmove <molid> <matrix> <volID>   -- transform volumetric data\n",
     "\nClipping Planes:\n",
     "  clipplane center <clipid> <repid> <molid> [<vector>]\n",
     "  clipplane color  <clipid> <repid> <molid> [<vector>]\n",
@@ -289,6 +289,7 @@ static void cmd_mol_usage(Tcl_Interp *interp) {
     "See also the molinfo command\n",
     NULL);
 }
+
 
 int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
                             const char *argv[]) {
@@ -309,7 +310,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
       return TCL_OK;
     }
     FileSpec spec;
-    spec.waitfor = -1;
+    spec.waitfor = FileSpec::WAIT_ALL;
     int newmolid = app->molecule_load(-1, argv[3], argv[2], &spec);
     if (newmolid < 0) {
       Tcl_AppendResult(interp, "Unable to load structure file ",argv[3], NULL);
@@ -400,24 +401,20 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
     if (idList.num() < 1) return TCL_ERROR;
     if (!app->molecule_addrep(idList[0])) {
       Tcl_AppendResult(interp, "addrep: Unable to add rep to molecule ", 
-        argv[2], NULL);
+                       argv[2], NULL);
       return TCL_ERROR;
     }
-
   } else if(argc == 4 && !strupncmp(argv[1],"delrep",CMDLEN)) {
     IdList idList;
     if (idList.find(interp, app, argv[3]) != 1) {
-      
       Tcl_AppendResult(interp, argv[0], " operates on one molecule only.", NULL);
       return TCL_ERROR;
     }
     app->molrep_delete(idList[0], atoi(argv[2]));
-
   } else if(argc == 4 && !strupncmp(argv[1],"modrep",CMDLEN)) {
     // XXX This is freakin' lame - deprecate this, please!
     IdList idList;
     if (idList.find(interp, app, argv[3]) != 1) {
-      
       Tcl_AppendResult(interp, argv[0], " operates on one molecule only.", NULL);
       return TCL_ERROR;
     }
@@ -427,7 +424,6 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
     app->molrep_set_color(molid, repid, app->molecule_get_color());
     app->molrep_set_selection(molid, repid, app->molecule_get_selection());
     app->molrep_set_material(molid, repid, app->molecule_get_material());
-
   } else if(argc == 3 && !strupncmp(argv[1],"delete",CMDLEN)) {
     IdList idList;
     int allmolsflag=0;
@@ -449,7 +445,6 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
     for (int i=0; i<idList.num(); i++) {
       app->molecule_activate(idList[i], !strupncmp(argv[1],"active",CMDLEN));
     }
-
   } else if(argc == 3 && (!strupncmp(argv[1],"on",CMDLEN) ||
             !strupncmp(argv[1],"off",CMDLEN))) {
     IdList idList;
@@ -457,7 +452,6 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
     for (int i=0; i<idList.num(); i++) {
       app->molecule_display(idList[i], !strupncmp(argv[1],"on",CMDLEN));
     }
-
   } else if(argc == 3 && (!strupncmp(argv[1],"fix",CMDLEN) ||
             !strupncmp(argv[1],"free",CMDLEN))) {
     IdList idList;
@@ -473,7 +467,6 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
       return TCL_ERROR;
     }
     app->molecule_make_top(idList[0]);
-
   } else if (argc == 4 && !strupncmp(argv[1], "urlload", CMDLEN)) {
     // load a file from a URL
     //   "mol urlload xyz http://www.umn.edu/test/me/out.xyz
@@ -489,7 +482,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
       return TCL_ERROR;
     }
     FileSpec spec;
-    spec.waitfor = -1;
+    spec.waitfor = FileSpec::WAIT_ALL;
     int molid = app->molecule_load(-1, localfile, argv[2], &spec);
     delete [] localfile;
     if (molid < 0) {
@@ -497,11 +490,10 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
       return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewIntObj(molid));
-
   } else if (argc == 3 && !strupncmp(argv[1], "pdbload", CMDLEN)) {
     // alias to "mol load webpdb ..."
     FileSpec spec;
-    spec.waitfor = -1;
+    spec.waitfor = FileSpec::WAIT_ALL; 
     int rc = app->molecule_load(-1, argv[2], "webpdb", &spec);
     if (rc < 0) {
       Tcl_AppendResult(interp, "pdbload of '", argv[2], "' failed.", NULL);
@@ -731,7 +723,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
             return TCL_ERROR;
           }
           if (!app->molrep_set_clipcenter(molid, repid, clipid, center)) {
-            Tcl_AppendResult(interp, "Unable to set clip center\n");
+            Tcl_AppendResult(interp, "Unable to set clip center\n", NULL);
             return TCL_ERROR;
           }
         } else if (!strupncmp(argv[2], "normal", CMDLEN)) { 
@@ -740,7 +732,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
             return TCL_ERROR;
           }
           if (!app->molrep_set_clipnormal(molid, repid, clipid, normal)) {
-            Tcl_AppendResult(interp, "Unable to set clip normal\n");
+            Tcl_AppendResult(interp, "Unable to set clip normal\n", NULL);
             return TCL_ERROR;
           }
         } else if (!strupncmp(argv[2], "color", CMDLEN)) { 
@@ -749,7 +741,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
             return TCL_ERROR;
           }
           if (!app->molrep_set_clipcolor(molid, repid, clipid, color)) {
-            Tcl_AppendResult(interp, "Unable to set clip color\n");
+            Tcl_AppendResult(interp, "Unable to set clip color\n", NULL);
             return TCL_ERROR;
           }
         } else if (!strupncmp(argv[2], "status", CMDLEN)) { 
@@ -758,7 +750,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
             return TCL_ERROR;
           }
           if (!app->molrep_set_clipstatus(molid, repid, clipid, status)) {
-            Tcl_AppendResult(interp, "Unable to set clip status\n");
+            Tcl_AppendResult(interp, "Unable to set clip status\n", NULL);
             return TCL_ERROR;
           }
         }
@@ -788,7 +780,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
     IdList idList;
     if (idList.find(interp, app, argv[2]) != 1) {
       Tcl_AppendResult(interp, argv[0], argv[1], 
-        " operates on one molecule only", NULL);
+                       " operates on one molecule only", NULL);
       return TCL_ERROR;
     }
     int repid = atoi(argv[3]);
@@ -802,13 +794,56 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
     IdList idList;
     if (idList.find(interp, app, argv[2]) > 1) {
       Tcl_AppendResult(interp, argv[0], " ", argv[1], 
-        " operates on one molecule only", NULL);
+                       " operates on one molecule only", NULL);
       return TCL_ERROR;
     }
     int repid = -1;
     if (idList.num() == 1)
       repid = app->molrep_get_by_name(idList[0], argv[3]);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(repid));
+// mol fromsels <selection list>
+  } else if (argc >= 2 && !strupncmp(argv[1], "fromsels", CMDLEN)) {
+    int newmolid = -1;
+    if (argc == 3) {
+      // build selection list
+      int numsels=0;
+
+      Tcl_Obj **sel_list = NULL;
+      Tcl_Obj *selparms = Tcl_NewStringObj(argv[2], -1);
+#if 1
+      if (Tcl_ListObjGetElements(interp, selparms, &numsels, &sel_list) != TCL_OK) {
+        Tcl_AppendResult(interp, "mol fromsels: bad selection list", NULL);
+        return TCL_ERROR;
+      }
+#endif
+
+// printf("mol fromsels: numsels %d\n", numsels);
+      AtomSel **asels = (AtomSel **) calloc(1, numsels * sizeof(AtomSel *));
+      int s;
+      for (s=0; s<numsels; s++) {
+        asels[s] = tcl_commands_get_sel(interp, Tcl_GetStringFromObj(sel_list[s], NULL));
+        if (!asels[s]) {
+// printf("mol fromsels: invalid selection[%d]\n", s);
+          Tcl_AppendResult(interp, "mol fromsels: invalid atom selection list element", NULL);
+          return TCL_ERROR;
+        }
+      }
+
+      newmolid = app->molecule_from_selection_list(NULL, 0, numsels, asels);
+      free(asels);
+
+      if (newmolid < 0) {
+        Tcl_AppendResult(interp, "Unable to create new molecule.", NULL);
+        return TCL_ERROR;
+      }
+    } else {
+      Tcl_AppendResult(interp, "Atom selection list missing.", NULL);
+      return TCL_ERROR;
+    } 
+
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(newmolid));
+
+
 // mol new [filename] [options...]
 // mol addfile <filename> [options...]
 // options: 
@@ -883,7 +918,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
         } else if (!strupncmp(argv[a], "waitfor", CMDLEN)) {
           if ((a+1) < argc) {
             if (!strupncmp(argv[a+1], "all", CMDLEN)) {
-              spec.waitfor = -1;
+              spec.waitfor = FileSpec::WAIT_ALL;
             } else {
               if (Tcl_GetInt(interp, argv[a+1], &spec.waitfor) != TCL_OK)
                 return TCL_ERROR;
@@ -920,7 +955,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
         type = app->guess_filetype(argv[2]);
         if (!type) {
           Tcl_AppendResult(interp, "Could not determine file type for file '",
-              argv[2], "' from its extension.", NULL);
+                           argv[2], "' from its extension.", NULL);
           return TCL_ERROR;
         }
       }
@@ -928,7 +963,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
         IdList idList;
         if (idList.find(interp, app, argv[argc-1]) != 1) {
           Tcl_AppendResult(interp, argv[0], " ", argv[1], 
-            " operates on one molecule only", NULL);
+                           " operates on one molecule only", NULL);
           return TCL_ERROR;
         }
         molid = idList[0];
@@ -946,7 +981,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
     IdList idList;
     if (idList.find(interp, app, argv[2]) != 1) {
       Tcl_AppendResult(interp, argv[0], " ", argv[1],
-          " operates on one molecule only", NULL);
+                       " operates on one molecule only", NULL);
       return TCL_ERROR;
     }
     int repid;
@@ -971,13 +1006,14 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
       }
     }
     return TCL_OK;
+
     // mol showperiodic <molid> <repid> <string>
     // where string is x, y, z, xy, xz, yz, or xyz
   } else if ((argc == 4 || argc == 5) && !strupncmp(argv[1], "showperiodic", CMDLEN)) {
     IdList idList;
     if (idList.find(interp, app, argv[2]) != 1) {
       Tcl_AppendResult(interp, argv[0], " ", argv[1],
-          (char *)" operates on one molecule only", NULL);
+                       (char *)" operates on one molecule only", NULL);
       return TCL_ERROR;
     }
     int repid;
@@ -992,8 +1028,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
       if (strchr(argv[4], 'Z')) pbc |= PBC_OPZ;
       if (strchr(argv[4], 'n')) pbc |= PBC_NOSELF;
       if (!app->molrep_set_pbc(idList[0], repid, pbc)) {
-        Tcl_AppendResult(interp, "mol setpbc: Unable to set periodic images for this rep",
-            NULL);
+        Tcl_AppendResult(interp, "mol setpbc: Unable to set periodic images for this rep", NULL);
         return TCL_ERROR;
       }
     } else {
@@ -1037,11 +1072,87 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
       }
       Tcl_SetObjResult(interp, Tcl_NewIntObj(npbc));
     }
+
+    // mol instances 
+  } else if (argc >= 2 && !strupncmp(argv[1], "instances", CMDLEN)) {
+    IdList idList;
+    if (idList.find(interp, app, argv[2]) != 1) {
+      Tcl_AppendResult(interp, argv[0], " operates on one molecule only.", NULL);
+      return TCL_ERROR;
+    }
+    int molid = idList[0];
+    // 'mol instances x' query, return number of instances
+    if (argc == 3) {
+      int ninstances = app->molecule_num_instances(molid); 
+      if (ninstances < 0) {
+        Tcl_AppendResult(interp, "mol instances: Unable to get number of replicas for specified molecule", NULL);
+        return TCL_ERROR;
+      }
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(ninstances));
+    } 
+
+    // mol addinstance xform
+  } else if (argc >= 2 && !strupncmp(argv[1], "addinstance", CMDLEN)) {
+    IdList idList;
+    if (idList.find(interp, app, argv[2]) != 1) {
+      Tcl_AppendResult(interp, argv[0], " operates on one molecule only.", NULL);
+      return TCL_ERROR;
+    }
+    int molid = idList[0];
+
+    Matrix4 mat;
+    Tcl_Obj *matobj = Tcl_NewStringObj(argv[3], -1);
+    int mrc=tcl_get_matrix("mol addinstance:", interp, matobj , mat.mat);
+    Tcl_DecrRefCount(matobj);
+    if (mrc != TCL_OK)
+      return TCL_ERROR;
+
+    if (!app->molecule_add_instance(molid, mat)) {
+      Tcl_AppendResult(interp, argv[0], " ", argv[1], (char *)" failed to add instance", NULL);
+      return TCL_ERROR;
+    }
+
+    // mol showinstances <molid> <repid> <string>
+    // where string is none, all, noself
+  } else if ((argc == 4 || argc == 5) && !strupncmp(argv[1], "showinstances", CMDLEN)) {
+    IdList idList;
+    if (idList.find(interp, app, argv[2]) != 1) {
+      Tcl_AppendResult(interp, argv[0], " ", argv[1],
+                       (char *)" operates on one molecule only", NULL);
+      return TCL_ERROR;
+    }
+    int repid;
+    if (Tcl_GetInt(interp, argv[3], &repid) != TCL_OK) return TCL_ERROR;
+    if (argc == 5) {
+      // defaults to INSTANCE_NONE if no 5th argument is given
+      int instances = INSTANCE_NONE;
+
+      if (!strcmp(argv[4], "all")) 
+        instances |= INSTANCE_ALL;
+
+      if (!strcmp(argv[4], "noself")) 
+        instances |= INSTANCE_ALL | INSTANCE_NOSELF;
+
+      if (!app->molrep_set_instances(idList[0], repid, instances)) {
+        Tcl_AppendResult(interp, "mol setinstances: Unable to set instances for this rep", NULL);
+        return TCL_ERROR;
+      }
+    } else {
+      int instances = app->molrep_get_instances(idList[0], repid);
+      if (instances < 0) {
+        Tcl_AppendResult(interp, "mol showinstances: Unable to get instance info for this rep", NULL);
+        return TCL_ERROR;
+      }
+      if (instances & INSTANCE_NONE) Tcl_AppendResult(interp, "none", NULL);
+      else if (instances & INSTANCE_ALL) Tcl_AppendResult(interp, "all", NULL);
+      else if (instances & INSTANCE_NOSELF) Tcl_AppendResult(interp, "noself", NULL);
+    }
+
   } else if ((argc >= 4 && argc <= 6) && !strupncmp(argv[1], "scaleminmax", CMDLEN)) {
     IdList idList;
     if (idList.find(interp, app, argv[2]) != 1) {
       Tcl_AppendResult(interp, argv[0], " ", argv[1],
-          (char *)" operates on one molecule only", NULL);
+                       (char *)" operates on one molecule only", NULL);
       return TCL_ERROR;
     }
     int repid;
@@ -1076,7 +1187,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
     IdList idList;
     if (idList.find(interp, app, argv[2]) != 1) {
       Tcl_AppendResult(interp, argv[0], " ", argv[1],
-          (char *)" operates on one molecule only", NULL);
+                       (char *)" operates on one molecule only", NULL);
       return TCL_ERROR;
     }
     int repid;
@@ -1095,7 +1206,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
     IdList idList;
     if (idList.find(interp, app, argv[2]) != 1) {
       Tcl_AppendResult(interp, argv[0], " ", argv[1],
-          (char *)" operates on one molecule only", NULL);
+                       (char *)" operates on one molecule only", NULL);
       return TCL_ERROR;
     }
     int repid;
@@ -1135,7 +1246,7 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
       } else if (!strupncmp(argv[2], "material", CMDLEN)) {
         Tcl_SetResult(interp, (char *)app->moleculeList->default_material(), TCL_VOLATILE);
       } else {
-        Tcl_SetResult(interp, "Usage: mol default [color | style | selection | material]", TCL_STATIC);
+        Tcl_SetResult(interp, (char *) "Usage: mol default [color | style | selection | material]", TCL_STATIC);
         return TCL_ERROR;
       }
       return TCL_OK;
@@ -1161,13 +1272,41 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
           return TCL_ERROR;
         }
       } else {
-        Tcl_SetResult(interp, "Usage: mol default [color | style | selection | material] <value>", TCL_STATIC);
+        Tcl_SetResult(interp, (char *) "Usage: mol default [color | style | selection | material] <value>", TCL_STATIC);
         return TCL_ERROR;
       }
       return TCL_OK;
     }
-  } else if ( (argc == 4 || argc == 5) && !strupncmp(argv[1], "volmove", CMDLEN)) {
-    // volmove <molid> <matrix as returned by measure fit or trans*> [<which volset we want to move>]
+
+    /// delete a volumetric object
+  } else if ((argc == 4) && !strupncmp(argv[1], "voldelete", CMDLEN)) {
+    int volset = 0;
+    IdList idList;
+    if (idList.find(interp, app, argv[2]) != 1) {
+      Tcl_AppendResult(interp, argv[0], " operates on one molecule only.", NULL);
+      return TCL_ERROR;
+    }
+    int molid = idList[0];
+    Molecule *mol = app->moleculeList->mol_from_id(molid);
+    if (!mol) {
+      Tcl_SetResult(interp, (char *) "mol voldelete: molecule was deleted", TCL_STATIC);
+      return TCL_ERROR;
+    }
+    if (Tcl_GetInt(interp, argv[3], &volset) != TCL_OK)
+      return TCL_ERROR;
+    if (volset >= mol->num_volume_data() || volset < 0) {
+      char tmpstring[128];
+      sprintf(tmpstring, "mol voldelete: no volume set %d", volset);
+      Tcl_SetResult(interp, tmpstring, TCL_VOLATILE);
+      return TCL_ERROR;
+    }
+    mol->remove_volume_data(volset); 
+    return TCL_OK;
+ 
+    /// move a specified volumetric data object by transforming the 
+    /// origin and axes with a 4x4 matrix
+  } else if (argc == 5 && !strupncmp(argv[1], "volmove", CMDLEN)) {
+    // volmove <molid> <4x4 matrix, e.g., from trans*> [<which volset to move>]
     int volset = 0;
     IdList idList;
     if (idList.find(interp, app, argv[2]) != 1) {
@@ -1180,7 +1319,8 @@ int text_cmd_mol(ClientData cd, Tcl_Interp *interp, int argc,
       Tcl_SetResult(interp, (char *) "mol volmove: molecule was deleted", TCL_STATIC);
       return TCL_ERROR;
     }
-    if (argc == 5 && Tcl_GetInt(interp, argv[4], &volset) != TCL_OK) return TCL_ERROR;
+    if (Tcl_GetInt(interp, argv[4], &volset) != TCL_OK)
+      return TCL_ERROR;
     if (volset >= mol->num_volume_data() || volset < 0) {
       char tmpstring[128];
       sprintf(tmpstring, "mol volmove: no volume set %d", volset);

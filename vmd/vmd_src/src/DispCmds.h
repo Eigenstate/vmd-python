@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DispCmds.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.109 $	$Date: 2016/11/28 03:04:59 $
+ *	$Revision: 1.112 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -29,6 +29,14 @@
 class VMDDisplayList;
 class Scene;
 
+/// Macro used to mitigate the peak size of vertex buffers accumulated into
+/// single display commands, e.g., for line, point, and sphere arrays that 
+/// could easily grow to the point of causing integer wraparound in renderer
+/// subclasses or back-end renderer implementations that might only be using
+/// 32-bit integers for various vertex indexing calculations.  
+/// We go with 2^26 as a fairly conservative maximum vertex buffer size.
+#define VMDMAXVERTEXBUFSZ (128*1024*1024)
+
 /// enum for all display commands
 /// draw commands with a _I suffix use indices into a DATA block, not the
 /// coordinates themselves
@@ -36,6 +44,7 @@ enum { DBEGINREPGEOMGROUP, DPOINT, DPOINTARRAY, DLITPOINTARRAY,
        DLINE, DLINEARRAY, DPOLYLINEARRAY, 
        DCYLINDER, 
        DSPHERE, DSPHEREARRAY,
+       DCUBEARRAY,
        DTRIANGLE, DSQUARE, DCONE, 
        DTRIMESH_C4F_N3F_V3F, DTRIMESH_C3F_N3F_V3F, 
        DTRIMESH_C4U_N3F_V3F, DTRIMESH_C4U_N3B_V3F,
@@ -104,6 +113,31 @@ struct DispCmdSphereArray {
 
   int numspheres;
   int sphereres;
+};
+
+
+/// draw axis-aligned lattic cubes from the specified 
+// position, radii (from center to each wall), and color arrays
+struct DispCmdLatticeCubeArray {
+  static void putdata(const float * centers, const float * radii, 
+                      const float * colors, int num_cubes, 
+                      VMDDisplayList * dobj);
+
+  inline void getpointers(
+    float *& centers,
+    float *& radii,
+    float *& colors
+    ) const {
+    char *rawptr = (char *)this;
+    centers = (float *) (rawptr + sizeof(DispCmdLatticeCubeArray));
+    radii   = (float *) (rawptr + sizeof(DispCmdLatticeCubeArray) +
+                         sizeof(float) * numcubes * 3L);
+    colors  = (float *) (rawptr + sizeof(DispCmdLatticeCubeArray) +
+                         sizeof(float) * numcubes * 3L +
+                         sizeof(float) * numcubes);
+  }
+
+  int numcubes;
 };
 
 

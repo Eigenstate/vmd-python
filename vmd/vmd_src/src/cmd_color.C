@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: cmd_color.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.33 $       $Date: 2016/11/28 03:05:07 $
+ *      $Revision: 1.40 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -42,49 +42,148 @@ int text_cmd_color(ClientData cd, Tcl_Interp *interp, int argc, const char *argv
   }
 
   if (!strupncmp(argv[1], "change", CMDLEN) && argc > 3) {
-    float r = 0.5, g = 0.5, b = 0.5;
-    if (app->color_index(argv[3]) < 0) { 
-      Tcl_SetResult(interp,  (char *) "color change: invalid color specified", TCL_STATIC);
-      return TCL_ERROR;
-    }
-    if (argc == 4) {
-      // Get the default values for the color
-      if (!app->color_default_value(argv[3], &r, &g, &b)) {
-        Tcl_SetResult(interp, (char *) "Unable to get default values for color", TCL_STATIC);
-        return TCL_ERROR;
-      } 
-      app->color_changevalue(argv[3], r, g, b);
-      return TCL_OK;
-    } else {
-      double rr;
-      if (Tcl_GetDouble(interp, argv[4], &rr) != TCL_OK) {
-        Tcl_AppendResult(interp,  " in color change", NULL);
+    if (!strupncmp(argv[2], "rgb", CMDLEN)) {
+      float r = 0.5, g = 0.5, b = 0.5;
+      if (app->color_index(argv[3]) < 0) { 
+        Tcl_SetResult(interp,  (char *) "color change: invalid color specified", TCL_STATIC);
         return TCL_ERROR;
       }
-      r = (float) rr;
-      if (argc == 5) {
-        if (!app->color_changevalue(argv[3], r, r, r)) {
-          Tcl_SetResult(interp, (char *) "Unable to change color", TCL_STATIC);
+      if (argc == 4) {
+        // Get the default values for the color
+        if (!app->color_default_value(argv[3], &r, &g, &b)) {
+          Tcl_SetResult(interp, (char *) "Unable to get default values for color", TCL_STATIC);
           return TCL_ERROR;
-        }
-      } else if (argc == 7) {
-        double gg, bb;
-        if (Tcl_GetDouble(interp, argv[5], &gg) != TCL_OK ||
-          Tcl_GetDouble(interp, argv[6], &bb) != TCL_OK) {
-          Tcl_AppendResult(interp, " in color change", NULL);
-          return TCL_ERROR;
-        }
-        g = (float) gg;
-        b = (float) bb;
-        if (!app->color_changevalue(argv[3], r, g, b)) {
-          Tcl_SetResult(interp, (char *) "Unable to change color", TCL_STATIC);
-          return TCL_ERROR;
-        }
+        } 
+        app->color_change_rgb(argv[3], r, g, b);
+        return TCL_OK;
       } else {
-        Tcl_SetResult(interp, (char *) "color change needs 1 (or 3) parameters", TCL_STATIC);
+        double rr;
+        if (Tcl_GetDouble(interp, argv[4], &rr) != TCL_OK) {
+          Tcl_AppendResult(interp,  " in color change", NULL);
+          return TCL_ERROR;
+        }
+        r = (float) rr;
+        if (argc == 5) {
+          if (!app->color_change_rgb(argv[3], r, r, r)) {
+            Tcl_SetResult(interp, (char *) "Unable to change color", TCL_STATIC);
+            return TCL_ERROR;
+          }
+        } else if (argc == 7) {
+          double gg, bb;
+          if (Tcl_GetDouble(interp, argv[5], &gg) != TCL_OK ||
+            Tcl_GetDouble(interp, argv[6], &bb) != TCL_OK) {
+            Tcl_AppendResult(interp, " in color change", NULL);
+            return TCL_ERROR;
+          }
+          g = (float) gg;
+          b = (float) bb;
+          if (!app->color_change_rgb(argv[3], r, g, b)) {
+            Tcl_SetResult(interp, (char *) "Unable to change color", TCL_STATIC);
+            return TCL_ERROR;
+          }
+        } else {
+          Tcl_SetResult(interp, (char *) "color change needs 1 (or 3) parameters", TCL_STATIC);
+          return TCL_ERROR;
+        }
+        return TCL_OK;
+      }
+    } else if (!strupncmp(argv[2], "rgblist", CMDLEN)) {
+      const char **colcmds;
+      int i, num_colcmds;
+      if (Tcl_SplitList(interp, argv[3], &num_colcmds, &colcmds) != TCL_OK) {
+        Tcl_AppendResult(interp, "cannot split color command name list", NULL);
         return TCL_ERROR;
       }
-      return TCL_OK;
+
+      char **colnames=(char **) calloc(1, num_colcmds * sizeof(char *));
+      float *colors=(float *) calloc(1, num_colcmds * 3 * sizeof(float));
+
+      int fail=0;
+      for (i=0; i<num_colcmds; i++) {
+        char tmpbuf[1024];
+        if (sscanf(colcmds[i], "%s %f %f %f", tmpbuf, 
+                   &colors[i*3], &colors[i*3 + 1], &colors[i*3 + 2]) != 4) {
+          fail=i;
+          break;
+        }
+        colnames[i] = strdup(tmpbuf);
+      }
+
+      if (!fail &&
+          !app->color_change_rgblist(num_colcmds, (const char **) colnames, colors)) {
+        Tcl_SetResult(interp, (char *) "Unable to change color namelist", TCL_STATIC); 
+      }
+
+      int freecnt=num_colcmds;
+      if (fail) 
+        freecnt=fail;
+ 
+      for (i=0; i<freecnt; i++) {
+        free(colnames[i]);
+      }
+      free(colnames);
+
+      if (colcmds) 
+        Tcl_Free((char *) colcmds);
+
+      if (fail) {
+        Tcl_AppendResult(interp, "cannot split/copy color command name list", NULL);
+        return TCL_ERROR;
+      }
+    } else if (!strupncmp(argv[2], "namelist", CMDLEN)) {
+      const char **colcmds;
+      int i, num_colcmds;
+      if (Tcl_SplitList(interp, argv[3], &num_colcmds, &colcmds) != TCL_OK) {
+        Tcl_AppendResult(interp, "cannot split color command name list", NULL);
+        return TCL_ERROR;
+      }
+
+      char **colcats=(char **) calloc(1, num_colcmds * sizeof(char *));
+      char **colnames=(char **) calloc(1, num_colcmds * sizeof(char *));
+      char **colors=(char **) calloc(1, num_colcmds * sizeof(char *));
+
+      int fail=0;
+      for (i=0; i<num_colcmds; i++) {
+        int cnt;
+        const char **cmdparts;
+        if (Tcl_SplitList(interp, colcmds[i], &cnt, &cmdparts) == TCL_OK) {
+          if (cnt == 3) {
+            colcats[i] = strdup(cmdparts[0]);
+            colnames[i] = strdup(cmdparts[1]);
+            colors[i] = strdup(cmdparts[2]);
+          } else {
+            fail=i;
+            break;
+          }
+          Tcl_Free((char *) cmdparts);
+        }
+      }
+
+      if (!fail &&
+          !app->color_change_namelist(num_colcmds, colcats, colnames, colors)) {
+        Tcl_SetResult(interp, (char *) "Unable to change color namelist", TCL_STATIC); 
+      }
+
+      int freecnt=num_colcmds;
+      if (fail) 
+        freecnt=fail;
+ 
+      for (i=0; i<freecnt; i++) {
+        free(colcats[i]);
+        free(colnames[i]);
+        free(colors[i]);
+      }
+      free(colcats);
+      free(colnames);
+      free(colors);
+
+      if (colcmds) 
+        Tcl_Free((char *) colcmds);
+
+      if (fail) {
+        Tcl_AppendResult(interp, "cannot split/copy color command name list", NULL);
+        return TCL_ERROR;
+      }
     }
   } else if (!strupncmp(argv[1], "scale", CMDLEN)) {
     /// color scale colors <method> [<color1> <color2> <color3>]
@@ -167,7 +266,7 @@ int text_cmd_color(ClientData cd, Tcl_Interp *interp, int argc, const char *argv
       Tcl_SetResult(interp, (char *)result, TCL_STATIC);
     } else { //argc==4
       if (!app->color_set_restype(argv[2], argv[3])) {
-        if (!app->color_changename(argv[1], argv[2], argv[3])) {
+        if (!app->color_change_name(argv[1], argv[2], argv[3])) {
           Tcl_AppendResult(interp, "Unable to set restype: invalid restype '",
                            argv[3], 
                            "' specified -- or unable to change color name", 
@@ -187,14 +286,14 @@ int text_cmd_color(ClientData cd, Tcl_Interp *interp, int argc, const char *argv
       return TCL_ERROR;
     }
   } else if(argc == 4) {
-    if (!app->color_changename(argv[1], argv[2], argv[3])) {
+    if (!app->color_change_name(argv[1], argv[2], argv[3])) {
       Tcl_SetResult(interp, (char *) "Unable to change color name", TCL_STATIC); 
       return TCL_ERROR;
     }
   } else if (argc == 6 && !strupncmp(argv[1], "add", CMDLEN) 
                        && !strupncmp(argv[2], "item", CMDLEN)) {
     if (!app->color_add_item(argv[3], argv[4], argv[5])) {
-      Tcl_SetResult(interp, "Error adding color item.", TCL_STATIC);
+      Tcl_SetResult(interp, (char *) "Error adding color item.", TCL_STATIC);
       return TCL_ERROR;
     }
   } else {

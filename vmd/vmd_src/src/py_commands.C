@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_commands.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.15 $       $Date: 2016/11/28 03:05:08 $
+ *      $Revision: 1.16 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -25,8 +25,8 @@
 
 /*
 
-Some distributed versions of VMD are linked against the Python 2.0
-library.  The following BeOpen license agreement permits us to use the
+Some distributed versions of VMD are linked against the Python 2.0 
+library.  The following BeOpen license agreement permits us to use the 
 Python 2.0 libraries in this fashion.  The BeOpen license agreement is in
 no way applicable to the license under which VMD itself is distributed;
 persuant to item 2 below, we merely include a copy of the BeOpen license
@@ -103,31 +103,149 @@ Agreement.
 
 */
 
+// Wrapper function for getting char* from a Python string, with 2/3 ifdefs
+char* as_charptr(PyObject *target)
+{
+    char *result;
+#if PY_MAJOR_VERSION >= 3
+    result = PyUnicode_AsUTF8(target);
+#else
+    result = PyString_AsString(target);
+#endif
+
+    if (!result || PyErr_Occurred()) {
+        PyErr_SetString(PyExc_ValueError, "cannot convert PyObject to char*");
+        return NULL;
+    }
+    return result;
+}
+
+// Wrapper function for turning char* into a Python string, with 2/3 ifdefs
+PyObject* as_pystring(const char *target)
+{
+    PyObject *result;
+    if (!target) {
+        PyErr_SetString(PyExc_ValueError, "cannot return null string");
+        return NULL;
+    }
+
+#if PY_MAJOR_VERSION >= 3
+    result = PyUnicode_FromString(target);
+#else
+    result = PyString_FromString(target);
+#endif
+
+    if (!result) {
+        PyErr_Format(PyExc_ValueError, "cannot convert char* '%s'", target);
+        return NULL;
+    }
+
+    // Separate this so it gives a more helpful error message
+    if (PyErr_Occurred())
+        return NULL;
+
+    return result;
+}
+
+// Wrapper function for checking if a PyObject is a string, with 2/3 ifdefs
+int is_pystring(const PyObject *target)
+{
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_Check(target);
+#else
+    return PyString_Check(target);
+#endif
+}
+
+// Wrapper function for turning int into a Python int/long, with 2/3 ifdefs
+PyObject* as_pyint(int target)
+{
+    PyObject *result;
+#if PY_MAJOR_VERSION >= 3
+    result = PyLong_FromLong((long) target);
+#else
+    result = PyInt_FromLong((long) target);
+#endif
+
+    if (!result) {
+        PyErr_Format(PyExc_ValueError, "cannot convert int %d", target);
+        return NULL;
+    }
+
+    // Separate this so it gives a more helpful error message
+    if (PyErr_Occurred())
+        return NULL;
+
+    return result;
+}
+
+// Wrapper function for getting int from a Python object, with 2/3 ifdefs
+int as_int(PyObject *target)
+{
+    int result;
+#if PY_MAJOR_VERSION >= 3
+    if (!PyLong_Check(target)) {
+#else
+    if (!PyInt_Check(target)) {
+#endif
+        PyErr_SetString(PyExc_ValueError, "Non-integer Python object in as_int");
+        return -1;
+    }
+
+#if PY_MAJOR_VERSION >= 3
+    result = (int) PyLong_AsLong(target);
+#else
+    result = (int) PyInt_AsLong(target);
+#endif
+
+    return result;
+}
+
+// Wrapper function to check if a python object is an int
+int is_pyint(PyObject *target)
+{
+#if PY_MAJOR_VERSION >= 3
+    return PyLong_Check(target);
+#else
+    return PyInt_Check(target);
+#endif
+}
 
 // The VMDApp instance will be found in the VMDApp module, under the
-// VMDApp dictionary entry.  Got it?
+// VMDApp dictionary entry.  Got it?  
 
 VMDApp *get_vmdapp() {
 #if PY_MAJOR_VERSION >= 3
-  PyObject *module = PyImport_ImportModule((char *)"builtins");
+    PyObject *module = PyImport_ImportModule((char *)"builtins");
 #else
-  PyObject *module = PyImport_ImportModule((char *)"__builtin__");
+    PyObject *module = PyImport_ImportModule((char *)"__builtin__");
 #endif
-  if (!module) return NULL;
+    if (!module)
+        return NULL;
+
   PyObject *module_dict = PyModule_GetDict(module);
-  if (!module_dict) return NULL;
+  if (!module_dict)
+      return NULL;
+
+// Python 3 uses a "capsule" to store C pointers
 #if PY_MAJOR_VERSION >= 3
-  PyObject *c_obj = PyDict_GetItemString(module_dict, "-vmdapp-");
-  if (!c_obj) return NULL;
-  if (PyCapsule_CheckExact(c_obj))
-    return (VMDApp *)PyCapsule_GetPointer(c_obj, "-vmdapp-");
+    PyObject *c_obj = PyDict_GetItemString(module_dict, "-vmdapp-");
+    if (!c_obj || PyErr_Occurred())
+        return NULL;
+
+    if (PyCapsule_CheckExact(c_obj))
+        return (VMDApp *)PyCapsule_GetPointer(c_obj, "-vmdapp-");
+
+// Python 2 instead uses the idea of a "C Object"
 #else
-  PyObject *c_obj = PyDict_GetItemString(module_dict, (char *)"-vmdapp-");
-  if (!c_obj) return NULL;
-  if (PyCObject_Check(c_obj))
-    return (VMDApp *)PyCObject_AsVoidPtr(c_obj);
+    PyObject *c_obj = PyDict_GetItemString(module_dict, (char *)"-vmdapp-");
+    if (!c_obj || PyErr_Occurred())
+        return NULL;
+
+    if (PyCObject_Check(c_obj))
+        return (VMDApp *)PyCObject_AsVoidPtr(c_obj);
 #endif
-  return NULL;
+    return NULL;
 }
 
 void set_vmdapp(VMDApp *app) {
@@ -144,42 +262,150 @@ void set_vmdapp(VMDApp *app) {
 }
 
 int py_array_from_obj(PyObject *obj, float *arr) {
-  if (PyTuple_Check(obj)) {
-    if (PyTuple_Size(obj) != 3) {
-      PyErr_SetString(PyExc_ValueError, (char *)"Tuple must have length 3");
-      return 0;
-    }
-    for (int i=0; i<3; i++) {
-      PyObject *elem = PyTuple_GET_ITEM(obj, i);
-      arr[i] = PyFloat_AsDouble(elem);
-      if (PyErr_Occurred())
-        return 0;
-    }
-    return 1;  // successful return
+
+   PyObject *seqdata = NULL;
+   PyObject *elem;
+   int i;
+
+  if (!(seqdata = PySequence_Fast(obj, "Coordinate argument must be a sequence")))
+    goto failure;
+
+  if (PySequence_Fast_GET_SIZE(seqdata) != 3) {
+    PyErr_SetString(PyExc_ValueError, "Coordinate must have length 3");
+    goto failure;
   }
-  PyErr_SetString(PyExc_ValueError, (char *)"Invalid tuple");
+
+  for (i = 0; i < 3; i++) {
+    elem = PySequence_Fast_GET_ITEM(seqdata, i);
+
+    arr[i] = PyFloat_AsDouble(elem);
+    if (PyErr_Occurred()) {
+      PyErr_SetString(PyExc_ValueError, "Problem unpacking coordinate");
+      goto failure;
+    }
+  }
+  return 1;  // successful return
+
+failure:
+  Py_XDECREF(seqdata);
   return 0;
 }
 
 Timestep *parse_timestep(VMDApp *app, int molid, int frame) {
-  if (molid < 0) molid = app->molecule_top();
-  Molecule *mol = app->moleculeList->mol_from_id(molid);
-  if (!mol) {
-    PyErr_SetString(PyExc_ValueError, (char *)"Invalid molecule id");
-    return NULL;
-  }
+
   Timestep *ts = NULL;
-  if (frame == -1) {
-    ts = mol->current();
-  } else if (frame == -2) {
-    ts = mol->get_last_frame();
-  } else {
-    ts = mol->get_frame(frame);
-  }
-  if (!ts) {
-    PyErr_SetString(PyExc_ValueError, (char *)"Invalid frame");
+  Molecule *mol;
+
+  // Get molecule from molid or top molecule
+  if (molid < 0)
+    molid = app->molecule_top();
+  mol = app->moleculeList->mol_from_id(molid);
+
+  if (!mol) {
+    PyErr_Format(PyExc_ValueError, "Invalid molecule id '%d'", molid);
     return NULL;
   }
+
+  // Get frame number
+  if (frame == -1)
+    ts = mol->current();
+  else if (frame == -2)
+    ts = mol->get_last_frame();
+  else
+    ts = mol->get_frame(frame);
+
+  if (!ts) {
+    PyErr_Format(PyExc_ValueError, "Invalid frame '%d'", frame);
+    return NULL;
+  }
+
   return ts;
 }
+
+// Helper function to check if molid is valid and set exception if not
+int valid_molid(int molid, VMDApp *app)
+{
+  if (!app->molecule_valid_id(molid)) {
+    PyErr_Format(PyExc_ValueError, "Invalid molecule id '%d'", molid);
+    return 0;
+  }
+  return 1;
+}
+
+
+// extract vector from sequence object.  Return success.
+int py_get_vector(PyObject *matobj, int n, float *vec) {
+
+  PyObject *fastval = NULL;
+  PyObject *fval;
+  int i;
+
+  if (!PySequence_Check(matobj) || PySequence_Size(matobj) != n) {
+    PyErr_SetString(PyExc_ValueError, "vector has incorrect size");
+    return 0;
+  }
+
+  if (!(fastval = PySequence_Fast(matobj, "Invalid sequence")))
+    goto failure;
+
+  for (i = 0; i < n; i++) {
+    fval = PySequence_Fast_GET_ITEM(fastval, i);
+
+    if (!PyFloat_Check(fval)) {
+      PyErr_SetString(PyExc_TypeError, "vector must contain only floats");
+      goto failure;
+    }
+
+    vec[i] = PyFloat_AsDouble(fval);
+    if (PyErr_Occurred())
+      goto failure;
+  }
+
+  Py_DECREF(fastval);
+  return 1;
+
+failure:
+  Py_XDECREF(fastval);
+  return 0;
+}
+
+// Converter function for boolean arguments
+int convert_bool(PyObject *obj, void *boolval)
+{
+  if (!PyObject_TypeCheck(obj, &PyBool_Type)) {
+    PyErr_SetString(PyExc_TypeError, "expected a boolean");
+    return 0;
+  }
+
+  *((int*)(boolval)) = PyObject_IsTrue(obj);
+  return 1; // success
+}
+
+_py3_inittab py_initializers[] = {
+   {"animate", initanimate},
+   {"atomsel", initatomsel},
+   {"axes", initaxes},
+   {"color", initcolor},
+   {"display", initdisplay},
+   {"graphics", initgraphics},
+#ifdef VMDIMD
+   {"imd", initimd},
+#endif
+   {"label", initlabel},
+   {"material", initmaterial},
+   {"molecule", initmolecule},
+   {"molrep", initmolrep},
+   {"mouse", initmouse},
+   {"render", initrender},
+   {"trans", inittrans},
+   {"measure", initmeasure},
+   {"topology", inittopology},
+   {"selection", initselection},
+   {"vmdcallbacks", initvmdcallbacks},
+   {"vmdmenu", initvmdmenu},
+#ifdef VMDNUMPY
+   {"vmdnumpy", initvmdnumpy},
+#endif
+   {NULL, NULL},
+};
 

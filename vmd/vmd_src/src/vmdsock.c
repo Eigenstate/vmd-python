@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: vmdsock.c,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.24 $      $Date: 2016/11/28 03:05:08 $
+ *      $Revision: 1.29 $      $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -123,7 +123,7 @@ void *vmdsock_accept(void * v) {
   unsigned int len;
 #elif defined(SOCKLEN_T)
   SOCKLEN_T len;
-#elif defined(ARCH_LINUXALPHA)
+#elif defined(ARCH_BLUEWATERS) || defined(ARCH_CRAY_XC) || defined(ARCH_CRAY_XK) || defined(ARCH_LINUXALPHA) || defined(ARCH_LINUXAMD64) || defined(ARCH_MACOSX) || defined(ARCH_MACOSXX86) || defined(ARCH_MACOSXX86_64) || defined(ARCH_SUMMIT) || defined(ARCH_OPENPOWER)
   socklen_t len;
 #else
   int len;

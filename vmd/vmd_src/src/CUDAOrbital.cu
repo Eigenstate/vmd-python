@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2008-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,7 +10,7 @@
  *
  *      $RCSfile: CUDAOrbital.cu,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.113 $      $Date: 2016/11/28 02:49:09 $
+ *      $Revision: 1.116 $      $Date: 2019/01/17 21:38:55 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -154,9 +154,9 @@ __global__ static void cuorbitalconstmem(int numatoms,
                           float grid_z, 
                           int density,
                           float * orbitalgrid) {
-  unsigned int xindex  = __umul24(blockIdx.x, blockDim.x) + threadIdx.x;
-  unsigned int yindex  = __umul24(blockIdx.y, blockDim.y) + threadIdx.y;
-  unsigned int outaddr = __umul24(gridDim.x, blockDim.x) * yindex + xindex;
+  unsigned int xindex  = blockIdx.x * blockDim.x + threadIdx.x;
+  unsigned int yindex  = blockIdx.y * blockDim.y + threadIdx.y;
+  unsigned int outaddr = gridDim.x * blockDim.x * yindex + xindex;
   float grid_x = originx + voxelsize * xindex;
   float grid_y = originy + voxelsize * yindex;
 
@@ -321,9 +321,9 @@ __global__ static void cuorbitaltiledshared(int numatoms,
                           float grid_z, 
                           int density, 
                           float * orbitalgrid) {
-  unsigned int xindex  = __umul24(blockIdx.x, blockDim.x) + threadIdx.x;
-  unsigned int yindex  = __umul24(blockIdx.y, blockDim.y) + threadIdx.y;
-  unsigned int outaddr = __umul24(gridDim.x, blockDim.x) * yindex + xindex;
+  unsigned int xindex  = blockIdx.x * blockDim.x + threadIdx.x;
+  unsigned int yindex  = blockIdx.y * blockDim.y + threadIdx.y;
+  unsigned int outaddr = gridDim.x * blockDim.x * yindex + xindex;
   float grid_x = originx + voxelsize * xindex;
   float grid_y = originy + voxelsize * yindex;
 
@@ -523,11 +523,9 @@ __global__ static void cuorbitalcachedglobmem(int numatoms,
                           float grid_z, 
                           int density, 
                           float *  RESTRICT orbitalgrid) {
-  unsigned int xindex  = __umul24(blockIdx.x, blockDim.x) * UNROLLX
-                         + threadIdx.x;
-  unsigned int yindex  = __umul24(blockIdx.y, blockDim.y) + threadIdx.y;
-  unsigned int outaddr = (__umul24(gridDim.x, blockDim.x) * UNROLLX) * yindex
-                         + xindex;
+  unsigned int xindex  = blockIdx.x * blockDim.x * UNROLLX + threadIdx.x;
+  unsigned int yindex  = blockIdx.y * blockDim.y + threadIdx.y;
+  unsigned int outaddr = gridDim.x * blockDim.x * UNROLLX * yindex + xindex;
   float grid_x = originx + voxelsize * xindex;
   float grid_y = originy + voxelsize * yindex;
 
@@ -672,6 +670,7 @@ static void * cudaorbitalthread(void *voidparms) {
   int numvoxels[3];
   float origin[3];
   orbthrparms *parms = NULL;
+  int hwpreferscachekernel=0;
   int usefastconstkernel=0;
   int usecachekernel=0;
   int threadid=0;
@@ -685,6 +684,19 @@ static void * cudaorbitalthread(void *voidparms) {
 
   wkf_threadpool_worker_getid(voidparms, &threadid, NULL);
   wkf_threadpool_worker_getdata(voidparms, (void **) &parms);
+
+  // query hardware to favor algorithms accordingly
+  cudaDeviceProp deviceProp;
+  memset(&deviceProp, 0, sizeof(cudaDeviceProp));
+
+  int dev=0;
+  if ((cudaGetDevice(&dev) == cudaSuccess) &&
+      (cudaGetDeviceProperties(&deviceProp, dev) == cudaSuccess)) {
+    cudaError_t err = cudaGetLastError(); // eat error so next CUDA op succeeds
+
+    if (deviceProp.major >= 7) 
+      hwpreferscachekernel=1; // Volta hardware prefers the cache kernel
+  }
 
   // scale tile size by device performance
   tilesize=4; // GTX 280, Tesla C1060 starting point tile size
@@ -713,17 +725,24 @@ static void * cudaorbitalthread(void *voidparms) {
 
   // determine which runtime strategy is workable
   // given the data sizes involved
-  if ((parms->num_wave_f < MAX_WAVEF_SZ) &&
-      (parms->numatoms < MAX_ATOM_SZ) &&
-      (parms->numatoms < MAX_ATOMSHELL_SZ) &&
-      (2*parms->num_basis < MAX_BASIS_SZ) &&
-      (parms->num_shells < MAX_SHELL_SZ)) {
+  if (hwpreferscachekernel) {
+    usecachekernel=1;
+  } else if ((parms->num_wave_f < MAX_WAVEF_SZ) &&
+             (parms->numatoms < MAX_ATOM_SZ) &&
+             (parms->numatoms < MAX_ATOMSHELL_SZ) &&
+             (2*parms->num_basis < MAX_BASIS_SZ) &&
+             (parms->num_shells < MAX_SHELL_SZ)) {
     usefastconstkernel=1;
   }
 
   // allow overrides for testing purposes
+  if (getenv("VMDFORCEMOCONSTMEM") != NULL) {
+    usefastconstkernel=1; 
+    usecachekernel=0;
+  }
   if (getenv("VMDFORCEMOTILEDSHARED") != NULL) {
     usefastconstkernel=0; 
+    usecachekernel=0;
   }
   if (getenv("VMDFORCEMOL1CACHE") != NULL) {
     usefastconstkernel=0; 

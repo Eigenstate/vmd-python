@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2007-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: OpenCLVolCPotential.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.31 $      $Date: 2013/10/24 16:23:36 $
+ *      $Revision: 1.32 $      $Date: 2019/01/17 21:38:55 $
  *
  ***************************************************************************
  * DESCRIPTION:

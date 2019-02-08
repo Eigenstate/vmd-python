@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: AtomColor.C,v $
  *      $Author: johns $        $Locker:  $                $State: Exp $
- *      $Revision: 1.103 $      $Date: 2016/11/28 03:04:57 $
+ *      $Revision: 1.105 $      $Date: 2019/01/17 21:20:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -386,10 +386,9 @@ int AtomColor::find(DrawMolecule *m) {
 
     // Get min/max values from selected volume
     if (need_recalc_minmax && mol->num_volume_data()) {
-      const VolumetricData *v = mol->get_volume_data(volIndex);
+      VolumetricData *v = mol->modify_volume_data(volIndex);
       if (v != NULL) {
-        minRange = v->datamin;
-        maxRange = v->datamax;
+        v->datarange(minRange, maxRange);
       }
 
       need_recalc_minmax = FALSE;

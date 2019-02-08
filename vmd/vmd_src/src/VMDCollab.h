@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: VMDCollab.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.6 $      $Date: 2016/11/28 03:05:05 $
+ *      $Revision: 1.8 $      $Date: 2019/01/17 21:21:02 $
  *
  ***************************************************************************/
 
@@ -23,10 +23,9 @@
 class Inform;
 
 class VMDCollab : public UIObject {
-
 private:
   void *serversock;
-  static void *serverproc(void *v);
+  static void *serverproc(void *v); // static member launched in a new thread
 
   Inform *cmdbufstr;
   void *clientsock;

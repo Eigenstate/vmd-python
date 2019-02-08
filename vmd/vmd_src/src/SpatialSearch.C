@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: SpatialSearch.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.22 $	$Date: 2016/11/28 03:05:04 $
+ *	$Revision: 1.24 $	$Date: 2019/01/17 21:21:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -186,16 +186,16 @@ int make_neighborlist(int **nbrlist, int xb, int yb, int zb) {
         if (xi < (xb-1) && zi < (zb-1)) nbrs[n++] = aindex + xytotb + 1;
         if (yi < (yb-1) && zi < (zb-1)) nbrs[n++] = aindex + xytotb + xb;
         if (xi < (xb-1) && yi > 0)      nbrs[n++] = aindex - xb + 1;
-        if (xi > 0 && zi < (zb-1))     nbrs[n++] = aindex + xytotb - 1;
-        if (yi > 0 && zi < (zb-1))     nbrs[n++] = aindex + xytotb - xb;
+        if (xi > 0 && zi < (zb-1))      nbrs[n++] = aindex + xytotb - 1;
+        if (yi > 0 && zi < (zb-1))      nbrs[n++] = aindex + xytotb - xb;
         if (xi < (xb-1) && yi < (yb-1) && zi < (zb-1))
-                                       nbrs[n++] = aindex + xytotb + xb + 1;
+                                        nbrs[n++] = aindex + xytotb + xb + 1;
         if (xi > 0 && yi < (yb-1) && zi < (zb-1))
-                                       nbrs[n++] = aindex + xytotb + xb - 1;
+                                        nbrs[n++] = aindex + xytotb + xb - 1;
         if (xi < (xb-1) && yi > 0 && zi < (zb-1))
-                                       nbrs[n++] = aindex + xytotb - xb + 1;
+                                        nbrs[n++] = aindex + xytotb - xb + 1;
         if (xi > 0 && yi > 0 && zi < (zb-1))
-                                       nbrs[n++] = aindex + xytotb - xb - 1;
+                                        nbrs[n++] = aindex + xytotb - xb - 1;
         nbrs[n++] = -1; // mark end of list
 
         int *lst = (int *) malloc(n*sizeof(int));
@@ -1034,7 +1034,8 @@ void find_within(const float *xyz, int *flgs, const int *others,
     float xi = pos[0];
     float yi = pos[1];
     float zi = pos[2];
-    if (xi<xmin || xi>xmax || yi<ymin || yi>ymax || zi<zmin || zi>zmax) {
+    if (xi<xmin || xi>xmax || yi<ymin || yi>ymax || zi<zmin || zi>zmax ||
+        isnan(xi) || isnan(yi) || isnan(zi)) {
       continue;
     }
     AtomEntry entry(xi,yi,zi,i);

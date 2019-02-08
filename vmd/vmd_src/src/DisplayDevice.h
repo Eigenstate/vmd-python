@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DisplayDevice.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.138 $	$Date: 2016/11/28 03:04:59 $
+ *	$Revision: 1.143 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************/
 #ifndef DISPLAYDEVICE_H
@@ -230,7 +230,7 @@ protected:
   /// total size of the screen, in pixels ... MUST BE SET BY DERIVED CLASS
   int screenX, screenY;
 
-  /// Find transformations corresponding to th periodic boundary conditions
+  /// Find transformations corresponding to the periodic boundary conditions
   /// specified in the given display list.  Append these transformations to
   /// the given array.
   void find_pbc_images(const VMDDisplayList *, ResizeArray<Matrix4> &);
@@ -239,6 +239,11 @@ protected:
   /// in the ResizeArray with 3 values per cell, in the form na nb nc, where
   /// nx is the number of times to apply transform x to get to the cell.
   void find_pbc_cells(const VMDDisplayList *, ResizeArray<int> &);
+
+  /// Find transformations corresponding to the list of active molecule  
+  /// instances specified in the given display list.  
+  /// Append these transformations to the given array.
+  void find_instance_images(const VMDDisplayList *, ResizeArray<Matrix4> &);
 
 public:
   DisplayDevice(const char *);
@@ -310,9 +315,6 @@ public:
   virtual void set_cursor(int);
 
 private:
-  /// these put the cursor into the "WAIT" cursor and back
-  int old_cursor;
-
   Projection my_projection;     ///< viewing projection mode used
   static const char *projNames[NUM_PROJECTIONS];
   static const char *cueModeNames[NUM_CUE_MODES];
@@ -779,7 +781,14 @@ public:
   virtual void reshape(void);		///< refresh device after change
 
   /// virtual routine for capturing the screen to a packed RGB array
-  virtual unsigned char * readpixels(int &x, int &y);
+  virtual unsigned char * readpixels_rgb3u(int &x, int &y);
+
+  /// virtual routine for capturing the screen to a packed RGBA array
+  virtual unsigned char * readpixels_rgba4u(int &x, int &y);
+
+  /// virtual routine for drawing the screen from a packed RGBA array
+  virtual int drawpixels_rgba4u(unsigned char *rgba, int &x, int &y) { return -1; };
+  
   
   /// process list of draw commands
   virtual void render(const VMDDisplayList *) { _needRedraw = 0; } 

@@ -1,17 +1,25 @@
 // -*- c++ -*-
 
+// This file is part of the Collective Variables module (Colvars).
+// The original version of Colvars and its updates are located at:
+// https://github.com/colvars/colvars
+// Please update all Colvars source files before making any changes.
+// If you wish to distribute your changes, please submit them to the
+// Colvars repository at GitHub.
+
 #ifndef COLVAR_H
 #define COLVAR_H
 
 #include <iostream>
-#include <iomanip>
-#include <cmath>
 
 #include "colvarmodule.h"
 #include "colvarvalue.h"
 #include "colvarparse.h"
 #include "colvardeps.h"
 
+#ifdef LEPTON
+#include "Lepton.h" // for runtime custom expressions
+#endif
 
 /// \brief A collective variable (main class); to be defined, it needs
 /// at least one object of a derived class of colvar::cvc; it
@@ -51,6 +59,12 @@ public:
   /// \brief Current actual value (not extended DOF)
   colvarvalue const & actual_value() const;
 
+  /// \brief Current running average (if calculated as set by analysis flag)
+  colvarvalue const & run_ave() const;
+
+  /// \brief Force constant of the spring
+  cvm::real const & force_constant() const;
+
   /// \brief Current velocity (previously set by calc() or by read_traj())
   colvarvalue const & velocity() const;
 
@@ -78,11 +92,25 @@ public:
   static std::vector<feature *> cv_features;
 
   /// \brief Implementation of the feature list accessor for colvar
-  std::vector<feature *> &features() {
+  virtual const std::vector<feature *> &features()
+  {
     return cv_features;
   }
+  virtual std::vector<feature *> &modify_features()
+  {
+    return cv_features;
+  }
+  static void delete_features() {
+    for (size_t i=0; i < cv_features.size(); i++) {
+      delete cv_features[i];
+    }
+    cv_features.clear();
+  }
 
-  int refresh_deps();
+  /// Implements possible actions to be carried out
+  /// when a given feature is enabled
+  /// This overloads the base function in colvardeps
+  void do_feature_side_effects(int id);
 
   /// List of biases that depend on this colvar
   std::vector<colvarbias *> biases;
@@ -143,8 +171,12 @@ protected:
   // Options for extended_lagrangian
   /// Restraint center
   colvarvalue xr;
+  /// Previous value of the restraint center;
+  colvarvalue prev_xr;
   /// Velocity of the restraint center
   colvarvalue vr;
+  /// Previous velocity of the restraint center
+  colvarvalue prev_vr;
   /// Mass of the restraint center
   cvm::real ext_mass;
   /// Restraint force constant
@@ -170,6 +202,9 @@ public:
   /// the biases are updated
   colvarvalue fb;
 
+  /// \brief Bias force to the actual value (only useful with extended Lagrangian)
+  colvarvalue fb_actual;
+
   /// \brief Total \em applied force; fr (if extended_lagrangian
   /// is defined), fb (if biases are applied) and the walls' forces
   /// (if defined) contribute to it
@@ -183,12 +218,9 @@ public:
   colvarvalue ft;
 
 
-  /// Period, if it is a constant
+  /// Period, if this variable is periodic
   cvm::real period;
-
-  /// \brief Same as above, but also takes into account components
-  /// with a variable period, such as distanceZ
-  bool b_periodic;
+  cvm::real wrap_center;
 
 
   /// \brief Expand the boundaries of multiples of width, to keep the
@@ -221,10 +253,25 @@ public:
 
 
   /// Constructor
-  colvar(std::string const &conf);
+  colvar();
+
+  /// Main init function
+  int init(std::string const &conf);
 
   /// Parse the CVC configuration and allocate their data
   int init_components(std::string const &conf);
+
+  /// Parse parameters for custom function with Lepton
+  int init_custom_function(std::string const &conf);
+
+  /// Init defaults for grid options
+  int init_grid_parameters(std::string const &conf);
+
+  /// Init extended Lagrangian parameters
+  int init_extended_Lagrangian(std::string const &conf);
+
+  /// Init output flags
+  int init_output_flags(std::string const &conf);
 
 private:
   /// Parse the CVC configuration for all components of a certain type
@@ -243,6 +290,9 @@ public:
 
   /// \brief Calculate the colvar's value and related quantities
   int calc();
+
+  /// Carry out operations needed before next step is run
+  int end_of_step();
 
   /// \brief Calculate a subset of the colvar components (CVCs) currently active
   /// (default: all active CVCs)
@@ -290,6 +340,9 @@ public:
   /// Add to the total force from biases
   void add_bias_force(colvarvalue const &force);
 
+  /// Apply a force to the actual value (only meaningful with extended Lagrangian)
+  void add_bias_force_actual_value(colvarvalue const &force);
+
   /// \brief Collect all forces on this colvar, integrate internal
   /// equations of motion of internal degrees of freedom; see also
   /// colvar::communicate_forces()
@@ -306,6 +359,9 @@ public:
   /// \brief Updates the flags in the CVC objects, and their number
   int update_cvc_flags();
 
+  /// \brief Modify the configuration of CVCs (currently, only base class data)
+  int update_cvc_config(std::vector<std::string> const &confs);
+
 protected:
   /// \brief Number of CVC objects with an active flag
   size_t n_active_cvcs;
@@ -313,44 +369,40 @@ protected:
   /// Sum of square coefficients for active cvcs
   cvm::real active_cvc_square_norm;
 
-  /// Time step multiplier (for coarse-time-step colvars)
-  /// Colvar will only be calculated at those times; biases may ignore the information and
-  /// always update their own forces (which is typically inexpensive) especially if
-  /// they rely on other colvars. In this case, the colvar will accumulate forces applied between
-  /// colvar updates. Alternately they may use it to calculate "impulse" biasing
-  /// forces at longer intervals. Impulse forces must be multiplied by the timestep factor.
-  int   time_step_factor;
+  /// Update the sum of square coefficients for active cvcs
+  void update_active_cvc_square_norm();
 
-  /// Biasing force collected between updates, to be applied at next update for coarse-time-step colvars
-  colvarvalue f_accumulated;
+  /// \brief Absolute timestep number when this colvar was last updated
+  int prev_timestep;
 
 public:
+
+  /// \brief Return the number of CVC objects defined
+  inline size_t num_cvcs() const { return cvcs.size(); }
+
   /// \brief Return the number of CVC objects with an active flag (as set by update_cvc_flags)
   inline size_t num_active_cvcs() const { return n_active_cvcs; }
-
-  /// \brief returns time_step_factor
-  inline int get_time_step_factor() const {return time_step_factor;}
 
   /// \brief Use the internal metrics (as from \link cvc
   /// \endlink objects) to calculate square distances and gradients
   ///
   /// Handles correctly symmetries and periodic boundary conditions
   cvm::real dist2(colvarvalue const &x1,
-                   colvarvalue const &x2) const;
+                  colvarvalue const &x2) const;
 
   /// \brief Use the internal metrics (as from \link cvc
   /// \endlink objects) to calculate square distances and gradients
   ///
   /// Handles correctly symmetries and periodic boundary conditions
   colvarvalue dist2_lgrad(colvarvalue const &x1,
-                           colvarvalue const &x2) const;
+                          colvarvalue const &x2) const;
 
   /// \brief Use the internal metrics (as from \link cvc
   /// \endlink objects) to calculate square distances and gradients
   ///
   /// Handles correctly symmetries and periodic boundary conditions
   colvarvalue dist2_rgrad(colvarvalue const &x1,
-                           colvarvalue const &x2) const;
+                          colvarvalue const &x2) const;
 
   /// \brief Use the internal metrics (as from \link cvc
   /// \endlink objects) to wrap a value into a standard interval
@@ -361,8 +413,9 @@ public:
 
   /// Read the analysis tasks
   int parse_analysis(std::string const &conf);
+
   /// Perform analysis tasks
-  void analyze();
+  int analyze();
 
 
   /// Read the value from a collective variable trajectory file
@@ -385,6 +438,12 @@ public:
 protected:
   /// Previous value (to calculate velocities during analysis)
   colvarvalue            x_old;
+
+  /// Value read from the most recent state file (if any)
+  colvarvalue            x_restart;
+
+  /// True if a state file was just read
+  bool                   after_restart;
 
   /// Time series of values and velocities used in correlation
   /// functions
@@ -434,37 +493,39 @@ protected:
   acf_type_e             acf_type;
 
   /// \brief Velocity ACF, scalar product between v(0) and v(t)
-  int calc_vel_acf(std::list<colvarvalue> &v_history,
-                     colvarvalue const      &v);
+  void calc_vel_acf(std::list<colvarvalue> &v_history,
+                    colvarvalue const      &v);
 
   /// \brief Coordinate ACF, scalar product between x(0) and x(t)
   /// (does not work with scalar numbers)
   void calc_coor_acf(std::list<colvarvalue> &x_history,
-                      colvarvalue const      &x);
+                     colvarvalue const      &x);
 
   /// \brief Coordinate ACF, second order Legendre polynomial between
   /// x(0) and x(t) (does not work with scalar numbers)
   void calc_p2coor_acf(std::list<colvarvalue> &x_history,
-                        colvarvalue const      &x);
+                       colvarvalue const      &x);
 
   /// Calculate the auto-correlation function (ACF)
   int calc_acf();
   /// Save the ACF to a file
-  void write_acf(std::ostream &os);
+  int write_acf(std::ostream &os);
 
   /// Length of running average series
   size_t         runave_length;
   /// Timesteps to skip between two values in the running average series
   size_t         runave_stride;
   /// Name of the file to write the running average
-  cvm::ofstream  runave_os;
+  std::string    runave_outfile;
+  /// File to write the running average
+  std::ostream  *runave_os;
   /// Current value of the running average
   colvarvalue    runave;
   /// Current value of the square deviation from the running average
   cvm::real      runave_variance;
 
   /// Calculate the running average and its standard deviation
-  void calc_runave();
+  int calc_runave();
 
   /// If extended Lagrangian active: colvar energies (kinetic and harmonic potential)
   cvm::real kinetic_energy;
@@ -475,12 +536,14 @@ public:
   // collective variable component base class
   class cvc;
 
-  // currently available collective variable components
+  // list of available collective variable components
 
   // scalar colvar components
   class distance;
   class distance_z;
   class distance_xy;
+  class polar_theta;
+  class polar_phi;
   class distance_inv;
   class distance_pairs;
   class angle;
@@ -529,6 +592,21 @@ private:
   /// when using scriptedFunction
   std::vector<const colvarvalue *> sorted_cvc_values;
 
+#ifdef LEPTON
+  /// Vector of evaluators for custom functions using Lepton
+  std::vector<Lepton::CompiledExpression *> value_evaluators;
+
+  /// Vector of evaluators for gradients of custom functions
+  std::vector<Lepton::CompiledExpression *> gradient_evaluators;
+
+  /// Vector of references to cvc values to be passed to Lepton evaluators
+  std::vector<double *> value_eval_var_refs;
+  std::vector<double *> grad_eval_var_refs;
+
+  /// Unused value that is written to when a variable simplifies out of a Lepton expression
+  double dev_null;
+#endif
+
 public:
   /// \brief Sorted array of (zero-based) IDs for all atoms involved
   std::vector<int> atom_ids;
@@ -543,18 +621,25 @@ public:
   }
 };
 
+inline cvm::real const & colvar::force_constant() const
+{
+  return ext_force_k;
+}
 
 inline colvarvalue const & colvar::value() const
 {
   return x_reported;
 }
 
-
 inline colvarvalue const & colvar::actual_value() const
 {
   return x;
 }
 
+inline colvarvalue const & colvar::run_ave() const
+{
+  return runave;
+}
 
 inline colvarvalue const & colvar::velocity() const
 {
@@ -577,9 +662,20 @@ inline void colvar::add_bias_force(colvarvalue const &force)
 }
 
 
+inline void colvar::add_bias_force_actual_value(colvarvalue const &force)
+{
+  if (cvm::debug()) {
+    cvm::log("Adding biasing force "+cvm::to_str(force)+" to colvar \""+name+"\".\n");
+  }
+  fb_actual += force;
+}
+
+
 inline void colvar::reset_bias_force() {
   fb.type(value());
   fb.reset();
+  fb_actual.type(value());
+  fb_actual.reset();
 }
 
 #endif

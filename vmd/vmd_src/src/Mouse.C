@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Mouse.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.147 $	$Date: 2016/11/28 03:05:01 $
+ *	$Revision: 1.150 $	$Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -38,6 +38,7 @@
 #include "PickList.h"
 #include "VMDApp.h"
 
+#include "VideoStream.h" // for video streaming event generation
 
 // constructor
 Mouse::Mouse(VMDApp *vmdapp) : UIObject(vmdapp) {
@@ -473,7 +474,14 @@ void Mouse::handle_winevent(long dev, long val) {
     case DisplayDevice::WIN_KBD_F10:
     case DisplayDevice::WIN_KBD_F11:
     case DisplayDevice::WIN_KBD_F12:
-      runcommand(new UserKeyEvent((DisplayDevice::EventCodes) dev, (char) val, app->display->shift_state()));
+      // if we are a video streaming client, graphics window 
+      // keyboard events are sent to the server and are not
+      // interpreted locally
+      if (app->uivs && app->uivs->cli_connected()) {
+        app->uivs->cli_send_keyboard(dev, (char) val, app->display->shift_state());
+      } else {
+        runcommand(new UserKeyEvent((DisplayDevice::EventCodes) dev, (char) val, app->display->shift_state()));
+      }
       break;
 
     default:
@@ -504,7 +512,8 @@ int Mouse::check_event(void) {
     } 
   }
 
-  if (rocking_enabled) {
+  // don't perform auto-rotation a remote video stream client at present
+  if (rocking_enabled && !(app->uivs && app->uivs->cli_connected())) {
     // apply ang velocity, if necessary
     if (xRotVel != 0.0 || yRotVel != 0.0 || zRotVel != 0.0) {
       if (moveMode != LIGHT) {          // (possibly) rotate app->scene

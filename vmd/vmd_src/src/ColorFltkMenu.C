@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -293,7 +293,7 @@ void ColorFltkMenu::color_cb(Fl_Widget *, void *v) {
   const char *category = self->categorybrowser->text(catval);
   const char *item = self->itembrowser->text(itemval);
   const char *color = self->app->color_name(colorval-1);
-  self->app->color_changename(category, item, color);
+  self->app->color_change_name(category, item, color);
   self->update_chosen_color();
 }
 
@@ -315,7 +315,7 @@ void ColorFltkMenu::rgb_cb(Fl_Widget *w, void *v) {
     g = (float)self->greenscale->value();
     b = (float)self->bluescale->value();
   }
-  self->app->color_changevalue(color, r, g, b);
+  self->app->color_change_rgb(color, r, g, b);
 }
 
 void ColorFltkMenu::default_cb(Fl_Widget *, void *v) {
@@ -328,7 +328,7 @@ void ColorFltkMenu::default_cb(Fl_Widget *, void *v) {
     msgErr << "ColorFltkMenu::default_cb(): invalid color" << sendmsg;
     return;
   }
-  self->app->color_changevalue(color, r, g, b);
+  self->app->color_change_rgb(color, r, g, b);
 }
 
 void ColorFltkMenu::scalemethod_cb(Fl_Widget *w, void *v) {

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: FltkOpenGLDisplayDevice.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.21 $	$Date: 2016/11/28 03:05:00 $
+ *	$Revision: 1.23 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -86,7 +86,8 @@ public:
   virtual void reshape(void);			// refresh device after change
 
   // virtual routine for capturing the screen to a packed RGB array
-  virtual unsigned char * readpixels(int &x, int &y);
+  virtual unsigned char * readpixels_rgb3u(int &x, int &y);
+  virtual unsigned char * readpixels_rgba4u(int &x, int &y);
 
   // Update xOrig and yOrig before computing screen position
   virtual void rel_screen_pos(float &x, float &y) {

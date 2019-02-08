@@ -1,7 +1,6 @@
 /***************************************************************************
-
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,104 +10,194 @@
 #include "VMDTkinterMenu.h"
 #include "VMDApp.h"
 
-static PyObject *show(PyObject *self, PyObject *args) {
+static const char show_doc[] =
+"Show or hide a registered window, or queries window visibility\n\n"
+"Args:\n"
+"    name (str): Window name\n"
+"    visible (bool): Whether or not window is visible, or None to query"
+"Returns:\n"
+"    (bool): Updated visibility status of menu";
+static PyObject *py_menushow(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  const char *kwlist[] = {"name", "visible", NULL};
+  PyObject *shownobj = Py_None;
+  PyObject *result;
+  VMDApp *app;
   char *name;
-  int onoff;
-  if (!PyArg_ParseTuple(args, (char *)"s|i", &name, &onoff))
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|O!:menu.show",
+                                   (char**) kwlist, &name,
+                                   &PyBool_Type, &shownobj))
     return NULL;
-  VMDApp *app = get_vmdapp();
-  if (PyTuple_GET_SIZE(args) > 1) {
-    app->menu_show(name, onoff);
+
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  // Check menu name actually exists
+  if (app->menu_id(name) == -1) {
+    PyErr_Format(PyExc_ValueError, "No such menu '%s' to show/hide", name);
+    return NULL;
   }
-  return Py_BuildValue("i", app->menu_status(name));
+
+  // If visible is not None, set visibility of window if (shownobj != Py_None)
+    app->menu_show(name, PyObject_IsTrue(shownobj));
+
+  // Return visibility status of window
+  result = app->menu_status(name) ? Py_True : Py_False;
+  Py_INCREF(result);
+  return result;
 }
 
-static PyObject *location(PyObject *self, PyObject *args) {
+static const char loc_doc[] =
+"Sets or queries menu location\n\n"
+"Args:\n"
+"    name (str): Menu name\n"
+"    location (tuple of ints): (x,y) position to set menu location, or None\n"
+"        to query current menu location\n"
+"Returns:\n"
+"    (tuple of ints): (x, y) updated menu location";
+static PyObject* py_location(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  const char *kwlist[] = {"name", "location", NULL};
+  int x = -1, y = -1;
+  VMDApp *app;
   char *name;
-  PyObject *loc;
-  if (!PyArg_ParseTuple(args, (char *)"s|O", &name, &loc))
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|(ii):menu.location",
+                                   (char**) kwlist, &name, &x, &y))
     return NULL;
-  VMDApp *app = get_vmdapp();
-  int x, y;
-  if (PyTuple_GET_SIZE(args) > 1) {
-    // parse loc argument
-    if (!PyArg_ParseTuple(loc, (char *)"ii", &x, &y))
-      return NULL;
-    app->menu_move(name, x, y);
+
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  // Check menu name actually exists
+  if (app->menu_id(name) == -1) {
+    PyErr_Format(PyExc_ValueError, "No such menu '%s' to set location", name);
+    return NULL;
   }
+
+  // If a new position is specified, move the menu
+  if (x != -1 && y != -1)
+    app->menu_move(name, x, y);
+
+  // Return current menu location
   app->menu_location(name, x, y);
   return Py_BuildValue("(ii)", x, y);
 }
 
-static PyObject *addmenu(PyObject *self, PyObject *args) {
-  char *name;
+static const char add_doc[] =
+"Add a new entry to a VMD menu\n\n"
+"Args:\n"
+"    name (str): Name of new menu to add\n"
+"    root (TKinter menu): Root menu to add this menu under\n";
+static PyObject* py_addmenu(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  const char *kwlist[] = {"name", "root", NULL};
   PyObject *root;
-  if (!PyArg_ParseTuple(args, (char *)"sO", &name, &root))
+  VMDMenu *menu;
+  VMDApp *app;
+  char *name;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sO:menu.add", (char**) kwlist,
+                                   &name, &root))
     return NULL;
-  VMDApp *app = get_vmdapp();
-  VMDMenu *menu = new VMDTkinterMenu(name, root, app);
+
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  // Create the menu
+  menu = new VMDTkinterMenu(name, root, app);
+
+  // Try to add the menu to the root menu
   if (!app->add_menu(menu)) {
     delete menu;
-    PyErr_SetString(PyExc_ValueError, (char *)"Could not add menu");
+    PyErr_Format(PyExc_ValueError, "Could not add menu '%s'", name);
     return NULL;
   }
   app->menu_add_extension(name,name);
+
   Py_INCREF(Py_None);
   return Py_None;
 }
 
-static PyObject *registermenu(PyObject *self, PyObject *args) {
-  char *name, *menupath=NULL;
+static const char register_doc[] =
+"Add an item to a menu and register a function to be called when it is "
+"selected.\n\nArgs:\n"
+"    name (str): Name of menu to add\n"
+"    function (callable): Function to call when menu selected\n"
+"    menupath (str): Path to add menu to, if it will be a submenu.\n"
+"        Defaults to adding to the root menu";
+static PyObject* py_registermenu(PyObject *self, PyObject *args,
+                                 PyObject *kwargs)
+{
+  const char *kwlist[] = {"name", "function", "menupath", NULL};
+  char *menupath = NULL;
+  VMDTkinterMenu *menu;
   PyObject *func;
-  if (!PyArg_ParseTuple(args, (char *)"sO|s", &name, &func, &menupath))
+  VMDApp *app;
+  char *name;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|s:menu.register",
+                                   (char**) kwlist, &name, &func, &menupath))
     return NULL;
+
+  // Check that the function is actually a callable
   if (!PyCallable_Check(func)) {
-    PyErr_SetString(PyExc_ValueError, (char *)"func argument must be callable");
+    PyErr_Format(PyExc_ValueError, "function argument for menu '%s' must "
+                 "be callable", name);
     return NULL;
   }
+
+  // Default for menupath is just being its own menu
   if (!menupath)
     menupath = name;
-  VMDApp *app = get_vmdapp();
-  VMDTkinterMenu *menu = new VMDTkinterMenu(name, NULL, app);
+
+  // Make a new menu and try to add it to the app
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+  menu = new VMDTkinterMenu(name, NULL, app);
   if (!app->add_menu(menu)) {
     delete menu;
-    PyErr_SetString(PyExc_ValueError, (char *)"Could not add menu");
+    PyErr_Format(PyExc_ValueError, "Could not add menu '%s'", name);
     return NULL;
   }
+
+  // Register the callback for the menu
   menu->register_windowproc(func);
   app->menu_add_extension(name,menupath);
+
   Py_INCREF(Py_None);
   return Py_None;
 }
 
 static PyMethodDef methods[] = {
-  {(char *)"add", (vmdPyMethod)addmenu, METH_VARARGS,
-    (char *)"add(name, root) -- add to VMD extension menu"},
-  {(char *)"register", (vmdPyMethod)registermenu, METH_VARARGS,
-    (char *)"register(name, func, menupath) -- func returns Tk() instance"},
-  {(char *)"show", (vmdPyMethod)show, METH_VARARGS,
-    (char *)"show(name, onoff) -- show/hide registered window"},
-  {(char *)"location", (vmdPyMethod)location, METH_VARARGS,
-    (char *)"location(name, (x, y)) -- set menu location"},
-  {NULL, NULL, 0, NULL}
+  {"add", (PyCFunction)py_addmenu, METH_VARARGS | METH_KEYWORDS, add_doc},
+  {"register", (PyCFunction)py_registermenu, METH_VARARGS | METH_KEYWORDS, register_doc},
+  {"show", (PyCFunction)py_menushow, METH_VARARGS | METH_KEYWORDS, show_doc},
+  {"location", (PyCFunction)py_location, METH_VARARGS | METH_KEYWORDS, loc_doc},
+  {NULL, NULL}
 };
+
+static const char menu_moddoc[] =
+"Methods to manipulate GUI menus";
 
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef menudef = {
-    PyModuleDef_HEAD_INIT,
-    "vmdmenu",
-    NULL,
-    -1,
-    methods,
+  PyModuleDef_HEAD_INIT,
+  "vmdmenu",
+  menu_moddoc,
+  -1,
+  methods,
 };
 #endif
 
 PyObject* initvmdmenu(void) {
 #if PY_MAJOR_VERSION >= 3
-    PyObject *m= PyModule_Create(&menudef);
+  PyObject *m = PyModule_Create(&menudef);
 #else
-    PyObject *m= Py_InitModule((char *)"vmdmenu", methods);
+  PyObject *m = Py_InitModule3("vmdmenu", methods, menu_moddoc);
 #endif
-    return m;
+  return m;
 }
 

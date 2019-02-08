@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,7 +10,7 @@
  *
  *      $RCSfile: VolMapCreate.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.122 $      $Date: 2016/11/28 03:05:06 $
+ *      $Revision: 1.124 $      $Date: 2019/01/23 21:33:54 $
  *
  ***************************************************************************/
 
@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h> // only for write_dx_file()
+#include <tcl.h>
 
 #include "VMDApp.h"
 #include "MoleculeList.h"
@@ -52,6 +53,7 @@
 #include "ResizeArray.h"
 #include "Inform.h"
 #include "WKFUtils.h"
+#include "TclCommands.h"
 
 #if defined(VMDUSEMSMPOT)
 #include "msmpot.h"
@@ -564,6 +566,14 @@ int VolMapCreateDensity::compute_frame (int frame, float *voldata) {
     sel->which_frame = save_frame;
     return -1;
   }
+
+  if (weight_mutable) {
+    if (weight_string) {
+      get_weights_from_attribute(app, sel, weight_string, weight);
+    } else {
+      atomsel_default_weights(sel, weight);
+    }
+  }
   
   float cellx[3], celly[3], cellz[3];
   volmap->cell_axes(cellx, celly, cellz);
@@ -572,7 +582,6 @@ int VolMapCreateDensity::compute_frame (int frame, float *voldata) {
   for (i=0; i<3; i++) 
     min_coords[i] = float(volmap->origin[i] - 0.5f*(cellx[i] + celly[i] + cellz[i]));
   
-  int w_index=0;
   int gx, gy, gz;   // grid coord indices
   for (i=sel->firstsel; i<=sel->lastsel; i++) { 
     if (!sel->on[i]) continue; //atom is not selected
@@ -583,7 +592,7 @@ int VolMapCreateDensity::compute_frame (int frame, float *voldata) {
       
     float scaled_radius = 0.5f*radius_scale*radius[i];
     float exp_factor = 1.0f/(2.0f*scaled_radius*scaled_radius);
-    float norm = weight[w_index++]/(sqrtf((float) (8.0f*VMD_PI*VMD_PI*VMD_PI))*scaled_radius*scaled_radius*scaled_radius);
+    float norm = weight[i]/(sqrtf((float) (8.0f*VMD_PI*VMD_PI*VMD_PI))*scaled_radius*scaled_radius*scaled_radius);
                   
     int steps = (int)(4.1f*scaled_radius/delta);
     int iz, iy, ix;
@@ -647,8 +656,15 @@ int VolMapCreateInterp::compute_frame (int frame, float *voldata) {
     sel->which_frame = save_frame;
     return -1;
   }
+
+  if (weight_mutable) {
+    if (weight_string) {
+      get_weights_from_attribute(app, sel, weight_string, weight);
+    } else {
+      atomsel_default_weights(sel, weight);
+    }
+  }
   
-  int w_index=0;
   int gx, gy, gz;      // grid coord indices
   float fgx, fgy, fgz; // fractional grid coord indices
   float dx, dy, dz;    // to measure distances
@@ -673,28 +689,28 @@ int VolMapCreateInterp::compute_frame (int frame, float *voldata) {
     // Perform trilinear interpolation
 
     voldata[ gx + gy*GRIDSIZEX + gz*GRIDSIZEXY ] \
-      += (1.0f - dx) * (1.0f - dy) * (1.0f - dz) * weight[w_index];
+      += (1.0f - dx) * (1.0f - dy) * (1.0f - dz) * weight[i];
 
     voldata[ (gx+1) + (gy+1)*GRIDSIZEX + (gz+1)*GRIDSIZEXY ] \
-      += dx * dy * dz * weight[w_index];
+      += dx * dy * dz * weight[i];
 
     voldata[ (gx+1) + (gy+1)*GRIDSIZEX + gz*GRIDSIZEXY ] \
-      += dx * dy * (1.0f - dz) * weight[w_index];
+      += dx * dy * (1.0f - dz) * weight[i];
 
     voldata[ gx + gy*GRIDSIZEX + (gz+1)*GRIDSIZEXY ] \
-      += (1.0f - dx) * (1.0f - dy) * dz * weight[w_index];
+      += (1.0f - dx) * (1.0f - dy) * dz * weight[i];
 
     voldata[ (gx+1) + gy*GRIDSIZEX + gz*GRIDSIZEXY ] \
-      += dx * (1.0f - dy) * (1.0f - dz) * weight[w_index];
+      += dx * (1.0f - dy) * (1.0f - dz) * weight[i];
 
     voldata[ gx + (gy+1)*GRIDSIZEX + (gz+1)*GRIDSIZEXY ] \
-      += (1.0f - dx) * dy * dz * weight[w_index];
+      += (1.0f - dx) * dy * dz * weight[i];
 
     voldata[ gx + (gy+1)*GRIDSIZEX + gz*GRIDSIZEXY ] \
-      += (1.0f - dx) * dy * (1.0f - dz) * weight[w_index];
+      += (1.0f - dx) * dy * (1.0f - dz) * weight[i];
 
     voldata[ (gx+1) + gy*GRIDSIZEX + (gz+1)*GRIDSIZEXY ] \
-      += dx * (1.0f - dy) + dz * weight[w_index++];
+      += dx * (1.0f - dy) + dz * weight[i];
   }
 
   sel->which_frame = save_frame;
