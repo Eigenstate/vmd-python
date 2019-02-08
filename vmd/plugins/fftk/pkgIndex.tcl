@@ -8,4 +8,4 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded forcefieldtoolkit 1.1 "set env(FFTKDIR) [list $dir]; [list source [file join $dir fftk.tcl]]"
+package ifneeded forcefieldtoolkit 1.2 "set env(FFTKDIR) [list $dir]; [list source [file join $dir fftk.tcl]]"

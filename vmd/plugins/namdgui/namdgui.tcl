@@ -1,6 +1,6 @@
 # NAMDgui
 # -------
-# $Id: namdgui.tcl,v 1.37 2013/04/15 16:37:31 johns Exp $
+# $Id: namdgui.tcl,v 1.38 2017/10/11 14:55:43 johns Exp $
 #
 # Author:
 # Jan Saam
@@ -18,7 +18,7 @@
 package require readcharmmpar
 package require exectool 1.2
 package require pbctools
-package provide namdgui 1.3
+package provide namdgui 1.4
 
 namespace eval ::NAMDgui:: {
    namespace export namd
@@ -61,8 +61,6 @@ namespace eval ::NAMDgui:: {
       variable pairlistdist 12
       variable COMmotion    no
       variable dielectric   1.0
-      variable par          {}
-      lappend par [file join $env(CHARMMPARDIR) par_all27_prot_lipid_na.inp]
       variable simdir      "./"
       variable ensemble    "NVE"
       variable temperature 298
@@ -87,6 +85,13 @@ namespace eval ::NAMDgui:: {
       variable restartfreq 1000
       variable tclforcesscript ""
       variable namd_button "Run NAMD"
+      variable par          {}
+      lappend par [file join $env(CHARMMPARDIR) par_all36_prot.prm]
+      lappend par [file join $env(CHARMMPARDIR) par_all36_na.prm]
+      lappend par [file join $env(CHARMMPARDIR) par_all36_lipd.prm]
+      lappend par [file join $env(CHARMMPARDIR) par_all36_carb.prm]
+      lappend par [file join $env(CHARMMPARDIR) par_all36_cgenff.prm]
+      lappend par [file join $env(CHARMMPARDIR) toppar_water_ions_namd.str]
    }
    init_variables
 }

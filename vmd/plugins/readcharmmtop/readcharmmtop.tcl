@@ -1,7 +1,7 @@
 #
 # Read charmm topology file
 #
-# $Id: readcharmmtop.tcl,v 1.17 2015/04/17 20:59:22 ryanmcgreevy Exp $
+# $Id: readcharmmtop.tcl,v 1.18 2018/11/28 18:22:06 jribeiro Exp $
 #
 
 package provide readcharmmtop 1.2
@@ -37,7 +37,7 @@ proc ::Toporead::read_charmm_topology { file } {
    set acceptors    {}
    set residefaultfirst {}
    set residefaultlast  {}
-
+   set cgenff  0 ; # topology file coming from CGenFF server
    set nresid 0
    set ngroupatoms 0
    set unsavedresi 0
@@ -50,7 +50,11 @@ proc ::Toporead::read_charmm_topology { file } {
       if {[string index $line 0]=="*"} { continue }
 
       set comment [string trimleft [string range $line [expr [string first "!" $line] + 1] end]]
-      if { [string first "!" $line] != -1 } {
+      if {$cgenff == 0 && [string first "RESI" $line] > -1 && [string first "param penalty" $line] > -1} {
+         set cgenff 1
+      }
+
+      if { [string first "!" $line] != -1 && $cgenff == 0} {
          set line [string range $line 0 [expr [string first "!" $line] - 1]]
       }
 
@@ -146,7 +150,11 @@ proc ::Toporead::read_charmm_topology { file } {
 	 set name   [string toupper [lindex $line 1]]
 	 set type   [string toupper [lindex $line 2]]
 	 set charge [lindex $line 3]
-	 lappend group [list $name $type $charge]
+    set list [list $name $type $charge]
+    if {$cgenff == 1} {
+      lappend list [string trimright [lindex $line 5] "!"]
+    }
+	 lappend group $list
 	 incr ngroupatoms
 	 continue
       }

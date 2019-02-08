@@ -93,6 +93,10 @@ Unpack the distribution package.  A directory named catdcd will be created.
 Enter that directory and type "make".  To use a different compiler or compile
 flags, edit the first three definitions in the Makefile.
 
+New in version 5.2:
+        * Bug fix for segfaults that occured for indexed output selections
+          with page-aligned page-multiple buffers.
+
 New in version 5.1:
         * Support for cross-compilation to windows with mingw64
         * avoid segfaults by initializing dynamically allocated data to zero

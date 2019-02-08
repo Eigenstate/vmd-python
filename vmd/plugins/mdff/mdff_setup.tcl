@@ -11,7 +11,7 @@
 #
 #       $RCSfile: mdff_setup.tcl,v $
 #       $Author: ryanmcgreevy $        $Locker:  $             $State: Exp $
-#       $Revision: 1.19 $       $Date: 2015/05/11 22:18:49 $
+#       $Revision: 1.23 $       $Date: 2017/05/25 15:37:02 $
 #
 ############################################################################
 
@@ -62,6 +62,10 @@ namespace eval ::MDFF::Setup:: {
   variable defaultIMDFreq 1
   variable defaultIMDWait "no"
   variable defaultIMDIgnore "no"
+  #REMDFF related variables
+  variable defaultREMDFF 0
+  variable defaultReplicas 6
+  #variable defaultAutoSmooth 0
 }
 
 proc ::MDFF::Setup::mdff_setup_usage { } {
@@ -98,6 +102,12 @@ proc ::MDFF::Setup::mdff_setup_usage { } {
   variable defaultIMDFreq
   variable defaultIMDWait
   variable defaultIMDIgnore
+
+  #REMDFF related variables
+  variable defaultREMDFF
+  variable defaultReplicas
+#  variable defaultAutoSmooth
+
   ::MDFF::Setup::init_files
 
   puts "Usage: mdff setup -o <output prefix> -psf <psf file> -pdb <pdb file> -griddx <griddx file(s)> ?options?"
@@ -131,6 +141,11 @@ proc ::MDFF::Setup::mdff_setup_usage { } {
   puts "  -imdfreq  -- timesteps between sending IMD coordinates"
   puts "  --imdwait -- wait for IMD connection"
   puts "  --imdignore -- ignore steering forces from VMD" 
+#REMDFF options
+  puts " --remdff   -- turn on resolution exchange mdff (default mode: off)" 
+  puts " -replicas  -- number of replicas for resolution exchange mdff (default: $defaultReplicas)" 
+  #autosmooth not currently supported here because it is done by the GUI.
+  #puts " --autosmooth  -- automatically generate smoothed potentials for resolution exchange mdff" 
 #xMDFF options only!
   puts "xMDFF Options:"
   puts "  --xmdff   -- set up xMDFF simulation.  The following options apply to xMDFF only."  
@@ -159,6 +174,12 @@ proc ::MDFF::Setup::mdff_setup { args } {
   variable defaultFixCol
   variable namdTemplateFile
   variable xMDFFTemplateFile
+  variable REMDFFTemplateFile
+  variable REMDFFLoadFile
+  variable REMDFFShowFile
+  variable REMDFFFile
+  variable REMDFFReset
+  variable REMDFFREADME
   variable xMDFFScriptFile
   variable defaultMargin 
   variable defaultDir
@@ -183,6 +204,11 @@ proc ::MDFF::Setup::mdff_setup { args } {
   variable defaultIMDFreq
   variable defaultIMDWait
   variable defaultIMDIgnore
+  
+  #REMDFF related variables
+  variable defaultREMDFF
+  variable defaultReplicas
+#  variable defaultAutoSmooth
   
   set nargs [llength $args]
   if {$nargs == 0} {
@@ -274,6 +300,10 @@ proc ::MDFF::Setup::mdff_setup { args } {
       -dir        { set arg(dir)      [lindex $args [expr $i + 1]] } 
       --lite      { set arg(lite)       1 }
       --gridoff   { set arg(gridoff)    1 }
+      #begin REMDFF related options
+      --remdff    { set arg(remdff)   1 }
+      -replicas   { set arg(replicas) [lindex $args [expr $i + 1]] }
+      #--autosmooth { set arg(autosmooth)   1 }
       #begind xMDFF related options
       --xmdff     { set arg(xmdff)    1 }
       -refsteps   { set arg(refsteps) [lindex $args [expr $i + 1]] }
@@ -449,6 +479,26 @@ proc ::MDFF::Setup::mdff_setup { args } {
     set step 1
   }
   
+  #puts "starting REMDFF section"
+
+  if { [info exists arg(remdff)] } {
+    set remdff $arg(remdff)
+  } else {
+    set remdff $defaultREMDFF
+  }
+  if {$remdff} {
+    if { [info exists arg(replicas)] } {
+      set replicas $arg(replicas)
+    } else {
+      set replicas $defaultReplicas
+    }
+    #if { [info exists arg(autosmooth)] } {
+    #  set autosmooth $arg(autosmooth)
+    #} else {
+    #  set autosmooth $defaultAutoSmooth
+    #}
+  }
+  
   puts "starting xmdff section"
   if { [info exists arg(xmdff)] } {
     set xmdff $arg(xmdff)
@@ -456,6 +506,9 @@ proc ::MDFF::Setup::mdff_setup { args } {
     set xmdff $defaultxMDFF
   }
   if { $xmdff } {
+    if {$remdff} {
+      error "xMDFF not currently compatible with replica exchange."
+    }
     if { [info exists arg(refs)] } {
       set refs $arg(refs)
     } else {
@@ -550,7 +603,52 @@ proc ::MDFF::Setup::mdff_setup { args } {
     }
   }
 
-  if {$xmdff} {
+  if { $remdff } {
+    file copy -force $REMDFFTemplateFile $dir
+    file copy -force $REMDFFFile $dir
+    file copy -force $REMDFFLoadFile $dir
+    file copy -force $REMDFFShowFile $dir
+    file copy -force $REMDFFREADME $dir
+    file copy -force $REMDFFReset $dir
+    
+   
+    set out [open [file join $dir "remdff.namd"] w] 
+    set outname [file join $dir ${outprefix}-step${step}]
+    puts $out "set num_replicas $replicas"
+    #set min_temp 300
+    #set max_temp 300
+    puts $out "set steps_per_run 1000"
+    puts $out "set num_runs 10000"
+    puts $out "\# num_runs should be divisible by runs_per_frame * frames_per_restart"
+    puts $out "set runs_per_frame 1"
+    puts $out "set frames_per_restart 10"
+    puts $out "set namd_config_file $outname.namd"
+    puts $out "\# directories must exist"
+    puts $out "set output_root output/\%s/${outprefix}-step${step}"
+
+    puts $out "\# the following used only by show_replicas.vmd"
+    puts $out "set psf_file $psf"
+    puts $out "set initial_pdb_file $pdb"
+#    set fit_pdb_file "test-0003-target.pdb"
+
+    puts $out "\# prevent VMD from reading replica-mdff.namd by trying command only NAMD has"
+    puts $out "if { ! \[catch numPes\] } { source replica-mdff.namd }"
+
+    close $out 
+    
+#For now, mdff gui does this because mdff gui makes potentials, while this does not. Might want to change that.
+    #set initialMapDir [file join $dir "initialmaps/"]
+    #file mkdir $initialMapDir
+    #if {$autosmooth} {
+    #  for {set i 0} {$i < $replicas} {incr i} {
+    #    file mkdir [file join $dir "output/$i"]
+    #    file rename -force [file join $dir [lindex $grid $i]] [file join $initialMapDir "$i.dx"] 
+    #    file delete -force [file join $dir [lindex $grid $i]]
+    #    file link "[file join $dir [lindex $grid $i]]" [file join $initialMapDir "$i.dx"] 
+    #  }
+    #}
+    
+  } elseif {$xmdff} {
     file copy -force $xMDFFTemplateFile $dir
     file copy -force $xMDFFScriptFile $dir
     file delete "maps.params"
@@ -610,7 +708,7 @@ proc ::MDFF::Setup::mdff_setup { args } {
               \#density names in the GRIDFILE list, if they exist."
                  
   }
-  puts $out "set GRIDFILE [list $grid]"   
+  if {!$remdff} { puts $out "set GRIDFILE [list $grid]" }   
   if {$gscale == $defaultGScale && [llength $grid] > 1} {
     puts $out "set GSCALE [list [lrepeat [llength $grid] $gscale]]"
   } else {
@@ -674,13 +772,13 @@ proc ::MDFF::Setup::mdff_setup { args } {
       puts "Warning: Previous NAMD configuration file $prevnamd not found." 
       puts "You may need to manually edit the variable INPUTNAME in the file ${outname}.namd."
     }
-    puts $out "set INPUTNAME $inputname"  
+    if {!$remdff} {   puts $out "set INPUTNAME $inputname" } 
   }
 
-  puts $out "set OUTPUTNAME ${outprefix}-step${step}"
+  if {!$remdff} { puts $out "set OUTPUTNAME ${outprefix}-step${step}" }
   puts $out " "
-  puts $out "set TS $numsteps"
-  puts $out "set MS $minsteps"
+  if {!$remdff} { puts $out "set TS $numsteps" }
+  if {!$remdff} { puts $out "set MS $minsteps" }
   puts $out " "
   puts $out "set MARGIN $margin"
   puts $out " "
@@ -721,7 +819,7 @@ proc ::MDFF::Setup::mdff_setup { args } {
 
   }
   puts $out " "
-  if {$imd} {
+  if {$imd && !$remdff} {
     puts $out "IMDon on"
     puts $out "IMDport $imdport"
     if {$imdfreq > 0} {
@@ -737,6 +835,8 @@ proc ::MDFF::Setup::mdff_setup { args } {
   }
   if {$xmdff} {
     puts $out "source [file tail $xMDFFTemplateFile]"
+  } elseif {$remdff} {
+    puts $out "source [file tail $REMDFFTemplateFile]"
   } else {
     puts $out "source [file tail $namdTemplateFile]"
   }
@@ -858,10 +958,22 @@ proc ::MDFF::Setup::init_files {} {
   variable namdTemplateFile
   variable xMDFFTemplateFile
   variable xMDFFScriptFile
+  variable REMDFFTemplateFile
+  variable REMDFFFile
+  variable REMDFFREADME
+  variable REMDFFLoadFile
+  variable REMDFFShowFile
+  variable REMDFFReset
   set defaultParFile [file join $env(CHARMMPARDIR) par_all36_prot.prm]
   set namdTemplateFile [file join $env(MDFFDIR) mdff_template.namd]
   set xMDFFTemplateFile [file join $env(MDFFDIR) xmdff_template.namd]
   set xMDFFScriptFile [file join $env(MDFFDIR) xmdff_phenix.tcl]
+  set REMDFFTemplateFile [file join $env(MDFFDIR) remdff_template.namd]
+  set REMDFFFile [file join $env(MDFFDIR) replica-mdff.namd]
+  set REMDFFLoadFile  [file join $env(MDFFDIR) load-mdff-results.tcl]
+  set REMDFFShowFile [file join $env(MDFFDIR) show_replicas_mdff.vmd]
+  set REMDFFREADME [file join $env(MDFFDIR) README_REMDFF.txt]
+  set REMDFFReset [file join $env(MDFFDIR) resetmaps.sh]
 }
 
 proc ::MDFF::Setup::mdff_constrain_usage { } {

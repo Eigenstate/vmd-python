@@ -1,5 +1,5 @@
 #
-# $Id: fftk_ChargeOpt.tcl,v 1.25 2014/06/10 21:54:30 mayne Exp $
+# $Id: fftk_ChargeOpt.tcl,v 1.26 2017/03/17 19:11:10 mayne Exp $
 #
 
 #======================================================
@@ -9,7 +9,7 @@ namespace eval ::ForceFieldToolKit::ChargeOpt {
     
     # Need to Manually Set
     variable psfPath
-    variable pdbPath
+    #variable pdbPath ; # changed to use the general configurations geomOptPDB
     variable resName
     variable parList
     variable logFileList
@@ -75,7 +75,7 @@ proc ::ForceFieldToolKit::ChargeOpt::init {} {
 
     # GUI Input
     variable psfPath
-    variable pdbPath
+    #variable pdbPath
     variable resName
     variable parList
     variable outFileName
@@ -198,7 +198,8 @@ proc ::ForceFieldToolKit::ChargeOpt::sanityCheck {} {
     
     # localize relevant ChargeOpt variables
     variable psfPath
-    variable pdbPath
+    #variable pdbPath
+    set pdbPath $::ForceFieldToolKit::Configuration::geomOptPDB
     variable resName
     variable parList
     variable outFileName
@@ -439,7 +440,8 @@ proc ::ForceFieldToolKit::ChargeOpt::optimize {} {
     
     # need to localize all variables
     variable psfPath
-    variable pdbPath
+    #variable pdbPath
+    set pdbPath $::ForceFieldToolKit::Configuration::geomOptPDB
     variable resName
     variable parList
     variable outFileName
@@ -1488,7 +1490,7 @@ proc ::ForceFieldToolKit::ChargeOpt::printSettings { debugLog } {
     
     puts $debugLog "INPUT SECTION"
     puts $debugLog "psfPath: $::ForceFieldToolKit::ChargeOpt::psfPath"
-    puts $debugLog "pdbPath: $::ForceFieldToolKit::ChargeOpt::pdbPath"
+    puts $debugLog "pdbPath: $::ForceFieldToolKit::Configuration::geomOptPDB"
     puts $debugLog "resName: $::ForceFieldToolKit::ChargeOpt::resName"
     puts $debugLog "parList:"
     foreach item $::ForceFieldToolKit::ChargeOpt::parList {puts $debugLog "\t$item"}
@@ -1543,7 +1545,8 @@ proc ::ForceFieldToolKit::ChargeOpt::printSettings { debugLog } {
 proc ::ForceFieldToolKit::ChargeOpt::buildScript { scriptFileName } {
     # need to localize all variables
     variable psfPath
-    variable pdbPath
+    #variable pdbPath
+    set pdbPath $::ForceFieldToolKit::Configuration::geomOptPDB
     variable resName
     variable parList
     variable chargeGroups
@@ -1589,7 +1592,7 @@ proc ::ForceFieldToolKit::ChargeOpt::buildScript { scriptFileName } {
     # set all chargeOpt variables
     puts $scriptFile "\n\# Set ChargeOpt Variables"
     puts $scriptFile "set ::ForceFieldToolKit::ChargeOpt::psfPath $psfPath"
-    puts $scriptFile "set ::ForceFieldToolKit::ChargeOpt::pdbPath $pdbPath"
+    puts $scriptFile "set ::ForceFieldToolKit::Configuration::geomOptPDB $pdbPath"
     puts $scriptFile "set ::ForceFieldToolKit::ChargeOpt::resName $resName"
     puts $scriptFile "set ::ForceFieldToolKit::ChargeOpt::parList {$parList}"
     puts $scriptFile "set ::ForceFieldToolKit::ChargeOpt::outFileName $outFileName"

@@ -3,7 +3,7 @@
 # manipulating bonds and other topology related properties.
 #
 # Copyright (c) 2009,2010,2011 by Axel Kohlmeyer <akohlmey@gmail.com>
-# $Id: topogromacs.tcl,v 1.13 2016/11/04 05:57:55 johns Exp $
+# $Id: topogromacs.tcl,v 1.14 2017/01/17 23:39:56 johns Exp $
 
 # high level subroutines for supporting gromacs topology files.
 #
@@ -48,7 +48,7 @@ proc ::TopoTools::writegmxtop {filename mol sel {flags none}} {
         if {$gmxciteme} {
             vmdcon -info "======================"
             vmdcon -info "Please cite the following publication:"
-            vmdcon -info "J.V. Vermaas et al., TopoGromacs: [...]"
+            vmdcon -info "J.V. Vermaas et al., TopoGromacs: ..."
             vmdcon -info "http://dx.doi.org/10.1021/acs.jcim.6b00103"
             vmdcon -info "======================\n"
             set gmxciteme 0

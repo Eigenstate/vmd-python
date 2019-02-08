@@ -10,8 +10,8 @@
 # RCS INFORMATION:
 #
 #       $RCSfile: mdff_sim.tcl,v $
-#       $Author: ltrabuco $        $Locker:  $             $State: Exp $
-#       $Revision: 1.1 $       $Date: 2009/08/06 20:07:34 $
+#       $Author: ryanmcgreevy $        $Locker:  $             $State: Exp $
+#       $Revision: 1.3 $       $Date: 2019/01/10 16:06:22 $
 #
 ############################################################################
 
@@ -23,33 +23,28 @@
 # mdff sim -- creates a simulated map from an atomic structure
 #
 
-package require volutil
 package require mdff_tmp
 package provide mdff_sim 0.2
 
 namespace eval ::MDFF::Sim:: {
 
-  variable defaultGridspacing 1.0
   variable defaultTargetResolution 10.0
-
 }
 
 proc ::MDFF::Sim::mdff_sim_usage { } {
 
   variable defaultTargetResolution
-  variable defaultGridspacing
 
   puts "Usage: mdff sim <atomselection> -o <output map> ?options?"
   puts "Options:"
   puts "  -res <target resolution in Angstroms> (default: $defaultTargetResolution)"
-  puts "  -spacing <grid spacing in Angstroms> (default: $defaultGridspacing)"
+  puts "  -spacing <grid spacing in Angstroms> (default based on res)"
   puts "  -allframes (average over all frames)"
 
 }
 
 proc ::MDFF::Sim::mdff_sim { args } {
 
-  variable defaultGridspacing
   variable defaultTargetResolution
 
   set nargs [llength $args]
@@ -82,8 +77,6 @@ proc ::MDFF::Sim::mdff_sim { args } {
 
   if { [info exists arg(spacing)] } {
     set gridspacing $arg(spacing)
-  } else {
-    set gridspacing $defaultGridspacing
   }
 
   if { [info exists arg(res)] } {
@@ -91,34 +84,18 @@ proc ::MDFF::Sim::mdff_sim { args } {
   } else {
     set targetResolution $defaultTargetResolution
   }
-
+  
   if { [info exists arg(o)] } {
     set dxout $arg(o)
   } else {
     error "Missing output dx map."
   }
 
-  # Interpolate atomic numbers onto a map
-  set weight [::MDFF::Tmp::getAtomicNumber $sel]
-
-  # Get temporary filename
-  set tmpDir [::MDFF::Tmp::tmpdir]
-  set tmpDX [file join $tmpDir \
-    [::MDFF::Tmp::tmpfilename -prefix mdff_sim -suffix .dx -tmpdir $tmpDir]]
-
-  if $allFrames {
-    volmap interp $sel -res $gridspacing -weight $weight -o $tmpDX -allframes
+  if { [info exists gridspacing] } {
+    voltool sim $sel -res $targetResolution -spacing $gridspacing -o $dxout 
   } else {
-    volmap interp $sel -res $gridspacing -weight $weight -o $tmpDX
+    voltool sim $sel -res $targetResolution -o $dxout 
   }
-
-  # Low pass filter to the target resolution 
-  # volutil pre-divides sigma by sqrt(3), so we don't have to do it here
-  set sigma [expr {0.5 * $targetResolution}]
-  ::VolUtil::volutil -o $dxout -pad -smooth $sigma $tmpDX
-
-  file delete $tmpDX
-
   return
 
 }

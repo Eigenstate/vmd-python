@@ -8,5 +8,5 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded namdgui 1.3 "set env(NAMDGUIDIR) [list $dir]; source [list [file join $dir namdgui.tcl]]"
+package ifneeded namdgui 1.4 "set env(NAMDGUIDIR) [list $dir]; source [list [file join $dir namdgui.tcl]]"
 

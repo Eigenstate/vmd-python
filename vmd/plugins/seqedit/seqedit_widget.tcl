@@ -2,11 +2,11 @@
 # Copyright 2004-2007 Luthey-Schulten Group,
 # All rights reserved.
 #
-# $Id: seqedit_widget.tcl,v 1.17 2013/04/15 17:40:20 johns Exp $
+# $Id: seqedit_widget.tcl,v 1.18 2018/11/06 23:10:22 johns Exp $
 #
 # Developed by: Luthey-Schulten Group
 #               University of Illinois at Urbana-Champaign
-#               http://www.scs.illinois.edu/~schulten
+#               http://faculty.scs.illinois.edu/schulten/
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
 # this software and associated documentation files (the Software), to deal with

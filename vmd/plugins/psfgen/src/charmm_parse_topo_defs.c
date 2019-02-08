@@ -78,20 +78,7 @@ int charmm_parse_topo_defs(topo_defs *defs, FILE *file, int all_caps, void *v,
     }
     if ( first ) {
       first = 0;
-      if ( ! strncasecmp("READ",tok[0],4) && ! strncasecmp("RTF",tok[1],4) ) {
-        print_msg (v, "reading topology from stream file");
-        first = 1;
-        stream = 1;
-        continue;
-      } else if ( ! strncasecmp("READ",tok[0],4) && ! strncasecmp("PARA",tok[1],4) ) {
-        print_msg (v, "skipping parameters in stream file");
-        skip = 1;
-        continue;
-      } else if ( ! strncasecmp("READ",tok[0],4) ) {
-        print_msg (v, "skipping unknown section in stream file");
-        skip = 1;
-        continue;
-      } else if ( ! strncasecmp("IOFORMAT",tok[0],8) ) {
+      if ( ! strncasecmp("IOFORMAT",tok[0],8) ) {
         first = 1;
         continue;
       } else if ( ntok == 2 && sscanf(tok[0],"%u",&utmp) == 1
@@ -104,6 +91,22 @@ int charmm_parse_topo_defs(topo_defs *defs, FILE *file, int all_caps, void *v,
         print_msg(v,msgbuf);
         continue;
       }
+    }
+
+    if ( ! strncasecmp("READ",tok[0],4) && ! strncasecmp("RTF",tok[1],4) ) {
+      print_msg (v, "reading topology from stream file");
+      skip = 0;
+      first = 1;
+      stream = 1;
+      continue;
+    } else if ( ! strncasecmp("READ",tok[0],4) && ! strncasecmp("PARA",tok[1],4) ) {
+      print_msg (v, "skipping parameters in stream file");
+      skip = 1;
+      continue;
+    } else if ( ! strncasecmp("READ",tok[0],4) ) {
+      print_msg (v, "skipping unknown section in stream file");
+      skip = 1;
+      continue;
     }
 
     if ( skip ) {
@@ -211,7 +214,12 @@ int charmm_parse_topo_defs(topo_defs *defs, FILE *file, int all_caps, void *v,
     }
     else if ( ! strncasecmp("ATOM",tok[0],4) ) {
       debug_msg("Recognized atom statement.");
-      if ( ntok < 4 ) {
+      if ( ntok == 2 ) {
+        s1 = parse_atom(tok[1],&i1,&j1);
+        if ( topo_defs_atom(defs,0,0, s1,i1,j1,"",0.0) ) {
+          PRINT_ERROR("Failed to parse atom statement.");
+        }
+      } else if ( ntok != 2 && ntok < 4 ) {
         PRINT_ERROR("Failed to parse atom statement.");
       } else {
         s1 = parse_atom(tok[1],&i1,&j1);

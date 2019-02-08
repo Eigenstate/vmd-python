@@ -434,11 +434,14 @@ Segments may also contain pure solvent or lipid. Options \OKEY{segids}
 \OKEY{resids} \OKEY{residue} \OKEY{first} \OKEY{last} are used to query 
 information about the specified segment.} 
 {\KEYDEF{segids}{Return a list of segids for the molecule in the current context.}\\
-\KEYDEF{resids}{Return a list of resids for the molecule in the current context.}\\
-\KEYDEF{residue}{Return the residue name of the residue in
-the given segment with the given resid.}\\
+\KEYDEF{resids}{Return a list of resids for the given segment in the current context.}\\
+\KEYDEF{residue}{Return the residue name of the residue in the given segment with the given resid.}\\
 \KEYDEF{atoms}{Return a list of atoms for the given segment with the given resid.}\\
 \KEYDEF{coordinates}{Return x, y, z coordinates for the given atom.}\\
+\KEYDEF{velocities}{Return x, y, z velocities for the given atom.}\\
+\KEYDEF{mass}{Return the mass of the given atom.}\\
+\KEYDEF{charge}{Return the charge of the given atom.}\\
+\KEYDEF{atomid}{Return the one-based atomid of the given atom. These are only assigned/updated when writing a file. Therefore {\tt writepsf}, {\tt writepdb}, or {\tt writemol} must be called to avoid returning old atomid values or zero.}\\
 \KEYDEF{first}{Returns the name of the patch that was applied 
 to the beginning of the specified segment.}\\
 \KEYDEF{last}{Returns the name of the patch that was applied 
@@ -524,16 +527,16 @@ first non-increasing resid or residue with an insertion code.}
 \ARGDEF{segid:resid:atomname}{segment, residue, or atom to be multiplied.  If :resid is omitted the entire segment is multiplied; if :atomname is omitted the entire residue is multiplied.  May be repeated as many times as necessary to include all atoms.}}
 {After one or more segments have been built, all patches applied, and coordinates guessed.  The effects of this command may confuse other commands.}
 
-\item \COMMAND{\IKEY{delatom} \ARG {segid} \OARG{resid} \OARG{atom name}}
+\item \COMMAND{\IKEY{delatom} \ARG {segid} \OARG{resid} \OARG{atomname}}
 {Delete one or more atoms.  If only {\tt segid} is specified, all atoms from
 that segment will be removed from the structure.  If both {\tt segid} and
 {\tt resid} are specified, all atoms from just that residue will be removed.
-If {\tt segid}, {\tt resid}, and {\tt atom name} are all specified, just a
+If {\tt segid}, {\tt resid}, and {\tt atomname} are all specified, just a
 single atom will be removed.}
-{\ARGDEF{segid}{Name of segment.}\\
-\ARGDEF{resid}{Name of residue (optional).}\\
-\ARGDEF{atom name}{Name of atom (optional).}}
-{After all segments have been built and patched.}
+{\ARGDEF{segid}{Segment ID of target atom.}\\
+\ARGDEF{resid}{Residue ID of target atom (optional).}\\
+\ARGDEF{atomname}{Name of target atom (optional).}}
+{After one or more segments have been built.}
 
 \item \COMMAND{\IKEY{resetpsf}}
 {Delete all segments in the structure.  The topology definitions and 
@@ -607,13 +610,14 @@ This is useful for checking if a script is leaking contexts.}
 {}
 {At any time.}
 
-\item \COMMAND{\IKEY{writepsf} \OKEY{charmm} \OKEY{x-plor} \OKEY{cmap} \OKEY{nocmap} \ARG{file name}}
+\item \COMMAND{\IKEY{writepsf} \OKEY{charmm} \OKEY{x-plor} \OKEY{cmap} \OKEY{nocmap} \OKEY{nopatches} \ARG{file name}}
 {Write out structure information as PSF file. A simplified session log is listed in the REMARKS 
 section of the PSF file.}
 { \KEYDEF{charmm}{Use CHARMM format (numbers for atom types).}\\
 \KEYDEF{x-plor}{Use X-PLOR format (names for atom types), the default format required by NAMD.}\\
 \KEYDEF{cmap}{Write cross-term entries to PSF file if present, the default.}\\
 \KEYDEF{nocmap}{Do not write cross-term entries to PSF file, even if present.}\\
+\KEYDEF{nopatches}{Do not write list of applied patches to PSF file header.}\\
 \ARGDEF{file name}{PSF file to be generated.}}
 {After all segments have been built and patched.}
 
@@ -643,14 +647,6 @@ This command also exists under the deprecated name \IKEY{alias}.}
 \ARGDEF{real name}{Atom name found in topology file.}}
 {Before reading coordinates with coordpdb.  May call multiple times.}
 
-\item \COMMAND{\IKEY{coord} \ARG{segid} \ARG{resid} \ARG{atomname} \ARG{\{ x y z \}}}
-{Set coordinates for a single atom.}
-{\ARGDEF{segid}{Segment ID of target atom.}\\
-\ARGDEF{resid}{Residue ID of target atom.}\\
-\ARGDEF{atomname}{Name of target atom.}\\
-\ARGDEF{\{ x y z \}}{Coordinates to be assigned.}}
-{After structure has been generated.}
-
 \item \COMMAND{\IKEY{coordpdb} \ARG{file name} \OARG{segid} \OKEY{namdbin} \OARG{namdbin file name}}
 {Read coordinates from PDB file, matching segment, residue and atom names.}
 {\ARGDEF{file name}{PDB file containing known or aliased residues and atoms.}\\
@@ -666,6 +662,35 @@ definition files.  When these are insufficient, wild guesses are attempted
 based on bond lengths of 1 \AA\ and angles of 109$^\circ$.}
 {None.}
 {After stucture has been generated and known coordinates read in.}
+
+\item \COMMAND{\IKEY{coord} \ARG{segid} \ARG{resid} \ARG{atomname} \ARG{\{ x y z \}}}
+{\textbf{WILL BE DEPRECATED AFTER VERSON 1.6} (use {\tt psfset coord} instead) Set coordinates for a single atom.}
+{\ARGDEF{segid}{Segment ID of target atom.}\\
+\ARGDEF{resid}{Residue ID of target atom.}\\
+\ARGDEF{atomname}{Name of target atom.}\\
+\ARGDEF{\{ x y z \}}{Coordinates to be assigned.}}
+{After structure has been generated.}
+
+\item \COMMAND{\IKEY{psfset} \ARG{attribute} \ARG{segid} \OARG{resid} \OARG{atomname} \ARG{value}}
+{Set an attribute for a given segment, residue, or atom.}
+{\ARGDEF{attribute}{
+Segment attributes: 
+\KEYDEF{segid}{the name of the segment}
+Residue attributes: 
+\KEYDEF{resname}{the name of the residue}
+Atom attributes: 
+\KEYDEF{name}{the name of the atom}, 
+\KEYDEF{mass}{the mass of the atom},
+\KEYDEF{charge}{the charge of the atom},
+\KEYDEF{beta}{the PDB bfactor of the atom},
+\KEYDEF{coord}{the coordinates of the atom as \{x y z\}}, 
+\KEYDEF{vel}{the velocity of the atom as \{vx vy vz\}}
+}\\
+\ARGDEF{segid}{Segment ID of target segment, residue, or atom.}\\
+\ARGDEF{resid}{Residue ID of target residue or atom.}\\
+\ARGDEF{atomname}{Name of target atom.}\\
+\ARGDEF{value}{Value to be assigned.}}
+{After structure has been generated or read from file.}
 
 \item \COMMAND{\IKEY{writepdb} \ARG{file name}}
 {Writes PDB file containing coordinates.  Atom order is identical to

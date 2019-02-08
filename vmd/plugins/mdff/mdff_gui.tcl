@@ -61,6 +61,9 @@ namespace eval MDFFGUI:: {
     variable CButtonBFS
     variable MaskResInput ""
     variable MaskCutoffInput ""
+   
+    variable REMDFFNumReplicasInput
+    variable CButtonREMDFFAutoBlur
     
     variable IMDInpOrList
     variable IMDHost
@@ -116,6 +119,9 @@ namespace eval MDFFGUI:: {
     variable SSRestraints 0
     variable ChiralityRestraints 0
     variable CispeptideRestraints 0
+    variable REMDFF 0
+    variable REMDFFNumReplicas 6
+    variable REMDFFAutoBlur 1
     variable xMDFF 0
     variable BFS 0
     variable BSharp "none"
@@ -139,6 +145,7 @@ namespace eval MDFFGUI:: {
     variable UseCCThresh 0
     variable CCThresh ""
     variable GridforceLite 0
+    variable QwikMDLogFile ""
     variable ParameterList [list [file join $env(CHARMMPARDIR) par_all36_prot.prm]\
     [file join $env(CHARMMPARDIR) par_all36_lipid.prm] \
   [file join $env(CHARMMPARDIR) par_all36_na.prm] [file join $env(CHARMMPARDIR) par_all36_carb.prm] \
@@ -207,6 +214,9 @@ proc MDFFGUI::gui::mdffgui {} {
   variable CButtonBFS
   variable MaskResInput
   variable MaskCutoffInput
+  
+  variable REMDFFNumReplicasInput
+  variable CButtonREMDFFAutoBlur
   
   variable IMDInpOrList
   variable IMDHost
@@ -783,6 +793,44 @@ proc MDFFGUI::gui::mdffgui {} {
   grid $IMDProcLabel -row 8 -column 0 -sticky nw
   grid $IMDProcInput -row 8 -column 1 -sticky nsew
   
+  #REMDFF
+  
+  set REMDFFFrame [ttk::labelframe $w.hlf.n.f1.main.remdffframe]
+  grid columnconfigure $REMDFFFrame 1 -weight 1
+ 
+  set REMDFFLabel [ttk::label $w.hlf.n.f1.main.remdffframe.remdfflabel -text "Test Label"]
+  set CButtonREMDFF [ttk::checkbutton $w.hlf.n.f1.main.remdffframe.remdff -text "Resolution Exchange MDFF (BETA)" -variable MDFFGUI::settings::REMDFF -command {MDFFGUI::gui::remdff_toggle}]
+
+  set CButtonREMDFFAutoBlur [ttk::checkbutton $w.hlf.n.f1.main.remdffframe.remdffautoblur -text "Automatically Generate Replica Potentials" -variable MDFFGUI::settings::REMDFFAutoBlur -state disabled]
+
+  set REMDFFReplicasLabel [ttk::label $w.hlf.n.f1.main.remdffframe.remdffreplicaslabel -text "Number of Replicas:"]
+  set REMDFFNumReplicasInput [ttk::entry $w.hlf.n.f1.main.remdffframe.remdffreplicasentry -textvariable MDFFGUI::settings::REMDFFNumReplicas -state disabled]
+
+  set ShowREMDFF [ttk::label $w.hlf.n.f1.main.showremdff -text "$rightPoint Resolution Exchange Parameters (BETA) ..." -anchor w]
+  set HideREMDFF [ttk::label $w.hlf.n.f1.main.remdffframe.hideremdff -text "$downPoint Resolution Exchange Parameters (BETA)" -anchor w]
+  
+  $REMDFFFrame configure -labelwidget $HideREMDFF
+  bind $HideREMDFF <Button-1> {
+      grid remove .mdffgui.hlf.n.f1.main.remdffframe
+      grid .mdffgui.hlf.n.f1.main.showremdff
+      MDFFGUI::gui::resizeToActiveTab
+  }
+  bind $ShowREMDFF <Button-1> {
+      grid remove .mdffgui.hlf.n.f1.main.showremdff
+      grid .mdffgui.hlf.n.f1.main.remdffframe -row 4 -column 0 -sticky nsew -pady 5
+      grid columnconfigure .mdffgui.hlf.n.f1.main.remdffframe 1 -weight 1 
+      #grid rowconfigure .mdffgui.hlf.n.f1.main 1 -weight 1 
+      MDFFGUI::gui::resizeToActiveTab
+  }
+  
+  grid $ShowREMDFF -row 4 -column 0 -sticky nsew -pady 5 -padx $ShowBTNPadX
+ 
+  grid $CButtonREMDFF -row 0 -column 0 -sticky nw 
+  grid $CButtonREMDFFAutoBlur -row 1 -column 0 -sticky nw 
+  
+  grid $REMDFFReplicasLabel -row 2 -column 0 -sticky nw
+  grid $REMDFFNumReplicasInput -row 2 -column 1 -sticky nw
+  
   #IMD Connect
   set NBTab4 [ttk::frame $w.hlf.n.f4];
   $Notebook add $NBTab4 -text "IMDFF Connect" 
@@ -1249,6 +1297,20 @@ proc MDFFGUI::gui::xmdff_toggle {args} {
 
 }
 
+proc MDFFGUI::gui::remdff_toggle {args} {
+  variable REMDFFNumReplicasInput
+  variable CButtonREMDFFAutoBlur
+    
+  if {$MDFFGUI::settings::REMDFF} {
+    $REMDFFNumReplicasInput configure -state normal
+    $CButtonREMDFFAutoBlur configure -state normal
+  } else {
+    $REMDFFNumReplicasInput configure -state disabled
+    $CButtonREMDFFAutoBlur configure -state disabled
+  }
+
+}
+
 proc MDFFGUI::gui::thresh_toggle {args} {
   variable CCThreshInput
 
@@ -1393,12 +1455,16 @@ proc MDFFGUI::gui::mdff_setup {} {
     tk_messageBox -message "Please provide a PSF file."
   } elseif {$MDFFGUI::settings::CurrentPDBPath == ""} {
     tk_messageBox -message "Please provide a PDB file."
-  } elseif {!$MDFFGUI::settings::xMDFF && [llength [$MDFFGUI::gui::DensityView children {}]] == 0 && !$MDFFGUI::settings::GridOff} {
+  } elseif {!$MDFFGUI::settings::REMDFF && !$MDFFGUI::settings::xMDFF && [llength [$MDFFGUI::gui::DensityView children {}]] == 0 && !$MDFFGUI::settings::GridOff} {
     tk_messageBox -message "Please provide a density map file or turn grid forces off in simulation parameters."
   } elseif {$MDFFGUI::settings::MolID == ""} {
-    tk_messageBox -message "Please load the PSF and PDB using the button."
+    tk_messageBox -message "Please select a molecule containing a PSF and PDB."
   } elseif {$MDFFGUI::settings::xMDFF && [llength [$MDFFGUI::gui::xMDFFDensityView children {}]] == 0} {
     tk_messageBox -message "Please provide a reflections data file or turn off xMDFF."
+  } elseif {($MDFFGUI::settings::REMDFF && $MDFFGUI::settings::xMDFF) || ($MDFFGUI::settings::REMDFF && $MDFFGUI::settings::xMDFF)} {
+    tk_messageBox -message "Replica exchange not currently compatible with IMD or xMDFF."
+  } elseif {$MDFFGUI::settings::REMDFF && [llength [$DensityView children {}]] > 1} {
+    tk_messageBox -message "Replica exchange not currently compatible with multiple input density maps."
   } else {
     set refs ""
     set refsteps ""
@@ -1409,7 +1475,10 @@ proc MDFFGUI::gui::mdff_setup {} {
     set maskcutoff ""
     set averagemap ""
     set bsharp ""
-    
+    set remdff ""
+    set autosmooth ""
+    set replicasnum ""
+
   #  file mkdir $MDFFGUI::settings::CurrentDir 
     
     if {[llength $Extrabonds] == 0} {set Extrabonds 0}
@@ -1443,8 +1512,10 @@ proc MDFFGUI::gui::mdff_setup {} {
      
     set parlist ""
     foreach par $MDFFGUI::settings::ParameterList {
-      file copy -force $par $MDFFGUI::settings::CurrentDir
-      set parlist [lappend parlist [file tail $par]]
+      if {[file dirname $par] != $MDFFGUI::settings::CurrentDir} {
+        file copy -force $par $MDFFGUI::settings::CurrentDir
+        set parlist [lappend parlist [file tail $par]]
+      }
     }
     set imd ""
     set imdport ""
@@ -1489,10 +1560,22 @@ proc MDFFGUI::gui::mdff_setup {} {
       lappend gscales $gscale  
       MDFFGUI::gui::make_gridpdb $maps $seltext
       lappend gridpdbs "gridpdb$maps.pdb"
-     # if {!$MDFFGUI::settings::xMDFF} {
-      MDFFGUI::gui::make_griddx $maps $file 
-      lappend potentials "griddx$maps.dx"
-     # }
+      if {$MDFFGUI::settings::REMDFF && $MDFFGUI::settings::REMDFFAutoBlur} {
+        #Note could increase starting smoothness, say $i + 3, but would have
+        #to begin set i 1 and have an out of for loop griddx for 0.dx
+        #so that 0.dx is still the unblurred one.
+        for {set i 0} {$i < $MDFFGUI::settings::REMDFFNumReplicas} {incr i} {
+          set replicadxfile [file join $MDFFGUI::settings::CurrentDir "$i.dx"]
+          file delete -force $replicadxfile
+          voltool smooth -sigma $i -i $file -o $replicadxfile
+          #don't use make_griddx since we aren't following the usual naming convention in the case of replicas
+          mdff griddx -i $replicadxfile -o $replicadxfile
+          lappend potentials "$i.dx"
+        }
+      } else {
+        MDFFGUI::gui::make_griddx $maps $file 
+        lappend potentials "griddx$maps.dx"
+      }
       incr maps
     }
     set reffiles ""
@@ -1553,6 +1636,24 @@ proc MDFFGUI::gui::mdff_setup {} {
       set xmdffsel "-xmdffsel \"$MDFFGUI::settings::xMDFFSel\""  
     }
 
+    if {$MDFFGUI::settings::REMDFF} {
+      set remdff "--remdff"
+      set replicasnum "-replicas $MDFFGUI::settings::REMDFFNumReplicas"
+      set initialMapDir [file join $MDFFGUI::settings::CurrentDir "initialmaps/"]
+      file mkdir $initialMapDir
+      if {$MDFFGUI::settings::REMDFFAutoBlur} {
+        #set this whe you make mdff_setup handle this instead. only makes
+        #sense if mdff_setup can also auto-make potential files, which we might want to do.
+        #set autosmooth "--autosmooth"
+        for {set i 0} {$i < $MDFFGUI::settings::REMDFFNumReplicas} {incr i} {
+          file mkdir [file join $MDFFGUI::settings::CurrentDir "output/$i"]
+          file rename -force [file join $MDFFGUI::settings::CurrentDir [lindex $potentials $i]] [file join $initialMapDir "$i.dx"] 
+          file delete -force [file join $MDFFGUI::settings::CurrentDir [lindex $potentials $i]]
+          file link "[file join $MDFFGUI::settings::CurrentDir [lindex $potentials $i]]" [file join $initialMapDir "$i.dx"] 
+        }
+      }
+    }
+
     MDFFGUI::gui::generate_xbonds
 
     mdff setup -o $MDFFGUI::settings::SimulationName -dir $MDFFGUI::settings::CurrentDir -psf [file tail $MDFFGUI::settings::CurrentPSFPath] \
@@ -1561,7 +1662,15 @@ proc MDFFGUI::gui::mdff_setup {} {
     -minsteps $MDFFGUI::settings::Minsteps -numsteps $MDFFGUI::settings::Numsteps -temp $MDFFGUI::settings::Temperature -ftemp $MDFFGUI::settings::FTemperature $MDFFGUI::settings::PBCorGBIS \
     $xmdff $refs $reffiles {*}$refsteps {*}$CrystOption {*}$xmdffsel $bfs $mask $masks $maskres $masksres $bsharp $bsharps \
     $maskcutoff $maskscutoff $averagemap $averagemaps $imd {*}$imdport {*}$imdfreq $imdwait $imdignore \
-    {*}$fixedpdb {*}$fixedcol $lite $gridoff -parfiles $parlist -step $MDFFGUI::settings::SimulationStep 
+    {*}$fixedpdb {*}$fixedcol $lite $gridoff -parfiles $parlist -step $MDFFGUI::settings::SimulationStep $remdff {*}$replicasnum 
+    #put this option back in when mdff_setup handles this instead.
+    #$autosmooth 
+  
+    #write QwikMD log file if GUI was run from QwikMD
+#    if {$MDFFGUI::settings::QwikMDLogFile != ""} {
+#      set qwikmdlogfile [open $MDFFGUI::settings::QwikMDLogFile "a"]
+
+#    }
   }
   foreach mol [molinfo list] {
     molinfo $mol set center_matrix $CM 
@@ -1891,7 +2000,7 @@ proc MDFFGUI::gui::get_density {parent} {
   variable MDFFSetup 
   variable MapID
 
-  set pathname [tk_getOpenFile -defaultextension ".dx, .situs" -filetypes {{dx {.dx}} {situs {.situs}} {ccp4 {.ccp4}} {all {*}}} -parent $parent -initialdir $MDFFGUI::settings::CurrentDir]
+  set pathname [tk_getOpenFile -defaultextension ".dx, .situs" -filetypes {{dx {.dx}} {situs {.situs}} {mrc {.mrc}} {ccp4 {.ccp4}} {all {*}}} -parent $parent -initialdir $MDFFGUI::settings::CurrentDir]
   if {$pathname != ""} {
     set MDFFGUI::settings::CurrentDXPath $pathname
 #    set MapID [mol new $MDFFGUI::settings::CurrentDXPath]

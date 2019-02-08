@@ -1,7 +1,7 @@
 .SILENT:
 
 VMFILES = gui.tcl graphene.tcl nanotube.tcl pkgIndex.tcl
-VMVERSION = 1.5
+VMVERSION = 1.6
 DIR = $(PLUGINDIR)/noarch/tcl/nanotube$(VMVERSION)
 
 bins:

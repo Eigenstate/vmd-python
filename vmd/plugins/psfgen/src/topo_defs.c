@@ -242,6 +242,38 @@ int topo_defs_bond(topo_defs *defs, const char *rname, int del,
   if ( NAMETOOLONG(a2name) ) return -3;
   if ( del && ! defs->buildres->patch ) return -4;
   if ( ( a1res || a2res ) && ! defs->buildres->patch ) return -4;
+  for ( newitem=defs->buildres->bonds; newitem; newitem=newitem->next ) {
+    char errmsg[128];
+    if ( newitem->res1 != a1res ) continue;
+    if ( newitem->rel1 != a1rel ) continue;
+    if ( newitem->res2 != a2res ) continue;
+    if ( newitem->rel2 != a2rel ) continue;
+    if ( newitem->del != del ) continue;
+    if ( strcmp(newitem->atom1,a1name) ) continue;
+    if ( strcmp(newitem->atom2,a2name) ) continue;
+    sprintf(errmsg, "duplicate bond %s %s in residue %s", a1name, a2name, defs->buildres->name);
+    topo_defs_log_error(defs,errmsg);
+    return -6;
+  }
+  for ( newitem=defs->buildres->bonds; newitem; newitem=newitem->next ) {
+    char errmsg[128];
+    if ( newitem->res1 != a2res ) continue;
+    if ( newitem->rel1 != a2rel ) continue;
+    if ( newitem->res2 != a1res ) continue;
+    if ( newitem->rel2 != a1rel ) continue;
+    if ( newitem->del != del ) continue;
+    if ( strcmp(newitem->atom1,a2name) ) continue;
+    if ( strcmp(newitem->atom2,a1name) ) continue;
+    sprintf(errmsg, "duplicate bond %s %s in residue %s", a1name, a2name, defs->buildres->name);
+    topo_defs_log_error(defs,errmsg);
+    return -7;
+  }
+  if ( ( a1res == a2res ) && ( a1rel == a2rel ) && ! strcmp(a1name,a2name) ) {
+    char errmsg[128];
+    sprintf(errmsg, "self bond %s %s in residue %s", a1name, a2name, defs->buildres->name);
+    topo_defs_log_error(defs,errmsg);
+    return -8;
+  }
   newitem = (topo_defs_bond_t*) malloc(sizeof(topo_defs_bond_t));
   if ( ! newitem )  return -5;
   newitem->res1 = a1res;

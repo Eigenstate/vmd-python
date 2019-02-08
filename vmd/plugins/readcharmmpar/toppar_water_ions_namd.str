@@ -33,7 +33,7 @@
 read rtf card append
 * Topology for water and ions
 *
-*31  1
+31  1
 
 MASS  1   HT    1.00800 H  ! TIPS3P WATER HYDROGEN
 MASS  2   HX    1.00800 H  ! hydroxide hydrogen
@@ -145,7 +145,7 @@ PATCHING FIRST NONE LAST NONE
 
 END
 
-!read para card flex append
+read para card flex append
 * Parameters for water and ions
 *
 
@@ -262,7 +262,7 @@ SOD    CLA      -0.083875   3.731 !  From osmotic pressure calibration, J. Phys.
 POT    CLA      -0.114236   4.081 !  From osmotic pressure calibration, J. Phys.Chem.Lett. 1:183-189
 END
 
-!read para card flex append
+read para card flex append
 * NBFix between carboxylate and sodium
 *
 
@@ -273,4 +273,6 @@ SOD    OCL      -0.075020   3.190 ! For lipid carboxylate groups
 SOD    OC2D2    -0.075020   3.190 ! For carb carboxylate groups
 SOD    OG2D2    -0.075020   3.190 ! For CGenFF carboxylate groups
 END
+
+return
 

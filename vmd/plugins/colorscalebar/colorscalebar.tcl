@@ -1,6 +1,6 @@
 ## NAME: color_scale_bar
 ## 
-## $Id: colorscalebar.tcl,v 1.25 2013/04/16 19:00:34 johns Exp $
+## $Id: colorscalebar.tcl,v 1.26 2018/03/08 06:25:38 johns Exp $
 ##
 ## SYNOPSIS:
 ##   color_scale_bar draws a color bar on the screen to show all of the
@@ -9,7 +9,7 @@
 ##   color range can be taken from input or automaticall read from a 
 ##   selected molecule and representation.
 ##
-## VERSION: 1.4
+## VERSION: 3.0
 ##    Requires VMD version:  1.8.8 or later
 ## 
 ## PROCEDURES:
@@ -27,12 +27,17 @@
 ##
 ##    New version 2 built on Wuwei Liang's code, by Dan Wright 
 ##                  <dtwright@uiuc.edu>
-## 
+##
 ##    Plugin-ized version by John Stone
 ##    Various subsequent bug fixes by John Stone
 ##
 ##    GUI overhaul and option to select molecule and representation
 ##    where the color scale is taken from by Axel Kohlmeyer.
+## 
+##    New version 3 rewritten to avoid using line primitives that 
+##    don't work well in ray tracing engines, replaced with cylinders
+##    and color-per-vertex triangle primitives by John Stone
+##
 
 # This function draws a color bar to show the color scale
 # length = the length of the color bar
@@ -43,7 +48,7 @@
 
 namespace eval ::ColorScaleBar:: {
   namespace export color_scale_bar delete_color_scale_bar
-  variable version      1.4; # version number of this package.
+  variable version      3.0; # version number of this package.
   variable w
   variable molid        "0"; # id of the molecule
   variable moltxt        ""; # title the molecule
@@ -161,20 +166,33 @@ proc ::ColorScaleBar::color_scale_bar {{length 0.5} {width 0.05} {auto_scale 1} 
   set uy [expr $start_y + $length + $bw]
   set bz [expr $use_z - 0.00001]
   
-  draw line "$lx $ly $bz" "$lx $uy $bz" width 2
-  draw line "$lx $uy $bz" "$rx $uy $bz" width 2
-  draw line "$rx $uy $bz" "$rx $ly $bz" width 2
-  draw line "$rx $ly $bz" "$lx $ly $bz" width 2
+#  draw line "$lx $ly $bz" "$lx $uy $bz" width 2
+#  draw line "$lx $uy $bz" "$rx $uy $bz" width 2
+#  draw line "$rx $uy $bz" "$rx $ly $bz" width 2
+#  draw line "$rx $ly $bz" "$lx $ly $bz" width 2
+
+  draw cylinder "$lx $ly $bz" "$lx $uy $bz" radius $bw
+  draw cylinder "$lx $uy $bz" "$rx $uy $bz" radius $bw
+  draw cylinder "$rx $uy $bz" "$rx $ly $bz" radius $bw
+  draw cylinder "$rx $ly $bz" "$lx $ly $bz" radius $bw
 
   # draw the color bar
   set mincolorid [colorinfo num] 
   set maxcolorid [expr [colorinfo max] - 1]
   set numscaleids [expr $maxcolorid - $mincolorid]
-  set step [expr $length / double($numscaleids)]
-  for {set colorid $mincolorid } { $colorid <= $maxcolorid } {incr colorid 1 } {
-    draw color $colorid
+  set colincstep 8 
+  set step [expr $length / double($numscaleids) ]
+  draw material Diffuse
+#  draw materials off
+  for {set colorid $mincolorid } { $colorid <= $maxcolorid } {incr colorid $colincstep } {
     set cur_y [ expr $start_y + ($colorid - $mincolorid) * $step ]
-    draw line "$use_x $cur_y $use_z"  "[expr $use_x+$width] $cur_y $use_z"
+    set next_y [ expr $start_y + ($colincstep + $colorid - $mincolorid) * $step ]
+    set next_x [expr $use_x+$width]
+    set next_col [expr $colorid + $colincstep]
+#    draw color $colorid
+#    draw line "$use_x $cur_y $use_z"  "$next_x $cur_y $use_z"
+    draw tricolor "$use_x $cur_y $use_z"  "$next_x $cur_y $use_z"  "$next_x $next_y $use_z"  {0 0 1} {0 0 1} {0 0 1}  $colorid $colorid $next_col
+    draw tricolor "$next_x $next_y $use_z"  "$use_x $next_y $use_z"  "$use_x $cur_y $use_z"  {0 0 1} {0 0 1} {0 0 1}  $next_col $next_col $colorid
   }
 
   # draw the labels
@@ -182,8 +200,8 @@ proc ::ColorScaleBar::color_scale_bar {{length 0.5} {width 0.05} {auto_scale 1} 
   set step_size [expr $length / $label_num]
   set color_step [expr double($numscaleids)/$label_num]
   set value_step [expr ($max - $min ) / double ($label_num)]
+  draw color $text
   for {set i 0} {$i <= $label_num } { incr i 1} {
-    draw color $text
     set coord_y [expr $start_y+$i * $step_size ]
     set cur_text [expr $min + $i * $value_step ]
 
@@ -200,7 +218,8 @@ proc ::ColorScaleBar::color_scale_bar {{length 0.5} {width 0.05} {auto_scale 1} 
       set labeltxt [format "% #.3e"  $cur_text]
     }
     draw text  "$coord_x $coord_y $use_z" "$labeltxt"
-    draw line "[expr $use_x+$width] $coord_y $use_z" "[expr $use_x+(1.45*$width)] $coord_y $use_z" width 2
+#    draw line "[expr $use_x+$width] $coord_y $use_z" "[expr $use_x+(1.45*$width)] $coord_y $use_z" width 2
+    draw cylinder "[expr $use_x+$width] $coord_y $use_z" "[expr $use_x+(1.45*$width)] $coord_y $use_z" radius $bw
   }
 
   if {$showlegend == 1} {
@@ -278,7 +297,7 @@ proc ::ColorScaleBar::gui { } {
   menu $w.menubar.help.menu -tearoff no
   $w.menubar.help.menu add command -label "About" \
                -command {tk_messageBox -type ok -title "About Color Scale Bar GUI" \
-                              -message "The Color Scale Bar GUI is a wrapper around the color_scale_bar procedure that adds a color scale legend to the VMD display.\n\nBased on color_scale_bar.tcl written by Wuwei Liang and then rewritten by Dan Wright.\nPlugin version and bug fixes by John Stone.\nFurther improvements by Axel Kohlmeyer\n\nVersion $::ColorScaleBar::version"}
+                              -message "The Color Scale Bar GUI is a wrapper around the color_scale_bar procedure that adds a color scale legend to the VMD display.\n\nBased on color_scale_bar.tcl written by Wuwei Liang and then rewritten by Dan Wright.\nPlugin version and bug fixes by John Stone.\nFurther improvements by Axel Kohlmeyer and John Stone\n\nVersion $::ColorScaleBar::version"}
   $w.menubar.help.menu add command -label "Help..." -command "vmd_open_url [string trimright [vmdinfo www] /]/plugins/colorscalebar"
   pack $w.menubar.help -side right
   pack $w.menubar -fill x -anchor w

@@ -168,8 +168,8 @@ lines, remember to set the top molecule to the one you want to analyze.*
 
 ### Backbone torsion CVs
 
-The **Structure>Insert backbone torsions...** inserts a list of CVs
-corresponding to the φ, ψ, and ω Ramachandran angles defined in an
+The **Structure>Insert backbone torsions...** dialog inserts a list of
+CVs corresponding to the φ, ψ, and ω Ramachandran angles defined in an
 atom selection. Note that N-CA-C atom names are assumed for backbone
 atoms.  Dihedrals involving atoms outside the selection are not
 added. The ω angle is intended between residue *i* and *i+1*.
@@ -177,11 +177,34 @@ added. The ω angle is intended between residue *i* and *i+1*.
 ![Ramachandran CVs](plumedgui_rama.png)
 
 
+### Display gradients and forces
+
+The **Structure>Display gradients and forces...** uses the "dump
+forces" function of PLUMED2's `driver` to visualize the force vector
+that a CV would apply on each atom. To use this function,
+one should add a bias, most likely a linear restraint. For example, 
+the following script 
+
+```
+g: GYRATION ATOMS=[chain B and name CA] TYPE=RADIUS    # Trivial example but of course any CV works
+RESTRAINT ARG=g AT=0 SLOPE=-1                          # Unitary force in the positive CV direction
+```
+
+would yield the following display in VMD main window (on PDB:1KDX
+chain B). This shows the direction of the forces corresponding to
+unitary posivite "generalized force" acting on the radius of gyration
+of Cα atoms. 
+
+![Show forces](plumedgui_show_forces.png)
+
+
+
+
 
 VMD Colvars
 -----------
 
-*Experimental*  support for VMD's built-in *Colvars* module can be enabled setting the environment variable `PLUMED_GUI_EXPERIMENTAL` before running VMD.  This is very experimental and VMD session may crash suddenly. The *Colvars* syntax is described in http://colvars.github.io/ and in the corresponding [reference article](http://dx.doi.org/10.1080/00268976.2013.813594).
+The *Colvars* syntax is described in http://colvars.github.io/ and in the corresponding [reference article](http://dx.doi.org/10.1080/00268976.2013.813594).
 
 
 

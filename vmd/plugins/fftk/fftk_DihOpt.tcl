@@ -1,17 +1,16 @@
 #
-# $Id: fftk_DihOpt.tcl,v 1.17 2016/05/31 21:21:24 mayne Exp $
+# $Id: fftk_DihOpt.tcl,v 1.22 2017/08/04 18:28:59 gumbart Exp $
 #
 
 #======================================================
 namespace eval ::ForceFieldToolKit::DihOpt {
 
     variable GlogFiles
-    variable psf
-    variable pdb
+    #variable psf ; # replaced by general configuration chargeOptPSF
+    #variable pdb ; # replaced by general configuration geomOptPDB
     variable parlist
     variable parDataInput
     variable boundInfo
-    variable namdbin
     variable QMdata
     variable MMdata
     variable outFile
@@ -60,11 +59,10 @@ namespace eval ::ForceFieldToolKit::DihOpt {
 proc ::ForceFieldToolKit::DihOpt::init {} {
     # localize variables
     variable GlogFiles
-    variable psf
-    variable pdb
+    #variable psf
+    #variable pdb
     variable parlist
     variable parDataInput
-    variable namdbin
     variable QMdata
     variable MMdata
     #variable outFile
@@ -113,7 +111,6 @@ proc ::ForceFieldToolKit::DihOpt::init {} {
     set pdb {}
     set parlist {}
     set parDataInput {}
-    set namdbin "namd2"
     set outFileName "DihOpt.log"
     set QMdata {}
     set MMdata {}
@@ -160,10 +157,11 @@ proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
     # returns 0 if there are errors
 
     # localize relevant variables
-    variable psf
-    variable pdb
+    #variable psf
+    set psf $::ForceFieldToolKit::Configuration::chargeOptPSF
+    #variable pdb
+    set pdb $::ForceFieldToolKit::Configuration::geomOptPDB
     variable parlist
-    variable namdbin
     variable outFileName
     variable GlogFiles
     variable parDataInput
@@ -221,6 +219,7 @@ proc ::ForceFieldToolKit::DihOpt::sanityCheck { procType } {
             }
 
             # make sure namd2 command and/or file exists
+            set namdbin $::ForceFieldToolKit::Configuration::namdBin
             if { $namdbin eq "" } {
                 lappend errorList "NAMD binary file (or command if in PATH) was not specified."
             } else { if { [::ExecTool::find $namdbin] eq "" } { lappend errorList "Cannot find NAMD binary file." } }
@@ -416,12 +415,13 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
     variable guiMode
 
     variable GlogFiles
-    variable psf
-    variable pdb
+    #variable psf
+    set psf $::ForceFieldToolKit::Configuration::chargeOptPSF
+    #variable pdb
+    set pdb $::ForceFieldToolKit::Configuration::geomOptPDB
     variable parDataInput
-##    variable boundsInfo
+    #variable boundsInfo
 
-    variable namdbin
     variable parlist
 
     variable QMdata
@@ -447,10 +447,7 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
     variable saTSteps
     variable saTExp
 
-
     variable fixScanned
-
-
 
     # -----
     # SETUP
@@ -511,7 +508,7 @@ proc ::ForceFieldToolKit::DihOpt::optimize {} {
     puts $outFile "\nPDB\n$pdb\nEND"
     flush $outFile
 
-    set MMdata [calcMM $psf $pdb $dihToFit $namdbin $parlist]
+    set MMdata [calcMM $psf $pdb $dihToFit $::ForceFieldToolKit::Configuration::namdBin $parlist]
     # in the form:
     # { {MME1 MME2 ... MMEN } {dihAll array} }
 
@@ -818,8 +815,10 @@ proc ::ForceFieldToolKit::DihOpt::manualRefinementCalculation {inputPars} {
     variable dihAllData
     variable EnQM
     variable EnMM
-    variable psf
-    variable pdb
+    #variable psf
+    set psf $::ForceFieldToolKit::Configuration::chargeOptPSF
+    #variable pdb
+    set pdb $::ForceFieldToolKit::Configuration::geomOptPDB
 
     # Take the cutoff from the refine section,
     # which may or may not be what the user wants
@@ -885,8 +884,10 @@ proc ::ForceFieldToolKit::DihOpt::refine {} {
     # localize necessary variables
 
     # shared/preserved variables
-    variable psf
-    variable pdb
+    #variable psf
+    set psf $::ForceFieldToolKit::Configuration::chargeOptPSF
+    #variable pdb
+    set pdb $::ForceFieldToolKit::Configuration::geomOptPDB
     variable EnQM
     variable EnMM
     variable dihAllData
@@ -899,7 +900,7 @@ proc ::ForceFieldToolKit::DihOpt::refine {} {
     variable debugLog
     variable globalCount
     variable guiMode
-##    variable boundsInfo
+   #variable boundsInfo
 
     # refinement variables
     variable refineParDataInput
@@ -911,7 +912,7 @@ proc ::ForceFieldToolKit::DihOpt::refine {} {
     variable refinesaIter
     variable refinesaTSteps
     variable refinesaTExp
-#    variable kmax
+    #variable kmax
 
     # SETUP
 
@@ -1298,7 +1299,7 @@ proc ::ForceFieldToolKit::DihOpt::parseGlog { inputFiles } {
                     # NOTE: this overrides the E(RHF) parse from above
                 }
 
-                {Optimization completed\.} {
+                {Optimization completed} {
                     # we've reached an optimized conformation
                     # keep reading until finding the scanned dihedral
                     while { [lindex [set inline [gets $infile]] 2] ne $scanDihDef } {
@@ -1831,13 +1832,13 @@ proc ::ForceFieldToolKit::DihOpt::printSettings { printFile } {
 
     # Input
     puts $printFile "Settings for Dihedral Optimization"
-    puts $printFile "PSF: $::ForceFieldToolKit::DihOpt::psf"
-    puts $printFile "PDB: $::ForceFieldToolKit::DihOpt::pdb"
+    puts $printFile "PSF: $::ForceFieldToolKit::Configuration::chargeOptPSF"
+    puts $printFile "PDB: $::ForceFieldToolKit::Configuration::geomOptPDB"
     puts $printFile "Parameter Files:"
     foreach pfile $::ForceFieldToolKit::DihOpt::parlist {
         puts $printFile "\t$pfile"
     }
-    puts $printFile "namdbin: $::ForceFieldToolKit::DihOpt::namdbin"
+    puts $printFile "namdbin: $::ForceFieldToolKit::Configuration::namdBin"
     puts $printFile "output LOG: $::ForceFieldToolKit::DihOpt::outFileName"
 
     # QM Target Data
@@ -1881,10 +1882,9 @@ proc ::ForceFieldToolKit::DihOpt::buildScript { scriptFileName } {
 
     # need to localize variables
     # input
-    variable psf
-    variable pdb
+    #variable psf
+    #variable pdb
     variable parlist
-    variable namdbin
     variable outFileName
 
     # qm target data
@@ -1912,11 +1912,12 @@ proc ::ForceFieldToolKit::DihOpt::buildScript { scriptFileName } {
     # load required packages
     puts $scriptFile "\# Load the ffTK package"
     puts $scriptFile "package require forcefieldtoolkit"
+    #puts $scriptFile "::ForcefieldToolKit::Configuration::init"
     puts $scriptFile "\n\# Set DihOpt Variables"
-    puts $scriptFile "set ::ForceFieldToolKit::DihOpt::psf $psf"
-    puts $scriptFile "set ::ForceFieldToolKit::DihOpt::pdb $pdb"
+    puts $scriptFile "set ::ForceFieldToolKit::Configuration::chargeOptPSF $::ForceFieldToolKit::Configuration::chargeOptPSF"
+    puts $scriptFile "set ::ForceFieldToolKit::Configuration::geomOptPDB   $::ForceFieldToolKit::Configuration::geomOptPDB"
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::parlist [list $parlist]"
-    puts $scriptFile "set ::ForceFieldToolKit::DihOpt::namdbin $namdbin"
+    puts $scriptFile "set ::ForceFieldToolKit::Configuration::namdBin $::ForceFieldToolKit::Configuration::namdBin"
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::outFileName $outFileName"
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::GlogFiles [list $GlogFiles]"
     puts $scriptFile "set ::ForceFieldToolKit::DihOpt::parDataInput [list $parDataInput]"

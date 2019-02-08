@@ -1,5 +1,5 @@
 #
-# $Id: fftk.tcl,v 1.10 2014/03/20 16:53:19 mayne Exp $
+# $Id: fftk.tcl,v 1.13 2017/12/13 18:34:16 gumbart Exp $
 #
 #==============================================================================
 # Force Field ToolKit (ffTk) and GUI
@@ -34,7 +34,7 @@
 
 
 # package provide statement
-package provide forcefieldtoolkit 1.1
+package provide forcefieldtoolkit 1.2
 
 # package requirements
 package require exectool
@@ -54,9 +54,11 @@ namespace eval ::ForceFieldToolKit:: {
 
 # source code base
 source [file join $env(FFTKDIR) fftk_BuildPar.tcl]
+source [file join $env(FFTKDIR) fftk_Configuration.tcl]
 source [file join $env(FFTKDIR) fftk_GeomOpt.tcl]
 source [file join $env(FFTKDIR) fftk_GenZMatrix.tcl]
 source [file join $env(FFTKDIR) fftk_ChargeOpt.tcl]
+source [file join $env(FFTKDIR) fftk_ChargeOpt_ESP.tcl]
 source [file join $env(FFTKDIR) fftk_GenBonded.tcl]
 source [file join $env(FFTKDIR) fftk_BondAngleOpt.tcl]
 source [file join $env(FFTKDIR) fftk_GenDihScan.tcl]

@@ -1,7 +1,7 @@
 .SILENT:
 
 VMFILES = autoionize.tcl autoionizegui.tcl pkgIndex.tcl
-VMVERSION = 1.4
+VMVERSION = 1.5
 DIR = $(PLUGINDIR)/noarch/tcl/autoionize$(VMVERSION)
 
 bins:

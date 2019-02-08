@@ -5,7 +5,7 @@ RANLIB = ranlib
 SRCDIR=src
 INCDIR=-Isrc -I../molfile_plugin/src
 COMPILEDIR = ../compile
-ARCHDIR=${COMPILEDIR}/lib_${ARCH}/tcl/autopsf1.6
+ARCHDIR=${COMPILEDIR}/lib_${ARCH}/tcl/autopsf1.7
 VPATH = src ${ARCHDIR}
 
 ##

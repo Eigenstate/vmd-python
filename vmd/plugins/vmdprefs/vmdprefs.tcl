@@ -1,5 +1,5 @@
 #==============================================================================
-# $Id: vmdprefs.tcl,v 1.11 2014/12/17 21:42:07 mayne Exp $
+# $Id: vmdprefs.tcl,v 1.13 2017/06/30 21:20:48 johns Exp $
 #==============================================================================
 #
 # VMD Prefs - A preferences plugin for customizing the VMD environment
@@ -23,7 +23,7 @@
 
 #=============================
 # package setup
-package provide vmdprefs 1.0
+package provide vmdprefs 1.1
 #=============================
 namespace eval ::vmdPrefs {
     
@@ -639,15 +639,15 @@ proc ::vmdPrefs::gui {} {
     
     ttk::label $disp.frame2.aoambientLbl -text "AO Ambient:" -anchor w
     ttk::frame $disp.frame2.aoambientFrame
-    ttk::button $disp.frame2.aoambientFrame.minus -text "-" -width 1 -command { ::vmdPrefs::displayPlusMinus aoambient -0.1 "display aoambient"}
+    ttk::button $disp.frame2.aoambientFrame.minus -text "-" -width 1 -command { ::vmdPrefs::displayPlusMinus aoambient -0.1 }
     ttk::entry $disp.frame2.aoambientFrame.aoambient -textvariable ::vmdPrefs::displaySettings(aoambient) -width 5 -justify center -validate key -validatecommand { string is double %P }
-    ttk::button $disp.frame2.aoambientFrame.plus -text "+" -width 1 -command { ::vmdPrefs::displayPlusMinus aoambient 0.1 "display aoambient"}
+    ttk::button $disp.frame2.aoambientFrame.plus -text "+" -width 1 -command { ::vmdPrefs::displayPlusMinus aoambient 0.1 }
 
     ttk::label $disp.frame2.aodirectLbl -text "AO Direct:" -anchor w
     ttk::frame $disp.frame2.aodirectFrame
-    ttk::button $disp.frame2.aodirectFrame.minus -text "-" -width 1 -command { ::vmdPrefs::displayPlusMinus aodirect -0.1 "display aodirect"}
+    ttk::button $disp.frame2.aodirectFrame.minus -text "-" -width 1 -command { ::vmdPrefs::displayPlusMinus aodirect -0.1 }
     ttk::entry $disp.frame2.aodirectFrame.aodirect -textvariable ::vmdPrefs::displaySettings(aodirect) -width 5 -justify center -validate key -validatecommand { string is double %P }
-    ttk::button $disp.frame2.aodirectFrame.plus -text "+" -width 1 -command { ::vmdPrefs::displayPlusMinus aodirect 0.1 "display aodirect"}
+    ttk::button $disp.frame2.aodirectFrame.plus -text "+" -width 1 -command { ::vmdPrefs::displayPlusMinus aodirect 0.1 }
 
     
     # grid display frame 2

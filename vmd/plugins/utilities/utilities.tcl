@@ -1,6 +1,6 @@
 # utilities - Generally useful procedures
 #
-# $Id: utilities.tcl,v 1.12 2013/07/09 15:41:39 johns Exp $
+# $Id: utilities.tcl,v 1.13 2018/09/27 21:05:04 jribeiro Exp $
 #
 package provide utilities 1.2
 
@@ -752,6 +752,12 @@ proc ::util::anglelist { args } {
    return $compressedlist
 }
 
+##############################################################
+# Calculation of the factorial number to be used in the      #
+# evaluation of number of possible dihedral angles when we   #
+# have n bonded atoms                                        #
+##############################################################
+proc ::util::factorial {n} {expr {$n < 2 ? 1: $n*[factorial [expr $n-1]]}}
 
 ##############################################################
 # Returns a list of quadruples defining dihedral angles      #
@@ -779,25 +785,47 @@ proc ::util::dihedlist { args } {
 
    set dihedlist {}
    foreach bond $bondlist {
-      set atom1 [lindex $bond 0]
-      set atom2 [lindex $bond 1]
-      if {$atom1==$atom2} { continue }
-      set neighbors1 [lindex $neighborlist [lsearch $atomlist $atom1]]
-      set neighbors2 [lindex $neighborlist [lsearch $atomlist $atom2]]
+      
+      ### When one atom has more than two bonded atoms, 
+      ### it is necessary to test the different possible combinations
+      ### based on these n bonds 
+      set j 0 
+      set h 1
+      set max 1
+      set length [llength $bond]
+      if {$length > 2} {
+        #number of possible combinations of the indexes (disregarding order)
+        set max [expr [factorial $length] / [expr 2 * [factorial [expr $length -2] ] ]]
+      }
+      
 
-      set lfound 0
-      foreach leftneighbor $neighbors1 {
-	 if {$leftneighbor==$atom1 || $leftneighbor==$atom2} { continue }
-	 if {!$all && $lfound} { continue }
-	 set rfound 0
-	 foreach rightneighbor $neighbors2 {
-	    if {$rightneighbor==$atom1 || $rightneighbor==$atom2 || 
-		$rightneighbor==$leftneighbor} { continue }
-	    if {!$all && $rfound} { continue }
-	    lappend dihedlist [list $leftneighbor $atom1 $atom2 $rightneighbor]
-	    set rfound 1
-	    set lfound 1
-	 }
+      for {set i 0} {$i < $max} {incr i} {
+        set atom1 [lindex $bond $j]
+        set atom2 [lindex $bond $h]
+        incr h
+        if {$h == [llength $bond]} {
+          incr j
+          set h [expr $j + 1] 
+        }
+
+        if {$atom1==$atom2} { continue }
+        set neighbors1 [lindex $neighborlist [lsearch $atomlist $atom1]]
+        set neighbors2 [lindex $neighborlist [lsearch $atomlist $atom2]]
+
+        set lfound 0
+        foreach leftneighbor $neighbors1 {
+         if {$leftneighbor==$atom1 || $leftneighbor==$atom2} { continue }
+         if {!$all && $lfound} { continue }
+         set rfound 0
+         foreach rightneighbor $neighbors2 {
+            if {$rightneighbor==$atom1 || $rightneighbor==$atom2 || 
+              $rightneighbor==$leftneighbor} { continue }
+            if {!$all && $rfound} { continue }
+              lappend dihedlist [list $leftneighbor $atom1 $atom2 $rightneighbor]
+              set rfound 1
+              set lfound 1
+         }
+        }
       }
    }
    return $dihedlist

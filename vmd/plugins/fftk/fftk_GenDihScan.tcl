@@ -1,11 +1,11 @@
 #
-# $Id: fftk_GenDihScan.tcl,v 1.11 2016/10/20 16:43:04 mayne Exp $
+# $Id: fftk_GenDihScan.tcl,v 1.13 2017/08/04 18:28:59 gumbart Exp $
 #
 
 #======================================================
 namespace eval ::ForceFieldToolKit::GenDihScan {
-    variable psf
-    variable pdb
+    #variable psf ; # replaced by general configuration chargeOptPSF
+    #variable pdb ; # replaced by general configuration geomOptPDB
     variable outPath
     variable basename
     variable qmProc
@@ -19,8 +19,8 @@ namespace eval ::ForceFieldToolKit::GenDihScan {
 proc ::ForceFieldToolKit::GenDihScan::init {} {
 
     # localize variables
-    variable psf
-    variable pdb
+    #variable psf
+    #variable pdb
     variable outPath
     variable basename
     variable qmProc
@@ -53,8 +53,10 @@ proc ::ForceFieldToolKit::GenDihScan::sanityCheck {} {
     # returns 0 if there is a problem
 
     # localize relevant variables
-    variable psf
-    variable pdb
+    #variable psf
+    set psf $::ForceFieldToolKit::Configuration::chargeOptPSF
+    #variable pdb
+    set pdb $::ForceFieldToolKit::Configuration::geomOptPDB
     variable outPath
     variable basename
     variable qmProc
@@ -151,8 +153,10 @@ proc ::ForceFieldToolKit::GenDihScan::buildGaussianFiles {} {
     # builds gaussian input files for scanning dihedral angles
 
     # localize variables
-    variable psf
-    variable pdb
+    #variable psf
+    set psf $::ForceFieldToolKit::Configuration::chargeOptPSF
+    #variable pdb
+    set pdb $::ForceFieldToolKit::Configuration::geomOptPDB
     variable outPath
     variable basename
     variable qmProc
@@ -404,6 +408,7 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::launchGUI {} {
 
     ttk::label $w.hlf.inp.psflbl -text "PSF File:"
     ttk::entry $w.hlf.inp.psfentry -textvariable ::ForceFieldToolKit::GenDihScan::TorExplor::psf -width 40
+    set ::ForceFieldToolKit::GenDihScan::TorExplor::psf $::ForceFieldToolKit::Configuration::chargeOptPSF
     ttk::button $w.hlf.inp.psfbrowse -text "Browse" \
         -command {
             set tempfile [tk_getOpenFile -title "Select a PSF File" -filetypes $::ForceFieldToolKit::GenDihScan::TorExplor::psfType]
@@ -412,6 +417,7 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::launchGUI {} {
 
     ttk::label $w.hlf.inp.pdblbl -text "PDB File:"
     ttk::entry $w.hlf.inp.pdbentry -textvariable ::ForceFieldToolKit::GenDihScan::TorExplor::pdb -width 40
+    set ::ForceFieldToolKit::GenDihScan::TorExplor::pdb $::ForceFieldToolKit::Configuration::geomOptPDB
     ttk::button $w.hlf.inp.pdbbrowse -text "Browse" -command {
             set tempfile [tk_getOpenFile -title "Select a PDB File" -filetypes $::ForceFieldToolKit::GenDihScan::TorExplor::pdbType]
             if {![string eq $tempfile ""]} { set ::ForceFieldToolKit::GenDihScan::TorExplor::pdb $tempfile }
@@ -565,7 +571,7 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::launchGUI {} {
         -title "QM Potential Energy Surface" \
         -xlabel "Scan Frame" \
         -ylabel "Rel. E." \
-        -xsize 680 -ysize 450 -xmin 0 -xmax auto -ymin auto -ymaxe auto \
+        -xsize 680 -ysize 450 -xmin 0 -xmax auto -ymin auto -ymax auto \
         -lines -linewidth 1]
 
 
@@ -600,10 +606,18 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::launchGUI {} {
     ttk::label  $w.hlf.plot.controls.xySet.yMaxLbl -text "y-max" -anchor center
     ttk::entry  $w.hlf.plot.controls.xySet.yMax -textvariable ::ForceFieldToolKit::GenDihScan::TorExplor::ymax -width 4 -justify center
     ttk::button $w.hlf.plot.controls.xySet.set -text "Set Axis" -command {
-        $::ForceFieldToolKit::GenDihScan::TorExplor::plothandle configure \
-            -xmin $::ForceFieldToolKit::GenDihScan::TorExplor::xmin -xmax $::ForceFieldToolKit::GenDihScan::TorExplor::xmax \
-            -ymin $::ForceFieldToolKit::GenDihScan::TorExplor::ymin -ymax $::ForceFieldToolKit::GenDihScan::TorExplor::ymax
+        set xmin $::ForceFieldToolKit::GenDihScan::TorExplor::xmin
+        set xmax $::ForceFieldToolKit::GenDihScan::TorExplor::xmax
+        set ymin $::ForceFieldToolKit::GenDihScan::TorExplor::ymin
+        set ymax $::ForceFieldToolKit::GenDihScan::TorExplor::ymax
+        # update the plot
+        $::ForceFieldToolKit::GenDihScan::TorExplor::plothandle configure -xmin $xmin -xmax $xmax -ymin $ymin -ymax $ymax 
         $::ForceFieldToolKit::GenDihScan::TorExplor::plothandle replot
+        # update the sliders
+        .namdTutPlot.hlf.rp.plotControls.sliders.xMin configure -value $xmin
+        .namdTutPlot.hlf.rp.plotControls.sliders.xMax configure -value $xmax
+        .namdTutPlot.hlf.rp.plotControls.sliders.yMin configure -value $ymin
+        .namdTutPlot.hlf.rp.plotControls.sliders.yMax configure -value $ymax
     }
     ttk::separator $w.hlf.plot.controls.xySet.vsep1 -orient vertical
     ttk::checkbutton $w.hlf.plot.controls.xySet.as -offvalue 0 -onvalue 1 -variable ::ForceFieldToolKit::GenDihScan::TorExplor::plotAutoscaling
@@ -892,7 +906,7 @@ proc ::ForceFieldToolKit::GenDihScan::TorExplor::readLog {log} {
                 # NOTE: this overrides the E(RHF) parse from above
             }
 
-            {Optimization completed\.} {
+            {Optimization completed} {
                 # we've reached the optimized conformation
                 lappend stepEn $currEnergy
                 lappend stepCoords $currCoords

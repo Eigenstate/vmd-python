@@ -8,4 +8,4 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded parsefep 1.9 [list source [file join $dir parseFEP.tcl]]
+package ifneeded parsefep 2.1 [list source [file join $dir parseFEP.tcl]]

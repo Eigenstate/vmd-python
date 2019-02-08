@@ -1,3 +1,20 @@
+2017-08-21  Toni  <toni@pcgiorgino.isib.cnr.it>
+
+	* 2.7.1 Show forces and gradients feature
+
+2017-03-30  Toni  <toni@pcgiorgino.isib.cnr.it>
+
+	* 2.6.1 Updated to Plumed 2.3
+
+2016-11-23  Toni  <toni@pcgiorgino.isib.cnr.it>
+
+	* 2.6 VMD colvars no longer experimental. For next VMD release.
+
+2015-10-14  Toni  <toni@pcgiorgino.isib.cnr.it>
+
+	* 2.5 Support for experimental VMD COLVARS. Updated PLUMED2
+	templates. New docs.
+
 2014-12-05  Toni  <toni@pcgiorgino.isib.cnr.it>
 
 	* 2.4.1 Extensive OSX fixes.

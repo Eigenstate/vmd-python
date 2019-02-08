@@ -11,7 +11,7 @@ int topo_mol_write_pdb(topo_mol *mol, FILE *file, void *,
 int topo_mol_write_namdbin(topo_mol *mol, FILE *file, FILE *velfile, void *, 
                                 void (*print_msg)(void *, const char *));
 
-int topo_mol_write_psf(topo_mol *mol, FILE *file, int charmmfmt, int nocmap,
+int topo_mol_write_psf(topo_mol *mol, FILE *file, int charmmfmt, int nocmap, int nopatches,
                         void *, void (*print_msg)(void *, const char *));
 
 #endif

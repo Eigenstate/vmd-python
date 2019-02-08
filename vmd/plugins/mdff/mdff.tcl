@@ -11,7 +11,7 @@
 #
 #       $RCSfile: mdff.tcl,v $
 #       $Author: ryanmcgreevy $        $Locker:  $             $State: Exp $
-#       $Revision: 1.6 $       $Date: 2015/04/17 21:08:22 $
+#       $Revision: 1.7 $       $Date: 2019/01/10 16:06:22 $
 #
 ############################################################################
 
@@ -46,7 +46,7 @@ proc ::MDFF::mdff_usage { } {
   puts "  fix        -- creates a pdb file for fixing atoms"
   puts "  griddx     -- creates a map for docking"
   puts "  gridpdb    -- creates a pdb file with atomic masses in the beta field"
-#  puts "  hist       -- calculates a density histogram"
+  puts "  hist       -- calculates a density histogram"
   puts "  setup      -- writes a NAMD configuration file for MDFF"
   puts "  sim        -- creates a simulated map from an atomic structure"
   return
@@ -87,6 +87,8 @@ proc ::MDFF::mdff { args } {
     return [eval ::MDFF::Sim::mdff_sim $args]
   } elseif { $command == "edges" } {
     return [eval ::MDFF::Map::mdff_edge $args]
+  } elseif { $command == "hist" } {
+    return [eval ::MDFF::Map::mdff_histogram $args]
   } else {
     mdff_usage
     error "Unrecognized command."

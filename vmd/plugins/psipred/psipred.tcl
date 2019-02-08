@@ -1,15 +1,17 @@
 ############################################################################
 #cr
-#cr            (C) Copyright 1995-2003 The Board of Trustees of the
+#cr            (C) Copyright 1995-2018 The Board of Trustees of the
 #cr                        University of Illinois
 #cr                         All Rights Reserved
 #cr
 ############################################################################
 #
-# $Id: psipred.tcl,v 1.4 2013/04/15 16:57:28 johns Exp $
+# $Id: psipred.tcl,v 1.7 2018/12/17 15:11:26 johns Exp $
 #
-
-# Package for using Psipred
+# Package for using Psipred with Multiseq. 
+# Tested successfully with Psipred versions 3.21 and 4.02.
+#
+############################################################################
 
 package provide psipred 1.1
 package require seqdata 1.1
@@ -138,9 +140,6 @@ namespace eval ::Psipred {
             if {![file exists [file join $psipredDataDir "weights.dat3"]]} {
                 lappend errors "$pref weights.dat3"
             }
-            if {![file exists [file join $psipredDataDir "weights.dat4"]]} {
-                lappend errors "$pref weights.dat4"
-            }
             if {![file exists [file join $psipredDataDir "weights_p2.dat"]]} {
                 lappend errors "$pref weights_p2.dat"
             }
@@ -196,7 +195,7 @@ namespace eval ::Psipred {
         # Run psipred.
         set ssFilename "$tempDir/$filePrefix.ss"
         set ss2Filename "$tempDir/$filePrefix.ss2"
-        set output [run $tempDir psipred $matrixFilename "$psipredDataDir/weights.dat" "$psipredDataDir/weights.dat2" "$psipredDataDir/weights.dat3" "$psipredDataDir/weights.dat4" > $ssFilename]
+        set output [run $tempDir psipred $matrixFilename "$psipredDataDir/weights.dat" "$psipredDataDir/weights.dat2" "$psipredDataDir/weights.dat3" > $ssFilename]
         set output [run $tempDir psipass2 "$psipredDataDir/weights_p2.dat" 1 1.0 1.0 $ss2Filename $ssFilename]
         
         # Parse the output file.

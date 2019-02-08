@@ -7,7 +7,7 @@
 ## Authors: Peter Freddolino, John Stone
 ##          vmd@ks.uiuc.edu
 ##
-## $Id: namdenergy.tcl,v 1.60 2011/12/01 21:53:35 johns Exp $
+## $Id: namdenergy.tcl,v 1.61 2017/08/22 21:18:01 gumbart Exp $
 ##
 ## Home Page:
 ##   http://www.ks.uiuc.edu/Research/vmd/plugins/namdenergy
@@ -25,6 +25,7 @@
 ##      ofile -- file to output energy data
 ##      switch -- switch distance for namd
 ##      cutoff -- cutoff distance for namd
+##      drude -- use drude?
 ##      sel1 -- selection 1
 ##      sel2 -- selection 2
 ##      energy -- type of energy to be calculated
@@ -65,6 +66,7 @@ namespace eval ::namdEnergy:: {
   variable ctype
   variable switch
   variable cutoff
+  variable drude 0
   variable extsystem ""
   variable nsel
   variable cfile
@@ -133,6 +135,7 @@ proc ::namdEnergy::namdenergy_usage {} {
   puts "namdEnergy)   -stride <stride> (There were <stride> frames between each frame written to the trajectory)"
   puts "namdEnergy)   -updatesel (Update selections for every frame)"
   puts "namdEnergy)   -par <file1> -par <file2> ... (Parameter files to use)"
+  puts "namdEnergy)   -drude (If present, drude polarizable force field is supported)"
   puts "namdEnergy)   -silent (If present, no energy output is printed)"
   puts "namdEnergy)   -debug (If present, temporary files will not be deleted)"
   puts "namdEnergy)   -keepforce (Show force output as well as energies)"
@@ -180,6 +183,7 @@ proc ::namdEnergy::namdenergy { args } {
   variable cfile ""
   variable switch 10
   variable cutoff 12
+  variable drude 0
   variable pme 0
   variable extsystem ""
   variable temperature 0
@@ -227,6 +231,11 @@ proc ::namdEnergy::namdenergy { args } {
     }
     if {$i == "-silent"} {
        set silent 1
+       set arglist [lreplace $arglist $argnum $argnum]
+       continue
+    }
+    if {$i == "-drude"} {
+       set drude 1
        set arglist [lreplace $arglist $argnum $argnum]
        continue
     }
@@ -376,6 +385,7 @@ proc ::namdEnergy::namdmain { } {
   variable cfile
   variable switch
   variable cutoff
+  variable drude
   variable nsel
   variable energy
   variable psf
@@ -475,6 +485,7 @@ proc ::namdEnergy::namdmain2 {} {
   variable cfile
   variable switch
   variable cutoff
+  variable drude
   variable nsel
   variable energy
   variable psf
@@ -705,6 +716,7 @@ proc ::namdEnergy::namdconf {} {
   variable cutoff
   variable extsystem
   variable switch
+  variable drude
   variable nsel
   variable sel1
   variable sel2
@@ -838,6 +850,20 @@ proc ::namdEnergy::namdconf {} {
     puts $namdconf "switching off"
   } else {
     puts $namdconf "switchdist\t\t $switch"
+  }
+
+# See if we want drude
+  if { $drude } {
+    puts $namdconf "drude on"
+    puts $namdconf "drudeTemp 1"
+    puts $namdconf "drudeDamping 20.0"
+    puts $namdconf "drudeBondLen 0.25"
+    puts $namdconf "drudeHardWall on"
+###    puts $namdconf "LJcorrection yes"
+    puts $namdconf "langevin on"
+    puts $namdconf "langevinDamping 1"
+    puts $namdconf "langevinTemp $temperature"
+    puts $namdconf "langevinHydrogen off"
   }
 
   puts $namdconf "pairInteraction\t\t on"
@@ -1360,6 +1386,7 @@ proc ::namdEnergy::gui_init_defaults {} {
   variable ctype
   variable cfile
   variable switch
+  variable drude 
   variable cutoff
   variable nsel
   variable energy
@@ -1383,6 +1410,7 @@ proc ::namdEnergy::gui_init_defaults {} {
   set ofile ""  
   set switch 10
   set cutoff 12
+  set drude 0
   set nsel 0
   set sel1 ""
   set sel2 ""
@@ -1414,6 +1442,7 @@ proc ::namdEnergy::namdenergy_mainwin {{defaults 1}} {
   variable cfile
   variable switch
   variable cutoff
+  variable drude
   variable nsel
   variable energy
   variable psf

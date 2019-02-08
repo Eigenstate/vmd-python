@@ -1,5 +1,5 @@
 #
-# $Id: fftk_guiProcs.tcl,v 1.41 2016/05/31 21:21:23 mayne Exp $
+# $Id: fftk_guiProcs.tcl,v 1.47 2017/12/13 18:34:17 gumbart Exp $
 #
 
 #======================================================
@@ -10,6 +10,9 @@
 # GENERAL
 #------------------------------------------------------
 proc ::ForceFieldToolKit::gui::init {} {
+
+    # FFTK General Configurations Initialization
+    #::ForceFieldToolKit::Configuration::init
 
     # BuildPar Tab Setup
     # Initialize BuildPar namespace
@@ -29,6 +32,9 @@ proc ::ForceFieldToolKit::gui::init {} {
     ::ForceFieldToolKit::GeomOpt::init
     # Initialize GeomOpt GUI settings
 
+    # ChargeOpt Tab Setup
+    set ::ForceFieldToolKit::gui::coptMethod "Water Interaction"
+
     # GenZMatrix Tab Setup
     # Initialize GenZMatrix namespace
     ::ForceFieldToolKit::GenZMatrix::init
@@ -40,7 +46,6 @@ proc ::ForceFieldToolKit::gui::init {} {
     set ::ForceFieldToolKit::gui::gzmCOMfiles {}
     set ::ForceFieldToolKit::gui::gzmLOGfiles {}
 
-    # ChargeOpt Tab Setup
     # Initialize ChargeOpt namespace
     ::ForceFieldToolKit::ChargeOpt::init
     # Initialize ChargeOpt GUI Settings
@@ -58,6 +63,13 @@ proc ::ForceFieldToolKit::gui::init {} {
     ::ForceFieldToolKit::gui::coptClearEditData "cconstr"
     ::ForceFieldToolKit::gui::coptClearEditData "wie"
     ::ForceFieldToolKit::gui::coptClearEditData "results"
+
+    # RESP Settings
+    set ::ForceFieldToolKit::gui::espEditGroup     {}
+    set ::ForceFieldToolKit::gui::espEditInit      {}
+    set ::ForceFieldToolKit::gui::espEditRestraint {}
+    set ::ForceFieldToolKit::gui::espEditRestNum   {}
+
 
     # GenBonded Tab Setup
     # Initialize GenBonded Namespace
@@ -1041,9 +1053,73 @@ proc ::ForceFieldToolKit::gui::bparCGenFFTvSelectionDidChange {} {
 }
 #======================================================
 
+#------------------------------------------------------
+# CHARGE OPTMIZATION
+#------------------------------------------------------
+# Support for new methods requires method selector
+proc ::ForceFieldToolKit::gui::coptSelectMethod { method } {
+    # Swaps out the appropriate notebook tabs based on the selected method
+    # Passed: charge optimization method (i.e., waterInteraction or resp)
+    # Returns: nothing
+
+    # hardcoded identity of notebooks
+    set nbRoot .fftk_gui.hlf.nb
+    set watIntTabIDs {genzmat chargeopt}
+    set respTabIDs   {calcESP optESP}
+
+    # Query the currently active tab
+    set activeTab [.fftk_gui.hlf.nb index current]
+
+    switch -exact $method {
+        "waterInt" {
+            # hide the resp
+            foreach w $respTabIDs { eval $nbRoot hide [join [list $nbRoot $w] "."] }
+            # show the water int
+            foreach w $watIntTabIDs { eval $nbRoot add [join [list $nbRoot $w] "."] }
+            # activate the correct tab
+            set ::ForceFieldToolKit::gui::coptMethod "Water Interaction"
+            if { $activeTab == 2 || $activeTab == 4 } {
+                .fftk_gui.hlf.nb select 2
+            } elseif { $activeTab == 3 || $activeTab == 5 } {
+                .fftk_gui.hlf.nb select 3
+            } else {
+                .fftk_gui.hlf.nb selet $activeTab
+            }
+        }
+        "resp" {
+            # hide the resp
+            foreach w $watIntTabIDs { eval $nbRoot hide [join [list $nbRoot $w] "."] }
+            # show the water int
+            foreach w $respTabIDs { eval $nbRoot add [join [list $nbRoot $w] "."] }
+            set ::ForceFieldToolKit::gui::coptMethod "RESP Fitting"
+            # activate the correct tab
+            if { $activeTab == 2 || $activeTab == 4 } {
+                .fftk_gui.hlf.nb select 4
+            } elseif { $activeTab == 3 || $activeTab == 5 } {
+                .fftk_gui.hlf.nb select 5
+            } else {
+                .fftk_gui.hlf.nb selet $activeTab
+            }
+        }
+        default { 
+            # invalid method passed for some unknown reason
+            # don't do anything
+            puts "invalid argument passed to ::ForceFieldToolKit::gui::coptSelectMethod"
+            puts "Passed Method: $method"
+            puts "Currently supported methods: waterInt, resp"
+            flush stdout
+            return
+        }
+    }
+
+    # showing/hiding will likely require resizing the plugin
+    update idletasks
+    ::ForceFieldToolKit::gui::resizeToActiveTab
+}
+#======================================================
 
 #------------------------------------------------------
-# GenZMat Specific
+# GenZMat Specific - Water Interaction
 #------------------------------------------------------
 proc ::ForceFieldToolKit::gui::gzmToggleLabels {} {
     # toggles atom labels for TOP molecule to help determine donor and acceptor indices
@@ -1160,9 +1236,8 @@ proc ::ForceFieldToolKit::gui::gzmAutoDetect {} {
 }
 #======================================================
 
-
 #------------------------------------------------------
-# ChargeOpt Specific
+# ChargeOpt Specific - Water Interaction
 #------------------------------------------------------
 proc ::ForceFieldToolKit::gui::coptShowAtomLabels {} {
     # shows labels to aid in setting up charge optimizations
@@ -1584,7 +1659,6 @@ proc ::ForceFieldToolKit::gui::coptRunOpt {} {
     }
 
     # DONE
-
 }
 #======================================================
 proc ::ForceFieldToolKit::gui::coptParseLog { logFile } {
@@ -1653,7 +1727,7 @@ proc ::ForceFieldToolKit::gui::coptWriteNewPSF {} {
         tk_messageBox -type ok -icon warning -message "Action halted on error!" -detail "Cannot find PSF file."
         return
     }
-    if { $::ForceFieldToolKit::ChargeOpt::pdbPath eq "" || ![file exists $::ForceFieldToolKit::ChargeOpt::pdbPath] } {
+    if { $::ForceFieldToolKit::Configuration::geomOptPDB eq "" || ![file exists $::ForceFieldToolKit::Configuration::geomOptPDB] } {
         tk_messageBox -type ok -icon warning -message "Action halted on error!" -detail "Cannot find PDB file."
         return
     }
@@ -1668,7 +1742,7 @@ proc ::ForceFieldToolKit::gui::coptWriteNewPSF {} {
 
     # reload the PSF/PDB file pair
     mol new $::ForceFieldToolKit::ChargeOpt::psfPath
-    mol addfile $::ForceFieldToolKit::ChargeOpt::pdbPath
+    mol addfile $::ForceFieldToolKit::Configuration::geomOptPDB
 
     # reType/reCharge, taking into account reChargeOverride settings (if set)
     # reTypeFromPSF/reChargeFromPSF has been depreciated
@@ -1710,6 +1784,233 @@ proc ::ForceFieldToolKit::gui::coptWriteNewPSF {} {
 }
 #======================================================
 
+#------------------------------------------------------
+# ESP Specific - RESP Fitting
+#------------------------------------------------------
+#======================================================
+proc ::ForceFieldToolKit::gui::espSetEditData { args } {
+    # grabs data from the currently selected entry and copies into the Edit Box
+
+    set tv .fftk_gui.hlf.nb.optESP.cconstr.chargeData
+    # handle single and multiple selections differently
+    if { [llength [$tv selection]] == 1 } {
+        # enable
+        ::ForceFieldToolKit::gui::espEnableEditData
+        set editData [$tv item [$tv selection] -values]
+
+        # clear and then rebuild restNum menu dynamically
+#        set menu .fftk_gui.hlf.nb.optESP.cconstr.editRestNum.menu
+#        while { [.fftk_gui.hlf.nb.optESP.cconstr.editRestNum.menu index end] ne "none" } { .fftk_gui.hlf.nb.optESP.cconstr.editRestNum.menu delete end }
+#        $menu add command -label N/A -command {set ::ForceFieldToolKit::gui::espEditRestNum N/A}
+#        foreach atomName [lindex $editData 0] { $menu add command -label $atomName -command "set ::ForceFieldToolKit::gui::espEditRestNum $atomName" }
+
+        # set the data
+        set ::ForceFieldToolKit::gui::espEditGroup     [lindex $editData 0]
+        set ::ForceFieldToolKit::gui::espEditInit      [lindex $editData 1]
+        set ::ForceFieldToolKit::gui::espEditRestraint [lindex $editData 2]
+        set ::ForceFieldToolKit::gui::espEditRestNum   [lindex $editData 3]
+
+    } else { 
+        # disable the edit boxes for > 1 or 0
+        ::ForceFieldToolKit::gui::espDisableEditData
+    }
+}
+#======================================================
+proc ::ForceFieldToolKit::gui::espClearEditData { args } {
+    # clears the charge constraints edit
+    set ::ForceFieldToolKit::ChargeOpt::ESP::espEditGroup     {}
+    set ::ForceFieldToolKit::ChargeOpt::ESP::espEditInit      {}
+    set ::ForceFieldToolKit::ChargeOpt::ESP::espEditRestraint {}
+    set ::ForceFieldToolKit::ChargeOpt::ESP::espEditRestNum   {}
+}
+#======================================================
+proc ::ForceFieldToolKit::gui::espDisableEditData { args } {
+    #::ForceFieldToolKit::gui::espClearEditData "cconstr"
+    set ::ForceFieldToolKit::gui::espEditGroup     "--"
+    set ::ForceFieldToolKit::gui::espEditInit      "--"
+    set ::ForceFieldToolKit::gui::espEditRestraint "--"
+    set ::ForceFieldToolKit::gui::espEditRestNum   "--"
+    
+    set prefix .fftk_gui.hlf.nb.optESP.cconstr
+###    while { [${prefix}.editRestNum.menu index end] ne "none" } { ${prefix}.editRestNum.menu delete end }
+    foreach ele {editGroup editInit editRestraint editRestNum} {
+        ${prefix}.${ele} configure -state disable
+    }
+    ${prefix}.buttonFrame.editUpdate configure -state disable
+    ${prefix}.buttonFrame.editCancel configure -state disable
+}
+#======================================================
+proc ::ForceFieldToolKit::gui::espEnableEditData {} {
+    #::ForceFieldToolKit::gui::espClearEditData "cconstr"
+    set prefix .fftk_gui.hlf.nb.optESP.cconstr
+    foreach ele {editGroup editInit editRestraint editRestNum} {
+        ${prefix}.${ele} configure -state active
+    }
+    ${prefix}.buttonFrame.editUpdate configure -state active
+    ${prefix}.buttonFrame.editCancel configure -state active
+}
+#======================================================
+proc ::ForceFieldToolKit::gui::espGuessChargeGroups {} {
+
+    # initialize some variables
+    set psfFile $::ForceFieldToolKit::ChargeOpt::ESP::psfFile
+    #variable psfFile
+    
+    array set indexTree {}
+    set typeFPList {}
+    
+    set cgNames {}
+    set cgInit {}
+    
+    set psfNum 1
+    set firstPsfNum {}
+    set psf [open $psfFile r]
+    
+    
+    # set the list of all atoms
+    set allList [lsort -dictionary [[atomselect top all] get index]]
+
+    # cycle through each atom as the root
+    foreach rootAtom $allList {
+    
+        # initialize the indexTree array for this particular atom
+        # by setting node 0
+        set indexTree($rootAtom) $rootAtom
+        
+        # initialize the traveledList
+        set traveledList $rootAtom
+        
+        # initialize nodeCounter
+        set nodeCount 1
+        # traverse nodes until all atoms are covered
+        while { [lsort -dictionary $traveledList] != $allList } {
+        
+            # initialize a temporary list to hold new atoms for this node
+            set tmpNodeList {}
+        
+            # find bonded atoms for each atom in the preceeding node
+            foreach precNodeAtom [lindex $indexTree($rootAtom) [expr {$nodeCount - 1}]] {
+        
+                # find the atoms
+                set bondedAtoms [lindex [[atomselect top "index $precNodeAtom"] getbonds] 0]
+                # check to see if we've already traveled to any of these atoms
+                foreach bAtom $bondedAtoms {
+                    if { [lsearch -exact -integer $traveledList $bAtom] == -1 } {
+                        # new atom, append it to the list of atoms that we've been to so that we won't come back
+                        lappend traveledList $bAtom
+                        # add to the temp current node list
+                        lappend tmpNodeList $bAtom
+                    } else {
+                        # we've already been to this atom, so skip it
+                    }
+                }; # end of travelList check foreach
+                
+            }; # end of node cycle foreach
+    
+            # now that we have only atoms that we haven't traveled to
+            # we can write them to the current node
+            lappend indexTree($rootAtom) $tmpNodeList
+        
+            # increment the node counter to move onto the next node
+            incr nodeCount
+            
+        }; # end of while statement that traverses the atom tree
+    
+        # convert the indexTree into type fingerprint
+        set typeFP {} 
+        foreach node $indexTree($rootAtom) {
+            set nodeAtomTypes {}
+            foreach atom $node {
+                lappend nodeAtomTypes [[atomselect top "index $atom"] get type]
+            }
+            lappend typeFP [lsort -dictionary $nodeAtomTypes]
+        }
+    
+        # append the fingerprint to the full list of fingerprints
+        # if everything sorted properly, then the index should match the atom index
+        lappend typeFPList $typeFP
+    
+    }; # end of foreach that cycles through each atom
+    
+    
+    # define charge groups based on the type fingerprints
+    set cgInd {}
+    foreach atom $allList {
+        # find the current atom's finger print
+        set atomFP [lindex $typeFPList $atom]
+        # search against the full list of finger prints, and sort the matches
+        set fpMatches [lsort -dictionary [lsearch -exact -all $typeFPList $atomFP]]
+        # append the matches to the master match file
+        lappend cgInd $fpMatches
+    }
+
+    # remove duplicate matches
+    set cgInd [lsort -dictionary -unique $cgInd]
+    
+    # if charge group is HA (non-polar hydrogens), then remove them
+    # work from end to beginning so that items can be removed without shifting contents
+    for {set i [expr {[llength $cgInd] - 1}] } {$i >= 0} {incr i -1} {
+        set atomInd [lindex [lindex $cgInd $i] 0]
+        set atomType [[atomselect top "index $atomInd"] get type]
+        if { $atomType eq "HA" } {
+            set cgInd [lreplace $cgInd $i $i]
+        }
+    }
+    
+    # convert to indices to atom name
+    foreach cg $cgInd {
+        set atomNames {}
+        foreach atom $cg {
+            lappend atomNames [[atomselect top "index $atom"] get name]
+        }
+        lappend cgNames $atomNames
+    }
+    
+    # decide some guess parameters
+    for {set i 0} {$i < [llength $cgInd]} {incr i} {
+        set atomIndex [lindex [lindex $cgInd $i] 0]
+        set temp [atomselect top "index $atomIndex"]
+        
+        # init value: grab PSF reCharge charge value
+        lappend cgInit [format "%.4f" [$temp get charge]]
+        
+        $temp delete
+        
+    }
+    
+    for { set i 0 } { $i < [llength $cgNames] } { incr i } {
+        while { [lindex [set line [gets $psf]] 1] ne "!NATOM" } {
+            continue
+        }
+        while { [lindex [set line [gets $psf]] 4] ne [lindex [lindex $cgNames $i] 0]} {
+            incr psfNum
+            continue
+        }
+        lappend firstPsfNum $psfNum
+        set psfNum 0
+        seek $psf 0
+    }
+    close $psf  
+
+    return [list $cgNames $cgInit]
+}
+#======================================================
+proc ::ForceFieldToolKit::gui::resetInputDefaultsESP {} {
+    # resets the Input File Settings to default values
+    set ::ForceFieldToolKit::ChargeOpt::ESP::ihfree 1
+    set ::ForceFieldToolKit::ChargeOpt::ESP::qwt 0.0005
+    set ::ForceFieldToolKit::ChargeOpt::ESP::iqopt 2       
+}
+#======================================================
+proc ::ForceFieldToolKit::gui::resetGaussianDefaultsESP {} {
+    # resets the Gaussian Settings to default values
+    set ::ForceFieldToolKit::ChargeOpt::ESP::qmProc 1
+    set ::ForceFieldToolKit::ChargeOpt::ESP::qmMem 1
+    set ::ForceFieldToolKit::ChargeOpt::ESP::qmCharge 0
+    set ::ForceFieldToolKit::ChargeOpt::ESP::qmMult 1
+    set ::ForceFieldToolKit::ChargeOpt::ESP::qmRoute "#P HF/6-31G* SCF=Tight Geom=Checkpoint Pop=MK IOp(6/33=2,6/41=10,6/42=17)"   
+}
+#======================================================
 
 #------------------------------------------------------
 # BondAngleOpt Specific
@@ -1724,7 +2025,8 @@ proc ::ForceFieldToolKit::gui::baoptGuessPars {} {
     update idletasks
 
     # set local variables for required input files
-    set psf $::ForceFieldToolKit::BondAngleOpt::psf
+    #set psf $::ForceFieldToolKit::BondAngleOpt::psf
+    set psf $::ForceFieldToolKit::Configuration::chargeOptPSF
     set hessLog $::ForceFieldToolKit::BondAngleOpt::hessLog
     set parInProg $::ForceFieldToolKit::BondAngleOpt::parInProg
 
@@ -1857,7 +2159,7 @@ proc ::ForceFieldToolKit::gui::baoptRunOpt {} {
         # build a script instead of running directly
         set ::ForceFieldToolKit::gui::baoptStatus "Writing to script..."
         update idletasks
-        ::ForceFieldToolKit::BondAngleOpt::buildScript BondedOpt-RunScript.tcl
+        ::ForceFieldToolKit::BondAngleOpt::buildScript [file join [file dirname $::ForceFieldToolKit::BondAngleOpt::outFileName] BondedOpt-RunScript.tcl]
         set ::ForceFieldToolKit::gui::baoptStatus "IDLE"
     } else {
         # run optimization directly
@@ -2178,8 +2480,8 @@ proc ::ForceFieldToolKit::gui::doptRunManualRefine {} {
     # check that there are parameters
     set errorList {}
     if { [llength [.fftk_gui.hlf.nb.dihopt.refine.parSet.tv children {}]] == 0 } { lappend errorList "No parameters provided for refinment/refitting." }
-    if { ![file exists $::ForceFieldToolKit::DihOpt::psf] } { lappend errorList "PSF not found." }
-    if { ![file exists $::ForceFieldToolKit::DihOpt::pdb] } { lappend errorList "PDB not found." }
+    if { ![file exists $::ForceFieldToolKit::Configuration::chargeOptPSF] } { lappend errorList "PSF not found." }
+    if { ![file exists $::ForceFieldToolKit::Configuration::geomOptPDB] } { lappend errorList "PDB not found." }
     if { ![info exists ::ForceFieldToolKit::DihOpt::dihAllData] } { lappend errorList "Dihedral Data is missing.  Rerun the initial optimization."}
     if { ![info exists ::ForceFieldToolKit::DihOpt::EnQM] } { lappend errorList "QM PES data is missing.  Rerun the initial optimization."}
     if { ![info exists ::ForceFieldToolKit::DihOpt::EnMM] } { lappend errorList "MMEi PES data is missing.  Rerun the initial optimization."}
@@ -2596,8 +2898,8 @@ proc ::ForceFieldToolKit::gui::doptLogParser { logfile } {
 
     # dihAll, psf, and pdb value are all fine as-is
     set ::ForceFieldToolKit::DihOpt::dihAllData $dihAll
-    set ::ForceFieldToolKit::DihOpt::psf $psf
-    set ::ForceFieldToolKit::DihOpt::pdb $pdb
+    set ::ForceFieldToolKit::Configuration::chargeOptPSF $psf
+    set ::ForceFieldToolKit::Configuration::geomOptPDB $pdb
 
     # update labels
     if { $::ForceFieldToolKit::DihOpt::EnQM ne "" } {
@@ -2652,12 +2954,12 @@ proc ::ForceFieldToolKit::gui::doptLogWriter { filename rmse mmef parData } {
 
     # write the psf path
     puts $outFile "\nPSF"
-    puts $outFile "$::ForceFieldToolKit::DihOpt::psf"
+    puts $outFile "$::ForceFieldToolKit::Configuration::chargeOptPSF"
     puts $outFile "END"
 
     # write the pdb path
     puts $outFile "\nPDB"
-    puts $outFile "$::ForceFieldToolKit::DihOpt::pdb"
+    puts $outFile "$::ForceFieldToolKit::Configuration::geomOptPDB"
     puts $outFile "END"
 
     # write MME (subsection of MMDATA)

@@ -22,7 +22,7 @@ namespace eval ::TorPlot:: {
 #   variable box		;# all those little boxes I draw
   variable lastsavedfile torsionplot.tga
 #  variable moldispstat "";# store displayed status before hiding for mk3drama
-  variable tempdir "$env(TMPDIR)"   ;# directory to which all temporary files will be written
+  variable tempdir "$env(TMPDIR)/"   ;# directory to which all temporary files will be written
   variable datadir "$env(TORPLOTDIR)"         ;# directory containing all the probability maps
   variable torfilename [file join $tempdir torplot_temp.pdb]
   variable torplotmol "-1"                    ;# molid handle for the molecule that will contain the data points

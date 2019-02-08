@@ -41,7 +41,8 @@ The only required inputs to NAMDEnergy are one selection, and the type of energy
 	<li>Timestep (<tt>-ts NUMBER</tt>): Starting timestep from NAMD; this is purely for bookkeeping purposes. Default: 0
 	<li>Step Length (<tt>-timemult NUMBER</tt>): Length of each timestep that a dynamics trajectory was recorded at, in fs; this is for bookkeeping purposes. Default 1. 
 	<li>Stride (<tt>-stride NUMBER</tt>): Number of timesteps between each output in a trajectory; this is purely for bookkeeping purposes. Default: 1
-	<li>Parameter Files (<tt>-par FILE</tt>): One or more parameter files for NAMD to use; there is a suitable default if none are specified. Each additional parameter file requires another -par switch.
+	<li>Parameter Files (<tt>-par FILE</tt>): One or more parameter files for NAMD to use; a default will be used if none are specified, but you must make sure that it is suitable for your application. Each additional parameter file requires another -par switch.
+        <li>Drude (<tt>-drude</tt>): If present, drude polarizable force field is supported.
 	<li>Silent (<tt>-silent</tt>): If this flag is specified, no energy output will be printed. This is usually only useful for the command line form, when you want to use the returned energy lists as part of another function.
 	<li>Debug (<tt>-debug</tt>): If this flag is specified, temporary files used by NAMDenergy will not be deleted.
 	<li>Show Force Output (<tt>-keepforce</tt>): If this flag is specified,  information on force magnitudes will be included in the output from interaction calculations. This only applies for calculating the interaction between two selections. 

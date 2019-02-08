@@ -1,13 +1,13 @@
 # Carbon Nanostructure Builder GUI
 #
-# $Id: gui.tcl,v 1.7 2013/04/15 15:27:10 johns Exp $
+# $Id: gui.tcl,v 1.8 2018/01/08 22:37:14 johns Exp $
 #
 
 package require topotools 1.3
 
 namespace eval ::Nanotube:: {
     variable w            ; # handle of the GUI's toplevel widget
-    variable version  1.5 ; # version number of this plugin
+    variable version  1.6 ; # version number of this plugin
 
     variable ccbond 0.1418; # length of bonds in nanometers
     variable ccorbn C-C   ; # choose between Carbon and BN system

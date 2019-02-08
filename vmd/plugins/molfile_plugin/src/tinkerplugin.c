@@ -11,7 +11,7 @@
  *
  *      $RCSfile: tinkerplugin.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.14 $       $Date: 2016/11/28 05:01:54 $
+ *      $Revision: 1.15 $       $Date: 2017/02/03 06:13:03 $
  *
  ***************************************************************************/
 
@@ -77,7 +77,7 @@ static int read_tinker_structure(void *mydata, int *optflags,
   float coord;
   molfile_atom_t *atom;
   tinkerdata *data = (tinkerdata *)mydata;
-
+  
   *optflags = MOLFILE_NOOPTIONS;
 
   for (i=0; i<data->numatoms; i++) {
@@ -112,18 +112,40 @@ static int read_tinker_structure(void *mydata, int *optflags,
 }
 
 static int read_tinker_timestep(void *mydata, int natoms, molfile_timestep_t *ts) {
-  int i, j, atomid;
+  int i, j, atomid, box_failed;
   char atom_name[1024], fbuffer[1024], *k;
-  float x, y, z;
+  float x, y, z, box[6];
   
   tinkerdata *data = (tinkerdata *)mydata;
   
   /* skip over the first line */
-  if (NULL == fgets(fbuffer, 1024, data->file))  return MOLFILE_ERROR;
+  if (NULL == fgets(fbuffer, 1024, data->file)) return MOLFILE_ERROR;
+  k = fgets(fbuffer, 1024, data->file);
+  if (NULL == k) return MOLFILE_ERROR;
+
+  /* attempt to get box size */
+  j = sscanf(fbuffer, "%f %f %f %f %f %f", box, box+1, box+2, box+3, box+4, box+5);
+  if (j > 2){
+    box_failed = 0;
+
+    if (ts != NULL){
+      ts->A = box[0];
+      ts->B = box[1];
+      ts->C = box[2];
+      if (j > 5){
+        ts->alpha = box[3];
+        ts->beta  = box[4];
+        ts->gamma = box[5];
+      }
+    }
+  } else {
+    box_failed = 1;
+  }
 
   /* read the coordinates */
   for (i=0; i<natoms; i++) {
-    k = fgets(fbuffer, 1024, data->file);
+    /* reuse line if box size failed, it's an atom line */
+    if (i > 0 || !box_failed) k = fgets(fbuffer, 1024, data->file);
 
     /* Read in atom type, X, Y, Z, skipping any remaining data fields */
     j = sscanf(fbuffer, "%d %s %f %f %f", &atomid, atom_name, &x, &y, &z);
@@ -166,7 +188,7 @@ VMDPLUGIN_API int VMDPLUGIN_init() {
   plugin.prettyname = "Tinker";
   plugin.author = "John Stone";
   plugin.majorv = 0;
-  plugin.minorv = 5;
+  plugin.minorv = 6;
   plugin.is_reentrant = VMDPLUGIN_THREADSAFE;
   plugin.filename_extension = "arc";
   plugin.open_file_read = open_tinker_read;

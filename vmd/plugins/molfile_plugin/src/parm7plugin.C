@@ -11,7 +11,7 @@
  *
  *      $RCSfile: parm7plugin.C,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.34 $       $Date: 2016/11/28 05:01:54 $
+ *      $Revision: 1.35 $       $Date: 2017/08/30 17:42:33 $
  *
  ***************************************************************************/
 
@@ -86,6 +86,9 @@ static int read_parm7_structure(void *mydata, int *optflags, molfile_atom_t *ato
       if (!parse_parm7_mass(buf, prm->Natom, atoms, file)) break;
     } else if (!strcmp(field, "AMBER_ATOM_TYPE")) {
       if (!parse_parm7_atype(buf, prm->Natom, atoms, file)) break;
+    } else if (!strcmp(field, "ATOMIC_NUMBER")) {
+      *optflags |= MOLFILE_ATOMICNUMBER;
+      if (!parse_parm7_atomicnumber(buf, prm->Natom, atoms, file)) break;
     } else if (!strcmp(field, "RESIDUE_LABEL")) {
       resnames = new char[4*prm->Nres];
       if (!parse_parm7_resnames(buf, prm->Nres, resnames, file)) break;
@@ -157,7 +160,7 @@ VMDPLUGIN_API int VMDPLUGIN_init(){
   plugin.prettyname = "AMBER7 Parm";
   plugin.author = "Brian Bennion, Justin Gullingsrud, John Stone";
   plugin.majorv = 0;
-  plugin.minorv = 15;
+  plugin.minorv = 16;
   plugin.is_reentrant = VMDPLUGIN_THREADUNSAFE;
   plugin.filename_extension = "prmtop,parm7";
   plugin.open_file_read = open_parm7_read;

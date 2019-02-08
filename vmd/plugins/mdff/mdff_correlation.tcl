@@ -10,8 +10,8 @@
 # RCS INFORMATION:
 #
 #       $RCSfile: mdff_correlation.tcl,v $
-#       $Author: ltrabuco $        $Locker:  $             $State: Exp $
-#       $Revision: 1.1 $       $Date: 2009/08/06 20:07:33 $
+#       $Author: ryanmcgreevy $        $Locker:  $             $State: Exp $
+#       $Revision: 1.3 $       $Date: 2019/01/10 16:06:22 $
 #
 ############################################################################
 
@@ -23,29 +23,25 @@
 # mdff ccc
 #
 
-package require volutil
 package require mdff_tmp
 package provide mdff_correlation 0.2
 
 namespace eval ::MDFF::Correlation:: {
-  variable defaultGridspacing 1.0
 }
 
 proc ::MDFF::Correlation::mdff_ccc_usage { } {
 
-  variable defaultGridspacing
  
   puts "Usage: mdff ccc <atom selection> -i <input map> -res <map resolution in Angstroms> ?options?"
   puts "Options:"
-  puts "  -spacing <grid spacing in Angstroms> (default: $defaultGridspacing)"
-  puts "  -threshold <x sigmas>"
+  puts "  -spacing <grid spacing in Angstroms> (default based on res)"
+  puts "  -threshold <x> (ignores voxels with values below x threshold.)"
   puts "  -allframes (average over all frames)"
   
 }
 
 proc ::MDFF::Correlation::mdff_ccc { args } {
 
-  variable defaultGridspacing
 
   set nargs [llength [lindex $args 0]]
   if {$nargs == 0} {
@@ -90,8 +86,6 @@ proc ::MDFF::Correlation::mdff_ccc { args } {
 
   if { [info exists arg(spacing)] } {
     set spacing $arg(spacing)
-  } else {
-    set spacing $defaultGridspacing
   }
 
   if { [info exists arg(threshold)] } {
@@ -101,47 +95,19 @@ proc ::MDFF::Correlation::mdff_ccc { args } {
     set use_threshold 0
   }
 
-  # Get temporary filenames
-  set tmpDir [::MDFF::Tmp::tmpdir]
-  set tmpDX [file join $tmpDir \
-    [::MDFF::Tmp::tmpfilename -prefix mdff_corr -suffix .dx -tmpdir $tmpDir]]
-  set tmpDX2 [file join $tmpDir \
-    [::MDFF::Tmp::tmpfilename -prefix mdff_corr -suffix .dx -tmpdir $tmpDir]]
-  set tmpLog [file join $tmpDir \
-    [::MDFF::Tmp::tmpfilename -prefix mdff_corr -suffix .log -tmpdir $tmpDir]]
-
-  # Create simulated map
-  if $allFrames {
-    ::MDFF::Sim::mdff_sim $sel -o $tmpDX -res $res -spacing $spacing -allframes
-  } else {
-    ::MDFF::Sim::mdff_sim $sel -o $tmpDX -res $res -spacing $spacing
-  }
-
   if $use_threshold {
-    # Set voxels above the given threshold to NAN
-    ::VolUtil::volutil -threshold $threshold $tmpDX -o $tmpDX2
-    # Calculate correlation
-    ::VolUtil::volutil -tee $tmpLog -quiet -safe -corr $inputMap $tmpDX2
+    if { [info exists spacing] } {
+        set cc [voltool cc $sel -i $inputMap -res $res -thresholddensity $threshold -spacing $spacing]
+      } else {
+        set cc [voltool cc $sel -i $inputMap -res $res -thresholddensity $threshold]
+      }
   } else {
-    # Calculate correlation
-    ::VolUtil::volutil -tee $tmpLog -quiet -corr $inputMap $tmpDX
+    if { [info exists spacing] } {
+        set cc [voltool cc $sel -i $inputMap -res $res -spacing $spacing]
+      } else {
+        set cc [voltool cc $sel -i $inputMap -res $res]
+      }
   }
-
-  file delete $tmpDX
-  file delete $tmpDX2
-
-  # parse the output to get the correlation coefficient
-  set file [open $tmpLog r]
-  gets $file line
-  while {$line != ""} {
-    if { [regexp {^Correlation coefficient = (.*)} $line fullmatch cc] } {
-      break
-    }
-    gets $file line
-  }
-  close $file
-
-  file delete $tmpLog
 
   return $cc
 

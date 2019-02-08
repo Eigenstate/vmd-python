@@ -1,7 +1,7 @@
 .SILENT:
 
 VMFILES = namdgui.tcl namdgui_tclforces.tcl pkgIndex.tcl
-VMVERSION = 1.3
+VMVERSION = 1.4
 DIR = $(PLUGINDIR)/noarch/tcl/namdgui$(VMVERSION)
 
 bins:

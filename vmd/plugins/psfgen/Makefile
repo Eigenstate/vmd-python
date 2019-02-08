@@ -8,7 +8,7 @@ AR= ar
 ARFLAGS = cr
 RANLIB = ranlib
 
-VMVERSION=1.6
+VMVERSION=1.7
 COMPILEDIR = ../compile
 ARCHDIR=${COMPILEDIR}/lib_${ARCH}/tcl/psfgen${VMVERSION}
 SRCDIR=src
@@ -36,13 +36,14 @@ dynlibs: ${TARGETS}
 staticlibs: 
 win32staticlibs: 
 
-distrib:
+distrib: doc/ug.pdf
 	@echo "Copying psfgen $(VMVERSION) files to $(PLUGINDIR) arch-specific dir"
 	for localname in `find ../compile -name libpsfgen.so -print` ; do \
 		pluginname=`echo $$localname | sed s/..\\\/compile\\\/lib_// `; \
 		dir=`dirname $(PLUGINDIR)/$$pluginname`; \
 		mkdir -p $$dir; \
 		cp $$localname $(PLUGINDIR)/$$pluginname; \
+		cp doc/ug.pdf $$dir ; \
 		cp src/pkgIndex.tcl $$dir ; \
 	done
 

@@ -6,7 +6,7 @@
 #cr
 ############################################################################
 #
-# $Id: multiseqdialog.tcl,v 1.12 2013/04/15 16:35:33 johns Exp $
+# $Id: multiseqdialog.tcl,v 1.13 2018/11/06 23:06:42 johns Exp $
 #
 
 ############################################################################
@@ -741,7 +741,7 @@ proc ::MultiSeqDialog::readInfoFile { } {
     variable release "b10"
 
     # The URL locations.
-    variable baseURL "http://www.scs.illinois.edu/multiseq/r$::MultiSeq::version"
+    variable baseURL "http://faculty.scs.illinois.edu/schulten/multiseq/r$::MultiSeq::version"
     variable backupURL "http://www.ks.uiuc.edu/Research/vmd/multiseq/r$::MultiSeq::version"
     
     # Figure out where to check.
