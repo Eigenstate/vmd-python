@@ -176,8 +176,9 @@ PyMODINIT_FUNC PyInit_vmd(void) {
   // read application defaults
   VMDreadInit(app);
 
-  // read user-defined startup files
-  VMDreadStartup(app);
+  // don't read .vmdrc or other user-defined startup files if running
+  // as a python module because it's too easy for that to cause unintended
+  // behavior
 
   set_vmdapp(app);
 

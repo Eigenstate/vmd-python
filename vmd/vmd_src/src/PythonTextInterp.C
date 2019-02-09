@@ -157,7 +157,6 @@ PyObject* initvmdcallbacks(void) {
 
 PythonTextInterp::PythonTextInterp(VMDApp *vmdapp) : app(vmdapp) {
 
-  const char *oo_modules[] = {"Molecule", "Label", "Material", NULL};
   PyObject *vmdmodule;
   int retval, i;
 
@@ -208,6 +207,9 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp) : app(vmdapp) {
   }
 
   // Now handle the three object-oriented classes
+  // Don't do this if running as a shared library as __init__.py does that for us
+#ifndef VMDSHARED
+  const char *oo_modules[] = {"Molecule", "Label", "Material", NULL};
   for (const char **tmp = oo_modules; *tmp; tmp++) {
     PyObject *module = PyImport_ImportModule(*tmp);
     if (!module) {
@@ -220,6 +222,7 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp) : app(vmdapp) {
       continue;
     }
   }
+#endif
 
   // Make all modules accessible in the default namespace
   if (!evalString("from vmd import *")) {
