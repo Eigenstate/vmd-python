@@ -36,19 +36,15 @@ dynlibs: ${TARGETS}
 staticlibs: 
 win32staticlibs: 
 
-distrib: doc/ug.pdf
+distrib:
 	@echo "Copying psfgen $(VMVERSION) files to $(PLUGINDIR) arch-specific dir"
 	for localname in `find ../compile -name libpsfgen.so -print` ; do \
 		pluginname=`echo $$localname | sed s/..\\\/compile\\\/lib_// `; \
 		dir=`dirname $(PLUGINDIR)/$$pluginname`; \
 		mkdir -p $$dir; \
 		cp $$localname $(PLUGINDIR)/$$pluginname; \
-		cp doc/ug.pdf $$dir ; \
 		cp src/pkgIndex.tcl $$dir ; \
 	done
-
-doc/ug.pdf: doc/ug_macros.tex doc/ug_psfgen.tex doc/ug.tex doc/ug_title.tex
-	cd doc; pdflatex ug; pdflatex ug
 
 ${ARCHDIR}:
 	mkdir -p ${ARCHDIR}

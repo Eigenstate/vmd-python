@@ -40,7 +40,7 @@ LINUXAMD64:
 	"AR = ar" \
 	"NM = nm -p" \
 	"RANLIB = touch" \
-	"SHLD = $(CC)-shared"
+	"SHLD = $(CC) -shared"
 
 MACOSX:
 	$(MAKE) dynlibs staticlibs bins \
