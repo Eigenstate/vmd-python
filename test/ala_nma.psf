@@ -1,0 +1,50 @@
+PSF
+
+       1 !NTITLE
+ REMARKS VMD-generated NAMD/X-Plor PSF structure file
+
+      16 !NATOM
+       1      1    ALA  N    N      0.000000       14.0067           0
+       2      1    ALA  HN   HN     0.000000        1.0079           0
+       3      1    ALA  CA   CA     0.000000       12.0107           0
+       4      1    ALA  HA   HA     0.000000        1.0079           0
+       5      1    ALA  CB   CB     0.000000       12.0107           0
+       6      1    ALA  HB1  HB1    0.000000        1.0079           0
+       7      1    ALA  HB2  HB2    0.000000        1.0079           0
+       8      1    ALA  HB3  HB3    0.000000        1.0079           0
+       9      1    ALA  C    C      0.000000       12.0107           0
+      10      1    ALA  O    O      0.000000       15.9994           0
+      11      2    NMA  N    N      0.000000       14.0067           0
+      12      2    NMA  HN   HN     0.000000        1.0079           0
+      13      2    NMA  CA   CA     0.000000       12.0107           0
+      14      2    NMA  HT1  HT1    0.000000        1.0079           0
+      15      2    NMA  HT2  HT2    0.000000        1.0079           0
+      16      2    NMA  HT3  HT3    0.000000        1.0079           0
+
+       0 !NBOND: bonds
+
+
+       0 !NTHETA: angles
+
+
+       0 !NPHI: dihedrals
+
+
+       0 !NIMPHI: impropers
+
+
+       0 !NDON: donors
+
+
+       0 !NACC: acceptors
+
+
+       0 !NNB
+
+       0       0       0       0       0       0       0       0
+       0       0       0       0       0       0       0       0
+
+
+       1       0 !NGRP
+       0       0       0
+
