@@ -1,5 +1,5 @@
 """
-The VMD Python module, based off VMD 1.9.3.
+The VMD Python module, based off VMD 1.9.4
 
 This software includes code developed by the Theoretical and Computational
 Biophysics Group in the Beckman Institute for Advanced Science and
@@ -9,29 +9,19 @@ Official VMD web page: http://www.ks.uiuc.edu/Research/vmd/
 
 """
 
-__version__ = '2.0.0'
+__version__ = '3.0.0'
 __author__ = 'Robin Betz'
 
 import imp
 import os
-import sys
 from pkg_resources import resource_filename
 
 # Need to set VMDDIR environment variable for vmd.so to import
-os.environ['VMDDIR'] = resource_filename(__name__, "libvmd.so").replace("/libvmd.so","")
-
-# Need VMD python scripts accessible (for import molecule, etc)
-#sys.path.append(resource_filename(__name__, "scripts/python/VMD.py").replace("VMD.py", ""))
-
-# Need to put python installation libs in LD_LIBRARY_PATH since that is what
-# vmd.so was dynamically linked to at compile time
-# This is only during the duration of this executable
-libdir = os.path.abspath(os.path.dirname(sys.executable).replace("bin", "lib"))
-os.environ['LD_LIBRARY_PATH'] = "%s:%s" % (libdir,
-                                           os.environ.get('LD_LIBRARY_PATH', ""))
+vmdlib = resource_filename(__name__, "libvmd.so")
+os.environ['VMDDIR'] = os.path.split(vmdlib)[0]
 
 # Load the library
-vmd = imp.load_dynamic(__name__, resource_filename(__name__, "libvmd.so"))
+vmd = imp.load_dynamic(__name__, vmdlib)
 
 # These modules define classes for convenient manipulation of VMD state.
 # Import them strangely so they're in the same python namespace
@@ -43,32 +33,4 @@ vmd.Material= imp.load_source("Material", os.path.join(os.environ["VMDDIR"],
                                                        "Material.py"))
 
 #==============================================================================
-
-# This evaluates tcl commands
-def evaltcl(args):
-  """
-  Use this method to execute Tcl script code from python. Since many new
-  features in VMD are first implemented for the Tcl text interpreter,
-  this will help to bridge the time until those are also available through
-  the python script interface. It can also be used to execute whole Tcl
-  scripts using the VMD 'play' command, so it is the equivalent to
-  'gopython' in the Tcl interpreter. If the tcl is not available, it
-  will have no effect.
-
-  Usage examples:
-
-  from VMD import evaltcl
-
-  versnum=evaltcl('vmdinfo version')
-  evaltcl('play somescript.tcl')
-  """
-  try:
-    from vmd import VMDevaltcl
-  except:
-    return
-  return VMDevaltcl(args)
-
-#==============================================================================
-
-vmd.evaltcl = evaltcl
 
