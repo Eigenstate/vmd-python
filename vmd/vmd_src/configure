@@ -149,7 +149,7 @@ if (!(-e "plugins")) {
 
 #################### Parse command line options   ###########
 # list of allowed architectures
-@archlist=('AIX6_64', 'ANDROIDARMV7A', 'BLUEGENEQ', 'BLUEWATERS', 'CRAY_XC', 'CRAY_XK', 'FREEBSD', 'FREEBSDAMD64', 'LINUX', 'LINUXAMD64', 'LINUXCARMA', 'LINUXPPC64', 'MACOSX', 'MACOSXX86', 'MACOSXX86_64', 'OPENPOWER', 'SUMMIT', 'SUMMITDEV', 'SOLARIS2', 'SOLARIS2_64', 'SOLARISX86', 'SOLARISX86_64', 'WIN32', 'WIN64');
+@archlist=('LINUX', 'LINUXAMD64', 'MACOSX', 'MACOSXX86', 'MACOSXX86_64', 'WIN32', 'WIN64');
 
 if ($#ARGV == -1) {
     $text = `cat configure.options`;
@@ -746,9 +746,9 @@ if ($config_tk) { $tcl_defines .= " -DVMDTK"; }
 $tcl_include      = $ENV{TCLINC};
 if ($config_tk) { $tcl_include .= " -I$stock_tk_include_dir"; }
 
-$tcl_library      = $ENV{TCLLIB}
+$tcl_library      = $ENV{TCLLIB};
 if ($config_tk) { $tcl_library .= " -L$stock_tk_library_dir"; }
-$tcl_libs         = $ENV{TCLLDFLAGS}
+$tcl_libs         = $ENV{TCLLDFLAGS};
 if ($config_tk) { $tcl_libs = "-ltk8.5 -lX11 " . $tcl_libs; }
 
 
@@ -1959,15 +1959,15 @@ if ($config_arch eq "LINUXAMD64") {
       print "LP64 ABI is already the default on this platform.\n";
     }
 
-    $arch_opt_flag	.= "-m64 -fno-for-scope -Wno-deprecated -Wall -Wno-unknown-pragmas -O6 -ffast-math";
-    $arch_depend_flag   .= "-MM";
-    $arch_copts       .= "-m64 -Wall -Wno-unknown-pragmas -O6 -ffast-math";
+    $arch_opt_flag	.= " -m64 -fno-for-scope -Wno-deprecated -Wall -Wno-unknown-pragmas -O6 -ffast-math";
+    $arch_depend_flag   .= " -MM";
+    $arch_copts       .= " -m64 -Wall -Wno-unknown-pragmas -O6 -ffast-math";
 
     # so far only STATIC version tested
     if ($config_static) {
-      $arch_lopts	= "-static"; 
+      $arch_lopts	.= " -static"; 
     } else {
-      $arch_lopts	= "-rdynamic";
+      $arch_lopts	.= " -rdynamic";
     }
 
     if ($config_cuda) {
@@ -1997,7 +1997,7 @@ if ($config_arch eq "LINUXAMD64") {
       $arch_opt_flag   .= " -fPIC";
       $arch_copts      .= " -fPIC";
       $arch_nvccflags  .= " -Xcompiler -fPIC";
-      $arch_lopts      .= "-shared";
+      $arch_lopts      .= " -shared";
       $arch_cppopts    .= " -DVMD_SHARED";
     }
 }
@@ -2014,13 +2014,13 @@ if ($config_arch eq "MACOSX") {
     $fltk_library     = "-L$fltk_dir/MACOSX";
     $fltk_libs        = "-lfltk -lX11";
 
-    $arch_depend_flag .= "-MM";
-    $arch_opt_flag    .= "-fPIC -Os -ffast-math";
-    $arch_copts       .= "-fPIC -Os -ffast-math";
+    $arch_depend_flag .= " -MM";
+    $arch_opt_flag    .= " -fPIC -Os -ffast-math";
+    $arch_copts       .= " -fPIC -Os -ffast-math";
     $arch_cppopts     .= "";
 
     if ($config_static) {
-      $arch_lopts       = "-static"
+      $arch_lopts       .= " -static"
     } else {
       $arch_lopts       .= "";
     }
@@ -2096,17 +2096,17 @@ if ($config_arch eq "MACOSXX86" || $config_arch eq "MACOSXX86_64") {
 
     if ($config_lp64) {
       $arch_depend_flag = "-MM";
-      $arch_opt_flag    .= "-m64 -fPIC -Os -ffast-math";
-      $arch_copts       .= "-m64 -fPIC -Os -ffast-math";
+      $arch_opt_flag    .= " -m64 -fPIC -Os -ffast-math";
+      $arch_copts       .= " -m64 -fPIC -Os -ffast-math";
     } else {
       $arch_depend_flag = "-MM";
-      $arch_opt_flag    .= "-m32 -fPIC -Os -ffast-math";
-      $arch_copts       .= "-m32 -fPIC -Os -ffast-math";
+      $arch_opt_flag    .= " -m32 -fPIC -Os -ffast-math";
+      $arch_copts       .= " -m32 -fPIC -Os -ffast-math";
     }
     $arch_cppopts = "";
 
     if ($config_static) {
-      $arch_lopts       .= "-static"
+      $arch_lopts       .= " -static"
     } else {
       $arch_lopts       .= "";
     }
@@ -2214,18 +2214,18 @@ if ($config_arch eq "MACOSXX86" || $config_arch eq "MACOSXX86_64") {
 
 if ($config_arch eq "WIN32") {
     if ($config_msvc) {
-      $arch_opt_flag   .= "/O2 /G5 /nologo /MT /DWIN32 -Dstrcasecmp=strupcmp";
+      $arch_opt_flag   .= " /O2 /G5 /nologo /MT /DWIN32 -Dstrcasecmp=strupcmp";
       $arch_debug_flag  = "-g";
       $arch_depend_flag = "-M";
       $arch_copts      .= "";
-      $arch_cppopts    .= "/TP";
-      $arch_coptout    .= "/Fo";
+      $arch_cppopts    .= " /TP";
+      $arch_coptout    .= " /Fo";
     } else {
-      $arch_opt_flag   .= "-O";
+      $arch_opt_flag   .= " -O";
       $arch_debug_flag  = "-g";
       $arch_depend_flag = "-M";
       $arch_copts      .= "";
-      $arch_cppopts    .= $arch_no_math_float;
+      $arch_cppopts    .= " $arch_no_math_float";
     }
 
     $def_imageviewer="explorer %s";
@@ -2236,12 +2236,12 @@ if ($config_arch eq "WIN32") {
 
 
 if ($config_arch eq "WIN64") {
-    $arch_opt_flag   .= "-O";
+    $arch_opt_flag   .= " -O";
     $arch_debug_flag  = "-g";
     $arch_depend_flag = "-M";
 
     $arch_copts      .= "";
-    $arch_cppopts    .= $arch_no_math_float;
+    $arch_cppopts    .= " $arch_no_math_float";
     $def_imageviewer="explorer %s";
     # startup command script file.  Read after program initialization.
     $startupfilename="vmd.rc";
@@ -2638,8 +2638,8 @@ install:
 	(cd "$install_library_dir" ; \$(TAR) -xf -)
 	-\$(CD) $vmd_library_dir; \$(TAR) -cf - scripts | \\
 	(cd "$install_library_dir" ; \$(TAR) -xf -)
-	-\$(CD) ..; \$(TAR) -cf - python | \\
-	(cd "$install_library_dir"/scripts ; \$(TAR) -xf -)
+	-\$(CD) ../python; \$(TAR) -cf - * | \\
+	(cd "$install_library_dir"; \$(TAR) -xf -)
 	-\$(CD) ..; \$(TAR) -cf - plugins | \\
 	(cd "$install_library_dir" ; \$(TAR) -xf -)
 	-\$(CD) ..; \$(TAR) -cf - shaders | \\

@@ -186,21 +186,32 @@ PyMODINIT_FUNC PyInit_vmd(void) {
   the_app = app;
 
 #if PY_MAJOR_VERSION >= 3
-  PyObject *vmdmodule = PyImport_ImportModule("vmd");
+  PyObject *vmdmodule = PyModule_Create(&vmddef);
 #else
   PyObject *vmdmodule = Py_InitModule3("vmd", VMDAppMethods, vmd_moddoc);
 #endif
+  if (!vmdmodule) {
+    msgErr << "Failed to import vmd module" << sendmsg;
+    PyErr_Print();
+    INITERROR;
+  }
 
   int i = 0;
   while (py_initializers[i].name) {
     const char *name = py_initializers[i].name;
     PyObject *module = (*(py_initializers[i].initfunc))();
-    if (!module)
-      INITERROR;
+    if (!module) {
+      msgErr << "Failed to initialize builtin module " << name << sendmsg;
+      PyErr_Print();
+      continue;
+    }
 
     int retval = PyModule_AddObject(vmdmodule, CAST_HACK name, module);
-    if (retval || PyErr_Occurred())
+    if (retval || PyErr_Occurred()) {
+      msgErr << "Failed to import builtin module " << name << sendmsg;
+      msgErr << "Aborting module import" << sendmsg;
       INITERROR;
+    }
     i++;
   }
 
