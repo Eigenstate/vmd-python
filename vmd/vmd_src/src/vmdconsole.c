@@ -348,6 +348,7 @@ int vmdcon_purge(void)
  * a very large buffer and then free it. :-( */
 int vmdcon_printf(const int lvl, const char *fmt, ...) 
 {
+
     va_list ap;
     char *buf;
     int len;
@@ -367,15 +368,19 @@ int vmdcon_printf(const int lvl, const char *fmt, ...)
         return -1;
     }
 
+    // In the Python module, we don't want to print unless it's
+    // an error
     /* prefix message with info level... or not. */
     switch (lvl) {
       case VMDCON_INFO:
-        vmdcon_append(lvl, "Info) ", 6);
-        break;
+        return 0;
+        //vmdcon_append(lvl, "Info) ", 6);
+        //break;
 
       case VMDCON_WARN:
-        vmdcon_append(lvl, "Warning) ", 9);
-        break;
+        return 0;
+        //vmdcon_append(lvl, "Warning) ", 9);
+        //break;
 
       case VMDCON_ERROR:
         vmdcon_append(lvl, "ERROR) ", 7);

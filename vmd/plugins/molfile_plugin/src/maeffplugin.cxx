@@ -825,7 +825,7 @@ namespace {
         if      (attr=="m_pdb_atom_name")    i_name=i;
         else if (attr=="m_pdb_residue_name") i_resname=i;
         else if (attr=="m_residue_number")   i_resid=i;
-        else if (attr=="m_insertion_code") { fprintf(stderr, "FOUND INSERTION CODE\n"); i_insertion=i; h->optflags |= MOLFILE_INSERTION; }
+        else if (attr=="m_insertion_code") { i_insertion=i; h->optflags |= MOLFILE_INSERTION; }
         else if (attr=="m_x_coord")          i_x=i;
         else if (attr=="m_y_coord")          i_y=i;
         else if (attr=="m_z_coord")          i_z=i;
@@ -1221,7 +1221,6 @@ namespace {
     // Read schema
     Schema schema = predict_schema(tokenizer);
     subarray.set_schema(schema);
-    fprintf(stderr, "READ SCHEMA\n");
     size_t width = schema.size();
     Row row(width);
     tokenizer.predict(":::");
