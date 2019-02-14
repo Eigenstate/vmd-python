@@ -1,6 +1,6 @@
 .SILENT:
 
-VMFILES = bendix.tcl pkgIndex.tcl doc/GUI-tips.gif  doc/Monsieur_Bendix_smaller_still.gif
+VMFILES = bendix.tcl pkgIndex.tcl
 VMVERSION = 1.1
 DIR = $(PLUGINDIR)/noarch/tcl/bendix$(VMVERSION)
 
