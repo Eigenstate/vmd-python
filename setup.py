@@ -171,6 +171,13 @@ class VMDBuild(DistutilsBuild):
     #==========================================================================
 
     def set_environment_variables(self, pydir):
+
+        # If compilers aren't set already, default to GCC
+        if not os.environ.get("CC"):
+            os.environ["CC"] = "gcc"
+        if not os.environ.get("CXX"):
+            os.environ["CXX"] = "g++"
+
         print("Finding libraries...")
         osys = platform.system()
         if "Linux" in osys or "Windows" in osys:
@@ -272,7 +279,7 @@ class VMDTest(Command):
 ###############################################################################
 
 setup(name='vmd-python',
-      version='2.0.1',
+      version='3.0.0',
       description='Visual Molecular Dynamics Python module',
       author='Robin Betz',
       author_email='robin@robinbetz.com',
@@ -282,7 +289,7 @@ setup(name='vmd-python',
       extras_require={'hoomdplugin': ["expat"]},
 
       packages=['vmd'],
-      package_data={'vmd' : ['libvmd.so']},
+      package_data={'vmd' : ['vmd.so']},
       cmdclass={
           'build': VMDBuild,
           'test': VMDTest,
