@@ -226,6 +226,10 @@ class VMDBuild(DistutilsBuild):
             os.environ["CC"] = "gcc"
         if not os.environ.get("CXX"):
             os.environ["CXX"] = "g++"
+        if not os.environ.get("CFLAGS"):
+            os.environ["CFLAGS"] = ""
+        if not os.environ.get("CXXFLAGS"):
+            os.environ["CXXFLAGS"] = ""
         if not os.environ.get("LDFLAGS"):
             os.environ["LDFLAGS"] = ""
 
