@@ -303,6 +303,9 @@ class VMDBuild(DistutilsBuild):
         # Set debug variable for now if requested
         os.environ["DEBUG"] = "DEBUG" if self.debug else ""
 
+        # DEBUG: unset makeflags
+        os.environ["MAKEFLAGS"] = "-j 1 "
+
         # Print a summary
         print("Building with:")
         print("  CC: %s" % os.environ["CC"])
