@@ -1,8 +1,6 @@
 # Makefile for molecule file readers
 # $Id: Makefile,v 1.132 2019/02/07 21:22:05 johns Exp $
 
-.SILENT:
-
 .NOTPARALLEL:
 
 .SUFFIXES:
