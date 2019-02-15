@@ -100,24 +100,26 @@ molecule is a module that allows loading and saving of molecules while tracking 
 integer index.
 
 ## Installation
-Wow it is INSTALLABLE NOW! This has been really hard to get working
-so please be happy for me.
+The easiest way to install the module is by using the [Conda](https://conda.io/en/latest/)
+Python package manager. Vmd-python is in the [conda forge](https://conda-forge.org/)
+channel:
 
 Simple binary installation with conda (currently linux-x86\_64 only)
 
-    conda install -c https://conda.anaconda.org/rbetz vmd-python
+    conda install -c conda-forge vmd-python
 
-For other architectures, use pip:
-Easy installation with pip:
-
-    pip install -i https://pypi.anaconda.org/rbetz/simple vmd-python
-
-Or, if you download the source:
+For other architectures, you can build from source by cloning this repo:
 
     python setup.py build
     python setup.py install
 
 Installation can take a while since it compiles VMD from source.
+
+### OSX support
+
+Users have reported that on OSX with Tcl/Tk 8.6 the module will
+segfault on import. Unfortunately I'm the only developer of this software and
+don't have access to a machine running OSX with which to debug the issue.
 
 ## Dependencies
 vmd-python has the following dependencies:
