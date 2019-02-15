@@ -449,7 +449,7 @@ webpdbplugin.so: ${ARCHDIR}/webpdbplugin.o
 ${ARCHDIR}/abinitplugin.o: abinitplugin.c ${PLUGINAPI} periodic_table.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/amiraplugin.o: amiraplugin.C ${PLUGINAPI}
+${ARCHDIR}/amiraplugin.o: src/amiraplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/avsplugin.o: avsplugin.C ${PLUGINAPI}
