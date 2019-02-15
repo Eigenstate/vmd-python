@@ -6,7 +6,6 @@
 ## $Id: Makefile,v 1.142 2018/02/22 22:21:55 johns Exp $
 ## 
 ## Parallel builds break because of molfile_plugin
-.SILENT:
 
 .NOTPARALLEL:
 
