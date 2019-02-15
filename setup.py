@@ -303,6 +303,14 @@ class VMDBuild(DistutilsBuild):
         # Set debug variable for now if requested
         os.environ["DEBUG"] = "DEBUG" if self.debug else ""
 
+        # Print a summary
+        print("Building with:")
+        print("  CC: %s" % os.environ["CC"])
+        print("  CXX: %s" % os.environ["CXX"])
+        print("  CFLAGS: %s" % os.environ["CFLAGS"])
+        print("  CXXFLAGS: %s" % os.environ["CXXFLAGS"])
+        print("  LDFLAGS: %s" % os.environ["LDFLAGS"])
+
     #==========================================================================
 
     @staticmethod
