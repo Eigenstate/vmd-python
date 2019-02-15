@@ -7,6 +7,7 @@
 ## 
 ## Parallel builds break because of molfile_plugin
 .SILENT:
+
 .NOTPARALLEL:
 
 default: make-arch-help

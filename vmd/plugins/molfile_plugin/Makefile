@@ -3,6 +3,8 @@
 
 .SILENT:
 
+.NOTPARALLEL:
+
 .SUFFIXES:
 
 PLUGINAPI = molfile_plugin.h vmdplugin.h vmdconio.h
