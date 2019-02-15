@@ -1,0 +1,74 @@
+
+if {! [info exists i_job]} { set i_job 0 }
+set job_output_root "$output_root.job$i_job"
+
+set outputbase $job_output_root
+
+if {! [info exists load_step] } {set load_step 1}
+set steps_per_frame [expr $steps_per_run * $runs_per_frame * $load_step]
+
+set dcd_filename_format "${outputbase}.%d$::sort.dcd"
+set color_filename_format "${outputbase}.%d$::sort.history"
+set color_index 1
+set color_scale_min 0
+set color_scale_max [expr $num_replicas - 1]
+set fit_selection_text "backbone"
+if {! [info exists fit_pdb_file] } {set fit_pdb_file $initial_pdb_file}
+
+if {! [array exists replica_data]} {
+  if {[molinfo num] > 0} {
+    mol delete all
+  }
+  for {set replica_id 0} {$replica_id < $num_replicas} {incr replica_id} {
+    set molid [mol new $psf_file]
+    mol addfile $initial_pdb_file
+    set replica_data($replica_id.molid) $molid
+    set allsel [atomselect $molid "all"]
+    set replica_data($replica_id.allsel) $allsel
+    mol modcolor 0 $molid User
+    mol colupdate 0 $molid 1
+    mol scaleminmax $molid 0 $color_scale_min $color_scale_max
+    mol modstyle 0 $molid NewCartoon 0.300000 10.000000 4.100000 0
+  }
+  #set fitmolid [mol new $psf_file]
+  #mol addfile $fit_pdb_file
+  set fitmolid [mol new $fit_pdb_file]
+  mol modstyle 0 $fitmolid NewCartoon 0.300000 10.000000 4.100000 0
+  set basesel [atomselect $fitmolid $fit_selection_text]
+}
+
+for {set replica_id 0} {$replica_id < $num_replicas} {incr replica_id} {
+  set molid $replica_data($replica_id.molid)
+  mol top $molid
+  set dcdfile [format $dcd_filename_format $replica_id $replica_id]
+
+  mol addfile $dcdfile type dcd first [expr $load_step - 1] step $load_step waitfor all
+  set numframes [molinfo $molid get numframes]
+  set replica_data($replica_id.numframes) $numframes
+
+  set fitsel [atomselect $molid "index [$basesel get index]"]
+  set allsel $replica_data($replica_id.allsel)
+
+  set color_file [open [format $color_filename_format $replica_id $replica_id] "r"]
+  while {[gets $color_file colorvals] >= 0} {
+    set step [lindex $colorvals 0]
+    if {$step % $steps_per_frame} { continue }
+    set frame [expr $step/$steps_per_frame]
+    if {$frame < $replica_data($replica_id.numframes)} {
+      $allsel frame $frame
+      $allsel set user [lindex $colorvals $color_index]
+    }
+  }
+
+#  for { set i 0 } { $i < $numframes } { incr i } {
+#    $fitsel frame $i
+#    $allsel frame $i
+#    $allsel move [measure fit $fitsel $basesel]
+#  }
+
+  $fitsel delete
+}
+
+# $basesel delete
+# mol delete $fitmolid
+
