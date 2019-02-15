@@ -9,10 +9,10 @@ PLUGINAPI = molfile_plugin.h vmdplugin.h vmdconio.h
 COMPILEDIR = ../compile
 ARCHDIR=${COMPILEDIR}/lib_${ARCH}/molfile
 
-SRCDIR = src
+SRCDIR = ./src
 INCDIR = -I../include -I${SRCDIR}
 
-VPATH = src ../include ${ARCHDIR}
+VPATH = ${SRCDIR}:../include:${ARCHDIR}
 
 SCCFLAGS = $(CCFLAGS) $(DEF)"STATIC_PLUGIN"
 SCXXFLAGS = $(CCFLAGS) $(DEF)"STATIC_PLUGIN"
