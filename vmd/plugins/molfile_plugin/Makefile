@@ -1,7 +1,7 @@
 # Makefile for molecule file readers
 # $Id: Makefile,v 1.132 2019/02/07 21:22:05 johns Exp $
 
-#.SILENT:
+.SILENT:
 
 .SUFFIXES:
 
@@ -27,8 +27,8 @@ PLUGINS = abinitplugin.so amiraplugin.so avsplugin.so babelplugin.so basissetplu
 
 
 #
-# Check to see if we're building on Android or not. If not, we 
-# include some plugins that don't currently compile cleanly using 
+# Check to see if we're building on Android or not. If not, we
+# include some plugins that don't currently compile cleanly using
 # the Android NDK cross-development toolchain for Linux.
 # XXX non-portable GNU make syntax used here...
 #
@@ -62,9 +62,9 @@ ifdef EXPATLDFLAGS
 ifndef EXPATDYNAMIC
 # Only add the HOOMD plugin as a static plugin if we compiled against
 # a static libexpat.a, as VMD itself will also have to be linked against
-# the same static library for this to work.  In the case of a dynamic 
+# the same static library for this to work.  In the case of a dynamic
 # library, we can get by linking only the plugin itself, and either
-# assuming it is installed already on the target OS, or included in the 
+# assuming it is installed already on the target OS, or included in the
 # VMD redistributables.
 STATICPLUGINS += hoomdplugin
 endif
@@ -84,9 +84,9 @@ ifdef NETCDFLDFLAGS
 ifndef NETCDFDYNAMIC
 # Only add the NetCDF plugin as a static plugin if we compiled against
 # a static libnetcdf.a, as VMD itself will also have to be linked against
-# the same static library for this to work.  In the case of a dynamic 
+# the same static library for this to work.  In the case of a dynamic
 # library, we can get by linking only the plugin itself, and either
-# assuming it is installed already on the target OS, or included in the 
+# assuming it is installed already on the target OS, or included in the
 # VMD redistributables.
 STATICPLUGINS += netcdfplugin
 endif
@@ -106,9 +106,9 @@ ifdef HDFLDFLAGS
 ifndef HDFDYNAMIC
 # Only add plugin that use HDF as static plugins if we compiled against
 # a static libnetcdf.a, as VMD itself will also have to be linked against
-# the same static library for this to work.  In the case of a dynamic 
+# the same static library for this to work.  In the case of a dynamic
 # library, we can get by linking only the plugin itself, and either
-# assuming it is installed already on the target OS, or included in the 
+# assuming it is installed already on the target OS, or included in the
 # VMD redistributables.
 STATICPLUGINS += lmplugin
 endif
@@ -128,9 +128,9 @@ ifdef SQLITELDFLAGS
 ifndef SQLITEDYNAMIC
 # Only add the dmsplugin as a static plugin if we compiled against
 # a static sqlite.a, as VMD itself will also have to be linked against
-# the same static library for this to work.  In the case of a dynamic 
+# the same static library for this to work.  In the case of a dynamic
 # library, we can get by linking only the plugin itself, and either
-# assuming it is installed already on the target OS, or included in the 
+# assuming it is installed already on the target OS, or included in the
 # VMD redistributables.
 STATICPLUGINS += dmsplugin
 endif
@@ -173,7 +173,7 @@ endif
 
 
 # list of all optional plugins for use by distrib target
-OPTPLUGINS = dmsplugin.so hoomdplugin.so lmplugin.so netcdfplugin.so orcaplugin.so tngplugin.so vtfplugin.so webpdbplugin.so 
+OPTPLUGINS = dmsplugin.so hoomdplugin.so lmplugin.so netcdfplugin.so orcaplugin.so tngplugin.so vtfplugin.so webpdbplugin.so
 
 STATICS = libmolfile_plugin.a libmolfile_plugin.h
 WIN32STATICS = libmolfile_plugin.lib libmolfile_plugin.h
@@ -182,7 +182,7 @@ DISTFILES = $(PLUGINS) $(OPTPLUGINS) $(STATICS) $(WIN32STATICS)
 bins:
 win32bins:
 dynlibs: ${ARCHDIR} mesg $(PLUGINS)
-staticlibs: ${ARCHDIR} $(STATICS) 
+staticlibs: ${ARCHDIR} $(STATICS)
 win32staticlibs: ${ARCHDIR} $(WIN32STATICS)
 
 distrib:
@@ -205,43 +205,43 @@ mesg:
 # plugin library rules
 #
 
-abinitplugin.so: ${ARCHDIR}/abinitplugin.o 
+abinitplugin.so: ${ARCHDIR}/abinitplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-amiraplugin.so: ${ARCHDIR}/amiraplugin.o 
+amiraplugin.so: ${ARCHDIR}/amiraplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-avsplugin.so: ${ARCHDIR}/avsplugin.o 
+avsplugin.so: ${ARCHDIR}/avsplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-babelplugin.so: ${ARCHDIR}/babelplugin.o 
+babelplugin.so: ${ARCHDIR}/babelplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 basissetplugin.so: ${ARCHDIR}/basissetplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-bgfplugin.so: ${ARCHDIR}/bgfplugin.o 
+bgfplugin.so: ${ARCHDIR}/bgfplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 binposplugin.so: ${ARCHDIR}/binposplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-biomoccaplugin.so: ${ARCHDIR}/biomoccaplugin.o 
+biomoccaplugin.so: ${ARCHDIR}/biomoccaplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 brixplugin.so: ${ARCHDIR}/brixplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-carplugin.so: ${ARCHDIR}/carplugin.o 
+carplugin.so: ${ARCHDIR}/carplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 ccp4plugin.so: ${ARCHDIR}/ccp4plugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-corplugin.so: ${ARCHDIR}/corplugin.o 
+corplugin.so: ${ARCHDIR}/corplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-cpmdplugin.so: ${ARCHDIR}/cpmdplugin.o 
+cpmdplugin.so: ${ARCHDIR}/cpmdplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 crdplugin.so: ${ARCHDIR}/crdplugin.o
@@ -250,7 +250,7 @@ crdplugin.so: ${ARCHDIR}/crdplugin.o
 cubeplugin.so: ${ARCHDIR}/cubeplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-dcdplugin.so: ${ARCHDIR}/dcdplugin.o 
+dcdplugin.so: ${ARCHDIR}/dcdplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 dlpolyplugin.so: ${ARCHDIR}/dlpolyplugin.o
@@ -259,25 +259,25 @@ dlpolyplugin.so: ${ARCHDIR}/dlpolyplugin.o
 dsn6plugin.so: ${ARCHDIR}/dsn6plugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-dxplugin.so: ${ARCHDIR}/dxplugin.o 
+dxplugin.so: ${ARCHDIR}/dxplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 edmplugin.so: ${ARCHDIR}/edmplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-fs4plugin.so: ${ARCHDIR}/fs4plugin.o 
+fs4plugin.so: ${ARCHDIR}/fs4plugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-gamessplugin.so: ${ARCHDIR}/gamessplugin.o 
+gamessplugin.so: ${ARCHDIR}/gamessplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 graspplugin.so: ${ARCHDIR}/graspplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-grdplugin.so: ${ARCHDIR}/grdplugin.o 
+grdplugin.so: ${ARCHDIR}/grdplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-gridplugin.so: ${ARCHDIR}/gridplugin.o 
+gridplugin.so: ${ARCHDIR}/gridplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 gromacsplugin.so: ${ARCHDIR}/gromacsplugin.o
@@ -289,16 +289,16 @@ jsplugin.so: ${ARCHDIR}/jsplugin.o
 lammpsplugin.so: ${ARCHDIR}/lammpsplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-mapplugin.so: ${ARCHDIR}/mapplugin.o 
+mapplugin.so: ${ARCHDIR}/mapplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-mdfplugin.so: ${ARCHDIR}/mdfplugin.o 
+mdfplugin.so: ${ARCHDIR}/mdfplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-mol2plugin.so: ${ARCHDIR}/mol2plugin.o 
+mol2plugin.so: ${ARCHDIR}/mol2plugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-moldenplugin.so: ${ARCHDIR}/moldenplugin.o 
+moldenplugin.so: ${ARCHDIR}/moldenplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 molemeshplugin.so: ${ARCHDIR}/molemeshplugin.o
@@ -316,46 +316,46 @@ offplugin.so: ${ARCHDIR}/offplugin.o
 orcaplugin.so: ${ARCHDIR}/orcaplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-parm7plugin.so: ${ARCHDIR}/parm7plugin.o 
+parm7plugin.so: ${ARCHDIR}/parm7plugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-parmplugin.so: ${ARCHDIR}/parmplugin.o 
+parmplugin.so: ${ARCHDIR}/parmplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-pbeqplugin.so: ${ARCHDIR}/pbeqplugin.o 
+pbeqplugin.so: ${ARCHDIR}/pbeqplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-pdbplugin.so: ${ARCHDIR}/pdbplugin.o 
+pdbplugin.so: ${ARCHDIR}/pdbplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-pdbxplugin.so: ${ARCHDIR}/pdbxplugin.o 
+pdbxplugin.so: ${ARCHDIR}/pdbxplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-phiplugin.so: ${ARCHDIR}/phiplugin.o 
+phiplugin.so: ${ARCHDIR}/phiplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 pltplugin.so: ${ARCHDIR}/pltplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-plyplugin.so: ${ARCHDIR}/plyplugin.o 
+plyplugin.so: ${ARCHDIR}/plyplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-pqrplugin.so: ${ARCHDIR}/pqrplugin.o 
+pqrplugin.so: ${ARCHDIR}/pqrplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-psfplugin.so: ${ARCHDIR}/psfplugin.o 
+psfplugin.so: ${ARCHDIR}/psfplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 raster3dplugin.so: ${ARCHDIR}/raster3dplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-rst7plugin.so: ${ARCHDIR}/rst7plugin.o 
+rst7plugin.so: ${ARCHDIR}/rst7plugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-situsplugin.so: ${ARCHDIR}/situsplugin.o 
+situsplugin.so: ${ARCHDIR}/situsplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-spiderplugin.so: ${ARCHDIR}/spiderplugin.o 
+spiderplugin.so: ${ARCHDIR}/spiderplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 stlplugin.so: ${ARCHDIR}/stlplugin.o
@@ -388,13 +388,13 @@ vaspxdatcarplugin.so: ${ARCHDIR}/vaspxdatcarplugin.o
 vaspxmlplugin.so: ${ARCHDIR}/vaspxmlplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-vtkplugin.so: ${ARCHDIR}/vtkplugin.o 
+vtkplugin.so: ${ARCHDIR}/vtkplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-xbgfplugin.so: ${ARCHDIR}/xbgfplugin.o 
+xbgfplugin.so: ${ARCHDIR}/xbgfplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
-xsfplugin.so: ${ARCHDIR}/xsfplugin.o 
+xsfplugin.so: ${ARCHDIR}/xsfplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 xyzplugin.so: ${ARCHDIR}/xyzplugin.o
@@ -404,7 +404,7 @@ xyzplugin.so: ${ARCHDIR}/xyzplugin.o
 ##
 ## In-development plugins that aren't part of the build quite yet...
 ##
-cpmdlogplugin.so: ${ARCHDIR}/cpmdlogplugin.o 
+cpmdlogplugin.so: ${ARCHDIR}/cpmdlogplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 gaussianplugin.so: ${ARCHDIR}/gaussianplugin.o
@@ -439,7 +439,7 @@ tngplugin.so: ${ARCHDIR}/tngplugin.o
 vtfplugin.so: ${ARCHDIR}/vtfplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(TCLLIB) $(TCLLDFLAGS) $(LDFLAGS)
 
-webpdbplugin.so: ${ARCHDIR}/webpdbplugin.o 
+webpdbplugin.so: ${ARCHDIR}/webpdbplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(TCLLIB) $(TCLLDFLAGS) $(LDFLAGS)
 
 
@@ -449,10 +449,10 @@ webpdbplugin.so: ${ARCHDIR}/webpdbplugin.o
 ${ARCHDIR}/abinitplugin.o: abinitplugin.c ${PLUGINAPI} periodic_table.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/amiraplugin.o: amiraplugin.C ${PLUGINAPI} 
+${ARCHDIR}/amiraplugin.o: amiraplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/avsplugin.o: avsplugin.C ${PLUGINAPI} 
+${ARCHDIR}/avsplugin.o: avsplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/babelplugin.o: babelplugin.c readpdb.h vmddir.h ${PLUGINAPI} periodic_table.h
@@ -461,25 +461,25 @@ ${ARCHDIR}/babelplugin.o: babelplugin.c readpdb.h vmddir.h ${PLUGINAPI} periodic
 ${ARCHDIR}/basissetplugin.o: basissetplugin.c ${PLUGINAPI} qmplugin.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/bgfplugin.o: bgfplugin.C ${PLUGINAPI} 
+${ARCHDIR}/bgfplugin.o: bgfplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/binposplugin.o: binposplugin.c ${PLUGINAPI}
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/biomoccaplugin.o: biomoccaplugin.C ${PLUGINAPI} 
+${ARCHDIR}/biomoccaplugin.o: biomoccaplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/brixplugin.o: brixplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/carplugin.o: carplugin.c ${PLUGINAPI} 
+${ARCHDIR}/carplugin.o: carplugin.c ${PLUGINAPI}
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/ccp4plugin.o: ccp4plugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/corplugin.o: corplugin.c ${PLUGINAPI} 
+${ARCHDIR}/corplugin.o: corplugin.c ${PLUGINAPI}
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/cpmdplugin.o: cpmdplugin.c ${PLUGINAPI} unit_conversion.h
@@ -500,13 +500,13 @@ ${ARCHDIR}/dlpolyplugin.o: dlpolyplugin.c ${PLUGINAPI} periodic_table.h
 ${ARCHDIR}/dsn6plugin.o: dsn6plugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/dxplugin.o: dxplugin.C ${PLUGINAPI} 
+${ARCHDIR}/dxplugin.o: dxplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/edmplugin.o: edmplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/fs4plugin.o: fs4plugin.C ${PLUGINAPI} 
+${ARCHDIR}/fs4plugin.o: fs4plugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/gamessplugin.o: gamessplugin.c ${PLUGINAPI} qmplugin.h periodic_table.h unit_conversion.h
@@ -515,10 +515,10 @@ ${ARCHDIR}/gamessplugin.o: gamessplugin.c ${PLUGINAPI} qmplugin.h periodic_table
 ${ARCHDIR}/graspplugin.o: graspplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/grdplugin.o: grdplugin.C ${PLUGINAPI} 
+${ARCHDIR}/grdplugin.o: grdplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/gridplugin.o: gridplugin.C ${PLUGINAPI} 
+${ARCHDIR}/gridplugin.o: gridplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/gromacsplugin.o: gromacsplugin.C ${PLUGINAPI} Gromacs.h
@@ -530,13 +530,13 @@ ${ARCHDIR}/jsplugin.o: jsplugin.c ${PLUGINAPI}
 ${ARCHDIR}/lammpsplugin.o: lammpsplugin.c ${PLUGINAPI} hash.c hash.h inthash.c inthash.h periodic_table.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/mapplugin.o: mapplugin.C ${PLUGINAPI} 
+${ARCHDIR}/mapplugin.o: mapplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/mdfplugin.o: mdfplugin.C ${PLUGINAPI} 
+${ARCHDIR}/mdfplugin.o: mdfplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/mol2plugin.o: mol2plugin.C ${PLUGINAPI} 
+${ARCHDIR}/mol2plugin.o: mol2plugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/moldenplugin.o: moldenplugin.c ${PLUGINAPI} periodic_table.h
@@ -557,13 +557,13 @@ ${ARCHDIR}/offplugin.o: offplugin.C ${PLUGINAPI}
 ${ARCHDIR}/orcaplugin.o: orcaplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/parm7plugin.o: parm7plugin.C ${PLUGINAPI} 
+${ARCHDIR}/parm7plugin.o: parm7plugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/parmplugin.o: parmplugin.C ${PLUGINAPI} 
+${ARCHDIR}/parmplugin.o: parmplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/pbeqplugin.o: pbeqplugin.C ${PLUGINAPI} 
+${ARCHDIR}/pbeqplugin.o: pbeqplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/pdbplugin.o: pdbplugin.c readpdb.h ${PLUGINAPI}
@@ -572,31 +572,31 @@ ${ARCHDIR}/pdbplugin.o: pdbplugin.c readpdb.h ${PLUGINAPI}
 ${ARCHDIR}/pdbxplugin.o: pdbxplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/phiplugin.o: phiplugin.C ${PLUGINAPI} 
+${ARCHDIR}/phiplugin.o: phiplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/pltplugin.o: pltplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/plyplugin.o: plyplugin.C ${PLUGINAPI} 
+${ARCHDIR}/plyplugin.o: plyplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/pqrplugin.o: pqrplugin.c ${PLUGINAPI} 
+${ARCHDIR}/pqrplugin.o: pqrplugin.c ${PLUGINAPI}
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/psfplugin.o: psfplugin.c fortread.h ${PLUGINAPI} 
+${ARCHDIR}/psfplugin.o: psfplugin.c fortread.h ${PLUGINAPI}
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/raster3dplugin.o: raster3dplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/rst7plugin.o: rst7plugin.c ${PLUGINAPI} 
+${ARCHDIR}/rst7plugin.o: rst7plugin.c ${PLUGINAPI}
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/situsplugin.o: situsplugin.C ${PLUGINAPI} 
+${ARCHDIR}/situsplugin.o: situsplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/spiderplugin.o: spiderplugin.C ${PLUGINAPI} 
+${ARCHDIR}/spiderplugin.o: spiderplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/stlplugin.o: stlplugin.C ${PLUGINAPI}
@@ -608,31 +608,31 @@ ${ARCHDIR}/tinkerplugin.o: tinkerplugin.c ${PLUGINAPI}
 ${ARCHDIR}/uhbdplugin.o: uhbdplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/vaspchgcarplugin.o: vaspchgcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vaspchgcarplugin.o: vaspchgcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/vaspoutcarplugin.o: vaspoutcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vaspoutcarplugin.o: vaspoutcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/vaspparchgplugin.o: vaspparchgplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vaspparchgplugin.o: vaspparchgplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/vaspposcarplugin.o: vaspposcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vaspposcarplugin.o: vaspposcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/vasp5xdatcarplugin.o: vasp5xdatcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vasp5xdatcarplugin.o: vasp5xdatcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/vaspxdatcarplugin.o: vaspxdatcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vaspxdatcarplugin.o: vaspxdatcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/vaspxmlplugin.o: vaspxmlplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vaspxmlplugin.o: vaspxmlplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/vtkplugin.o: vtkplugin.C ${PLUGINAPI} 
+${ARCHDIR}/vtkplugin.o: vtkplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/xbgfplugin.o: xbgfplugin.C ${PLUGINAPI} 
+${ARCHDIR}/xbgfplugin.o: xbgfplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/xsfplugin.o: xsfplugin.C ${PLUGINAPI} periodic_table.h
@@ -692,8 +692,8 @@ ARCHIVEOBJS = ${ARCHDIR}/abinitplugin-s.o ${ARCHDIR}/amiraplugin-s.o ${ARCHDIR}/
 
 
 #
-# Check to see if we're building on Android or not. If not, we 
-# include some plugins that don't currently compile cleanly using 
+# Check to see if we're building on Android or not. If not, we
+# include some plugins that don't currently compile cleanly using
 # the Android NDK cross-development toolchain for Linux.
 # XXX non-portable GNU make syntax used here...
 #
@@ -786,7 +786,7 @@ endif
 #
 # Check to see if we should build plugins that use the Desmond thing
 # XXX non-portable GNU make syntax used here...
-# 
+#
 ifdef SQLITELIB
 ifdef SQLITEINC
 ifdef SQLITELDFLAGS
@@ -796,12 +796,12 @@ endif
 endif
 
 libmolfile_plugin.a: ${ARCHIVEOBJS}
-	rm -f ${ARCHDIR}/$@ 
-	$(AR) cr ${ARCHDIR}/$@ ${ARCHIVEOBJS} 
+	rm -f ${ARCHDIR}/$@
+	$(AR) cr ${ARCHDIR}/$@ ${ARCHIVEOBJS}
 	$(RANLIB) ${ARCHDIR}/$@
 
 libmolfile_plugin.lib: ${ARCHIVEOBJS}
-	rm -f ${ARCHDIR}/$@ 
+	rm -f ${ARCHDIR}/$@
 	lib /OUT:${ARCHDIR}/$@ ${ARCHIVEOBJS}
 
 libmolfile_plugin.h: ${ARCHIVEOBJS}
@@ -974,25 +974,25 @@ ${ARCHDIR}/tinkerplugin-s.o: tinkerplugin.c ${PLUGINAPI}
 ${ARCHDIR}/uhbdplugin-s.o: uhbdplugin.C ${PLUGINAPI}
 	${CXX} ${SCXXFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_uhbdplugin" -c $< $(COPTO)$@
 
-${ARCHDIR}/vaspchgcarplugin-s.o: vaspchgcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vaspchgcarplugin-s.o: vaspchgcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	${CC} ${SCCFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_vaspchgcarplugin" -c $< $(COPTO)$@
 
-${ARCHDIR}/vaspoutcarplugin-s.o: vaspoutcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vaspoutcarplugin-s.o: vaspoutcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	${CC} ${SCCFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_vaspoutcarplugin" -c $< $(COPTO)$@
 
-${ARCHDIR}/vaspparchgplugin-s.o: vaspparchgplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vaspparchgplugin-s.o: vaspparchgplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	${CC} ${SCCFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_vaspparchgplugin" -c $< $(COPTO)$@
 
-${ARCHDIR}/vaspposcarplugin-s.o: vaspposcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vaspposcarplugin-s.o: vaspposcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	${CC} ${SCCFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_vaspposcarplugin" -c $< $(COPTO)$@
 
-${ARCHDIR}/vasp5xdatcarplugin-s.o: vasp5xdatcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vasp5xdatcarplugin-s.o: vasp5xdatcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	${CC} ${SCCFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_vasp5xdatcarplugin" -c $< $(COPTO)$@
 
-${ARCHDIR}/vaspxdatcarplugin-s.o: vaspxdatcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vaspxdatcarplugin-s.o: vaspxdatcarplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	${CC} ${SCCFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_vaspxdatcarplugin" -c $< $(COPTO)$@
 
-${ARCHDIR}/vaspxmlplugin-s.o: vaspxmlplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
+${ARCHDIR}/vaspxmlplugin-s.o: vaspxmlplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h
 	${CC} ${SCCFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_vaspxmlplugin" -c $< $(COPTO)$@
 
 ${ARCHDIR}/vtkplugin-s.o: vtkplugin.C ${PLUGINAPI}
