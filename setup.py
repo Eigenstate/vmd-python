@@ -86,11 +86,12 @@ class VMDBuild(DistutilsBuild):
             out = check_output(["find", "-H"]
                                + searchdirs
                                + ["-maxdepth", "2",
-                                  "-name", incfile],
+                                  "-path", r"*/%s" % incfile],
                                close_fds=True,
                                stderr=open(os.devnull, 'wb'))
         except: pass
 
+        # TODO: Fix this dumb parsing remove substring
         incdir = os.path.split(out.decode("utf-8").split("\n")[0])[0]
         if not glob(os.path.join(incdir, incfile)): # Glob allows wildcards
             incdir = os.path.join(pydir, "include", incfile)
@@ -253,6 +254,11 @@ class VMDBuild(DistutilsBuild):
         if addir is None: addir = os.path.join(pydir, "include")
         os.environ["CFLAGS"] += " -I%s" % addir
         os.environ["CXXFLAGS"] += " -I%s" % addir
+
+        # Find OpenGL headers
+        ogldir = self._find_include_dir("GL/gl.h")
+        os.environ["CFLAGS"] += " -I%s" % ogldir
+        os.environ["CXXFLAGS"] += " -I%s" % ogldir
 
         # No reliable way to ask for actual available library, so try 8.5 first
         tcllibdir = self._find_library_dir("libtcl8.5", fallback=False)
