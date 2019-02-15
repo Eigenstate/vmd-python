@@ -1,6 +1,18 @@
 # vmd-python
 Installable VMD as a python module
 
+*NEW*: Version 3.0 has the following new features
+
+* Offscreen rendering to an OpenGL buffer so you can render programmatically
+* Atomselection attributes can be accessed or set more easily:
+  `atomsel.get("x")` can be written as `atomsel.x`!
+* Removed extra info dumped to stdout
+* Docstrings for all methods and modules
+* Much more functionality as Python methods! `atomsel.hbonds`, etc
+* The `selection` module lets you define custom atomselection macros
+* More rigorous reference counting / fewer memory leaks
+* Much prettier code
+
 *NEW*: Support for Python 3!!!
 
 ![CI status](https://img.shields.io/travis/Eigenstate/vmd-python.svg)
@@ -9,7 +21,7 @@ Installable VMD as a python module
 ![PyPi](https://anaconda.org/rbetz/vmd-python/badges/installer/pypi.svg)
 
 ## Features
-All features of VMD from the 1.9.3 release, plus some
+All features of VMD from the 1.9.4 tree, plus some
 optional plugins not included in binary distributions:
 
 * Read and write formal charges to MAE files
@@ -110,9 +122,12 @@ Installation can take a while since it compiles VMD from source.
 ## Dependencies
 vmd-python has the following dependencies:
 
-    * libnetcdf >= 4.3
-    * numpy
     * python 2.7 or 3.6
+    * numpy
+    * libnetcdf >= 4.3
+    * expat
+    * sqlite
+    * Tcl/Tk = 8.5 (8.6 will crash on OSX)
 
 ## Licensing
 
