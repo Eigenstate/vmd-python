@@ -9,6 +9,8 @@
 
 .NOTPARALLEL:
 
+.SILENT:
+
 default: make-arch-help
 
 world:

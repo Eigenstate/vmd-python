@@ -1,7 +1,7 @@
 # Makefile for molecule file readers
 # $Id: Makefile,v 1.132 2019/02/07 21:22:05 johns Exp $
 
-.NOTPARALLEL:
+.SILENT:
 
 .SUFFIXES:
 
@@ -449,7 +449,7 @@ webpdbplugin.so: ${ARCHDIR}/webpdbplugin.o
 ${ARCHDIR}/abinitplugin.o: abinitplugin.c ${PLUGINAPI} periodic_table.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/amiraplugin.o: src/amiraplugin.C ${PLUGINAPI}
+${ARCHDIR}/amiraplugin.o: amiraplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/avsplugin.o: avsplugin.C ${PLUGINAPI}
