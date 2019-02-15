@@ -19,6 +19,7 @@ from pkg_resources import resource_filename
 # Need to set VMDDIR environment variable for vmd.so to import
 vmdlib = resource_filename(__name__, "libvmd.so")
 os.environ['VMDDIR'] = os.path.split(vmdlib)[0]
+os.environ['VMDDISPLAYDEVICE'] = "OPENGLPBUFFER" # For off screen rendering
 
 # Load the library
 vmd = imp.load_dynamic(__name__, vmdlib)

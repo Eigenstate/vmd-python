@@ -224,7 +224,7 @@ static const char *titleTypeNames[NUM_TITLE_TYPES] = {
 
 // display options set at startup time
 static int   showTitle      = INIT_DEFTITLE;   
-static int   which_display  = INIT_DEFDISPLAY;     
+static int   which_display  = DISPLAY_OGLPBUFFER;
 static float displayHeight  = INIT_DEFHEIGHT;
 static float displayDist    = INIT_DEFDIST;
 static int   displaySize[2] = { -1, -1 };

@@ -2299,7 +2299,7 @@ if (!defined $ENV{'VMD_NO_CONFIG'}) {
 #define CMDLEN 15
 #define DEF_VMDIMAGEVIEWER "$def_imageviewer"
 #define DEF_VMDENVVAR "$install_library_dir"
-#define INIT_DEFDISPLAY DISPLAY_WIN
+#define INIT_DEFDISPLAY DISPLAY_OGLPBUFFER
 #define INIT_DEFTITLE TITLE_$def_title
 #define INIT_DEFHEIGHT $def_height
 #define INIT_DEFDIST $def_dist

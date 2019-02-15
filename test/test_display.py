@@ -67,7 +67,7 @@ def test_3dgetset():
     """
 
     modes = display.stereomodes()
-    assert modes == ["Off"]
+    assert len(modes) == 11
 
     display.set(eyesep=2.0, focallength=10.0, height=200,
                 distance=20, stereo=modes[0])
@@ -93,9 +93,9 @@ def test_3dgetset():
     with pytest.raises(TypeError):
         display.set(culling=5.0)
 
-    assert "Off" in modes
-    displa.set(stereo="Off")
-    assert display.get("stereo") == "Off"
+    assert "QuadBuffered" in modes
+    display.set(stereo="QuadBuffered")
+    assert display.get("stereo") == "QuadBuffered"
 
     display.set(projection=display.PROJ_PERSP)
     assert display.get("projection") == display.PROJ_PERSP
