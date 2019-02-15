@@ -81,7 +81,7 @@ int hasharray_insert(hasharray *a, const char *key) {
   if ( a->count > a->alloc ) {
     if ( a->alloc ) new_alloc = a->alloc * 2;
     else new_alloc = 8;
-    new_array = realloc(*(a->itemarray), new_alloc * a->itemsize);
+    new_array = realloc(*(a->itemarray), new_alloc * (size_t) a->itemsize);
     if ( new_array ) {
       *(a->itemarray) = new_array;
       a->alloc = new_alloc;

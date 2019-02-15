@@ -11,7 +11,7 @@
  *
  *      $RCSfile: webpdbplugin.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.54 $       $Date: 2016/11/28 05:01:55 $
+ *      $Revision: 1.55 $       $Date: 2017/06/23 20:20:27 $
  *
  ***************************************************************************/
 
@@ -198,8 +198,14 @@ static void *open_file_read(const char *filename, const char *filetype,
     for (i=0; i<3; i++) printf("%s\n", rcsbmsg[i]);
   }
 
-  /* Adapted to new PDB website layout, changed on 1/1/2006 */
-  sprintf(url, "http://www.rcsb.org/pdb/downloadFile.do?fileFormat=pdb&compression=NO&structureId=%s",filename);
+#if 1
+  /* PDB website layout, changed on 6/23/2017                       */
+  /* http://www.rcsb.org/pdb/static.do?p=download/http/index.html   */
+  sprintf(url, "http://files.rcsb.org/download/%s.pdb", filename);
+#else
+  /* PDB website layout, changed on 1/1/2006 */
+  sprintf(url, "http://www.rcsb.org/pdb/downloadFile.do?fileFormat=pdb&compression=NO&structureId=%s", filename);
+#endif
   sprintf(cmd, "set token [::http::geturl \"%s\"]", url);
   if (Tcl_Eval(interp, cmd) != TCL_OK) {
     fprintf(stderr, "Error loading PDB: %s\n", Tcl_GetStringResult(interp));
@@ -419,7 +425,7 @@ VMDPLUGIN_API int VMDPLUGIN_init() {
   plugin.prettyname = "Web PDB Download";
   plugin.author = "Justin Gullingsrud, John Stone";
   plugin.majorv = 1;
-  plugin.minorv = 16;
+  plugin.minorv = 17;
   plugin.is_reentrant = VMDPLUGIN_THREADSAFE;
   plugin.filename_extension = "";
   plugin.open_file_read = open_file_read;

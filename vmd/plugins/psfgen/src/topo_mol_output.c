@@ -164,7 +164,7 @@ int topo_mol_write_namdbin(topo_mol *mol, FILE *file, FILE *velfile, void *v,
   return 0;
 }
 
-int topo_mol_write_psf(topo_mol *mol, FILE *file, int charmmfmt, int nocmap,
+int topo_mol_write_psf(topo_mol *mol, FILE *file, int charmmfmt, int nocmap, int nopatches,
                       void *v, void (*print_msg)(void *, const char *)) {
 
   char buf[128];
@@ -344,6 +344,7 @@ int topo_mol_write_psf(topo_mol *mol, FILE *file, int charmmfmt, int nocmap,
     fprintf(file," REMARKS segment %s { first %s; last %s; auto %s %s }\n", seg->segid, seg->pfirst, seg->plast, angles, diheds);
   }
 
+  if (!nopatches) {
   for ( patch = mol->patches; patch; patch = patch->next ) {
     strcpy(defpatch,"");
     if (patch->deflt) strcpy(defpatch,"default");
@@ -370,6 +371,7 @@ int topo_mol_write_psf(topo_mol *mol, FILE *file, int charmmfmt, int nocmap,
       if (ipres==npres-1) fprintf(file,"\n");
       ipres++;
     }
+  }
   }
   fprintf(file,"\n");
   fgetpos(file,&save_pos);

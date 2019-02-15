@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: MolFilePlugin.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.188 $      $Date: 2016/11/28 03:05:01 $
+ *      $Revision: 1.196 $      $Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -56,13 +56,11 @@ MolFilePlugin::MolFilePlugin(vmdplugin_t *p)
   rv = wv = NULL; 
   numatoms = 0;
   _filename = NULL;
-#if vmdplugin_ABIVERSION > 13
   qm_data = NULL;
 #if defined(VMDTKCON)
    plugin->cons_fputs = &vmdcon_fputs;
 #else
    plugin->cons_fputs = NULL;
-#endif
 #endif
 }
 
@@ -85,7 +83,7 @@ int MolFilePlugin::read_structure(Molecule *m, int filebonds, int autobonds) {
     free(atoms);
     return rc; // propagate error to caller
   }
-  if (optflags == MOLFILE_BADOPTIONS) {
+  if (optflags == int(MOLFILE_BADOPTIONS)) {
     free(atoms);
     msgErr << "MolFilePlugin: plugin didn't initialize optional data flags" << sendmsg;
     msgErr << "MolFilePlugin: file load aborted" << sendmsg;
@@ -260,7 +258,6 @@ int MolFilePlugin::read_structure(Molecule *m, int filebonds, int autobonds) {
 
   // if the plugin can read angles, dihedrals, impropers, cross-terms, 
   // do it here...
-#if vmdplugin_ABIVERSION > 9
   if (can_read_angles()) {
     int numangles, *angles, *angletypes, numangletypes;
     int numdihedrals, *dihedrals, *dihedraltypes, numdihedraltypes;
@@ -389,7 +386,7 @@ int MolFilePlugin::read_structure(Molecule *m, int filebonds, int autobonds) {
       }
     }
   }
-#endif
+
   return MOLFILE_SUCCESS;
 }
 
@@ -407,7 +404,7 @@ int MolFilePlugin::read_optional_structure(Molecule *m, int filebonds) {
     free(atoms);
     return rc; // propagate error to caller
   }
-  if (optflags == MOLFILE_BADOPTIONS) {
+  if (optflags == int(MOLFILE_BADOPTIONS)) {
     free(atoms);
     msgErr << "MolFilePlugin: plugin didn't initialize optional data flags" << sendmsg;
     msgErr << "MolFilePlugin: file load aborted" << sendmsg;
@@ -537,7 +534,6 @@ int MolFilePlugin::read_optional_structure(Molecule *m, int filebonds) {
 
   // if the plugin can read angles, dihedrals, impropers, cross-terms, 
   // do it here...
-#if vmdplugin_ABIVERSION > 9
   if (can_read_angles()) {
     int numangles, *angles, *angletypes, numangletypes;
     int numdihedrals, *dihedrals, *dihedraltypes, numdihedraltypes;
@@ -666,7 +662,6 @@ int MolFilePlugin::read_optional_structure(Molecule *m, int filebonds) {
       }
     }
   }
-#endif
 
   // (re)analyze the molecular structure, since bonds/angles/etc
   // may have been changed
@@ -697,7 +692,46 @@ int MolFilePlugin::init_read(const char *file) {
   return MOLFILE_SUCCESS;
 }
 
-Timestep *MolFilePlugin::next(Molecule *m) {
+
+int MolFilePlugin::read_timestep_pagealign_size(void) {
+#if vmdplugin_ABIVERSION > 17
+  if (!rv) return 1;
+  if (can_read_pagealigned_timesteps()) {
+    int sz;
+    plugin->read_timestep_pagealign_size(rv, &sz);
+
+    // If the page alignment size passes sanity check, we use it...
+    if ((sz != 1) && 
+        ((sz < MOLFILE_DIRECTIO_MIN_BLOCK_SIZE) &&
+         (sz > MOLFILE_DIRECTIO_MAX_BLOCK_SIZE))) {
+      msgWarn << "Plugin returned bad page alignment size!: " 
+              << sz << sendmsg;
+    }
+
+    if (getenv("VMDPLUGINVERBOSE") != NULL) {
+      msgInfo << "Plugin returned page alignment size: " << sz << sendmsg;
+    }
+
+    return sz;
+  } else {
+    if (getenv("VMDPLUGINVERBOSE") != NULL) {
+      msgInfo << "Plugin can't read page aligned timesteps." << sendmsg;
+    }
+  }
+
+  return 1;
+#else
+#if 1
+  return 1; // assume non-blocked I/O
+#else
+  // Enable VMD to cope with hard-coded revs of jsplugin if we want
+  return MOLFILE_DIRECTIO_MAX_BLOCK_SIZE;
+#endif
+#endif
+}
+
+
+Timestep *MolFilePlugin::next(Molecule *m, int ts_pagealign_sz) {
   if (!rv) return NULL;
   if (numatoms <= 0) return NULL;
   if (!(can_read_timesteps() || can_read_qm_timestep())) return NULL;
@@ -711,7 +745,6 @@ Timestep *MolFilePlugin::next(Molecule *m) {
 
   // XXX this needs to be pulled out into the read init code
   // rather than being done once per timestep
-#if vmdplugin_ABIVERSION > 10
   molfile_timestep_metadata_t meta;
   if (can_read_timestep_metadata()) {
     memset(&meta, 0, sizeof(molfile_timestep_metadata));
@@ -720,9 +753,7 @@ Timestep *MolFilePlugin::next(Molecule *m) {
       velocities = new float[3L*numatoms];
     }
   }
-#endif
 
-#if vmdplugin_ABIVERSION > 11
   // QM timestep metadata can be different on every single timestep
   // so we need to query it prior to reading the timestep so we can 
   // allocate the right buffer sizes etc. 
@@ -734,7 +765,6 @@ Timestep *MolFilePlugin::next(Molecule *m) {
     //     and rename the plugin function appropriately.
     plugin->read_qm_timestep_metadata(rv, &qmmeta);
   }
-#endif
 
   // set useful defaults for unit cell information
   // a non-periodic structure has cell lengths of zero
@@ -745,24 +775,19 @@ Timestep *MolFilePlugin::next(Molecule *m) {
   // cells are rectangular until told otherwise
   timestep.alpha = timestep.beta = timestep.gamma = 90.0f;
 
-  Timestep *ts = new Timestep(numatoms);
+  Timestep *ts = new Timestep(numatoms, ts_pagealign_sz);
   timestep.coords = ts->pos; 
-#if vmdplugin_ABIVERSION > 10
   timestep.velocities = velocities;
-#endif
   ts->vel = velocities;
  
   int rc = 0;
-#if vmdplugin_ABIVERSION > 11
   molfile_qm_metadata_t *qm_metadata = NULL; // this just a dummy
   molfile_qm_timestep_t qm_timestep;
   memset(&qm_timestep, 0, sizeof(molfile_qm_timestep_t));
-#endif
 
   // XXX this needs to be fixed so that a file format that can 
   //     optionally contain either QM or non-QM data will work correctly
   if (can_read_qm_timestep()) {
-#if vmdplugin_ABIVERSION > 11
     qm_timestep.scfenergies = new double[qmmeta.num_scfiter];
     qm_timestep.wave = new molfile_qm_wavefunction_t[qmmeta.num_wavef];
     memset(qm_timestep.wave, 0, qmmeta.num_wavef*sizeof(molfile_qm_wavefunction_t));
@@ -787,13 +812,11 @@ Timestep *MolFilePlugin::next(Molecule *m) {
       qm_timestep.charge_types = new int[qmmeta.num_charge_sets];
     }
     rc = plugin->read_timestep(rv, numatoms, &timestep, qm_metadata, &qm_timestep);
-#endif
   } else {
     rc = plugin->read_next_timestep(rv, numatoms, &timestep);
   }
 
   if (rc) {
-#if vmdplugin_ABIVERSION > 11
     if (can_read_qm_timestep()) {
       delete [] qm_timestep.scfenergies;
       if (qm_timestep.gradient) delete [] qm_timestep.gradient;
@@ -806,7 +829,6 @@ Timestep *MolFilePlugin::next(Molecule *m) {
       }
       delete [] qm_timestep.wave;
     }
-#endif
     delete ts;
     ts = NULL; 
   } else {
@@ -816,10 +838,7 @@ Timestep *MolFilePlugin::next(Molecule *m) {
     ts->alpha = timestep.alpha;
     ts->beta = timestep.beta;
     ts->gamma = timestep.gamma;
-#if vmdplugin_ABIVERSION > 10
     ts->physical_time = timestep.physical_time;
-#endif
-#if vmdplugin_ABIVERSION > 11
     if (can_read_qm_timestep()) {
       int i;
       int *chargetypes = new int[qmmeta.num_charge_sets];
@@ -942,7 +961,6 @@ Timestep *MolFilePlugin::next(Molecule *m) {
       }
 #endif 
     }
-#endif
   }
   return ts;
 }
@@ -969,11 +987,8 @@ void MolFilePlugin::close() {
 
 int MolFilePlugin::init_write(const char *file, int natoms) {
   wv = NULL;
-  if (can_write_structure() || can_write_timesteps() 
-#if vmdplugin_ABIVERSION > 9
-          || can_write_volumetric()
-#endif
-          ) { 
+  if (can_write_structure() || can_write_timesteps() || 
+      can_write_volumetric()) { 
     wv = plugin->open_file_write(file, plugin->name, natoms);
   } 
   if (!wv) return MOLFILE_ERROR;
@@ -1192,7 +1207,6 @@ int MolFilePlugin::write_structure(Molecule *m, const int *on) {
     }
   }
 
-#if vmdplugin_ABIVERSION > 9
   // Only write angle info if all atoms are selected.
   // It's not clear whether there's a point in trying to preserve this
   // kind of information when writing out a sub-structure from an 
@@ -1215,9 +1229,10 @@ int MolFilePlugin::write_structure(Molecule *m, const int *on) {
 
     // generate packed arrays with 1-based indexing
     for (i=0; i<numangles; i++) {
-      int idx0 = atomindexmap[m->angles[i*3L    ]];
-      int idx1 = atomindexmap[m->angles[i*3L + 1]];
-      int idx2 = atomindexmap[m->angles[i*3L + 2]];
+      long i3addr = i*3L;
+      int idx0 = atomindexmap[m->angles[i3addr    ]];
+      int idx1 = atomindexmap[m->angles[i3addr + 1]];
+      int idx2 = atomindexmap[m->angles[i3addr + 2]];
       if ((idx0 >= 0) && (idx1 >= 0) && (idx2 >= 0)) {
         angles.append3(idx0+1, idx1+1, idx2+1); // 1-based indices
 #if vmdplugin_ABIVERSION >= 16
@@ -1228,10 +1243,11 @@ int MolFilePlugin::write_structure(Molecule *m, const int *on) {
       } 
     } 
     for (i=0; i<numdihedrals; i++) {
-      int idx0 = atomindexmap[m->dihedrals[i*4L    ]];
-      int idx1 = atomindexmap[m->dihedrals[i*4L + 1]];
-      int idx2 = atomindexmap[m->dihedrals[i*4L + 2]];
-      int idx3 = atomindexmap[m->dihedrals[i*4L + 3]];
+      long i4addr = i*4L;
+      int idx0 = atomindexmap[m->dihedrals[i4addr    ]];
+      int idx1 = atomindexmap[m->dihedrals[i4addr + 1]];
+      int idx2 = atomindexmap[m->dihedrals[i4addr + 2]];
+      int idx3 = atomindexmap[m->dihedrals[i4addr + 3]];
       if ((idx0 >= 0) && (idx1 >= 0) && (idx2 >= 0) && (idx3 >= 0)) {
         dihedrals.append4(idx0+1, idx1+1, idx2+1, idx3+1); // 1-based indices
 #if vmdplugin_ABIVERSION >= 16
@@ -1242,10 +1258,11 @@ int MolFilePlugin::write_structure(Molecule *m, const int *on) {
       } 
     } 
     for (i=0; i<numimpropers; i++) {
-      int idx0 = atomindexmap[m->impropers[i*4L    ]];
-      int idx1 = atomindexmap[m->impropers[i*4L + 1]];
-      int idx2 = atomindexmap[m->impropers[i*4L + 2]];
-      int idx3 = atomindexmap[m->impropers[i*4L + 3]];
+      long i4addr = i*4L;
+      int idx0 = atomindexmap[m->impropers[i4addr    ]];
+      int idx1 = atomindexmap[m->impropers[i4addr + 1]];
+      int idx2 = atomindexmap[m->impropers[i4addr + 2]];
+      int idx3 = atomindexmap[m->impropers[i4addr + 3]];
       if ((idx0 >= 0) && (idx1 >= 0) && (idx2 >= 0) && (idx3 >= 0)) {
         impropers.append4(idx0+1, idx1+1, idx2+1, idx3+1); // 1-based indices
 #if vmdplugin_ABIVERSION >= 16
@@ -1332,7 +1349,6 @@ int MolFilePlugin::write_structure(Molecule *m, const int *on) {
     }
 #endif
   }
-#endif
 
   // write the structure
   if (plugin->write_structure(wv, optflags, atoms)) {
@@ -1360,14 +1376,14 @@ int MolFilePlugin::write_timestep(const Timestep *ts, const int *on) {
   mol_ts.alpha = ts->alpha;
   mol_ts.beta = ts->beta;
   mol_ts.gamma = ts->gamma;
-#if vmdplugin_ABIVERSION > 10
   mol_ts.physical_time = ts->physical_time;
-#endif
+
   if (!on) {
     mol_ts.coords = ts->pos;
     mol_ts.velocities = ts->vel;
     return plugin->write_timestep(wv, &mol_ts);
   }
+
   float *coords = new float[3L*numatoms];
   float *vel = NULL;
   if (ts->vel) vel = new float[3L*numatoms];
@@ -1533,7 +1549,7 @@ int MolFilePlugin::read_volumetric(Molecule *m, int nsets, const int *setids) {
     }  
 
     const molfile_volumetric_t *v = metadata+sets[i];
-    size_t size = v->xsize * v->ysize * v->zsize;
+    size_t size = long(v->xsize) * long(v->ysize) * long(v->zsize);
 
     char *dataname = stringdup(v->dataname);
     if (_filename) {
@@ -1647,7 +1663,6 @@ int MolFilePlugin::read_metadata(Molecule *m) {
 }
 
 
-#if vmdplugin_ABIVERSION > 9
 int MolFilePlugin::read_qm_data(Molecule *mol) {
   // Fetch metadata from file.
   // It provides us with a bunch of sizes for the arrays
@@ -1660,7 +1675,6 @@ int MolFilePlugin::read_qm_data(Molecule *mol) {
   if (plugin->read_qm_metadata(rv, &metadata) != MOLFILE_SUCCESS)
     return MOLFILE_ERROR;
 
-#if vmdplugin_ABIVERSION > 11
   // If the plugin didn't provide the number of atoms
   // (e.g. because it only read the basis set) we set it
   // to the number of atoms in the molecule.
@@ -1679,11 +1693,9 @@ int MolFilePlugin::read_qm_data(Molecule *mol) {
   // to be used in next() when we are sorting the
   // wavefunction coefficients for the current timestep.
   qm_data = mol->qm_data;
-#endif
 
   molfile_qm_t *qmdata = (molfile_qm_t *) calloc(1, sizeof(molfile_qm_t));
 
-#if vmdplugin_ABIVERSION > 11
   // Allocate memory for the arrays:
   if (metadata.num_basis_atoms) {
     qmdata->basis.num_shells_per_atom = new int[metadata.num_basis_atoms];
@@ -1714,24 +1726,18 @@ int MolFilePlugin::read_qm_data(Molecule *mol) {
 //   }
 //   else
 //     qmdata->run.esp_charges = NULL;
-#endif
 
   // All necessary arrays are allocated.
   // Now get the data from the plugin:
   plugin->read_qm_rundata(rv, qmdata);
 
-#if vmdplugin_ABIVERSION > 11
   // Copy data from molfile_plugin structs into VMD's data structures.
 
   if (metadata.have_sysinfo) {
     //mol->qm_data->num_orbitals_A = qmdata->run.num_orbitals_A;
     //mol->qm_data->num_orbitals_B = qmdata->run.num_orbitals_B;
     mol->qm_data->nproc  = qmdata->run.nproc;
-#if vmdplugin_ABIVERSION > 12
     mol->qm_data->memory = qmdata->run.memory;
-#else
-    mol->qm_data->memory = 0; // the older ABI used an unformatted string
-#endif
 
     // We need to translate between the macros used in the plugins
     // and the one ones in VMD, here so that they can be independent
@@ -1880,7 +1886,6 @@ int MolFilePlugin::read_qm_data(Molecule *mol) {
   delete [] qmdata->hess.intensities;
   delete [] qmdata->hess.imag_modes;
   free(qmdata);
-#endif
 
   return MOLFILE_SUCCESS;
 }
@@ -1920,5 +1925,6 @@ int MolFilePlugin::write_volumetric(Molecule *m, int set) {
 
   return MOLFILE_SUCCESS;
 }
-#endif
+
+
 

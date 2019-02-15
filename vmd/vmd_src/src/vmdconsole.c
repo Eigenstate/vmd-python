@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,14 +11,14 @@
  *
  *      $RCSfile: vmdconsole.c,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.12 $       $Date: 2016/11/28 03:05:08 $
+ *      $Revision: 1.13 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
  *
  * vmd console redirector
  * (c) 2006-2009 Axel Kohlmeyer <akohlmey@cmm.chem.upenn.edu>
- *
+ * 
  ***************************************************************************/
 
 #if defined(VMDTKCON)
@@ -37,7 +37,7 @@ extern "C" {
 #endif
 
 /* structure for linked list of pending messages. */
-struct vmdcon_msg
+struct vmdcon_msg 
 {
     char *txt;
     int  lvl;
@@ -51,7 +51,7 @@ static struct vmdcon_msg *vmdcon_logmsgs=NULL;
 static struct vmdcon_msg *vmdcon_lastlog=NULL;
 static int vmdcon_max_loglen=2000;
 static int vmdcon_loglen=0;
-
+    
 /* static buffer size for vmdcon_printf */
 static const int vmdcon_bufsz=4092;
 
@@ -68,18 +68,14 @@ static void *vmdcon_interp=NULL;
 static int vmdcon_status=VMDCON_UNDEF;
 
 /* output loglevel. default to print all.*/
-#ifdef VMD_SHARED
-static int vmdcon_loglvl=VMDCON_ERROR;
-#else
 static int vmdcon_loglvl=VMDCON_ALL;
-#endif
 
 /* mutex to lock access to status variables */
 static wkf_mutex_t vmdcon_status_lock;
 static wkf_mutex_t vmdcon_output_lock;
 
 /* initialize vmdcon */
-void vmdcon_init(void)
+void vmdcon_init(void) 
 {
     wkf_mutex_init(&vmdcon_status_lock);
     wkf_mutex_init(&vmdcon_output_lock);
@@ -91,7 +87,7 @@ int vmdcon_get_status(void)
 {
     return vmdcon_status;
 }
-
+ 
 /* set current vmdcon status */
 void vmdcon_set_status(int status, void *interp)
 {
@@ -117,19 +113,19 @@ int vmdcon_get_loglvl(void)
 }
 
 /* turn on text mode processing */
-void vmdcon_use_text(void *interp)
+void vmdcon_use_text(void *interp) 
 {
     vmdcon_set_status(VMDCON_TEXT, interp);
 }
 
 /* turn on tk text widget mode processing */
-void vmdcon_use_widget(void *interp)
+void vmdcon_use_widget(void *interp) 
 {
     vmdcon_set_status(VMDCON_WIDGET, interp);
 }
 
 /* register a tk/tcl widget to be the console window.
- * we get the widget path directly from tcl,
+ * we get the widget path directly from tcl, 
  * so we have to create a copy (and free it later).
  * we also need a pointer to the tcl interpreter.
  */
@@ -150,12 +146,12 @@ int vmdcon_register(const char *w_path, const char *mark, void *interp)
         if (vmdcon_status == VMDCON_WIDGET) vmdcon_status=VMDCON_NONE;
     } else {
         int len;
-
+        
         if (vmdcon_wpath != NULL) {
             free(vmdcon_wpath);
             free(vmdcon_mark);
         }
-
+    
         len=strlen(w_path);
         vmdcon_wpath=(char*)malloc(len+1);
         strcpy(vmdcon_wpath, w_path);
@@ -183,7 +179,7 @@ int vmdcon_showlog(void)
         msg->lvl=VMDCON_ALWAYS;
         strcpy(msg->txt,log->txt);
         msg->next=NULL;
-
+    
         if (vmdcon_pending == NULL) {
             vmdcon_pending=msg;
             vmdcon_lastmsg=msg;
@@ -200,7 +196,7 @@ int vmdcon_showlog(void)
     msg->lvl=VMDCON_ALWAYS;
     strcpy(msg->txt,"\n");
     msg->next=NULL;
-
+    
     if (vmdcon_pending == NULL) {
         vmdcon_pending=msg;
         vmdcon_lastmsg=msg;
@@ -215,9 +211,9 @@ int vmdcon_showlog(void)
 }
 
 /* append text to console log queue.
- * we have to make copies as we might get handed
+ * we have to make copies as we might get handed 
  * a tcl object or a pointer to some larger buffer. */
-int vmdcon_append(int level, const char *txt, int len)
+int vmdcon_append(int level, const char *txt, int len) 
 {
     struct vmdcon_msg *msg;
     char *buf;
@@ -229,19 +225,19 @@ int vmdcon_append(int level, const char *txt, int len)
     }
 
     wkf_mutex_lock(&vmdcon_output_lock);
-
+    
     /* append to message queue. */
     /* but don't print stuff below the current loglevel */
     if (level >= vmdcon_loglvl) {
       /* create copy of text. gets free'd after it has been 'printed'. */
       buf=(char *)calloc(len+1,1);
       strncpy(buf,txt,len);
-
+    
       msg=(struct vmdcon_msg *)malloc(sizeof(struct vmdcon_msg));
       msg->txt=buf;
       msg->lvl=level;
       msg->next=NULL;
-
+      
       if (vmdcon_pending == NULL) {
         vmdcon_pending=msg;
         vmdcon_lastmsg=msg;
@@ -250,7 +246,7 @@ int vmdcon_append(int level, const char *txt, int len)
         vmdcon_lastmsg=msg;
       }
     }
-
+    
     /* messages are added to the log regardless of loglevel.
      * this way we can silence the log window and still retrieve
      * useful information with 'vmdcon -dmesg'. */
@@ -262,7 +258,7 @@ int vmdcon_append(int level, const char *txt, int len)
     msg->txt=buf;
     msg->lvl=level;
     msg->next=NULL;
-
+        
     if (vmdcon_logmsgs == NULL) {
         vmdcon_logmsgs=msg;
         vmdcon_lastlog=msg;
@@ -272,7 +268,7 @@ int vmdcon_append(int level, const char *txt, int len)
         vmdcon_lastlog=msg;
         ++vmdcon_loglen;
     }
-
+    
     /* remove message from the front of the queue
      * in case we have too long a list */
     while (vmdcon_loglen > vmdcon_max_loglen) {
@@ -282,18 +278,18 @@ int vmdcon_append(int level, const char *txt, int len)
         free(msg);
         --vmdcon_loglen;
     }
-
+    
     wkf_mutex_unlock(&vmdcon_output_lock);
 
     return 0;
 }
 
-/* flush current message queue to a registered
+/* flush current message queue to a registered 
  * console widget, if such a thing exists.
  * since vmdcon_append() allocates the storage,
  * for everything, we have to free the msg structs
  * and the strings. */
-int vmdcon_purge(void)
+int vmdcon_purge(void) 
 {
     struct vmdcon_msg *msg;
     const char *res;
@@ -312,12 +308,12 @@ int vmdcon_purge(void)
               case VMDCON_TEXT:
                   fputs(msg->txt,stdout);
                   break;
-
-              case VMDCON_WIDGET:
-                  res = tcl_vmdcon_insert(vmdcon_interp, vmdcon_wpath,
+                  
+              case VMDCON_WIDGET: 
+                  res = tcl_vmdcon_insert(vmdcon_interp, vmdcon_wpath, 
                                           vmdcon_mark, msg->txt);
                   /* handle errors writing to a tcl console window.
-                   * unregister widget, don't free current message
+                   * unregister widget, don't free current message 
                    * and append error message into holding buffer. */
                   if (res) {
                       wkf_mutex_unlock(&vmdcon_status_lock);
@@ -338,7 +334,7 @@ int vmdcon_purge(void)
             free(msg);
 
         }
-        if (vmdcon_status == VMDCON_TEXT)
+        if (vmdcon_status == VMDCON_TEXT) 
             fflush(stdout);
 
         wkf_mutex_unlock(&vmdcon_output_lock);
@@ -347,11 +343,12 @@ int vmdcon_purge(void)
     return 0;
 }
 
-/* emulate printf. unfortunately, we cannot rely on
+/* emulate printf. unfortunately, we cannot rely on 
  * snprintf being available, so we have to write to
  * a very large buffer and then free it. :-( */
-int vmdcon_printf(const int lvl, const char *fmt, ...)
+int vmdcon_printf(const int lvl, const char *fmt, ...) 
 {
+
     va_list ap;
     char *buf;
     int len;
@@ -371,6 +368,38 @@ int vmdcon_printf(const int lvl, const char *fmt, ...)
         return -1;
     }
 
+    // In the Python module, we don't want to print unless it's
+    // an error
+    /* prefix message with info level... or not. */
+    switch (lvl) {
+      case VMDCON_INFO:
+        return 0;
+        //vmdcon_append(lvl, "Info) ", 6);
+        //break;
+
+      case VMDCON_WARN:
+        return 0;
+        //vmdcon_append(lvl, "Warning) ", 9);
+        //break;
+
+      case VMDCON_ERROR:
+        vmdcon_append(lvl, "ERROR) ", 7);
+        break;
+
+      default:  
+        break;
+    }
+
+    vmdcon_append(lvl, buf, len);
+    vmdcon_purge();
+
+    free(buf);
+    return 0;    
+}
+
+/* emulate fputs for console. */
+int vmdcon_fputs(const int lvl, const char *string) 
+{
     /* prefix message with info level... or not. */
     switch (lvl) {
       case VMDCON_INFO:
@@ -385,42 +414,14 @@ int vmdcon_printf(const int lvl, const char *fmt, ...)
         vmdcon_append(lvl, "ERROR) ", 7);
         break;
 
-      default:
-        break;
-    }
-
-    vmdcon_append(lvl, buf, len);
-    vmdcon_purge();
-
-    free(buf);
-    return 0;
-}
-
-/* emulate fputs for console. */
-int vmdcon_fputs(const int lvl, const char *string)
-{
-    /* prefix message with info level... or not. */
-    switch (lvl) {
-      case VMDCON_INFO:
-        vmdcon_append(lvl, "Infofputs) ", 6);
-        break;
-
-      case VMDCON_WARN:
-        vmdcon_append(lvl, "Warning) ", 9);
-        break;
-
-      case VMDCON_ERROR:
-        vmdcon_append(lvl, "ERROR) ", 7);
-        break;
-
-      default:
+      default:  
         break;
     }
 
     vmdcon_append(lvl, string, -1);
     vmdcon_purge();
 
-    return 0;
+    return 0;    
 }
 
 #ifdef __cplusplus

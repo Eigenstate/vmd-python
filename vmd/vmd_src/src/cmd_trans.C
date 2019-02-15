@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: cmd_trans.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.24 $       $Date: 2016/11/28 03:05:07 $
+ *      $Revision: 1.26 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -122,7 +122,7 @@ int text_cmd_scale(ClientData cd, Tcl_Interp *interp, int argc,
   }
 
   Tcl_AppendResult(interp, "scale usage:\n",
-    "scale [by | to] <scalefactor>", NULL); 
+                   "scale [by | to] <scalefactor>", NULL); 
   return TCL_ERROR;
 }
     
@@ -131,12 +131,11 @@ int text_cmd_rock(ClientData cd, Tcl_Interp *interp, int argc,
 
   VMDApp *app = (VMDApp *)cd;
 
-  if(argc == 2) {
-    if(!strupncmp(argv[1],"off",CMDLEN)) {
+  if (argc == 2) {
+    if (!strupncmp(argv[1],"off",CMDLEN)) {
       app->scene_rockoff();
       return TCL_OK;
-    }
-    else if (!strupncmp(argv[1],"on",CMDLEN)) {
+    } else if (!strupncmp(argv[1],"on",CMDLEN)) {
       Tcl_AppendResult(interp, "Totally, dude.", NULL); 
       return TCL_OK;
     }

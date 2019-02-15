@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
 *
 *      $RCSfile: OptiXDisplayDevice.h
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.6 $         $Date: 2016/11/28 03:05:00 $
+*      $Revision: 1.8 $         $Date: 2019/01/17 21:20:59 $
 *
 ***************************************************************************
 * DESCRIPTION:
@@ -31,7 +31,7 @@
 #include <openhmd.h>
 #endif
 
-
+#if 0
 // helper routine
 static void quat_rot_matrix(float *m, const float *q) {
   m[ 0] = 1.0 - 2.0 * (q[1] * q[1] + q[2] * q[2]);
@@ -54,7 +54,7 @@ static void quat_rot_matrix(float *m, const float *q) {
   m[14] = 0.0;
   m[15] = 1.0;
 }
-
+#endif
 
 HMDMgr::HMDMgr(void) {
   hmdcount = 0;

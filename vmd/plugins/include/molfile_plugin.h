@@ -11,7 +11,7 @@
  *
  *      $RCSfile: molfile_plugin.h,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.108 $       $Date: 2016/02/26 03:17:01 $
+ *      $Revision: 1.110 $       $Date: 2018/05/02 03:12:56 $
  *
  ***************************************************************************/
 
@@ -111,7 +111,7 @@ typedef struct {
   char resname[8];    /**< required residue name string          */
   int resid;          /**< required integer residue ID           */
   char segid[8];      /**< required segment name string, or ""   */
-#if 0 && vmdplugin_ABIVERSION > 17
+#if 0 && vmdplugin_ABIVERSION > 10000
   /* The new PDB file formats allows for much larger structures, */
   /* which can therefore require longer chain ID strings.  The   */
   /* new PDBx/mmCIF file formats do not have length limits on    */
@@ -837,6 +837,29 @@ typedef struct {
    * read_qm_metadata().
    */
   int (* read_qm_rundata)(void *, molfile_qm_t *qmdata);
+
+
+  /**
+   * Query the molfile plugin to determine whether or not memory
+   * allocations used for atomic coordinates and PBC unit cell information
+   * need to be aligned to a particular virtual memory or filesystem 
+   * page size boundary to facilitate kernel-bypass unbuffered I/O,
+   * e.g., as used by jsplugin.  This API should be called prior to the
+   * first call to read a timestep.  The required page alignment size 
+   * (in bytes) is returned to the caller.  If this API has not been 
+   * called, then the molfile plugin should revert to standard 
+   * kernel-buffered I/O and suffer the associated performance loss.
+   * The caller can be assured that the plugin will not request any 
+   * page alignment size that is greater than the value of 
+   * MOLFILE_DIRECTIO_MAX_BLOCK_SIZE, both as a runtime sanity check,
+   * and to ensure that a caller that is unable to perform the max 
+   * aligned allocation doesn't call the API in the first place.
+   * If a page-aligned allocation is not required for the file being read,
+   * the plugin will return an alignment size of 1. 
+   */ 
+#if vmdplugin_ABIVERSION > 17
+  int (* read_timestep_pagealign_size)(void *, int *pagealignsize);
+#endif
 
 
   /**

@@ -290,7 +290,7 @@ SWIG_UnpackData(char *c, void *ptr, int sz) {
 #endif
 
 /*
- * $Header: /home/cvs/vmd/cvsroot/plugins/autopsf/src/psfcheck_wrap.C,v 1.2 2005/07/20 18:06:02 petefred Exp $
+ * $Header: /vmd/cvsroot/plugins/autopsf/src/psfcheck_wrap.C,v 1.2 2005/07/20 18:06:02 petefred Exp $
  * 
  * swigtcl8.swg
  */

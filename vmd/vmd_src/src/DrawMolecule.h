@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolecule.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.84 $	$Date: 2016/11/28 03:04:59 $
+ *	$Revision: 1.87 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -37,6 +37,16 @@ class VMDApp;
 class MoleculeGraphics;
 class DrawForce;
 
+// XXX this macro enables code to allow the molecular orbital
+// representations within the same molecule to reuse any existing
+// rep's molecular orbital grid if the orbital ID and various 
+// grid-specific parameters are all compatible.  This optimization
+// short-circuits the need for a rep to compute its own grid if
+// any other rep already has what it needs.  For large QM/MM scenes,
+// this optimization can be worth as much as a 2X speedup when
+// orbital computation dominates animation performance.
+#define VMDENABLEORBITALGRIDBACKDOOR 1
+
 /// A monitor class that acts as a proxy for things like labels that
 /// have to be notified when molecules change their state.  
 class DrawMoleculeMonitor {
@@ -57,6 +67,7 @@ public:
                    ///< to GPU global memory management routines,
                    ///< shared QuickSurf objects, and other such routines
 
+
 private:
   int repcounter;  ///< counter for giving unique names to reps.
 
@@ -67,9 +78,19 @@ private:
   /// a DrawForce instance for drawing force arrows
   DrawForce *drawForce;
 
-  /// representations
+#if defined(VMDENABLEORBITALGRIDBACKDOOR)
+/// XXX hack to let orbital rep search for existing grids among 
+///     all of the reps in this molecule...
+public:
+#endif
+  /// all representations in this molecule
   ResizeArray<DrawMolItem *> repList;
 
+#if defined(VMDENABLEORBITALGRIDBACKDOOR)
+/// XXX hack to let orbital rep search for existing grids among 
+///     all of the reps in this molecule...
+private:
+#endif
   /// timesteps owned by the molecule
   ResizeArray<Timestep *> timesteps;
 

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: VMDCollab.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.9 $      $Date: 2016/11/28 03:05:05 $
+ *      $Revision: 1.11 $      $Date: 2019/01/17 21:21:02 $
  *
  ***************************************************************************/
 
@@ -58,6 +58,7 @@ static int32 imd_readn(void *s, char *ptr, int32 n) {
   return n-nleft;
 }
 
+
 static int32 imd_writen(void *s, const char *ptr, int32 n) {
   int32 nleft;
   int32 nwritten;
@@ -75,8 +76,7 @@ static int32 imd_writen(void *s, const char *ptr, int32 n) {
   return n;
 }
 
-VMDCollab::VMDCollab(VMDApp *app)
-: UIObject(app) {
+VMDCollab::VMDCollab(VMDApp *app) : UIObject(app) {
   clientsock = NULL;
   serversock = NULL;
   eval_in_progress = FALSE;
@@ -88,13 +88,15 @@ VMDCollab::VMDCollab(VMDApp *app)
   for (int i=0; i<Command::TOTAL; i++) command_wanted(i);
 }
 
+
 VMDCollab::~VMDCollab() {
   stopserver();
   delete cmdbufstr;
 }
 
-void *VMDCollab::serverproc(void *serversock) {
 
+// this is a static method that will be created in a new child thread
+void *VMDCollab::serverproc(void *serversock) {
   ResizeArray<void *>clients;
   char buf[VMDCOLLAB_MSGSIZE];
   int i, j;
@@ -141,6 +143,7 @@ void *VMDCollab::serverproc(void *serversock) {
     } // loop over clients
     vmd_msleep(10);
   }
+
   // if here, then the serversock got shut down, indicating that it's
   // time to die.
   msgInfo << "VMDCollab shutting down server" << sendmsg;
@@ -155,12 +158,13 @@ void *VMDCollab::serverproc(void *serversock) {
   return NULL;
 }
 
+
 int VMDCollab::startserver(int port) {
   if (serversock) {
     msgErr << "Already running a server on port " <<  port << sendmsg;
     return FALSE;
   }
-  void *serversock = vmdsock_create();
+  serversock = vmdsock_create();
   if (!serversock) {
     msgErr << "Could not create socket." << sendmsg;
     return FALSE;
@@ -182,8 +186,10 @@ int VMDCollab::startserver(int port) {
   } else {
     msgInfo << "Starting VMDCollab bounce server." << sendmsg;
   }
+
   return TRUE;
 }
+
 
 void VMDCollab::stopserver() {
   if (!serversock) return;
@@ -191,6 +197,7 @@ void VMDCollab::stopserver() {
   // don't destroy; let the server thread do that
   serversock = NULL;
 }
+
 
 int VMDCollab::connect(const char *host, int port) {
   if (clientsock) {
@@ -220,12 +227,14 @@ int VMDCollab::connect(const char *host, int port) {
   return FALSE;
 }
 
+
 void VMDCollab::disconnect() {
   if (!clientsock) return;
   vmdsock_shutdown(clientsock);
   vmdsock_destroy(clientsock);
   clientsock = NULL;
 }
+
 
 int VMDCollab::check_event() {
   if (!clientsock) return FALSE;
@@ -243,6 +252,7 @@ int VMDCollab::check_event() {
   eval_in_progress = FALSE;
   return TRUE;
 }
+
 
 int VMDCollab::act_on_command(int, Command *cmd) {
   if (!clientsock) return FALSE;

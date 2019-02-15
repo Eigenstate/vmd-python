@@ -1,70 +1,37 @@
 # vmd-python
+Installable VMD as a python module
+
+*NEW*: Version 3.0 has the following new features
+
+* Offscreen rendering to an OpenGL buffer so you can render programmatically
+* Atomselection attributes can be accessed or set more easily:
+  `atomsel.get("x")` can be written as `atomsel.x`!
+* Removed extra info dumped to stdout
+* Docstrings for all methods and modules
+* Much more functionality as Python methods! `atomsel.hbonds`, etc
+* The `selection` module lets you define custom atomselection macros
+* More rigorous reference counting / fewer memory leaks
+* Much prettier code
+
+*NEW*: Support for Python 3!!!
 
 ![CI status](https://img.shields.io/travis/Eigenstate/vmd-python.svg)
 ![Downloads](https://anaconda.org/rbetz/vmd-python/badges/downloads.svg)
 ![Conda](https://anaconda.org/rbetz/vmd-python/badges/installer/conda.svg)
 ![PyPi](https://anaconda.org/rbetz/vmd-python/badges/installer/pypi.svg)
 
-Installable VMD as a python module
-
 ## Features
-All features of VMD from the 1.9.3 release, plus some
+All features of VMD from the 1.9.4 tree, plus some
 optional plugins not included in binary distributions:
 
-* Read and write insertion codes in MAE files
+* Read and write formal charges to MAE files
 * DMS plugin for DESRES molecular file format
 * HOOMD plugin
+* It doesn't crash when you import it
 * Doesn't care which numpy you compile against
 * Support for Python 2 or Python 3
 
-## Installation
-
-Simple binary installation with conda (currently linux-x86\_64 only)
-
-    conda install -c https://conda.anaconda.org/rbetz vmd-python
-
-## Building from source
-
-If there is no binary available for your system, you'll have to build
-vmd-python either with pip or setuptools. Please report any issues you have
-with this process, as it's still under heavy development. I am especially
-interested in bug reports for OSX!
-
-First, make sure you have the following dependencies installed somehow and
-visible to the compiler and linker:
-
-    * netcdf >= 4.3 (on OSX: `brew install netcdf`)
-    * numpy
-    * python 2.7 or 3.6
-
-Easy installation with pip:
-
-    pip install -i https://pypi.anaconda.org/rbetz/simple vmd-python
-
-For the latest version:
-
-    git clone https://github.com/Eigenstate/vmd-python.git
-    cd vmd-python
-    python setup.py build
-    python setup.py install
-
-Installation can take a while since it compiles VMD from source.
-
-## For Mac users
-
-[Homebrew](https://brew.sh/) is an easy way to get vmd-python's dependencies.
-`brew install netcdf` is the main one.
-
-*I do not have a Mac or reliable access to one.* If you are sending an issue
-related to build errors on OSX, please be aware that I have limited ability
-to debug them.
-
-I am looking for someone to contribute binaries built on osx 32 and 64 bit.
-Please let me know if you are willing to do this and save all the other Mac
-users some build time.
-
-
-## Included modules
+### Included modules
 The following sub-modules are part of VMD. The import system
 makes more sense now, so standard importing like `from vmd import atomsel`
 will work correctly.
@@ -131,6 +98,36 @@ Don't confuse the Molecule and the molecule modules. Molecule is part of the hig
 Python interface, and can be pickled and have different representations. It's a class. However
 molecule is a module that allows loading and saving of molecules while tracking them by an
 integer index.
+
+## Installation
+Wow it is INSTALLABLE NOW! This has been really hard to get working
+so please be happy for me.
+
+Simple binary installation with conda (currently linux-x86\_64 only)
+
+    conda install -c https://conda.anaconda.org/rbetz vmd-python
+
+For other architectures, use pip:
+Easy installation with pip:
+
+    pip install -i https://pypi.anaconda.org/rbetz/simple vmd-python
+
+Or, if you download the source:
+
+    python setup.py build
+    python setup.py install
+
+Installation can take a while since it compiles VMD from source.
+
+## Dependencies
+vmd-python has the following dependencies:
+
+    * python 2.7 or 3.6
+    * numpy
+    * libnetcdf >= 4.3
+    * expat
+    * sqlite
+    * Tcl/Tk = 8.5 (8.6 will crash on OSX)
 
 ## Licensing
 

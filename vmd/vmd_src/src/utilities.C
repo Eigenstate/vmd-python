@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: utilities.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.171 $	$Date: 2016/11/28 03:05:08 $
+ *	$Revision: 1.173 $	$Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -384,7 +384,7 @@ int tri_degenerate(const float * v0, const float * v1, const float * v2) {
   s1_length = s2_length * (s1[0]*s2[0] + s1[1]*s2[1] + s1[2]*s2[2]);
 
   // and add it to the list if it's not degenerate
-  if ((s1_length >= 1.0 ) || (s1_length <= -1.0)) 
+  if ((s1_length >= 1.0f ) || (s1_length <= -1.0f)) 
     return 1;
   else
     return 0;

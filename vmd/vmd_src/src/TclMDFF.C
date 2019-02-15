@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2007-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,8 +10,8 @@
  * RCS INFORMATION:
  *
  *      $RCSfile: TclMDFF.C,v $
- *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.18 $      $Date: 2016/04/25 06:20:45 $
+ *      $Author: ryanmcgreevy $        $Locker:  $             $State: Exp $
+ *      $Revision: 1.30 $      $Date: 2019/01/30 18:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -37,16 +37,18 @@
 #include <math.h>
 #include <tcl.h>
 #include "TclCommands.h"
-
+#include "TclMDFF.h"
+#include "Voltool.h"
 
 
 int mdff_sim(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
   int verbose = 0;
   if (argc < 3) {
      // "     options: --allframes (average over all frames)\n"
-    Tcl_SetResult(interp, (char *) "usage: mdffi "
-      "sim: <selection> -o <output map> [options]\n"
+    Tcl_SetResult(interp, (char *) "usage: voltool "
+      "sim: <selection> [options]\n"
 //      "              --weight (weight density with atomic numbers)\n"
+      "              -o <output map> \n"
       "              -res <target resolution in Angstroms> (default 10.0)\n"
       "              -spacing <grid spacing in Angstroms> (default based on resolution)\n",
       TCL_STATIC);
@@ -132,52 +134,32 @@ int mdff_sim(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) 
   else
     quality = 3;
 
-  VolumetricData *synthvol=NULL;
   if (verbose)
     printf("MDFF dens: radscale %f gspacing %f\n", radscale, gspacing);
 
   int cuda_err = -1;
 #if defined(VMDCUDA)
-//if (gspacing == 0) {
+  VolumetricData *synthvol=NULL;
   if (getenv("VMDNOCUDA") == NULL) {
     cuda_err = vmd_cuda_calc_density(sel, app->moleculeList, quality, radscale, gspacing, &synthvol, NULL, NULL, verbose);
-    volmap_write_dx_file(synthvol, outputmap);
-    delete synthvol;
+    init_new_volume_molecule(app, synthvol, "sim_map");
+    if (outputmap != NULL) volmap_write_dx_file(synthvol, outputmap);
   }
-//}
-//#else
 #endif
 
+  // If CUDA failed, we use CPU fallback, and we have to prevent QuickSurf
+  // from using the GPU either...
   if (cuda_err == -1) {
-    char* vmdnocuda = getenv("VMDNOCUDA");
-#if defined(_MSC_VER) || defined(__APPLE__)
-    putenv("VMDNOCUDA=1");
-#else
-    setenv("VMDNOCUDA", "1", 1);
-#endif 
- 
-    // if(gspacing == 0){gspacing = 1.5*radscale;}
-    //Tcl_AppendResult(interp, "MDFF CPU code incomplete.",NULL);
-    //return TCL_ERROR;
-    QuickSurf *qs = new QuickSurf();
+    const int force_cpu_calc=1;
+    QuickSurf *qs = new QuickSurf(force_cpu_calc);
     VolumetricData *volmap = NULL;
     volmap = qs->calc_density_map(sel, mymol, framepos, radii,
                                   quality, (float)radscale, (float)gspacing);
-    volmap_write_dx_file(volmap, outputmap);
+    init_new_volume_molecule(app, volmap, "sim_map");
+    if (outputmap != NULL) volmap_write_dx_file(volmap, outputmap);
     delete qs;
-
-#if defined(_MSC_VER) || defined(__APPLE__)
-    if (vmdnocuda != NULL)
-      putenv("VMDNOCUDA=1");
-    else
-      putenv("VMDNOCUDA=");
-#else
-    setenv("VMDNOCUDA", vmdnocuda, 1);
-#endif
   }
-//#endif
 
-  printf("Done with simple MDFF density test...\n");
   return TCL_OK;
 }
 
@@ -186,7 +168,7 @@ int mdff_sim(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) 
 int mdff_cc(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
   if (argc < 3) {
     Tcl_SetResult(interp,
-      (char *) "usage: mdffi "
+      (char *) "usage: voltool "
       "cc: <selection> -res <target resolution in A> [options]\n"
       "     options: --allframes (average over all frames)\n"
     //  "              --weight (weight simulated density with atomic numbers)\n"
@@ -260,7 +242,7 @@ int mdff_cc(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
       }
 
       FileSpec spec;
-      spec.waitfor = 1;
+      spec.waitfor = FileSpec::WAIT_BACK; // shouldn't this be waiting for all?
       input_map = Tcl_GetStringFromObj(objv[1+i], NULL);
       molid = app->molecule_new(input_map,0,1);
       //sel->molid()
@@ -368,9 +350,15 @@ int mdff_cc(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
 
 
   const VolumetricData *volmapA = NULL;
-  if (molid != -1) {
+  if (molid > -1) {
     Molecule *volmol = mlist->mol_from_id(molid);
-    if (volmapA == NULL) volmapA = volmol->get_volume_data(volid);
+    if (volmol == NULL) {
+      Tcl_AppendResult(interp, "\n invalid molecule specified",NULL);
+      return TCL_ERROR;
+    }
+
+    if (volmapA == NULL) 
+      volmapA = volmol->get_volume_data(volid);
   } else {
     Tcl_AppendResult(interp, "\n no target volume specified",NULL);
     return TCL_ERROR;
@@ -381,8 +369,7 @@ int mdff_cc(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
   }
 
   float return_cc = 0;
-  int start;
-  int end;
+  int start, end;
   if (use_all_frames) {
     start = 0;
     end = mymol->numframes()-1;
@@ -392,6 +379,8 @@ int mdff_cc(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
     start = sel->which_frame;
     end = sel->which_frame;
   }
+
+  PROFILE_PUSH_RANGE("MDFF cross correlation", 5);
 
   // use quicksurf density map algorithm
   for (int frame = start; frame <= end; frame++) {
@@ -436,37 +425,41 @@ int mdff_cc(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
     }
 #endif
 
-#if 1
-#if 1
     VolumetricData *synthmap = NULL;
     VolumetricData *diffmap = NULL;
     VolumetricData *spatialccmap = NULL;
 
+    if (verbose) {
+      if (calcsynthmap)
+        printf("MDFF calculating simulated map\n");
+      if (calcdiffmap)
+        printf("MDFF calculating difference map\n");
+      if (calcspatialccmap)
+        printf("MDFF calculating spatial CC map\n");
+    }
+    
+
+    // 
+    // Try computing with CUDA first
+    //
+    int cuda_err = -1;
+#if defined(VMDCUDA)
     VolumetricData **synthpp = NULL;
     VolumetricData **diffpp = NULL;
     VolumetricData **spatialccpp = NULL;
 
     if (calcsynthmap) {
       synthpp = &synthmap;
-      if (verbose)
-        printf("MDFF calculating simulated map\n");
     }
 
     if (calcdiffmap) {
       diffpp = &diffmap;
-      if (verbose)
-        printf("MDFF calculating difference map\n");
     }
 
     if (calcspatialccmap) {
       spatialccpp = &spatialccmap;
-      if (verbose)
-        printf("MDFF calculating spatial CC map\n");
     }
 
-    
-    int cuda_err = -1;
-#if defined(VMDCUDA)
     if (gspacing == 0 && (getenv("VMDNOCUDA") == NULL)) {
       if (verbose)
         printf("Computing CC on GPU...\n");
@@ -475,13 +468,9 @@ int mdff_cc(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
       if (verbose) {
         printf("TclMDFF: prep for vmd_cuda_compare_sel_refmap():\n");
         printf("  refmap xaxis: %lf %lf %lf\n",
-               volmapA->xaxis[0], 
-               volmapA->xaxis[1], 
-               volmapA->xaxis[2]);
+               volmapA->xaxis[0], volmapA->xaxis[1], volmapA->xaxis[2]);
         printf("  refmap size: %d %d %d\n",
-               volmapA->xsize, 
-               volmapA->ysize,
-               volmapA->zsize);
+               volmapA->xsize, volmapA->ysize, volmapA->zsize);
         printf("  gridspacing (orig): %f\n", gspacing);
       }
 #endif
@@ -493,28 +482,22 @@ int mdff_cc(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
     }
 #endif
 
+    // If CUDA failed, we use CPU fallback, and we have to prevent QuickSurf
+    // from using the GPU either...
     if (cuda_err == -1) {
-      char* vmdnocuda = getenv("VMDNOCUDA");
-#if defined(_MSC_VER) || defined(__APPLE__)
-      putenv("VMDNOCUDA=1");
-#else
-      setenv("VMDNOCUDA", "1", 1);
-#endif
-  
+      const int force_cpu_calc=1;
       if (verbose)
         printf("Computing CC on CPUs...\n");
 
       if (gspacing == 0) {
         gspacing = 1.5*radscale;
       }
-      //Tcl_AppendResult(interp, "MDFF CPU code incomplete.",NULL);
-      //return TCL_ERROR;
 
-      QuickSurf *qs = new QuickSurf();
+      QuickSurf *qs = new QuickSurf(force_cpu_calc);
       VolumetricData *volmap = NULL;
       volmap = qs->calc_density_map(sel, mymol, framepos, radii,
                                     quality, (float)radscale, (float)gspacing);
-      double *cc = new double;
+      double cc = 0.0;
 
 #if 0
       // this is 'old style' sigma threshold 
@@ -538,8 +521,8 @@ int mdff_cc(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
       }
 #endif
   
-      cc_threaded(volmap,volmapA,cc,thresholddensity);
-      return_cc += *cc;
+      cc_threaded(volmap, volmapA, &cc, thresholddensity);
+      return_cc += cc;
       delete qs;
   
       if (start != end) {
@@ -561,20 +544,13 @@ int mdff_cc(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
                                        vol->data);
           vol->data = NULL; // prevent destruction of density array;
         }
-        delete vol;
       }
 
-#if defined(_MSC_VER) || defined(__APPLE__)
-      if (vmdnocuda != NULL)
-        putenv("VMDNOCUDA=1");
-      else
-        putenv("VMDNOCUDA=");
-#else
-      setenv("VMDNOCUDA", vmdnocuda, 1);
-#endif
+      delete volmap;
+
+      PROFILE_POP_RANGE(); // first return point
       return TCL_OK;
     }
-//#endif
 
     VolumetricData *v = NULL;
     if (calcsynthmap) {
@@ -616,26 +592,6 @@ int mdff_cc(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
       }
       delete v;
     }
-#else
-#if defined(VMDCUDA)
-    vmd_cuda_compare_sel_refmap(sel, app->moleculeList, quality, 
-                                radscale, gspacing, 
-                                volmapA, NULL, NULL, NULL, 
-                                &return_cc, 0.0f, 0);
-#else
-    Tcl_AppendResult(interp, "MDFF CPU code incomplete.",NULL);
-    return TCL_ERROR;
-#endif
-#endif
-#elif 1
-    vmd_calc_cc(sel, app->moleculeList, quality, radscale, gspacing, volmapA, 0, return_cc);
-#else
-    vmd_test_dens(sel, app->moleculeList, quality, radscale, gspacing, &synthvol, volmapA, &diffvol, 0);
-    if (synthvol)
-      volmap_write_dx_file(synthvol, "/tmp/synthmap.dx");
-    if (diffvol)
-      volmap_write_dx_file(diffvol, "/tmp/diffmap.dx");
-#endif
 
     delete synthvol;
     delete diffvol;
@@ -643,6 +599,8 @@ int mdff_cc(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
 
   if (start != end)
     return_cc /= mymol->numframes(); 
+
+  PROFILE_POP_RANGE(); // second return point
 
   Tcl_SetObjResult(interp, Tcl_NewDoubleObj(return_cc));
   return TCL_OK;

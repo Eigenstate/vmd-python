@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: cmd_label.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.47 $       $Date: 2016/11/28 03:05:07 $
+ *      $Revision: 1.49 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -273,7 +273,7 @@ int text_cmd_label(ClientData cd, Tcl_Interp *interp, int argc,
         return TCL_ERROR;
       }
     } else {
-      Tcl_SetResult(interp, "label textsize: wrong number of arguments",
+      Tcl_SetResult(interp, (char *) "label textsize: wrong number of arguments",
           TCL_STATIC);
       return TCL_ERROR;
     }
@@ -292,7 +292,7 @@ int text_cmd_label(ClientData cd, Tcl_Interp *interp, int argc,
         return TCL_ERROR;
       }
     } else {
-      Tcl_SetResult(interp, "label textthickness: wrong number of arguments",
+      Tcl_SetResult(interp, (char *) "label textthickness: wrong number of arguments",
           TCL_STATIC);
       return TCL_ERROR;
     }
@@ -304,7 +304,7 @@ int text_cmd_label(ClientData cd, Tcl_Interp *interp, int argc,
       if (Tcl_GetInt(interp, argv[3], &geom) != TCL_OK) return TCL_ERROR;
       const float *offset = app->geometryList->getTextOffset(geomtype, geom);
       if (!offset) {
-        Tcl_SetResult(interp, "label textoffset: Invalid geometry specified", TCL_STATIC);
+        Tcl_SetResult(interp, (char *) "label textoffset: Invalid geometry specified", TCL_STATIC);
         return TCL_ERROR;
       }
       Tcl_Obj *result = Tcl_NewListObj(0, NULL);
@@ -321,11 +321,11 @@ int text_cmd_label(ClientData cd, Tcl_Interp *interp, int argc,
         return TCL_ERROR;
       }
       if (!app->label_set_textoffset(geomtype, geom, x, y)) {
-        Tcl_SetResult(interp, "label textoffset: Invalid geometry specified", TCL_STATIC);
+        Tcl_SetResult(interp, (char *) "label textoffset: Invalid geometry specified", TCL_STATIC);
         return TCL_ERROR;
       }
     } else {
-      Tcl_SetResult(interp, "label textoffset: wrong number of arguments",
+      Tcl_SetResult(interp, (char *) "label textoffset: wrong number of arguments",
           TCL_STATIC);
       return TCL_ERROR;
     }
@@ -337,7 +337,7 @@ int text_cmd_label(ClientData cd, Tcl_Interp *interp, int argc,
       if (Tcl_GetInt(interp, argv[3], &geom) != TCL_OK) return TCL_ERROR;
       const char *format = app->geometryList->getTextFormat(geomtype, geom);
       if (!format) {
-        Tcl_SetResult(interp, "label textformat: Invalid geometry specified", TCL_STATIC);
+        Tcl_SetResult(interp, (char *) "label textformat: Invalid geometry specified", TCL_STATIC);
         return TCL_ERROR;
       }
       Tcl_SetResult(interp, (char *)format, TCL_VOLATILE);
@@ -346,11 +346,11 @@ int text_cmd_label(ClientData cd, Tcl_Interp *interp, int argc,
       int geom;
       if (Tcl_GetInt(interp, argv[3], &geom) != TCL_OK) return TCL_ERROR;
       if (!app->label_set_textformat(geomtype, geom, argv[4])) {
-        Tcl_SetResult(interp, "label textformat failed.", TCL_STATIC);
+        Tcl_SetResult(interp, (char *) "label textformat failed.", TCL_STATIC);
         return TCL_ERROR;
       }
     } else {
-      Tcl_SetResult(interp, "label textformat: wrong number of arguments",
+      Tcl_SetResult(interp, (char *) "label textformat: wrong number of arguments",
                     TCL_STATIC);
       return TCL_ERROR;
     }

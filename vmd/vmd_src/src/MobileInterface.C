@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: MobileInterface.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.46 $	$Date: 2016/11/28 03:05:01 $
+ *	$Revision: 1.49 $	$Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -94,60 +94,76 @@ static void swap4_aligned(void *v, long ndata) {
 }
 
 // ------------------------------------------------------------------------
-void Mobile::prepareSendBuffer(const int eventType)
-{
+void Mobile::prepareSendBuffer(const int eventType) {
   memset(statusSendBuffer, 0, sizeof(statusSendBuffer));
   int caretLoc = 0;
-  *(int*)(statusSendBuffer + caretLoc) = 1;    // endianism 
+  int itmp=0;
 
+  // set endianism flag
+  // *(int*)(statusSendBuffer + caretLoc) = 1;    // endianism 
+  itmp=1;
+  memcpy(statusSendBuffer + caretLoc, &itmp, sizeof(itmp)); 
   caretLoc += sizeof(int);
-  *(int*)(statusSendBuffer + caretLoc) = CURRENTAPIVERSION;    // version
+
+  // set API version
+  // *(int*)(statusSendBuffer + caretLoc) = CURRENTAPIVERSION;    // version
+  itmp=CURRENTAPIVERSION;
+  memcpy(statusSendBuffer + caretLoc, &itmp, sizeof(itmp)); 
   caretLoc += sizeof(int);
 
   // current mode in VMD (off, move, animate, tracker, etc)
-  *(int*)(statusSendBuffer + caretLoc) = moveMode;    // off/move/animate/etc
+  // *(int*)(statusSendBuffer + caretLoc) = moveMode;    // off/move/animate/etc
+  itmp=moveMode; // off/move/animate/etc
+  memcpy(statusSendBuffer + caretLoc, &itmp, sizeof(itmp)); 
   caretLoc += sizeof(int);
 
   // event code for what we are sending
-  *(int*)(statusSendBuffer + caretLoc) = eventType;    
+  // *(int*)(statusSendBuffer + caretLoc) = eventType;    
+  itmp=eventType;
+  memcpy(statusSendBuffer + caretLoc, &itmp, sizeof(itmp)); 
   caretLoc += sizeof(int);
 
   // we are putting a placeholder in.. at position 16, where we will insert
   // whether or not this specific user is active.
   caretLoc += 4;
 
-  *(int*)(statusSendBuffer + caretLoc) = clientNick.num();    // how many connections?
+  // number of connections
+  // *(int*)(statusSendBuffer + caretLoc) = clientNick.num();    // how many connections?
+  itmp=clientNick.num();    // how many connections?
+  memcpy(statusSendBuffer + caretLoc, &itmp, sizeof(itmp)); 
   caretLoc += sizeof(int);
 //  fprintf(stderr, "num connections: %d\n", clientNick.num());
 
   // names of who is connected, in control
-  for (int i=0; i<clientNick.num();i++)
-  {
-     int strLength = strlen((const char *)(*(clientNick)[i]));
-     *(int*)(statusSendBuffer + caretLoc) = strLength;
-     caretLoc += sizeof(int);
-//     fprintf(stderr, "nick is '%s'\n", (const char *)(*(clientNick)[i]));
-     memcpy((statusSendBuffer + caretLoc), (const char *)(*(clientNick)[i]), strLength);
-     caretLoc += strLength;  
+  for (int i=0; i<clientNick.num();i++) {
+    int strLength = strlen((const char *)(*(clientNick)[i]));
+    // *(int*)(statusSendBuffer + caretLoc) = strLength;
+    itmp=strLength;    // how many connections?
+    memcpy(statusSendBuffer + caretLoc, &itmp, sizeof(itmp)); 
+    caretLoc += sizeof(int);
+//    fprintf(stderr, "nick is '%s'\n", (const char *)(*(clientNick)[i]));
 
-//     fprintf(stderr, "clientactive is '%d'\n", (clientActive[i] ? 1 : 0));
-     *(int*)(statusSendBuffer + caretLoc) = (clientActive[i] ? 1 : 0);    // Is this nick active?
-     caretLoc += sizeof(int);
+    memcpy((statusSendBuffer + caretLoc), (const char *)(*(clientNick)[i]), strLength);
+    caretLoc += strLength;  
+
+//    fprintf(stderr, "clientactive is '%d'\n", (clientActive[i] ? 1 : 0));
+//    *(int*)(statusSendBuffer + caretLoc) = (clientActive[i] ? 1 : 0);    // Is this nick active?
+    itmp=(clientActive[i] ? 1 : 0);    // Is this nick active?
+    memcpy(statusSendBuffer + caretLoc, &itmp, sizeof(itmp)); 
+    caretLoc += sizeof(int);
   }
    
-// xxx: could send different configurations to different clients (client
-// in control might get different setup)
-// we need to send:
+  // XXX could send different configurations to different clients (client
+  // in control might get different setup)
+  // we need to send:
   // desired button states
 
-
-   // caretLoc is also the length of the useful data in the packet
-   statusSendBufferLength = caretLoc;
+  // caretLoc is also the length of the useful data in the packet
+  statusSendBufferLength = caretLoc;
 }
 
 
 // ------------------------------------------------------------------------
-
 typedef struct {
   /* socket management data */
   char buffer[1024];
@@ -221,6 +237,20 @@ static void * mobile_listener_create(int port) {
   return ph;
 }
 
+
+int getint32(char *bufptr) {
+  int tmp=0;
+  memcpy(&tmp, bufptr, sizeof(int));
+  return tmp;
+} 
+
+float getfloat32(char *bufptr) {
+  float tmp=0;
+  memcpy(&tmp, bufptr, sizeof(float));
+  return tmp;
+} 
+
+
 // ------------------------------------------------------------------------
 static int mobile_listener_poll(void *voidhandle,
                         float &tx, float &ty, float &tz,
@@ -233,7 +263,6 @@ static int mobile_listener_poll(void *voidhandle,
                         float &tranScal, float &rotScal, float &zoomScal,
                         JString &commandToSend) {
   mobilehandle *ph = (mobilehandle *) voidhandle;
-
   int offset = 0;
 
   memset(ph->buffer, 0, sizeof(ph->buffer));
@@ -251,16 +280,23 @@ static int mobile_listener_poll(void *voidhandle,
   }
 
   /* we now have info.  Decode it */
-  if (((int*)ph->buffer)[0] != 1) {
+//  if (((int*)ph->buffer)[0] != 1) {
+  if (getint32(ph->buffer) != 1) {
     swap4_aligned(ph->buffer, sizeof(ph->buffer) / 4);
   }
-  if (((int*)ph->buffer)[0] != 1) {
+//  if (((int*)ph->buffer)[0] != 1) {
+  if (getint32(ph->buffer) != 1) {
     printf("Received unrecognized mobile packet...\n");
     return 0;
   }
 
-  int endianism  = ((int*)ph->buffer)[offset++];     /* endianism.  Should be 1  */
-  int apiversion = ((int*)ph->buffer)[offset++];     /* API version */
+//  int endianism  = ((int*)ph->buffer)[offset++];     /* endianism.  Should be 1  */
+//  int apiversion = ((int*)ph->buffer)[offset++];     /* API version */
+  int endianism  = getint32(ph->buffer + offset*sizeof(int));
+  offset++;
+
+  int apiversion = getint32(ph->buffer + offset*sizeof(int));     /* API version */
+  offset++;
 
   /* drop old format packets, or packets with incorrect protocol,   */
   /* corruption, or that aren't formatted correctly for some reason */
@@ -280,10 +316,18 @@ static int mobile_listener_poll(void *voidhandle,
   offset += 4;
 
   if (apiversion >= 9) {
-    listenerPort = ((int*)ph->buffer)[offset++];     /* listener port on the client*/
-    rotScal = ((float*)ph->buffer)[offset++];     /* scale factor for rotate */
-    zoomScal = ((float*)ph->buffer)[offset++];     /* scale factor for zoom */
-    tranScal = ((float*)ph->buffer)[offset++];     /* scale factor for translate*/
+//    listenerPort = ((int*)ph->buffer)[offset++];     /* listener port on the client*/
+//    rotScal = ((float*)ph->buffer)[offset++];     /* scale factor for rotate */
+//    zoomScal = ((float*)ph->buffer)[offset++];     /* scale factor for zoom */
+//    tranScal = ((float*)ph->buffer)[offset++];     /* scale factor for translate*/
+    listenerPort = getint32(ph->buffer + offset*sizeof(float)); // listener port on the client
+    offset++;
+    rotScal = getfloat32(ph->buffer + offset*sizeof(float)); // scale factor for rotate
+    offset++;
+    zoomScal = getfloat32(ph->buffer + offset*sizeof(float)); // scale factor for zoom
+    offset++;
+    tranScal = getfloat32(ph->buffer + offset*sizeof(float)); // scale factor for translate
+    offset++;
   } else {
     listenerPort = 4141;  /* default */
   }
@@ -300,7 +344,7 @@ static int mobile_listener_poll(void *voidhandle,
   // at this point, lets check to see if we have a command that needs
   // to be send to the script side.
   if (packtype == EVENT_COMMAND) {
-     // xxx: extend to allow data parameters to be retrieved from client.
+     // XXX extend to allow data parameters to be retrieved from client.
      // 'buttons' and 'ph->seqnum' have been set.
      // 'buttons' stores the type of message that it is
      // and seqnum just stores the sequence number.  No big deal
@@ -327,10 +371,9 @@ static int mobile_listener_poll(void *voidhandle,
   padaction = EVENT_NON_TOUCH;
 
   // check to see if we need to go farther
-  //if (packtype != PACKET_ORIENT && packtype != PACKET_TOUCH)
-//  {
-//    return 1;
-//  }
+  //if (packtype != PACKET_ORIENT && packtype != PACKET_TOUCH) {
+  //    return 1;
+  //  }
 
   // clear previous state from handle before decoding incoming packet
   ph->rx = 0;
@@ -358,12 +401,12 @@ static int mobile_listener_poll(void *voidhandle,
       //       with positive values when the z-axis moves toward the y-axis.
       // r[2]: Roll, rotation around Y axis (-90<=roll<=90),
       //       with positive values when the z-axis moves toward the x-axis.
-      ph->rz         = ((float*)ph->buffer)[offset  ]; /* orientation 0 */
-      ph->rx         = ((float*)ph->buffer)[offset+1]; /* orientation 1 */
-      ph->ry         = ((float*)ph->buffer)[offset+2]; /* orientation 2 */
-      ph->tx         = ((float*)ph->buffer)[offset+3]; /* accel 0 */
-      ph->ty         = ((float*)ph->buffer)[offset+4]; /* accel 1 */
-      ph->tz         = ((float*)ph->buffer)[offset+5]; /* accel 2 */
+      ph->rz         = ((float*)ph->buffer)[offset  ]; // orientation 0
+      ph->rx         = ((float*)ph->buffer)[offset+1]; // orientation 1
+      ph->ry         = ((float*)ph->buffer)[offset+2]; // orientation 2
+      ph->tx         = ((float*)ph->buffer)[offset+3]; // accel 0
+      ph->ty         = ((float*)ph->buffer)[offset+4]; // accel 1
+      ph->tz         = ((float*)ph->buffer)[offset+5]; // accel 2
 
       /* 3x3 rotation matrix stored as 9 floats */
       for (i=0; i<9; i++)
@@ -371,38 +414,38 @@ static int mobile_listener_poll(void *voidhandle,
       break;
 
     case PACKET_TOUCH:  case PACKET_HEARTBEAT:
-      float xdpi = ((float*)ph->buffer)[offset];      /* X dots-per-inch */
-      float ydpi = ((float*)ph->buffer)[offset+1];      /* Y dots-per-inch */
-//      int xsz    = ((int*)ph->buffer)[11];        /* screen size in pixels */
-//      int ysz    = ((int*)ph->buffer)[12];        /* screen size in pixels */
+      float xdpi = ((float*)ph->buffer)[offset];    // X dots-per-inch
+      float ydpi = ((float*)ph->buffer)[offset+1];  // Y dots-per-inch
+//      int xsz    = ((int*)ph->buffer)[11];        // screen size in pixels
+//      int ysz    = ((int*)ph->buffer)[12];        // screen size in pixels
       float xinvdpi = 1.0f / xdpi;
       float yinvdpi = 1.0f / ydpi;
 
-      /* For single touch, Actions are basically:  0:down, 2: move, 1: up.  */
-      /* for multi touch, the actions can indicate, by masking, which pointer
-         is being manipulated */
-      ph->padaction = ((int*) ph->buffer)[offset+4];   /* action */
-      ph->upid      = ((int*) ph->buffer)[offset+5];   /* UP, pointer id */
+      // For single touch, Actions are basically:  0:down, 2: move, 1: up.
+      // for multi touch, the actions can indicate, by masking, which pointer
+      // is being manipulated
+      ph->padaction = ((int*) ph->buffer)[offset+4]; // action
+      ph->upid      = ((int*) ph->buffer)[offset+5]; // UP, pointer id
 
       if (ph->padaction == 1) {
          ph->touchcnt  = touchcnt = 0;
       } else {
-         ph->touchcnt  = ((int*) ph->buffer)[offset+6];   /* number of touches */
-         touchcnt = ph->touchcnt;
+        ph->touchcnt  = ((int*) ph->buffer)[offset+6]; // number of touches
+        touchcnt = ph->touchcnt;
 
-         for (int i=0; i<ph->touchcnt; i++) {
-           float px, py;
+        for (int i=0; i<ph->touchcnt; i++) {
+          float px, py;
 #if 0
-           // not currently used
-           int ptrid;
-           ptrid = ((int*) ph->buffer)[offset+7+3*i];     /* pointer id */
+          // not currently used
+          int ptrid;
+          ptrid = ((int*) ph->buffer)[offset+7+3*i];   // pointer id
 #endif
-           px  = ((float*) ph->buffer)[offset+8+3*i];     /* X pixel */
-           py  = ((float*) ph->buffer)[offset+9+3*i];     /* Y pixel */
+          px  = ((float*) ph->buffer)[offset+8+3*i];   // X pixel
+          py  = ((float*) ph->buffer)[offset+9+3*i];   // Y pixel
 
-//        printf("PID:%2d, X:%4.3f, Y:%4.3f, ", ptrid, px, py);
+//          printf("PID:%2d, X:%4.3f, Y:%4.3f, ", ptrid, px, py);
 
-           /* scale coords to be in inches rather than pixels */
+           // scale coords to be in inches rather than pixels
            ph->padx[i] = px * xinvdpi;
            ph->pady[i] = py * yinvdpi;
          }
@@ -480,6 +523,7 @@ static int mobile_listener_poll(void *voidhandle,
   return 1;
 } // end of mobile_listener_poll
 
+
 // ------------------------------------------------------------------------
 
 static int mobile_listener_destroy(void *voidhandle) {
@@ -493,17 +537,13 @@ static int mobile_listener_destroy(void *voidhandle) {
   free(ph);
 
   // all of our clients are, by definition, gone too
-
-
-
   return 0;
 }
 
 // ------------------------------------------------------------------------
 
 // constructor
-Mobile::Mobile(VMDApp *vmdapp)
-	: UIObject(vmdapp) {
+Mobile::Mobile(VMDApp *vmdapp) : UIObject(vmdapp) {
   mobile = NULL;
   port = 3141; // default UDP port to use
 
@@ -533,9 +573,8 @@ Mobile::Mobile(VMDApp *vmdapp)
   reset();
 }
 
-// ------------------------------------------------------------------------
 
-// destructor
+// ------------------------------------------------------------------------
 Mobile::~Mobile(void) {
   wkf_timer_destroy(packtimer);
   wkf_timer_destroy(statustimer);
@@ -547,8 +586,7 @@ Mobile::~Mobile(void) {
   }
 
   // clean up the client list
-//  while (clientList.num() > 0)
-//  {
+//  while (clientList.num() > 0) {
 //     MobileClientList *ptr = clientList.pop();
 //     delete ptr;
 //  }
@@ -556,6 +594,7 @@ Mobile::~Mobile(void) {
   if (mobile != NULL)
     mobile_listener_destroy(mobile);
 }
+
 
 // ------------------------------------------------------------------------
 int send_dgram(const char *host_addr, int port, const unsigned char *buf, 
@@ -585,36 +624,36 @@ int send_dgram(const char *host_addr, int port, const unsigned char *buf,
   return 0;
 }                     
 
+
 // ------------------------------------------------------------------------
-void Mobile::sendStatus(const int eventType)
-{
-    prepareSendBuffer(eventType);
+void Mobile::sendStatus(const int eventType) {
+  prepareSendBuffer(eventType);
 //    int port = 4141;
-    // loop over connected clients specifically, and send them the status
-    for (int i=0; i< clientIP.num(); i++)
-    {
+  // loop over connected clients specifically, and send them the status
+  for (int i=0; i< clientIP.num(); i++) {
+    // we need to insert whether or not this specific user is active
+    // *(int*)(statusSendBuffer + 16) = (clientActive[i] ? 1 : 0);    // Is this nick active?
+    int active = (clientActive[i] ? 1 : 0);    // Is this nick active?
+    memcpy(statusSendBuffer + 16, &active, sizeof(int));
 
-       // we need to insert whether or not this specific user is active
-       *(int*)(statusSendBuffer + 16) = (clientActive[i] ? 1 : 0);    // Is this nick active?
-//       fprintf(stderr, "Sending '%s': %d a message.\n", (const char*)*(clientIP[i]), clientListenerPort[i]);
-       send_dgram((const char *)*(clientIP[i]), clientListenerPort[i], 
-                                     statusSendBuffer, statusSendBufferLength);
-    }
+//  fprintf(stderr, "Sending '%s': %d a message.\n", (const char*)*(clientIP[i]), clientListenerPort[i]);
+    send_dgram((const char *)*(clientIP[i]), clientListenerPort[i], 
+               statusSendBuffer, statusSendBufferLength);
+  }
 
-    // broadcast the same to everyone that might be listening
-    // need to determine how widely we want to reasonably broadcast. For 
-    // our local case, we are on the ks subnet, but wireless devices aren't.
-    // not likely we should spam every device in illinois.edu, though.
-    // so, we have to be more intelligent about it.
+  // broadcast the same to everyone that might be listening
+  // need to determine how widely we want to reasonably broadcast. For 
+  // our local case, we are on the ks subnet, but wireless devices aren't.
+  // not likely we should spam every device in illinois.edu, though.
+  // so, we have to be more intelligent about it.
 
-    // now that we've done everything, reset the timer.
-    wkf_timer_start(statustimer);
+  // now that we've done everything, reset the timer.
+  wkf_timer_start(statustimer);
 }
 
 
 // ------------------------------------------------------------------------
-void Mobile::checkAndSendStatus()
-{
+void Mobile::checkAndSendStatus() {
   if (wkf_timer_timenow(statustimer) > statusSendSeconds) {
      sendStatus(SEND_HEARTBEAT);
   }
@@ -623,33 +662,30 @@ void Mobile::checkAndSendStatus()
 
 
 // ------------------------------------------------------------------------
-bool Mobile::isInControl(JString* nick, JString* ip, const int port, const int packtype)
-{
+bool Mobile::isInControl(JString* nick, JString* ip, const int port, const int packtype) {
 //   fprintf(stderr, "isInControl.start: %s, %s\n", (const char*)*nick, (const char *)*ip);
   int i;
   for (i=0; i < clientNick.num(); i++) {
     if (*nick == *(clientNick[i]) && *ip == *(clientIP[i])) {
-      // xxx: update the timer here?
+      // XXX update the timer here?
       break;
     }
   }
 
-  if (i < clientNick.num()) // we found them!
-  {
+  if (i < clientNick.num()) { // we found them!
     // was this a disconnect?
     if (packtype == PACKET_DISCONNECT) {
       removeClient(i);
       return false;
     }
     return clientActive[i];
-  }  else {
+  } else {
     JString *tmpNick, *tmpIp;
     tmpNick = new JString(*nick);
     tmpIp = new JString(*ip);
 //   fprintf(stderr, "isInControl: Adding %s, %s\n", (const char *)*tmpNick, (const char *)*tmpIp);
     // we didn't find this particular IP/nick combination.  Let's add it.
-    if (clientNick.num() == 0) // there weren't any before
-    {
+    if (clientNick.num() == 0) {  // there weren't any before
       addNewClient(tmpNick, tmpIp, port, true);  // make this client in control
       return true;
     } else {
@@ -657,8 +693,11 @@ bool Mobile::isInControl(JString* nick, JString* ip, const int port, const int p
       return false;
     }
   }
+
   return false; // won't ever get here
 }
+
+
 // ------------------------------------------------------------------------
 /////////////////////// virtual routines for UI init/display  /////////////
    
@@ -678,6 +717,7 @@ void Mobile::reset(void) {
    animInc = 1.0f /     1.0f;
 }
 
+
 // ------------------------------------------------------------------------
 // update the display due to a command being executed.  Return whether
 // any action was taken on this command.
@@ -686,6 +726,7 @@ void Mobile::reset(void) {
 int Mobile::act_on_command(int type, Command *cmd) {
   return FALSE; // we don't take any commands presently
 }
+
 
 // ------------------------------------------------------------------------
 // check for an event, and queue it if found.  Return TRUE if an event
@@ -724,8 +765,7 @@ int Mobile::check_event(void) {
          mobile_listener_poll(mobile, rx, ry, rz, tx, ty, tz, padaction, upid,
                               touchcnt, touchid, padx, pady, buttons, packtype,
                               incIP, nick, clientPort, tranScaling, rotScaling,
-                              zoomScaling, commandToSend)) 
-  {
+                              zoomScaling, commandToSend)) {
 //fprintf(stderr, "inside while. %s, %s\n", (const char *)nick, (const char *)incIP);
     win_event = TRUE;
 
@@ -746,15 +786,14 @@ int Mobile::check_event(void) {
 
     // let's figure out who this is, and whether or not they are in
     // control
-    if (isInControl(&nick, &incIP, clientPort, packtype))
-    {
+    if (isInControl(&nick, &incIP, clientPort, packtype)) {
       DisplayDevice::EventCodes keydev=DisplayDevice::WIN_KBD;
 //      inControl = true;
 
       // find which buttons changed state
       buttonchanged = buttons ^ buttonDown; 
 
-        // XXX change hardcoded numbers and support >3 buttons
+      // XXX change hardcoded numbers and support >3 buttons
       if (buttonchanged) {
          // for normal buttons, we want the down event
         if (buttonchanged == (1<<0) && (buttonchanged & buttons)) {
@@ -769,112 +808,109 @@ int Mobile::check_event(void) {
         if (buttonchanged == (1<<3) && (buttonchanged & buttons)) {
            runcommand(new UserKeyEvent(keydev, '3', (int) DisplayDevice::AUX));
         }
-
       } // end if on buttonchanged
 
 #if 0
-       printf("Touchpad action: %d upid %d", padaction, upid);
-       for (int i=0; i<touchcnt; i++) {
-         printf("ID[%d] x: %.2f y: %.2f ",
-                i, padx[i], pady[i]);
-       }
-       printf("\n");
+      printf("Touchpad action: %d upid %d", padaction, upid);
+      for (int i=0; i<touchcnt; i++) {
+        printf("ID[%d] x: %.2f y: %.2f ",
+               i, padx[i], pady[i]);
+      }
+      printf("\n");
 #endif
 
       if (padaction != EVENT_NON_TOUCH) {
-
-      // detect end of a touch event
-      if (touchcnt < touchcount || 
-           padaction == EVENT_TOUCH_UP || padaction == EVENT_TOUCH_SOMEUP) {
-//         fprintf(stderr,"<(a:%d,b:%d)", touchcnt, touchcount);
-        touchinprogress = 0;
-        touchmode = ROTATE;
-        touchcount = 0;
-        touchstartX = 0;
-        touchstartY = 0;
-        touchdeltaX = 0;
-        touchdeltaY = 0;
-        touchscale = 1.0;
-        touchscalestartdist = 0;
-        touchrotstartangle = 0;
-      }
-    
-      // detect a touch starting event 
-      if (touchcnt > touchcount ||
-           padaction == EVENT_TOUCH_DOWN ||
-           padaction == EVENT_TOUCH_SOMEDOWN) {
-//         fprintf(stderr,">(a:%d,b:%d)", touchcnt, touchcount);
-        touchcount = touchcnt;
-        touchstartX = 0;
-        touchstartY = 0;
-        touchdeltaX = 0;
-        touchdeltaY = 0;
-        touchscale = 1.0;
-        touchscalestartdist = 0;
-        touchrotstartangle = 0;
-
-   // printf("Touchcount: %d\n", touchcount);
-        if (touchcount == 1) {
-   // printf("Start rotate..\n");
-          touchinprogress=1;
+        // detect end of a touch event
+        if (touchcnt < touchcount || 
+             padaction == EVENT_TOUCH_UP || padaction == EVENT_TOUCH_SOMEUP) {
+//           fprintf(stderr,"<(a:%d,b:%d)", touchcnt, touchcount);
+          touchinprogress = 0;
           touchmode = ROTATE;
-          touchstartX = padx[0];
-          touchstartY = pady[0];
-        } else if (touchcount == 2) {
-          touchinprogress=1;
-          touchstartX = (padx[0] + padx[1]) * 0.5f;
-          touchstartY = (pady[0] + pady[1]) * 0.5f;
-
-          float dx = padx[1] - padx[0];
-          float dy = pady[1] - pady[0];
-          touchscalestartdist = sqrtf(dx*dx + dy*dy) + 0.00001f;
-          if (touchscalestartdist > 0.65f) { 
-            touchrotstartangle = float(atan2(dx, -dy) + VMD_PI);
-   // printf("Start scale.. dist: %.2f  angle: %.2f\n", touchscalestartdist, touchrotstartangle);
-            touchmode = SCALEROTZ;
-          } else {
-   // printf("Start translate.. dist(%.2f)\n", touchscalestartdist);
-            touchmode = TRANSLATE;
-          }
+          touchcount = 0;
+          touchstartX = 0;
+          touchstartY = 0;
+          touchdeltaX = 0;
+          touchdeltaY = 0;
+          touchscale = 1.0;
+          touchscalestartdist = 0;
+          touchrotstartangle = 0;
         }
-      }
+    
+        // detect a touch starting event 
+        if (touchcnt > touchcount ||
+             padaction == EVENT_TOUCH_DOWN ||
+             padaction == EVENT_TOUCH_SOMEDOWN) {
+//           fprintf(stderr,">(a:%d,b:%d)", touchcnt, touchcount);
+          touchcount = touchcnt;
+          touchstartX = 0;
+          touchstartY = 0;
+          touchdeltaX = 0;
+          touchdeltaY = 0;
+          touchscale = 1.0;
+          touchscalestartdist = 0;
+          touchrotstartangle = 0;
 
-      if (touchinprogress && padaction == EVENT_TOUCH_MOVE) {
-        if (touchmode == ROTATE) {
-          touchdeltaX = padx[0] - touchstartX;
-          touchdeltaY = pady[0] - touchstartY;
-        } else if (touchmode == SCALEROTZ) {
-          // only move the structure if we're in move mode,
-          // in animate mode we do nothing...
-          if (moveMode == MOVE) {
+          // printf("Touchcount: %d\n", touchcount);
+          if (touchcount == 1) {
+            // printf("Start rotate..\n");
+            touchinprogress=1;
+            touchmode = ROTATE;
+            touchstartX = padx[0];
+            touchstartY = pady[0];
+          } else if (touchcount == 2) {
+            touchinprogress=1;
+            touchstartX = (padx[0] + padx[1]) * 0.5f;
+            touchstartY = (pady[0] + pady[1]) * 0.5f;
+
             float dx = padx[1] - padx[0];
             float dy = pady[1] - pady[0];
-            float dist = sqrtf(dx*dx + dy*dy);
-     
-            // Only scale if the scale changes by at least 1%
-            float newscale = (dist / touchscalestartdist) / touchscale;
-            if (fabsf(newscale - 1.0f) > 0.01f) {
-              touchscale *= newscale;
-              app->scene_scale_by((newscale - 1.0f) * zoomScaling + 1.0f);
-            }
-
-            // Only rotate if the angle update is large enough to make
-            // it worthwhile, otherwise we get visible "jitter" from noise
-            // in the touchpad coordinates.  Currently, we only rotate if
-            // the rotation magnitude is greater than a quarter-degree
-            float newrotangle = float(atan2(dx, -dy) + VMD_PI);
-            float rotby = float((newrotangle-touchrotstartangle)*180.0f/VMD_PI);
-            if (fabsf(rotby) > 0.25f) {
-              app->scene_rotate_by(-rotScaling*rotby, 'z');
-              touchrotstartangle=newrotangle;
+            touchscalestartdist = sqrtf(dx*dx + dy*dy) + 0.00001f;
+            if (touchscalestartdist > 0.65f) { 
+              touchrotstartangle = float(atan2(dx, -dy) + VMD_PI);
+              // printf("Start scale.. dist: %.2f  angle: %.2f\n", touchscalestartdist, touchrotstartangle);
+              touchmode = SCALEROTZ;
+            } else {
+              // printf("Start translate.. dist(%.2f)\n", touchscalestartdist);
+              touchmode = TRANSLATE;
             }
           }
-        } else if (touchmode == TRANSLATE) {
-          touchdeltaX = ((padx[0]+padx[1])*0.5f) - touchstartX;
-          touchdeltaY = ((pady[0]+pady[1])*0.5f) - touchstartY;
         }
-      }
 
+        if (touchinprogress && padaction == EVENT_TOUCH_MOVE) {
+          if (touchmode == ROTATE) {
+            touchdeltaX = padx[0] - touchstartX;
+            touchdeltaY = pady[0] - touchstartY;
+          } else if (touchmode == SCALEROTZ) {
+            // only move the structure if we're in move mode,
+            // in animate mode we do nothing...
+            if (moveMode == MOVE) {
+              float dx = padx[1] - padx[0];
+              float dy = pady[1] - pady[0];
+              float dist = sqrtf(dx*dx + dy*dy);
+     
+              // Only scale if the scale changes by at least 1%
+              float newscale = (dist / touchscalestartdist) / touchscale;
+              if (fabsf(newscale - 1.0f) > 0.01f) {
+                touchscale *= newscale;
+                app->scene_scale_by((newscale - 1.0f) * zoomScaling + 1.0f);
+              }
+
+              // Only rotate if the angle update is large enough to make
+              // it worthwhile, otherwise we get visible "jitter" from noise
+              // in the touchpad coordinates.  Currently, we only rotate if
+              // the rotation magnitude is greater than a quarter-degree
+              float newrotangle = float(atan2(dx, -dy) + VMD_PI);
+              float rotby = float((newrotangle-touchrotstartangle)*180.0f/VMD_PI);
+              if (fabsf(rotby) > 0.25f) {
+                app->scene_rotate_by(-rotScaling*rotby, 'z');
+                touchrotstartangle=newrotangle;
+              }
+            }
+          } else if (touchmode == TRANSLATE) {
+            touchdeltaX = ((padx[0]+padx[1])*0.5f) - touchstartX;
+            touchdeltaY = ((pady[0]+pady[1])*0.5f) - touchstartY;
+          }
+        }
       }
 
       // update button status for next time through
@@ -885,7 +921,7 @@ int Mobile::check_event(void) {
     wkf_timer_start(packtimer);
   }           // end while (moveMode != OFF && mobile_listener_poll())
 
-  // xxx: this next check really needs to be done on a per-client basis and 
+  // XXX this next check really needs to be done on a per-client basis and 
   // non responsive clients should be kicked out
   // check for dropped packets or mobile shutdown and 
   // halt any ongoing events if we haven't heard from the
@@ -905,7 +941,7 @@ int Mobile::check_event(void) {
   if (touchinprogress) {
     if (moveMode == MOVE) {
       if (touchmode == ROTATE) {
-//         fprintf(stderr,"+");
+        //         fprintf(stderr,"+");
         // Motion in Android "X" rotates around VMD Y axis...
         app->scene_rotate_by(touchdeltaY*rotScaling*0.5f, 'x');
         app->scene_rotate_by(touchdeltaX*rotScaling*0.5f, 'y');
@@ -951,17 +987,20 @@ int Mobile::check_event(void) {
         app->animation_set_speed(1.0f);
       }
     }
-  } else { 
+  } 
+//  else { 
 //     if (!inControl) fprintf(stderr,"-");
 //     if (!touchinprogress) fprintf(stderr,"|");
-     } 
+//  } 
 
   if (win_event) {
     return TRUE;
   } else {
     return FALSE; // no events to report
   }
-} // end of Mobile::check_event(void) {
+} // end of Mobile::check_event()
+
+
 
 // ------------------------------------------------------------------------
 ///////////// public routines for use by text commands etc
@@ -1026,9 +1065,8 @@ int Mobile::sendMsgToClient(const char *nick, const char *ip,
    
   if (found) {
     int msgTypeAsInt;
-    if (EOF == sscanf(msgType, "%d", &msgTypeAsInt))
-    {
-       return false;
+    if (EOF == sscanf(msgType, "%d", &msgTypeAsInt)) {
+      return false;
     }
 
     sendMsgToIp(clientActive[i],   // 1 if active, else 0
@@ -1037,13 +1075,11 @@ int Mobile::sendMsgToClient(const char *nick, const char *ip,
                 (const char *)*(clientIP[i]),       // string IP address
                 clientListenerPort[i]);  // port to send to
     return true;
-
-
-    return true;
   } else {
     return false;
   }
 }  // end of Mobile::sendMsgToClient
+
 
 // ------------------------------------------------------------------------
 void Mobile::sendMsgToIp(const bool isActive,
@@ -1055,17 +1091,21 @@ void Mobile::sendMsgToIp(const bool isActive,
   // let's send them the msg
   prepareSendBuffer(SEND_MESSAGE);
   // we need to insert whether or not this specific user is active
-  *(int*)(statusSendBuffer + 16) = (isActive ? 1 : 0);    // Is this nick active?
+  // *(int*)(statusSendBuffer + 16) = (isActive ? 1 : 0);    // Is this nick active?
+  int active = (isActive ? 1 : 0);    // Is this nick active?
+  memcpy(statusSendBuffer + 16, &active, sizeof(int));
 
   // pack the message. Right now it is length long.  We need to add to it.
   int length = statusSendBufferLength;
 
-  *(int*)(statusSendBuffer + length) = msgTypeAsInt;
+  // *(int*)(statusSendBuffer + length) = msgTypeAsInt;
+  memcpy(statusSendBuffer + length, &msgTypeAsInt, sizeof(int));
   length += sizeof(int);
 
   int msgLength = strlen(msg);
 //  printf("msg is '%s', msglength is %ld\n", msg, msgLength);
-  *(int*)(statusSendBuffer + length) = msgLength;
+  // *(int*)(statusSendBuffer + length) = msgLength;
+  memcpy((statusSendBuffer + length), &msgLength, sizeof(int));
   length += sizeof(int);
 
   memcpy((statusSendBuffer + length), msg, msgLength);
@@ -1074,15 +1114,15 @@ void Mobile::sendMsgToIp(const bool isActive,
   send_dgram(ip, port, statusSendBuffer, length);
 
 }
+
+
 // ------------------------------------------------------------------------
-int Mobile::set_activeClient(const char *nick, const char *ip)
-{
-//   fprintf(stderr, "in set_activeClient.  nick: %s, ip: %s\n", nick, ip);
-   // find the user with the given nick and ip
+int Mobile::set_activeClient(const char *nick, const char *ip) {
+  // fprintf(stderr, "in set_activeClient.  nick: %s, ip: %s\n", nick, ip);
+  // find the user with the given nick and ip
   bool found = false;
   int i;
-  for (i=0; i<clientNick.num();i++)
-  {
+  for (i=0; i<clientNick.num();i++) {
     if (*(clientNick[i]) == nick) {
       // we've found the right nick.  Now let's check the IP
       if (*(clientIP[i]) == ip) {
@@ -1094,9 +1134,8 @@ int Mobile::set_activeClient(const char *nick, const char *ip)
    
   if (found) { 
     // First, run through clientActive and turn everyone off.
-    for (int j=0; j<clientActive.num();j++)
-    {
-       clientActive[j] = false;
+    for (int j=0; j<clientActive.num();j++) {
+      clientActive[j] = false;
     }
 
     // turn off any movements that might have been going on
@@ -1120,8 +1159,8 @@ int Mobile::set_activeClient(const char *nick, const char *ip)
   }
 }  // end set active client
 
-// ------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------
 void Mobile::get_tracker_status(float &tx, float &ty, float &tz,
                                 float &rx, float &ry, float &rz, 
                                 int &buttons) {
@@ -1134,8 +1173,8 @@ void Mobile::get_tracker_status(float &tx, float &ty, float &tz,
   buttons = trbuttons;
 }
 
-// ------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------
 // set the Mobile move mode to the given state; return success
 int Mobile::move_mode(MoveMode mm) {
   // change the mode now
@@ -1159,22 +1198,22 @@ int Mobile::move_mode(MoveMode mm) {
     removeAllClients();
   }
 
-  /// clear out any remaining tracker event data if we're not in that mode
+  // clear out any remaining tracker event data if we're not in that mode
   if (moveMode != TRACKER) {
     trtx=trty=trtz=trrx=trry=trrz=0.0f; 
     trbuttons=0;
   }
-//fprintf(stderr,"Triggering command due to mode change\n");
+  // fprintf(stderr,"Triggering command due to mode change\n");
   runcommand(new MobileStateChangedEvent());
   sendStatus(SEND_SETMODE);
 
   return TRUE; // report success
-}   // end of Mobile::move_mode
+} // end of Mobile::move_mode
+
 
 // ------------------------------------------------------------------------
 // set the incoming UDP port (closing the old one if needed)
 int Mobile::network_port(int newport) {
-
   if (mobile != NULL) {
     mobile_listener_destroy(mobile);
     removeAllClients();
@@ -1197,12 +1236,11 @@ int Mobile::network_port(int newport) {
   }
 
   return TRUE; // report success
-}     // end of Mobile::network_port
+} // end of Mobile::network_port
 
 
 // ------------------------------------------------------------------------
-int  Mobile::addNewClient(JString* nick,  JString* ip, const int port, const bool active)
-{
+int Mobile::addNewClient(JString* nick,  JString* ip, const int port, const bool active) {
 //  fprintf(stderr, "Adding %s, %s, %d\n", (const char*)*nick, (const char*)*ip, active);
   clientNick.append(nick);
   clientIP.append(ip);
@@ -1213,49 +1251,45 @@ int  Mobile::addNewClient(JString* nick,  JString* ip, const int port, const boo
   runcommand(new MobileStateChangedEvent());
   sendStatus(SEND_ADDCLIENT);
   return 0;
-}     // end of Mobile::addNewClient
+} // end of Mobile::addNewClient
+
 
 // ------------------------------------------------------------------------
-void Mobile::removeAllClients()
-{
+void Mobile::removeAllClients() {
   while (clientNick.num() > 0) {
     removeClient(0);
   }
 }
 
+
 // ------------------------------------------------------------------------
-int  Mobile::removeClient(const int num)
-{
+int Mobile::removeClient(const int num) {
   delete clientNick[num];
   clientNick.remove(num);
-
   delete clientIP[num];
   clientIP.remove(num);
-
   clientActive.remove(num);
-
   clientListenerPort.remove(num);
 
   // let's see how many active clients are left?
   int iCount;
-  for (iCount=0; iCount<clientActive.num();iCount++)
-  {
-     if (clientActive[iCount]) {
-        break;
-     }
+  for (iCount=0; iCount<clientActive.num(); iCount++) {
+    if (clientActive[iCount]) {
+      break;
+    }
   }
 
   // did we make it all the way through the client list without
   // finding anyone that is active?  If so (and there are actually
   // still clients) set the first one to active
-  if (iCount == clientActive.num() && clientActive.num() > 0)
-  {
+  if (iCount == clientActive.num() && clientActive.num() > 0) {
     clientActive[0] = true;
   }
 
-//fprintf(stderr,"Triggering command due to removeClient\n");
+  // fprintf(stderr,"Triggering command due to removeClient\n");
   runcommand(new MobileStateChangedEvent());
   sendStatus(SEND_REMOVECLIENT);
+
   return 0;
 }
 

@@ -11,7 +11,7 @@
  *
  *      $RCSfile: plyplugin.C,v $
  *      $Author: johns $       $:  $             $State: Exp $
- *      $Revision: 1.8 $       $Date: 2016/11/28 05:01:54 $
+ *      $Revision: 1.9 $       $Date: 2016/12/15 15:30:14 $
  *
  ***************************************************************************/
 
@@ -38,10 +38,6 @@ typedef struct Face {
   int *verts;              /* vertex index list */
   void *other_props;       /* other properties */
 } Face;
-
-char *elem_names[] = { /* list of the elements in the object */
-  "vertex", "face"
-};
 
 PlyProperty vert_props[] = { /* list of property information for a vertex */
   {"x", Float32, Float32, offsetof(Vertex,x), 0, 0, 0, 0},

@@ -1,11 +1,11 @@
 #
-# $Id: fftk_GenZMatrix.tcl,v 1.14 2015/12/31 05:05:13 gumbart Exp $
+# $Id: fftk_GenZMatrix.tcl,v 1.15 2017/03/17 19:11:10 mayne Exp $
 #
 #======================================================
 namespace eval ::ForceFieldToolKit::GenZMatrix:: {
 
     variable psfPath
-    variable pdbPath
+    #variable pdbPath
     variable outFolderPath
     variable basename
     
@@ -26,7 +26,7 @@ proc ::ForceFieldToolKit::GenZMatrix::init {} {
 
     # IO variables
     variable psfPath
-    variable pdbPath
+    #variable pdbPath
     variable outFolderPath
     variable basename
 
@@ -61,7 +61,8 @@ proc ::ForceFieldToolKit::GenZMatrix::sanityCheck {} {
     
     # localize relevant GenZMatrix variables
     variable psfPath
-    variable pdbPath
+    #variable pdbPath
+    set pdbPath $::ForceFieldToolKit::Configuration::geomOptPDB
     variable outFolderPath
     variable basename
     
@@ -680,7 +681,8 @@ proc ::ForceFieldToolKit::GenZMatrix::writeSPfiles {} {
 
     # localize some variables
     variable psfPath
-    variable pdbPath
+    #variable pdbPath
+    set pdbPath $::ForceFieldToolKit::Configuration::geomOptPDB
     variable outFolderPath
     variable basename
     variable qmProc

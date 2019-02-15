@@ -1,6 +1,6 @@
 # Generate graphene sheets
 #
-# $Id: graphene.tcl,v 1.9 2013/04/15 15:27:10 johns Exp $
+# $Id: graphene.tcl,v 1.10 2018/01/08 22:37:14 johns Exp $
 #
 
 proc ::Nanotube::graphene_usage { } {
@@ -26,7 +26,7 @@ proc ::Nanotube::graphene_core { args } {
         graphene_usage 
         return -1
     }
-    if { ($n_args < 8) || ($n_args > 20) } {
+    if { ($n_args < 6) || ($n_args > 20) } {
         vmdcon -err "graphene: wrong number of arguments"
         vmdcon -err ""
         graphene_usage

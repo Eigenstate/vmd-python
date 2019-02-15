@@ -1,7 +1,7 @@
 .SILENT:
 
 VMFILES = parseFEP.tcl pkgIndex.tcl
-VMVERSION = 1.9
+VMVERSION = 2.1
 DIR = $(PLUGINDIR)/noarch/tcl/parsefep$(VMVERSION)
 
 bins:

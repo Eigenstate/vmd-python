@@ -11,7 +11,7 @@
 #
 #       $RCSfile: xmdff_template.namd,v $
 #       $Author: ryanmcgreevy $        $Locker:  $             $State: Exp $
-#       $Revision: 1.7 $       $Date: 2015/05/29 22:40:05 $
+#       $Revision: 1.8 $       $Date: 2017/04/25 15:55:31 $
 #
 ############################################################################
 #
@@ -117,10 +117,10 @@ if {$FIXPDB != 0} {
 #BEGIN XMDFF NECESSARY FUNCTIONS
 if {[info exists INPUTNAME]} {
   set env(VMDARG) [list $PSFFILE $INPUTNAME $GRIDFILE $REFS $BFS $MASK $CRYSTPDB $MASKRES $MASKCUTOFF $XMDFFSEL $AVERAGE]
-  exec vmd -dispdev text -e xmdff_phenix.tcl  > map.log
+  exec -ignorestderr vmd -dispdev text -e xmdff_phenix.tcl  > map.log
 } else {
   set env(VMDARG) [list $PSFFILE $PDBFILE $GRIDFILE $REFS $BFS $MASK $CRYSTPDB $MASKRES $MASKCUTOFF $XMDFFSEL $AVERAGE]
-  exec vmd -dispdev text -e xmdff_phenix.tcl  > map.log
+  exec -ignorestderr vmd -dispdev text -e xmdff_phenix.tcl  > map.log
 }
 if {$MS != 0} {
   minimize $MS 
@@ -130,7 +130,7 @@ if {$ITEMP != $FTEMP} {
   set ANNEALSTEP [expr abs($FTEMP-$ITEMP)*100]
   run $ANNEALSTEP
   set env(VMDARG) [list $PSFFILE $OUTPUTNAME $GRIDFILE $REFS $BFS $MASK $CRYSTPDB $MASKRES $MASKCUTOFF $XMDFFSEL $AVERAGE]
-  exec vmd -dispdev text -e xmdff_phenix.tcl > map.log
+  exec -ignorestderr vmd -dispdev text -e xmdff_phenix.tcl > map.log
   
   for {set i 0} {$i < [llength $REFS]} {incr i} {
     set grid [expr [llength $GRIDFILE]-[llength $REFS]+$i]
@@ -140,7 +140,7 @@ if {$ITEMP != $FTEMP} {
 for {set i 0} {$i < $TS/$REFINESTEP} {incr i} {
   run $REFINESTEP
   set env(VMDARG) [list $PSFFILE $OUTPUTNAME $GRIDFILE $REFS $BFS $MASK $CRYSTPDB $MASKRES $MASKCUTOFF $XMDFFSEL $AVERAGE]
-  exec vmd -dispdev text -e xmdff_phenix.tcl > map.log 
+  exec -ignorestderr vmd -dispdev text -e xmdff_phenix.tcl > map.log 
   for {set j 0} {$j < [llength $REFS]} {incr j} {
     set grid [expr [llength $GRIDFILE]-[llength $REFS]+$j]
     reloadGridforceGrid $grid

@@ -1,6 +1,6 @@
 # Makefile for catdcd
 
-.SILENT:
+#.SILENT:
 
 .SUFFIXES: 
 
@@ -9,7 +9,7 @@ ARFLAGS = cr
 RANLIB = ranlib
 
 COMPILEDIR = ../compile
-ARCHDIR=${COMPILEDIR}/lib_${ARCH}/bin/catdcd5.1
+ARCHDIR=${COMPILEDIR}/lib_${ARCH}/bin/catdcd5.2
 SRCDIR=.
 INCDIR=-I. -I../include -I${COMPILEDIR}/lib_${ARCH}/molfile
 

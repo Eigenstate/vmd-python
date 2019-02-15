@@ -1,7 +1,7 @@
 ##
 ## RMSD Visualizer 1.0
 ##
-## $Id: rmsdvt-gui.tcl,v 1.5 2013/04/15 17:30:43 johns Exp $
+## $Id: rmsdvt-gui.tcl,v 1.6 2017/07/21 19:27:17 johns Exp $
 ##
 ## VMD plugin (Tcl extension) for calculating and visualizing RMSD and RMSF calculations
 ##
@@ -576,11 +576,6 @@ proc ::Rmsdvt::DataDir { } {
     if { [info exists ::env(LOCALAPPDATA)] } {
         lappend possible_locations [string map {"\\" "/"} $::env(LOCALAPPDATA)]
     }
-
-    # Plugin installation dir
-    if { [info exists ::env(RMSDVTDIR)] } {
-        lappend possible_locations [string map {"\\" "/"} $::env(RMSDVTDIR)]
-    }         
         
     # 'C:\Users\Username\AppData\Local\Temp' on Win7
     if { [info exists ::env(TEMP)] } {
@@ -596,7 +591,12 @@ proc ::Rmsdvt::DataDir { } {
     if { [info exists ::env(TMPDIR)] } {
         lappend possible_locations [string map {"\\" "/"} $::env(TMPDIR)]
     }        
-    
+   
+    # Plugin installation dir
+    if { [info exists ::env(RMSDVTDIR)] } {
+        lappend possible_locations [string map {"\\" "/"} $::env(RMSDVTDIR)]
+    }         
+
     # Last chances    
     lappend possible_locations "/usr/tmp"
     
@@ -624,6 +624,10 @@ proc ::Rmsdvt::DataDir { } {
         
         
         # Make sure plugin's dir exists under appdatadir
+	if { ![file writable $trydir] } {
+            puts "Directory $trydir missing or not writable (0)"
+	    continue
+	}
         set trydir [join [list $trydir "/VMD_RMSDVT"] ""]
         set mkdir_retval [file mkdir $trydir]
         

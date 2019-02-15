@@ -1,10 +1,10 @@
 #
 # Read charmm parameter file
 #
-# $Id: readcharmmpar.tcl,v 1.19 2015/04/17 21:01:45 ryanmcgreevy Exp $
+# $Id: readcharmmpar.tcl,v 1.20 2017/06/30 21:23:00 johns Exp $
 #
 
-package provide readcharmmpar 1.3
+package provide readcharmmpar 1.4
 
 namespace eval ::Pararead:: {
    namespace export getconf

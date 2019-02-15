@@ -2,11 +2,11 @@
 # Copyright 2004-2007 Luthey-Schulten Group, 
 # All rights reserved.
 #
-# $Id: multiseq.tcl,v 1.36 2015/05/20 22:19:08 kvandivo Exp $
+# $Id: multiseq.tcl,v 1.38 2018/11/06 23:02:49 johns Exp $
 # 
 # Developed by: Luthey-Schulten Group
 #      University of Illinois at Urbana-Champaign
-#      http://www.scs.illinois.edu/~schulten
+#      http://faculty.scs.illinois.edu/schulten/
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
 # this software and associated documentation files (the Software), to deal with 
@@ -53,7 +53,7 @@ package require seqedit 1.1
 package require seqedit_widget 1.1
 package require stamp 1.2
 package require multiseqdialog 1.1
-package require colorscalebar 1.2
+package require colorscalebar 
 package require multiplot 1.2
 package require multitext 1.0
 
@@ -727,8 +727,8 @@ namespace eval ::MultiSeq:: {
         $w.top.menubar.help config -width 5
         pack $w.top.menubar.help -side right
         menu $w.top.menubar.help.menu -tearoff no
-        $w.top.menubar.help.menu add command -label "MultiSeq Home Page" -command "vmd_open_url http://www.scs.illinois.edu/~schulten/multiseq"
-#        $w.top.menubar.help.menu add command -label "MultiSeq Help" -command "vmd_open_url http://www.scs.illinois.edu/~schulten/multiseq/manual"
+        $w.top.menubar.help.menu add command -label "MultiSeq Home Page" -command "vmd_open_url http://faculty.scs.illinois.edu/schulten/multiseq"
+#        $w.top.menubar.help.menu add command -label "MultiSeq Help" -command "vmd_open_url http://faculty.scs.illinois.edu/schulten/multiseq/manual"
          $w.top.menubar.help.menu add command -label "Help..." \
     -command "vmd_open_url [string trimright [vmdinfo www]]plugins/multiseq"
     }

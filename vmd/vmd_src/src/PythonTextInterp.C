@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: PythonTextInterp.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.68 $       $Date: 2016/11/28 03:05:04 $
+ *      $Revision: 1.69 $       $Date: 2019/01/17 21:21:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -32,13 +32,15 @@
 #include "errcode.h"
 #endif
 
+extern "C" PyMODINIT_FUNC PyInit_vmd(void);
+
 static PyObject *cbdict = NULL;
 
 static PyObject *add_callback(PyObject *, PyObject *args) {
   char *type;
   PyObject *temp;
 
-  if (!PyArg_ParseTuple(args, (char *)"sO:add_callback", &type, &temp))
+  if (!PyArg_ParseTuple(args, (char *)"sO:add_callback", &type, &temp)) 
     return NULL;
 
   if (!PyCallable_Check(temp)) {
@@ -51,6 +53,7 @@ static PyObject *add_callback(PyObject *, PyObject *args) {
     return NULL;
   }
   PyList_Append(cblist, temp);
+  Py_XDECREF(temp); // PyList_Append does not steal a reference
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -59,7 +62,7 @@ static PyObject *del_callback(PyObject *, PyObject *args) {
   char *type;
   PyObject *temp;
 
-  if (!PyArg_ParseTuple(args, (char *)"sO:del_callback", &type, &temp))
+  if (!PyArg_ParseTuple(args, (char *)"sO:del_callback", &type, &temp)) 
     return NULL;
 
   if (!PyCallable_Check(temp)) {
@@ -108,10 +111,10 @@ static void call_callbacks(const char *type, PyObject *arglist) {
 
   PyGILState_Release(state);
 }
-
+  
 static PyMethodDef CallbackMethods[] = {
-  {(char *)"add_callback", (vmdPyMethod)add_callback, METH_VARARGS },
-  {(char *)"del_callback", (vmdPyMethod)del_callback, METH_VARARGS },
+  {"add_callback", (PyCFunction) add_callback, METH_VARARGS },
+  {"del_callback", (PyCFunction) del_callback, METH_VARARGS },
   {NULL, NULL}
 };
 
@@ -152,56 +155,80 @@ PyObject* initvmdcallbacks(void) {
   return m;
 }
 
-extern "C" void initvmd(void);
+PythonTextInterp::PythonTextInterp(VMDApp *vmdapp) : app(vmdapp) {
 
+  PyObject *vmdmodule;
+  int retval, i;
 
-PythonTextInterp::PythonTextInterp(VMDApp *vmdapp)
-: app(vmdapp) {
   msgInfo << "Starting Python..." << sendmsg;
+
+  // Import VMD builtin module automatically
+  // Do this before Py_initialize called
+  PyImport_AppendInittab("vmd", PyInit_vmd);
+
+  // Do emit DeprecationWarnings
+#if PY_MAJOR_VERSION >= 3
+  PySys_AddWarnOption(L"default");
+#else
+  PySys_AddWarnOption((char*) "default");
+#endif
+
   Py_Initialize();
 
   // Some modules (like Tk) assume that os.argv has been initialized
 #if PY_MAJOR_VERSION >= 3
-  PySys_SetArgv(app->argc_m, (wchar_t **)app->argv_m);
+  PySys_SetArgv(app->argc_m-1, (wchar_t **)app->argv_m+1);
 #else
   PySys_SetArgv(app->argc_m, (char **)app->argv_m);
 #endif
-
   set_vmdapp(app);
 
   // Set up the prompts
-  PySys_SetObject((char *)"ps1", PyUnicode_FromString((char *)""));
-  PySys_SetObject((char *)"ps2", PyUnicode_FromString((char *)"... "));
+  PySys_SetObject((char*) "ps1", as_pystring(""));
+  PySys_SetObject((char*) "ps2", as_pystring("... "));
 
-#if PY_MAJOR_VERSION < 3
-  initvmdcallbacks();
-  initvmd();
-  initanimate();
-  initatomselection();
-  initatomsel();
-  initaxes();
-  initcolor();
-  initdisplay();
-  initgraphics();
-  initimd();
-  initlabel();
-  initmaterial();
-  initmolecule();
-  initmolrep();
-  initmouse();
-  initrender();
-  inittrans();
-  initvmdmenu();
-  initmeasure();
-  inittopology();
+  vmdmodule = PyImport_ImportModule("vmd");
+  i = 0;
+  while (py_initializers[i].name) {
+    const char *name = py_initializers[i].name;
 
-#ifdef VMDNUMPY
-  initvmdnumpy();
+    PyObject *module = (*(py_initializers[i].initfunc))();
+    i++;
+    if (!module) {
+      msgErr << "Failed to initialize builtin module " << name << sendmsg;
+      PyErr_Print();
+      continue;
+    }
+    retval = PyModule_AddObject(vmdmodule, CAST_HACK name, module);
+    if (retval || PyErr_Occurred()) {
+      msgErr << "Failed to import builtin module " << name << sendmsg;
+      exit(1);
+    }
+  }
+
+  // Now handle the three object-oriented classes
+  // Don't do this if running as a shared library as __init__.py does that for us
+#ifndef VMDSHARED
+  const char *oo_modules[] = {"Molecule", "Label", "Material", NULL};
+  for (const char **tmp = oo_modules; *tmp; tmp++) {
+    PyObject *module = PyImport_ImportModule(*tmp);
+    if (!module) {
+      msgErr << "Failed to initialize object-oriented module " << *tmp << sendmsg;
+      continue;
+    }
+    retval = PyModule_AddObject(vmdmodule, CAST_HACK *tmp, module);
+    if (retval || PyErr_Occurred()) {
+      msgErr << "Failed to initialize object-oriented module " << *tmp << sendmsg;
+      continue;
+    }
+  }
 #endif
-#endif
 
-  // The VMD module imports all the above modules.
-  // DEBUG ROBIN evalString("import VMD");
+  // Make all modules accessible in the default namespace
+  if (!evalString("from vmd import *")) {
+    msgErr << "Failed to import VMD python modules" << sendmsg;
+    exit(1);
+  }
 
   // have_tkinter and have_vmdcallback flags are set to zero if these calls
   // ever fail so that we don't fail over and over again and fill up the
@@ -214,7 +241,6 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp)
 PythonTextInterp::~PythonTextInterp() {
   Py_Finalize();
   msgInfo << "Done with Python." << sendmsg;
-
 }
 
 int PythonTextInterp::doTkUpdate() {
@@ -223,11 +249,18 @@ int PythonTextInterp::doTkUpdate() {
   if (in_tk) return 0;
   if (have_tkinter) {
     in_tk = 1;
-    int rc = evalString(
+  int rc = 1;
+// Python 3 just works for whatever reason when tkinter is imported.
+// I'm not sure why this is...
+#if PY_MAJOR_VERSION >= 3
+    rc = evalString("import _tkinter\n");
+#else
+    rc = evalString(
       "import Tkinter\n"
       "while Tkinter.tkinter.dooneevent(Tkinter.tkinter.DONT_WAIT):\n"
       "\tpass\n"
     );
+#endif
     in_tk = 0;
     if (rc) {
       return 1; // success
@@ -237,7 +270,7 @@ int PythonTextInterp::doTkUpdate() {
   }
   return 0;
 }
-
+  
 void PythonTextInterp::doEvent() {
   // Call any display loop callbacks
   // abort if the call ever fails
@@ -250,8 +283,8 @@ void PythonTextInterp::doEvent() {
     needPrompt = 0;
   }
 
-  if (!vmd_check_stdin())
-	return;
+  if (!vmd_check_stdin()) 
+	return;	
   int code = PyRun_InteractiveOne(stdin, (char *)"VMD");
   needPrompt = 1;
   if (code == E_EOF) {
@@ -270,7 +303,7 @@ int PythonTextInterp::evalString(const char *s) {
 
 int PythonTextInterp::evalFile(const char *s) {
   FILE *fid = fopen(s, "r");
-  if (!fid) {
+  if (!fid) { 
     msgErr << "Error opening file '" << s << "'" << sendmsg;
     return FALSE;
   }
@@ -278,7 +311,7 @@ int PythonTextInterp::evalFile(const char *s) {
   fclose(fid);
   return !code;
 }
-
+ 
 void PythonTextInterp::frame_cb(int molid, int frame) {
   PyObject *arglist = Py_BuildValue((char *)"(i,i)", molid, frame);
   call_callbacks("frame", arglist);

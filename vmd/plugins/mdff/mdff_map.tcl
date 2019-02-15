@@ -10,8 +10,8 @@
 # RCS INFORMATION:
 #
 #       $RCSfile: mdff_map.tcl,v $
-#       $Author: ltrabuco $        $Locker:  $             $State: Exp $
-#       $Revision: 1.1 $       $Date: 2009/08/06 20:07:33 $
+#       $Author: ryanmcgreevy $        $Locker:  $             $State: Exp $
+#       $Revision: 1.4 $       $Date: 2019/01/10 16:06:22 $
 #
 ############################################################################
 
@@ -25,11 +25,6 @@
 # mdff hist -- calculates a density histogram
 # 
 
-# TODO
-# - 'mdff delete' should use the input map gridspacing by default, but
-#    that information has to be provided by volutil first
-
-package require volutil
 package require multiplot
 package require mdff_tmp
 package provide mdff_map 0.2
@@ -90,24 +85,11 @@ proc ::MDFF::Map::mdff_griddx { args } {
     set threshold $defaultThreshold
   }
 
-  # Get temporary filename
-  set tmpDir [::MDFF::Tmp::tmpdir]
-  set tmpDX [file join $tmpDir \
-    [::MDFF::Tmp::tmpfilename -prefix mdff_griddx -suffix .dx -tmpdir $tmpDir]]
-
-  # TODO: change volutil so that we can do everything in once step
-  #       even when the threshold is not zero; i.e., the option
-  #       -dockgrid should take the threshold as an extra argument
-
-  if { $threshold != 0 } {
-    ::VolUtil::volutil -clamp $threshold: -o $tmpDX $inMap
-    ::VolUtil::volutil -smult -1 -o $tmpDX $tmpDX
-    ::VolUtil::volutil -range 0:1 -o $outDX $tmpDX
-    file delete $tmpDX
-  } else {
-    ::VolUtil::volutil -dockgrid 1 -o $outDX $inMap
-  }
-
+  set MAPMOL [mol new $inMap]
+  voltool clamp -min $threshold -mol $MAPMOL
+  voltool smult -amt -1 -mol $MAPMOL
+  voltool range -minmax {0 1} -mol $MAPMOL -o $outDX
+  mol delete $MAPMOL
   return
 
 }
@@ -201,10 +183,13 @@ proc ::MDFF::Map::mdff_delete { args } {
   }
 
   # create a "mask" based on simulated map
-  ::VolUtil::volutil -smult -1 $tmpDX -o $tmpDX2
-  ::VolUtil::volutil -range 0:1 $tmpDX2 -o $tmpDX
-  ::VolUtil::volutil -mult -union $inMap $tmpDX -o $outMap
-
+  set MAPMOL [mol new $tmpDX]
+  set INMAPMOL [mol new $inMap]
+  voltool smult -amt -1 -mol $MAPMOL
+  voltool range -minmax {0 1} -mol $MAPMOL
+  voltool mult -union -mol1 $INMAPMOL -mol2 $MAPMOL -o $outMap 
+  mol delete $MAPMOL
+  mol delete $INMAPMOL
   file delete $tmpDX $tmpDX2
 
 }
@@ -213,7 +198,7 @@ proc ::MDFF::Map::mdff_histogram_usage { } {
 
   variable defaultNBins
 
-  puts "Usage: mdff histogram -i <input map> ?options?"
+  puts "Usage: mdff hist -i <input map> ?options?"
   puts "Options:"
   puts "  -nbins <number of bins> (default: $defaultNBins)"
 
@@ -251,35 +236,99 @@ proc ::MDFF::Map::mdff_histogram { args } {
     set nbins $defaultNBins
   }
 
-  # Get temporary filename
-  set tmpDir [::MDFF::Tmp::tmpdir]
-  set tmpLog [file join $tmpDir \
-    [::MDFF::Tmp::tmpfilename -prefix mdff_hist -suffix .log -tmpdir $tmpDir]]
-
-  ::VolUtil::volutil -tee $tmpLog -quiet -hist -histnbins $nbins $inMap
-
-  # parse the output and plot the histogram...
-  set file [open $tmpLog r]
-  gets $file line
-  while {$line != ""} {
-    if { [regexp {^Density histogram with min = (.*), max = (.*), nbins = (\d+)} $line fullmatch min max nbins] } {
-      gets $file histogram
-      break
-    }
-    gets $file line
-  }
-  close $file
-  file delete $tmpLog
-
-  # calculate x axis
+  global MAPMOL
+  set MAPMOL [mol new $inMap] 
+  
+  set histreturn [voltool hist -nbins $nbins -mol $MAPMOL]
+  set minmax [voltool info minmax -mol $MAPMOL]
+  set min [lindex $minmax 0]
+  set max [lindex $minmax 1]
   set xlist [list]
   set delta [expr {($max - $min) / $nbins}]
-  for {set i 0} {$i < $nbins} {incr i} {
-    lappend xlist [expr {$min + (0.5 * $delta) + $i * $delta}]
+ 
+  foreach {midpt hist} $histreturn {
+    lappend xlist $midpt
+    lappend histogram $hist
   }
 
-  set plot [multiplot -x $xlist -y $histogram -title "Density histogram" -xlabel "Density" -ylabel "Number of voxels" -lines -plot]
+  set highhistval 0.5
+  set highhist 0
+  for {set l 0} {$l < $nbins} {incr l} {
+    if {[lindex $histogram $l] > $highhist} {
+     set highhist [lindex $histogram $l]
+     set highhistval [lindex $xlist $l] 
+    }
+  }
+      
+  set sorted [lsort -integer $histogram]
+  set ymin [lindex $sorted 0]
+  global ymax
+  set ymax [lindex $sorted end]
 
+   
+ #normalize?
+ # for {set z 0} {$z < $nbins} {incr z} {
+ #   set oldval [lindex $histogram $z]
+ #   lappend nhistogram [expr ($oldval - $ymin)/($ymax-$ymin)]
+ # }
+  
+  mol modstyle 0 $MAPMOL Isosurface $highhistval 0 0 0 1 1
+  
+  global plot
+  set plot [multiplot -x $xlist -y $histogram -title "Density histogram" -xlabel "Density" -ylabel "Number of voxels" -nolines -marker square -fill black -xmin [expr [lindex $xlist 0] - (0.5*$delta)] -xmax [expr [lindex $xlist end] + (0.5*$delta)] ]
+  
+  for {set j 0} {$j < $nbins} {incr j} {
+    set left [expr [lindex $xlist $j] - (0.5 * $delta)]
+    set right [expr [lindex $xlist $j] + (0.5 * $delta)]
+    $plot draw rectangle $left 0 $right [lindex $histogram $j] -fill "#0000ff" -tags rect$j
+   
+    #$plot add [lindex $xlist $j] [lindex $histogram $j] -marker square -fillcolor black -radius [expr 0.5*$delta] -callback histclick
+  }
+ # puts [[$plot getpath].f.cf find withtag "rect0"]
+  $plot replot
+  global bpress
+  set bpress 0
+    
+  global xmaxg
+  global xplotming
+  global xplotmaxg
+  global scalexg
+  global xming
+  variable [$plot namespace]::xplotmin
+  variable [$plot namespace]::xplotmax
+  variable [$plot namespace]::scalex
+  variable [$plot namespace]::xmin
+  variable [$plot namespace]::xmax
+  set xplotming $xplotmin
+  set xplotmaxg $xplotmax
+  set scalexg $scalex
+  set xming $xmin
+  set xmaxg $xmax
+  
+  bind [$plot getpath].f.cf <ButtonPress> {
+    set bpress 1    
+    variable [$plot namespace]::xplotmin
+    set x [expr (%x - $xplotming)/$scalexg + $xming]
+    if {$x >= $xming && $x <= $xmaxg} { 
+      $plot undraw "line"
+      $plot draw line $x 0 $x $ymax -tag "line"
+      mol modstyle 0 $MAPMOL Isosurface $x 0 0 0 1 1
+    }
+  }
+  
+  bind [$plot getpath].f.cf <ButtonRelease> {
+    set bpress 0 
+  }
+  
+  bind [$plot getpath].f.cf <Motion> {
+    if {$bpress && $x >= $xming && $x <= $xmaxg} {
+      variable [$plot namespace]::xplotmin
+      set x [expr (%x - $xplotming)/$scalexg + $xming]
+      $plot undraw "line"
+      $plot draw line $x 0 $x $ymax -tag "line"
+      mol modstyle 0 $MAPMOL Isosurface $x 0 0 0 1 1
+    }
+  }
 }
 
 
@@ -338,16 +387,24 @@ proc ::MDFF::Map::mdff_edge { args } {
   set tmpDX3 [file join $tmpDir \
     [::MDFF::Tmp::tmpfilename -prefix mdff_edge -suffix .dx -tmpdir $tmpDir]]
 
-  # TODO: change volutil so that we can do everything in one step
+  set MAPMOL [mol new $inMap]
+  
+  voltool binmask -mol $MAPMOL
+  voltool smult -amt -1 -mol $MAPMOL
+  voltool sadd -amt 1 -mol $MAPMOL
+  
+  set MAPMOL2 [mol new $inMap]
+  voltool -smooth -sigma $defaultSmoothKernel -mol $MAPMOL2
+  voltool mult -mol1 $MAPMOL -mol2 $MAPMOL2 -o $tmpDX3
 
-  # this function is doing B = A + gauus(A) * (1 - binmask(A))
-  # yielding the original information intact, and adding smooth 
-  # edges 
-  ::VolUtil::volutil -invmask -o $tmpDX $inMap
-  ::VolUtil::volutil -smooth $defaultSmoothKernel -o $tmpDX2 $inMap
-  ::VolUtil::volutil -mult $tmpDX $tmpDX2 -o $tmpDX3
-  ::VolUtil::volutil -add $inMap $tmpDX3 -o $outDX
-
+  set MAPMOL3 [mol new $inMap]
+  set MAPMOL4 [mol new $tmpDX3]
+  voltool add -mol1 $MAPMOL3 -mol2 $MAPMOL4 -o $outDX
+     
+  mol delete $MAPMOL
+  mol delete $MAPMOL2
+  mol delete $MAPMOL3
+  mol delete $MAPMOL4
   file delete $tmpDX $tmpDX2 $tmpDX3
 
   return

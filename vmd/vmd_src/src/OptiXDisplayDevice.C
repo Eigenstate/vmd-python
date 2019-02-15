@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 2013-2014 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
 *
 *      $RCSfile: OptiXDisplayDevice.C
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.66 $         $Date: 2016/11/04 06:12:40 $
+*      $Revision: 1.76 $         $Date: 2019/01/17 21:38:55 $
 *
 ***************************************************************************
 * DESCRIPTION:
@@ -42,6 +42,22 @@
 *   Symposium Workshops (IPDPSW), pp. 1048-1057, 2016.
 *   http://dx.doi.org/10.1109/IPDPSW.2016.121
 *
+*  "Omnidirectional Stereoscopic Projections for VR"
+*   John E. Stone.
+*   In, William R. Sherman, editor, 
+*   VR Developer Gems, Taylor and Francis / CRC Press, Chapter 24, 2019.
+*
+*  "Interactive Ray Tracing Techniques for
+*   High-Fidelity Scientific Visualization"
+*   John E. Stone.
+*   In, Eric Haines and Tomas Akenine-Möller, editors,
+*   Ray Tracing Gems, Apress, 2019.
+*
+*  "A Planetarium Dome Master Camera"
+*   John E. Stone.
+*   In, Eric Haines and Tomas Akenine-Möller, editors,
+*   Ray Tracing Gems, Apress, 2019.
+*
 * Portions of this code are derived from Tachyon:
 *   "An Efficient Library for Parallel Ray Tracing and Animation"
 *   John E. Stone.  Master's Thesis, University of Missouri-Rolla, 
@@ -59,8 +75,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "VMDApp.h"    // needed for GPU global memory management
-#include "QuickSurf.h" // needed for GPU global memory management
+#include "VMDApp.h"      // needed for GPU global memory management
+#include "QuickSurf.h"   // needed for GPU global memory management
+#include "VideoStream.h" // needed to query video streaming status
 
 #include "DispCmds.h"  // CYLINDER_TRAILINGCAP, etc..
 #include "OptiXDisplayDevice.h"
@@ -68,6 +85,7 @@
 #include "config.h"    // needed for default image viewer
 #include "Hershey.h"   // needed for Hershey font rendering fctns
 
+#include "ProfileHooks.h"
 
 // The default radius for points and lines (which are displayed
 // as small spheres or cylinders, respectively)
@@ -81,6 +99,9 @@ OptiXDisplayDevice::OptiXDisplayDevice(VMDApp *app, int interactive,
                (interactive) ? 
                "TachyonL-OptiX (interactive, GPU-accelerated)" : "TachyonL-OptiX (internal, in-memory, GPU-accelerated)",
                "vmdscene.ppm", DEF_VMDIMAGEVIEWER) {
+ 
+  PROFILE_PUSH_RANGE((interactive) ? "OptiXDisplayDevice::OptiXDisplayDevice(INTERACTIVE)" : "OptiXDisplayDevice::OptiXDisplayDevice(BATCH)", 0);  
+
   vmdapp = app; // save VMDApp handle for GPU memory management routines
 
   reset_vars(); // initialize material cache
@@ -100,21 +121,28 @@ OptiXDisplayDevice::OptiXDisplayDevice(VMDApp *app, int interactive,
   aosamples = 12;
 
   remote_device = cluster_dev;
-  ort = new OptiXRenderer(remote_device);
+  ort = new OptiXRenderer(vmdapp, remote_device);
   ort_timer = wkf_timer_create();
+
+  PROFILE_POP_RANGE();
 }
         
 /// destructor
 OptiXDisplayDevice::~OptiXDisplayDevice(void) {
+  PROFILE_PUSH_RANGE("OptiXDisplayDevice::~OptiXDisplayDevice()", 0);  
+
   delete ort;
   wkf_timer_destroy(ort_timer);
+
+  PROFILE_POP_RANGE();
 }
 
 void OptiXDisplayDevice::add_material(void) {
   ort->add_material(materialIndex,
                     mat_ambient, mat_diffuse, mat_specular, mat_shininess,
                     mat_mirror, mat_opacity, mat_outline, mat_outlinewidth, 
-                    mat_transmode > 0.5f);
+                    round(mat_transmode)); // XXX allow shader hacking
+//                    mat_transmode > 0.5f);
 }
 
 
@@ -156,7 +184,15 @@ void OptiXDisplayDevice::send_cylinder_buffer() {
 void OptiXDisplayDevice::cylinder(float *a, float *b, float r, int filled) {
   // if we have a change in transformation matrix, color, or material state,
   // we have to emit all accumulated cylinders to OptiX and begin a new batch
-  if (cylinder_xform != NULL && ((cylinder_matindex != materialIndex) || (memcmp(cylinder_xform->mat, transMat.top().mat, sizeof(cylinder_xform->mat))))) {
+  if (
+#if 1
+      // Rather than submitting all of the array elements in a single very large
+      // OptiX buffer, we break up very large arrays into multiple smaller 
+      // OptiX buffers, to better facilitate NVLink-based distributed memory 
+      // ray tracing across multiple GPUs.
+      cylinder_vert_buffer.num() >= 15000000 || 
+#endif
+      (cylinder_xform != NULL && ((cylinder_matindex != materialIndex) || (memcmp(cylinder_xform->mat, transMat.top().mat, sizeof(cylinder_xform->mat)))))) {
     send_cylinder_buffer(); // render the accumulated cylinder buffer...
   }
 
@@ -210,9 +246,31 @@ void OptiXDisplayDevice::cylinder(float *a, float *b, float r, int filled) {
 void OptiXDisplayDevice::sphere_array(int spnum, int spres, float *centers, 
                                       float *radii, float *colors) {
   add_material();
+
+#if 1
+  // Rather than submitting all of the array elements in a single very large 
+  // OptiX buffer, we break up very large arrays into multiple smaller 
+  // OptiX buffers, to better facilitate NVLink-based distributed memory 
+  // ray tracing across multiple GPUs.
+  int spleft=spnum;
+  while (spleft > 0) {
+    int spcount=spleft;
+    if (spcount > 6000000) {
+      spcount=5000000;
+    } 
+
+    long offset = spnum - spleft;
+    long offset3 = 3L * offset;
+    ort->sphere_array_color(transMat.top(), scale_factor(), spcount, 
+                            centers+offset3, radii+offset, colors+offset3, materialIndex);
+    spleft-=spcount;
+  }
+#else
+  // Submit all geometry in one buffer
   ort->sphere_array_color(transMat.top(), scale_factor(), spnum, 
                           centers, radii, colors, materialIndex);
-  
+#endif
+ 
   // set final color state after array has been drawn
   int ind=(spnum-1)*3;
   super_set_color(nearest_index(colors[ind], colors[ind+1], colors[ind+2]));
@@ -624,12 +682,25 @@ void OptiXDisplayDevice::write_trailer(void){
     }
   }
 
+  // enable output of alpha channel to alpha-capable file formats
+  int writealpha = 0;
+  if (getenv("VMDOPTIXWRITEALPHA"))
+    writealpha=1;
+
 #if defined(VMDOPTIX_INTERACTIVE_OPENGL)
-  if (isinteractive)
-    ort->render_to_glwin(my_filename); // interactive progressive ray tracer
+  if (isinteractive) {
+    if (vmdapp->display->supports_gui()) {
+      ort->render_to_glwin(my_filename, writealpha); // interactive progressive ray tracer
+    } else if (vmdapp->uivs->srv_connected()) {
+      ort->render_to_videostream(my_filename, writealpha); // interactive progressive ray tracer for remote video streaming
+    }
+  } else
+#else
+  if (isinteractive && vmdapp->uivs->srv_connected())
+    ort->render_to_videostream(my_filename, writealpha); // interactive progressive ray tracer for remote video streaming
   else
 #endif
-    ort->render_to_file(my_filename);  // render the scene in batch mode...
+    ort->render_to_file(my_filename, writealpha);  // render the scene in batch mode...
 
 
   // by default the OptiX context is re-used repeatedly,
@@ -640,7 +711,7 @@ void OptiXDisplayDevice::write_trailer(void){
     delete ort;
 
     // make a new OptiXRenderer object so we're ready for the next run...
-    ort = new OptiXRenderer(remote_device);
+    ort = new OptiXRenderer(vmdapp, remote_device);
   } else {
     // reset internal state between renders
     // reinitialize material cache, clean context state

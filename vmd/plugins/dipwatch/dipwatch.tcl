@@ -4,13 +4,13 @@
 # of a dipole to selections
 #
 # (c) 2006-2009 by Axel Kohlmeyer <akohlmey@cmm.chem.upenn.edu>
+# (c) 2018 by Axel Kohlmeyer <akohlmey@gmail.com>
 #     
 ########################################################################
 #
-# $Id: dipwatch.tcl,v 1.5 2013/04/15 15:43:09 johns Exp $
+# $Id: dipwatch.tcl,v 1.6 2018/10/22 14:50:35 johns Exp $
 #
 # create package and namespace and default all namespace global variables.
-package provide dipwatch 1.2
 
 namespace eval ::DipWatch:: {
     # exported functions
@@ -21,12 +21,14 @@ namespace eval ::DipWatch:: {
     namespace export dipwatchexport; # export dipole values to file
 
     variable w;               # handle to the base widget.
+    variable version "1.3";   # plugin version
     variable numdips 6;       # number of dipoles (could be made dynamical)
     variable diptoggle;       # on/off flags for dipoles
     variable dipmolid;        # molecule id for dipoles
     variable dipoldmolid;     # old molecule id for dipoles
     variable dipselstr;       # selection string for dipoles
     variable dipselfun;       # selection function (result of atomselect)
+    variable dipselupd;       # on/off flags for updating selections
     variable dipcolor;        # color of dipoles
     variable dipscale;        # scaling factor for dipole arrow
     variable dipradius;       # radius for dipole arrow
@@ -39,6 +41,7 @@ namespace eval ::DipWatch:: {
         set dipoldmolid($i)  0
         set dipselstr($i) all
         set dipselfun($i) "none"
+        set dipselupd($i) 0
         set dipcolor($i) red
         set dipscale($i) 1.0
         set dipradius($i) 0.2
@@ -48,12 +51,16 @@ namespace eval ::DipWatch:: {
     }
 }
 
+package provide dipwatch $DipWatch::version
+
+
 #####################
 # text mode interface to change settings
 proc ::DipWatch::dipwatchset {dipid args} {
     variable diptoggle
     variable dipmolid
     variable dipselstr
+    variable dipselupd
     variable dipcolor
     variable dipscale
     variable dipradius
@@ -102,6 +109,16 @@ proc ::DipWatch::dipwatchset {dipid args} {
                 }
             }
 
+            update {
+                if {[string equal -nocase $val yes] || [string equal -nocase $val y]
+                    || [string equal -nocase $val 1] || [string equal -nocase $val true]
+                    || [string equal -nocase $val on]} {
+                    set dipselupd($dipid) 1
+                } else {
+                    set dipselupd($dipid) 0
+                }
+            }
+
             sel    {set dipselstr($dipid) $val}
             color  {set dipcolor($dipid)  $val}
             scale  {set dipscale($dipid)  $val}
@@ -116,6 +133,7 @@ proc ::DipWatch::dipwatchexport {dipid {fname "none"} {step 1}} {
     variable w
     variable dipmolid
     variable dipselstr
+    variable dipselupd
     variable dipcenter
 
     set molid $dipmolid($dipid)
@@ -136,7 +154,7 @@ proc ::DipWatch::dipwatchexport {dipid {fname "none"} {step 1}} {
         set nf [molinfo $molid get numframes]
         for {set i 0} {$i < $nf} {incr i $step} {
             $sel frame $i
-            $sel update
+            if { $dipselupd($dipid) } { $sel update }
             if {! [catch {measure dipole $sel -debye $dipcenter($dipid)} vector]} {
                 puts $fp "$i  [lindex $vector 0]  [lindex $vector 1]  [lindex $vector 2]  [veclength $vector]"
             }
@@ -230,13 +248,14 @@ proc ::DipWatch::UpdateMolecule { args } {
 
 #################
 # the heart of the matter. draw a dipole.
-proc ::DipWatch::draw_dipole {mol sel {color red} {scale 1.0} {radius 0.2} {dipidx 0}} {
+proc ::DipWatch::draw_dipole {mol sel {update 0} {color red} {scale 1.0} {radius 0.2} {dipidx 0}} {
     variable dipvalue
     variable dipcenter
 
     set res 6
     set gidlist {}
     set filled yes
+    if { $update } { $sel update }
 
     # perhaps this should use the center information
     if {[catch {measure center $sel weight mass} center]} {
@@ -297,6 +316,7 @@ proc ::DipWatch::DrawDips {args} {
     variable dipmolid;
     variable dipselstr;
     variable dipselfun;
+    variable dipselupd;
     variable dipcolor;
     variable dipscale;
     variable dipradius;
@@ -316,7 +336,7 @@ proc ::DipWatch::DrawDips {args} {
             foreach g $dipgidlist($i) { 
                 graphics $dipmolid($i) delete $g
             }
-            set dipgidlist($i) [draw_dipole $dipmolid($i) $sel \
+            set dipgidlist($i) [draw_dipole $dipmolid($i) $sel $dipselupd($i) \
                                     $dipcolor($i) $dipscale($i) $dipradius($i) $i]
         }
     }
@@ -368,7 +388,7 @@ proc ::DipWatch::dipwatchgui {} {
     menu $w.menubar.help.menu -tearoff no
     $w.menubar.help.menu add command -label "About" \
         -command {tk_messageBox -type ok -title "About DipWatch" \
-                      -message "The dipwatch plugin provides a script and a GUI to draw arrows inside a molecule to represent the dipole moment of a given selection.\n\nVersion 1.2\n(c) 2006-2009 by Axel Kohlmeyer\n<akohlmey@cmm.chem.upenn.edu>"}
+                      -message "The dipwatch plugin provides a script and a GUI to draw arrows inside a molecule to represent the dipole moment of a given selection.\n\nVersion $DipWatch::version\n(c) 2006-2009 by Axel Kohlmeyer\n<akohlmey@cmm.chem.upenn.edu>\n(c) 2018 by Axel Kohlmeyer\n<akohlmey@gmail.com>"}
     $w.menubar.help.menu add command -label "Help..." \
         -command "vmd_open_url [string trimright [vmdinfo www] /]/plugins/dipwatch"
     pack $w.menubar.help -side right
@@ -388,6 +408,7 @@ proc ::DipWatch::dipwatchgui {} {
     label $f.b -text "Dipole \#:"
     label $f.m -text "Molecule \#:"
     label $f.s -text "Selection:"
+    label $f.u -text "Update:"
     label $f.c -text "Color:"
     label $f.f -text "Scaling:"
     label $f.r -text "Radius:"
@@ -396,11 +417,12 @@ proc ::DipWatch::dipwatchgui {} {
     grid configure $f.b -row 0 -column 0 -sticky "snew"
     grid configure $f.m -row 0 -column 1 -sticky "snew"
     grid configure $f.s -row 0 -column 2 -sticky "snew"
-    grid configure $f.c -row 0 -column 3 -sticky "snew"
-    grid configure $f.f -row 0 -column 4 -sticky "snew"
-    grid configure $f.r -row 0 -column 5 -sticky "snew"
-    grid configure $f.v -row 0 -column 6 -sticky "snew"
-    grid configure $f.o -row 0 -column 7 -sticky "snew"
+    grid configure $f.u -row 0 -column 3 -sticky "snew"
+    grid configure $f.c -row 0 -column 4 -sticky "snew"
+    grid configure $f.f -row 0 -column 5 -sticky "snew"
+    grid configure $f.r -row 0 -column 6 -sticky "snew"
+    grid configure $f.v -row 0 -column 7 -sticky "snew"
+    grid configure $f.o -row 0 -column 8 -sticky "snew"
     grid rowconfigure $f 0 -weight 0 -minsize 10
 
     set colors [colorinfo colors]
@@ -411,6 +433,7 @@ proc ::DipWatch::dipwatchgui {} {
         entry $f.s$i -textvariable ::DipWatch::dipselstr($i) \
             -validatecommand "::DipWatch::EntryUpdate $i" \
             -validate focusout
+        checkbutton $f.u$i -variable ::DipWatch::dipselupd($i)
         menubutton $f.m$i -relief raised -bd 2 -direction flush \
             -textvariable  ::DipWatch::dipmolid($i) \
             -menu $f.m$i.menu -width 10
@@ -439,6 +462,7 @@ proc ::DipWatch::dipwatchgui {} {
         pack $f.b$i -side left 
         pack $f.m$i -side left 
         pack $f.s$i -side left 
+        pack $f.u$i -side left 
         pack $f.c$i -side left 
         pack $f.f$i -side left
         pack $f.r$i -side left
@@ -447,21 +471,23 @@ proc ::DipWatch::dipwatchgui {} {
         grid configure $f.b$i -row [expr $i + 1] -column 0 -sticky "snew"
         grid configure $f.m$i -row [expr $i + 1] -column 1 -sticky "snew"
         grid configure $f.s$i -row [expr $i + 1] -column 2 -sticky "snew"
-        grid configure $f.c$i -row [expr $i + 1] -column 3 -sticky "snew"
-        grid configure $f.f$i -row [expr $i + 1] -column 4 -sticky "snew"
-        grid configure $f.r$i -row [expr $i + 1] -column 5 -sticky "snew"
-        grid configure $f.v$i -row [expr $i + 1] -column 6 -sticky "snew"
-        grid configure $f.o$i -row [expr $i + 1] -column 7 -sticky "snew"
+        grid configure $f.u$i -row [expr $i + 1] -column 3 -sticky "snew"
+        grid configure $f.c$i -row [expr $i + 1] -column 4 -sticky "snew"
+        grid configure $f.f$i -row [expr $i + 1] -column 5 -sticky "snew"
+        grid configure $f.r$i -row [expr $i + 1] -column 6 -sticky "snew"
+        grid configure $f.v$i -row [expr $i + 1] -column 7 -sticky "snew"
+        grid configure $f.o$i -row [expr $i + 1] -column 8 -sticky "snew"
         grid rowconfigure $f [expr $i + 1] -weight 0 
     }
     grid columnconfigure $f 0 -weight 0
     grid columnconfigure $f 1 -weight 1 -minsize 15
     grid columnconfigure $f 2 -weight 5 -minsize 15
-    grid columnconfigure $f 3 -weight 1 -minsize 15
-    grid columnconfigure $f 4 -weight 1 -minsize 10
-    grid columnconfigure $f 5 -weight 1 -minsize 10 
-    grid columnconfigure $f 6 -weight 1 -minsize 15 
+    grid columnconfigure $f 3 -weight 1 -minsize 10
+    grid columnconfigure $f 4 -weight 1 -minsize 15
+    grid columnconfigure $f 5 -weight 1 -minsize 10
+    grid columnconfigure $f 6 -weight 1 -minsize 10 
     grid columnconfigure $f 7 -weight 1 -minsize 15 
+    grid columnconfigure $f 8 -weight 1 -minsize 15 
 
     UpdateMolecule
     dipwatchrun

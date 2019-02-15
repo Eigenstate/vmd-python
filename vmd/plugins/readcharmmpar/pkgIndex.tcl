@@ -8,4 +8,4 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded readcharmmpar 1.3 "set env(CHARMMPARDIR) {$dir}; [list source [file join $dir readcharmmpar.tcl]]"
+package ifneeded readcharmmpar 1.4 "set env(CHARMMPARDIR) {$dir}; [list source [file join $dir readcharmmpar.tcl]]"

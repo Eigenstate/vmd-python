@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DispCmds.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.110 $	$Date: 2016/11/28 03:04:59 $
+ *	$Revision: 1.113 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -121,6 +121,35 @@ void DispCmdSphereArray::putdata(const float * spcenters,
 }
 
 //*************************************************************
+// plot a lattice cube with side length equal to 2x radius at the given position
+void DispCmdLatticeCubeArray::putdata(const float * cbcenters,
+                                      const float * cbradii,
+                                      const float * cbcolors,
+                                      int num_cubes,
+                                      VMDDisplayList * dobj) {
+
+  DispCmdLatticeCubeArray *ptr = (DispCmdLatticeCubeArray *) dobj->append(DCUBEARRAY, 
+                           sizeof(DispCmdLatticeCubeArray) +
+                           sizeof(float) * num_cubes * 3L +
+                           sizeof(float) * num_cubes + 
+                           sizeof(float) * num_cubes * 3L +
+                           sizeof(int) * 1L);
+  if (ptr == NULL)
+    return;
+  ptr->numcubes = num_cubes;
+
+  float *centers;
+  float *radii;
+  float *colors;
+  ptr->getpointers(centers, radii, colors);
+
+  memcpy(centers, cbcenters, sizeof(float) * num_cubes * 3L);
+  memcpy(radii, cbradii, sizeof(float) * num_cubes);
+  memcpy(colors, cbcolors, sizeof(float) * num_cubes * 3L);
+}
+
+
+//*************************************************************
 
 void DispCmdPointArray::putdata(const float * pcenters,
                                 const float * pcolors,
@@ -156,37 +185,53 @@ void DispCmdPointArray::putdata(const float * pcenters,
                                 int num_selected,
                                 VMDDisplayList * dobj) {
 
-  DispCmdPointArray *ptr = (DispCmdPointArray *) dobj->append(DPOINTARRAY, 
-                           sizeof(DispCmdPointArray) +
-                           sizeof(float) * num_selected * 3L +
-                           sizeof(float) * num_selected * 3L +
-                           sizeof(float) +
-                           sizeof(int));
-  if (ptr == NULL)
-    return;
-  ptr->size = psize;
-  ptr->numpoints = num_selected;
+  // If we have a reasonable size atom selection and therefore 
+  // vertex buffer size, we use a very fast/simple path for populating the 
+  // display command buffer.
+  // If we have too many vertices, we have to break up the vertex buffers
+  // and emit several smaller buffers to prevent integer wraparound in 
+  // vertex indexing in back-end renderers.  
+  int totalpoints=0;
+  int i=0;
+  while (totalpoints < num_selected) {
+    int chunksize = num_selected - totalpoints;
+    if (chunksize > VMDMAXVERTEXBUFSZ)
+      chunksize = VMDMAXVERTEXBUFSZ;
 
-  float *centers;
-  float *colors;
-  ptr->getpointers(centers, colors);
+    DispCmdPointArray *ptr = (DispCmdPointArray *) dobj->append(DPOINTARRAY, 
+                             sizeof(DispCmdPointArray) +
+                             sizeof(float) * chunksize * 3L +
+                             sizeof(float) * chunksize * 3L +
+                             sizeof(float) +
+                             sizeof(int));
+    if (ptr == NULL)
+      return;
+    ptr->size = psize;
+    ptr->numpoints = chunksize;
 
-  const float *fp = pcenters;
-  long i, ind;
-  for (ind=0,i=0; i < num_atoms; i++) {
-    // draw a sphere for each selected atom
-    if (on[i]) {
-      centers[ind    ] = fp[0];
-      centers[ind + 1] = fp[1];
-      centers[ind + 2] = fp[2];
+    float *centers, *colors;
+    ptr->getpointers(centers, colors);
 
-      const float *cp = scene->color_value(pcolors[i]);
-      colors[ind    ] = cp[0];
-      colors[ind + 1] = cp[1];
-      colors[ind + 2] = cp[2];
-      ind += 3L;
+    const float *fp = pcenters + 3L*i;
+    long ind;
+    int cnt;
+    for (ind=0,cnt=0; ((cnt < VMDMAXVERTEXBUFSZ) && (i < num_atoms)); i++) {
+      // draw a point for each selected atom
+      if (on[i]) {
+        cnt++;
+        centers[ind    ] = fp[0];
+        centers[ind + 1] = fp[1];
+        centers[ind + 2] = fp[2];
+
+        const float *cp = scene->color_value(pcolors[i]);
+        colors[ind    ] = cp[0];
+        colors[ind + 1] = cp[1];
+        colors[ind + 2] = cp[2];
+        ind += 3L;
+      }
+      fp += 3L;
     }
-    fp += 3L;
+    totalpoints+=cnt;
   }
 }
 

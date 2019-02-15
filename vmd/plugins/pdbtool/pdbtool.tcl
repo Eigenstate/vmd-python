@@ -7,7 +7,7 @@
 ##         johns@ks.uiuc.edu
 ##         vmd@ks.uiuc.edu
 ##
-## $Id: pdbtool.tcl,v 1.11 2009/09/04 19:27:57 akohlmey Exp $
+## $Id: pdbtool.tcl,v 1.13 2017/07/12 18:20:20 johns Exp $
 ##
 
 ##
@@ -21,7 +21,7 @@
 
 
 ## Tell Tcl that we're a package and any dependencies we may have
-package provide pdbtool 1.0
+package provide pdbtool 1.1
 
 package require http 2.4
 
@@ -126,8 +126,13 @@ proc ::PDBTool::download {} {
   variable pdbfile
   variable pdbcode
 
-  ## Adapted to new PDB website layout, changed on 1/1/2006
-  set url [format "http://www.rcsb.org/pdb/downloadFile.do?fileFormat=pdb&compression=NO&structureId=%s" $pdbcode] 
+  # Adapted to new PDB website layout, which changed on 6/23/2017
+  # http://www.rcsb.org/pdb/static.do?p=download/http/index.html
+  set url [format "http://files.rcsb.org/download/%s.pdb" $pdbcode]
+
+##  ## Adapted to new PDB website layout, changed on 1/1/2006
+##  set url [format "http://www.rcsb.org/pdb/downloadFile.do?fileFormat=pdb&compression=NO&structureId=%s" $pdbcode] 
+
   puts "Downloading PDB file from URL:\n  $url"
 
   vmdhttpcopy $url $pdbfile

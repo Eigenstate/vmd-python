@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: GraphicsFltkMenu.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.160 $       $Date: 2016/11/28 03:05:00 $
+ *      $Revision: 1.163 $       $Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -435,6 +435,10 @@ GraphicsFltkMenu::GraphicsFltkMenu(VMDApp *vmdapp)
     repcontrols.add_name("Beads",new GraphicsFltkRepBeads(repcontrol_cb, this));
     repcontrols.add_name("Dotted",new GraphicsFltkRepDotted(repcontrol_cb, this));
     repcontrols.add_name("Solvent",new GraphicsFltkRepSolvent(repcontrol_cb, this));
+#ifdef VMDLATTICECUBES
+    repcontrols.add_name("LatticeCubes",new GraphicsFltkRepLatticeCubes(repcontrol_cb, this));
+#endif
+
     stylegroup->end();
     selbuilder = new SelectionBuilder(0, 300, this, selectioninput, app->atomSelParser);
 #if defined(VMDMENU_WINDOW)
@@ -523,7 +527,7 @@ GraphicsFltkMenu::GraphicsFltkMenu(VMDApp *vmdapp)
     b4->callback(colorscale_auto_cb, this);
 #endif
 
-    new Fl_Box(10, 440, 250, 25, "Draw Multiple Frames: (now, b:e, b:s:e)");
+    new Fl_Box(10, 440, 250, 25, "Draw Multiple Frames: (now, b:e, b:s:e, comma separated)");
     multiframeinput = new Fl_Input(20, 465, 250, 20);
     multiframeinput->align(FL_ALIGN_TOP);
     multiframeinput->when(FL_WHEN_ENTER_KEY);
@@ -923,8 +927,10 @@ void GraphicsFltkMenu::update_molchooser() {
           (GraphicsFltkRepVolumetric *)repcontrols.data(k);
         rep->dataset_clear();
         for (int j=0; j<m->num_volume_data(); j++) {
-          const VolumetricData *data = m->get_volume_data(j);
-          rep->dataset_append(data->name, data->datamin, data->datamax);
+          VolumetricData *data = m->modify_volume_data(j);
+          float datamin, datamax;
+          data->datarange(datamin, datamax);
+          rep->dataset_append(data->name, datamin, datamax);
         }
       }
 

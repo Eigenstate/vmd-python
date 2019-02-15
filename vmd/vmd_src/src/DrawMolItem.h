@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolItem.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.180 $	$Date: 2016/11/28 03:04:59 $
+ *	$Revision: 1.184 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -78,23 +78,24 @@ private:
   //@{ 
   /// useful drawing command objects, used to create display list
   DispCmdBeginRepGeomGroup cmdBeginRepGeomGroup;
-  DispCmdColorIndex      cmdColorIndex;
-  DispCmdComment         cmdCommentX;
-  DispCmdCylinder        cmdCylinder;
-  DispCmdLine            cmdLine;
-  DispCmdLineType        cmdLineType;
-  DispCmdLineWidth       cmdLineWidth;
-  DispCmdPickPoint       pickPoint;
-  DispCmdPointArray      cmdPointArray;
-  DispCmdSphere          cmdSphere;
-  DispCmdSphereRes       cmdSphres;
-  DispCmdSphereType      cmdSphtype;
-  DispCmdSphereArray     cmdSphereArray;
-  DispCmdSquare          cmdSquare;
-  DispCmdTriangle        cmdTriangle;
-  DispCmdTriMesh         cmdTriMesh;
-  DispCmdVolSlice        cmdVolSlice;
-  DispCmdWireMesh        cmdWireMesh;
+  DispCmdColorIndex        cmdColorIndex;
+  DispCmdComment           cmdCommentX;
+  DispCmdCylinder          cmdCylinder;
+  DispCmdLatticeCubeArray  cmdCubeArray;
+  DispCmdLine              cmdLine;
+  DispCmdLineType          cmdLineType;
+  DispCmdLineWidth         cmdLineWidth;
+  DispCmdPickPoint         pickPoint;
+  DispCmdPointArray        cmdPointArray;
+  DispCmdSphere            cmdSphere;
+  DispCmdSphereRes         cmdSphres;
+  DispCmdSphereType        cmdSphtype;
+  DispCmdSphereArray       cmdSphereArray;
+  DispCmdSquare            cmdSquare;
+  DispCmdTriangle          cmdTriangle;
+  DispCmdTriMesh           cmdTriMesh;
+  DispCmdVolSlice          cmdVolSlice;
+  DispCmdWireMesh          cmdWireMesh;
   //@}
 
   /// Color/atom lookup table.  Updated when color or selection is changed.
@@ -129,6 +130,9 @@ private:
 
   /// Store periodic boundary transformations in the display list
   void update_pbc_transformations();
+
+  /// Store instance transformations in the display list
+  void update_instance_transformations();
 
 #ifdef VMDMSMS
   MSMSInterface msms;          ///< MSMS interface class object
@@ -177,6 +181,7 @@ private:
   void generate_tubearray();
 
   // commands to draw different representations for a given selection 
+  void draw_solid_cubes(float *, float radscale);
   void draw_solid_spheres(float *, int res, float radscale, float fixrad);
   void draw_residue_beads(float *, int res, float radscale);
   void draw_dotted_spheres(float *, float srad, int sres); ///< dotted reps
@@ -264,18 +269,18 @@ private:
 
   //@{
   // helper functions for volume rendering
-  void draw_volume_box_solid(const VolumetricData *);
-  void draw_volume_box_lines(const VolumetricData *);
+  void draw_volume_box_solid(VolumetricData *);
+  void draw_volume_box_lines(VolumetricData *);
   void draw_volume_slice(const VolumetricData *, int, float, int);
   void draw_volume_texture(const VolumetricData *, int);
   void draw_volume_isosurface_points(const VolumetricData *, float, int, int);
-  void draw_volume_isosurface_lit_points(const VolumetricData *, float, int, int);
-  void draw_volume_isosurface_trimesh(const VolumetricData *, float, int, const float *voltex=NULL);
-  void draw_volume_isosurface_lines(const VolumetricData *, float, int, int);
+  void draw_volume_isosurface_lit_points(VolumetricData *, float, int, int);
+  void draw_volume_isosurface_trimesh(VolumetricData *, float, int, const float *voltex=NULL);
+  void draw_volume_isosurface_lines(VolumetricData *, float, int, int);
   int  draw_volume_get_colorid(void);
   void prepare_volume_texture(const VolumetricData *v, int method);
-  int calcseeds_grid(const VolumetricData *v, ResizeArray<float> *seeds, int maxseedcount);
-  int calcseeds_gradient_magnitude(const VolumetricData *v, ResizeArray<float> *seeds, float seedmin, float seedmax, int maxseedcount);
+  int calcseeds_grid(VolumetricData *v, ResizeArray<float> *seeds, int maxseedcount);
+  int calcseeds_gradient_magnitude(VolumetricData *v, ResizeArray<float> *seeds, float seedmin, float seedmax, int maxseedcount);
 
   //@}
 
@@ -327,6 +332,7 @@ public:
 private:
   int needRegenerate;                   ///< regeneration flag
   int update_pbc;                       ///< Flag for updating PBC data
+  int update_instances;                 ///< Flag for updating instance data
   int update_ss;                        ///< Flag for updating sec. structure
   int update_ts;                        ///< Flag for update timestep
   int update_traj;                      ///< Flag for modified set of timesteps
@@ -366,8 +372,8 @@ public:
   void set_drawframes(const char *frames);
   const char *get_drawframes() const { return framesel; }
    
-  /// Controls for display of periodic boundary conditions.  Uses the
-  /// PBC_x defines in VMDDisplayList. 
+  /// Controls for display of periodic boundary conditions.  
+  /// Uses the PBC_x defines in VMDDisplayList. 
   void set_pbc(int);
   int get_pbc() const;
 
@@ -378,6 +384,17 @@ public:
   /// the pbc parameters in Timestep have changed; update the transformation
   /// matrices accordingly (but no need to regenerate display lists).
   void change_pbc() { update_pbc = 1; }
+
+
+  /// Controls for display of molecule instances
+  /// Uses the INSTANCE_x defines in VMDDisplayList. 
+  void set_instances(int);
+  int get_instances() const;
+
+  /// the instance parameters have changed; update the transformation
+  /// matrices accordingly (but no need to regenerate display lists).
+  void change_instances() { update_instances = 1; }
+
 
   /// the secondary structure for the molecule has changed
   void change_ss() { update_ss = 1; }

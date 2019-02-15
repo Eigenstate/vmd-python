@@ -8,4 +8,4 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded colorscalebar 1.4 [list source [file join $dir colorscalebar.tcl]]
+package ifneeded colorscalebar 3.0 [list source [file join $dir colorscalebar.tcl]]

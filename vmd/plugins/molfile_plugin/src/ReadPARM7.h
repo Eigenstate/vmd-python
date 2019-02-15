@@ -3,7 +3,7 @@
  *
  *      $RCSfile: ReadPARM7.h,v $
  *      $Author: johns $        $Locker:  $                $State: Exp $
- *      $Revision: 1.32 $      $Date: 2016/11/06 17:54:56 $
+ *      $Revision: 1.33 $      $Date: 2017/08/30 17:42:33 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -229,10 +229,11 @@ static int parse_parm7_charge(const char *fmt,
   return 1;
 }
 
-
 static int parse_parm7_atomicnumber(const char *fmt,
     int natoms, molfile_atom_t *atoms, FILE *file) {
-  if (strncasecmp(fmt, "%FORMAT(10I8)", 13)) return 0;
+  if (strncasecmp(fmt, "%FORMAT(10I8)", 13))
+    return 0;
+
   for (int i=0; i<natoms; i++) {
     long int j=0;
     if (fscanf(file, "%li", &j) != 1) {
@@ -241,6 +242,7 @@ static int parse_parm7_atomicnumber(const char *fmt,
     }
     atoms[i].atomicnumber = (int)j;
   }
+
   return 1;
 }
 

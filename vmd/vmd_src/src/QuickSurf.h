@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: QuickSurf.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.18 $	$Date: 2016/11/28 03:05:04 $
+ *	$Revision: 1.21 $	$Date: 2019/01/17 21:21:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -42,6 +42,7 @@ private:
   float yaxis[3];          ///< Y-axis of the volumetric map
   float zaxis[3];          ///< Z-axis of the volumetric map
 
+  int force_cpuonly;       ///< If we need CPU-fallback for MDFF, we set this flag in the constructor
   CUDAQuickSurf *cudaqs;   ///< Pointer to CUDAQuickSurf object if it exists
 
   wkf_timerhandle timer;   ///< Internal timer for performance instrumentation
@@ -53,7 +54,7 @@ private:
   double reptime;          ///< Internal timer for performance instrumentation
 
 public:
-  QuickSurf(void);
+  QuickSurf(int forcecpuonly=0);
   ~QuickSurf(void);
 
   void free_gpu_memory(void); ///< experimental mechanism to free GPU memory

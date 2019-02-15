@@ -31,6 +31,21 @@ switch ( `hostname` )
     echo "Plugin builds done..."
     breaksw;
 
+ ## IBM Poughkeepsie center P8 "Minsky" and P9 "Newell" test machines
+ case p10login4: 
+ case p10login3: 
+    echo "Using build settings for POWER8/9+P/V100 test box"
+    setenv TCLINC -I/gpfs/gpfs_gl4_16mb/b8p148/b8p148aa/vmd/lib/tcl/include
+    setenv TCLLIB -L/gpfs/gpfs_gl4_16mb/b8p148/b8p148aa/vmd/lib/tcl
+    cd $unixdir; make OPENPOWER TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_OPENPOWER >& log.OPENPOWER.$DATE < /dev/null &
+#    setenv NETCDFINC -I/gpfs/gpfs_gl4_16mb/b8p148/b8p148aa/vmd/lib/netcdf/include
+#    setenv NETCDFLIB -L/gpfs/gpfs_gl4_16mb/b8p148/b8p148aa/vmd/lib/netcdf
+    echo "Waiting for all plugin make jobs to complete..."
+    wait;
+    echo "^G^G^G^G"
+    echo "Plugin builds done..."
+    breaksw;
+
  ## NVIDIA P8 "Minsky" test machines
  case pwr02: 
  case pwr03: 
@@ -60,7 +75,24 @@ switch ( `hostname` )
     echo "Plugin builds done..."
     breaksw;
 
+ # KTH PDC
+ case beskow-login*:
+    echo "Using build settings for KTH PDC Beskow Cray XC40"
+    setenv TCLINC -I/cfs/klemming/nobackup/j/johnst/vmd/lib/tcl/include
+    setenv TCLLIB -L/cfs/klemming/nobackup/j/johnst/vmd/lib/tcl
+    cd $unixdir; gmake CRAY_XC TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_CRAY_XC >& log.CRAY_XC.$DATE < /dev/null &
+#    setenv NETCDFINC -I/autofs/na3_home1/stonej1/vmd/lib/netcdf/include
+#    setenv NETCDFLIB -L/autofs/na3_home1/stonej1/vmd/lib/netcdf
+    echo "Waiting for all plugin make jobs to complete..."
+    wait;
+    echo "^G^G^G^G"
+    echo "Plugin builds done..."
+    breaksw;
+
+
+ ## ORNL "Summit" P9+Volta
  ## ORNL Crest, Summit precursor 
+ case login1:
  case crest-login1*:
     echo "Using build settings for ORNL Crest IBM POWER8"
     setenv TCLINC -I/autofs/nccs-svm1_home1/stonej1/vmd/lib/tcl/include
@@ -97,7 +129,6 @@ switch ( `hostname` )
 
 
  ## IU Big Red II Cray XE6/XK7
- case login1:
  case login2:
  case login3:
     echo "Using build settings for IU Cray Big Red II"
@@ -116,6 +147,7 @@ switch ( `hostname` )
  case h2ologin1:
  case h2ologin2:
  case h2ologin3:
+ case h2ologin4:
     echo "Using build settings for NCSA Cray Blue Waters"
     setenv TCLINC -I/u/sciteam/stonej/vmd/lib/tcl/include
     setenv TCLLIB -L/u/sciteam/stonej/vmd/lib/tcl
@@ -235,6 +267,10 @@ switch ( `hostname` )
   case casablanca*:
   case moline*:
     echo "Using build settings for TB network..."
+    setenv HDFINC "-I/Projects/vmd/vmd/lib/hdf5/hdf5-1.10.2/src -I/Projects/vmd/vmd/lib/hdf5/hdf5-1.10.2/hl/src"
+    setenv HDFLIB -L/Projects/vmd/vmd/lib/hdf5
+    setenv HDFLDFLAGS "-lhdf5 -lhdf5_hl"
+
     setenv NETCDFINC -I/Projects/vmd/vmd/lib/netcdf/include
     setenv NETCDFLIB -L/Projects/vmd/vmd/lib/netcdf
 
@@ -254,7 +290,8 @@ switch ( `hostname` )
 
 ## enable libexpat for the HOOMD plugin, which also requires MacOS X 10.5,
 ## enable sqlite for dmsplugin.
-    ssh -x bogota "cd $unixdir; gmake MACOSXX86 EXPATDYNAMIC=1 EXPATINC=-I/usr/include EXPATLIB=-L/usr/lib64 EXPATLDFLAGS=-lexpat NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_MACOSXX86 SQLITEDYNAMIC=1 SQLITEINC=$SQLITEINC SQLITELIB=$SQLITELIB/lib_MACOSXX86 SQLITELDFLAGS=-lsqlite3 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_MACOSXX86 >& log.MACOSXX86.$DATE " < /dev/null &
+#    ssh -x bogota "cd $unixdir; gmake MACOSXX86 EXPATDYNAMIC=1 EXPATINC=-I/usr/include EXPATLIB=-L/usr/lib64 EXPATLDFLAGS=-lexpat NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_MACOSXX86 SQLITEDYNAMIC=1 SQLITEINC=$SQLITEINC SQLITELIB=$SQLITELIB/lib_MACOSXX86 SQLITELDFLAGS=-lsqlite3 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_MACOSXX86 >& log.MACOSXX86.$DATE " < /dev/null &
+    ssh -x malaga "cd $unixdir; gmake MACOSXX86 EXPATDYNAMIC=1 EXPATINC=-I/usr/include EXPATLIB=-L/usr/lib64 EXPATLDFLAGS=-lexpat NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_MACOSXX86 SQLITEDYNAMIC=1 SQLITEINC=$SQLITEINC SQLITELIB=$SQLITELIB/lib_MACOSXX86 SQLITELDFLAGS=-lsqlite3 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_MACOSXX86 >& log.MACOSXX86.$DATE " < /dev/null &
 
 # Use Apple-Provided Tcl framework
 #    ssh -x juneau "cd $unixdir; gmake MACOSXX86 NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_MACOSXX86 TCLINC=-F/System/Library/Frameworks TCLLIB=-F/System/Library/Frameworks >& log.MACOSXX86.$DATE " < /dev/null &
@@ -270,38 +307,29 @@ switch ( `hostname` )
     ##
     setenv TCLLIB -L/Projects/vmd/vmd/lib/tcl
     setenv SQLITELIB -L/Projects/vmd/vmd/lib/sqlite
+    setenv HDFLIB -L/Projects/vmd/vmd/lib/hdf5
+    setenv HDFLDFLAGS "-lhdf5 -lhdf5_hl"
 
 # Android builds for ARM V7A hardware, using Android NDK cross compilers
-    ssh -x taipei "cd $unixdir; gmake ANDROIDARMV7A TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_ANDROIDARMV7A >& log.ANDROIDARMV7A.$DATE " < /dev/null &
+    ssh -x asuncion "cd $unixdir; gmake ANDROIDARMV7A TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_ANDROIDARMV7A >& log.ANDROIDARMV7A.$DATE " < /dev/null &
 
 # build X11/Unix style 64-bit VMD for MacOS X since Tcl/Tk use Carbon otherwise
 #    ssh -x bogota "cd $unixdir; gmake MACOSXX86_64 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_MACOSXX86_64 >& log.MACOSXX86_64.$DATE " < /dev/null &
 
-#    ssh -x titan "cd $unixdir; gmake LINUX NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_LINUX TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_LINUX >& log.LINUX.$DATE " < /dev/null &
+#    ssh -x dallas "cd $unixdir; gmake LINUX NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_LINUX TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_LINUX >& log.LINUX.$DATE " < /dev/null &
 
-#    ssh -x titan "cd $unixdir; gmake LINUXAMD64 NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_LINUXAMD64 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_LINUXAMD64 >& log.LINUXAMD64.$DATE " < /dev/null &
+#    ssh -x dallas "cd $unixdir; gmake LINUXAMD64 NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_LINUXAMD64 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_LINUXAMD64 >& log.LINUXAMD64.$DATE " < /dev/null &
 
 ## HOOMD plugin requires libexpat 
-    ssh -x titan "cd $unixdir; gmake LINUX EXPATDYNAMIC=1 EXPATINC=-I/usr/include EXPATLIB=-L/usr/lib EXPATLDFLAGS=-lexpat NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_LINUX SQLITEDYNAMIC=1 SQLITEINC=$SQLITEINC SQLITELIB=$SQLITELIB/lib_LINUX SQLITELDFLAGS=-lsqlite3 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_LINUX >& log.LINUX.$DATE " < /dev/null &
+#    ssh -x dallas "cd $unixdir; gmake LINUX EXPATDYNAMIC=1 EXPATINC=-I/usr/include EXPATLIB=-L/usr/lib EXPATLDFLAGS=-lexpat NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_LINUX SQLITEDYNAMIC=1 SQLITEINC=$SQLITEINC SQLITELIB=$SQLITELIB/lib_LINUX SQLITELDFLAGS=-lsqlite3 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_LINUX >& log.LINUX.$DATE " < /dev/null &
 
-    ssh -x titan "cd $unixdir; gmake LINUXAMD64 EXPATDYNAMIC=1 EXPATINC=-I/usr/include EXPATLIB=-L/usr/lib64 EXPATLDFLAGS=-lexpat NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_LINUXAMD64 SQLITEDYNAMIC=1 SQLITEINC=$SQLITEINC SQLITELIB=$SQLITELIB/lib_LINUXAMD64 SQLITELDFLAGS=-lsqlite3 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_LINUXAMD64 >& log.LINUXAMD64.$DATE " < /dev/null &
-
-#    ssh -x titan "cd $unixdir; gmake IRIX6 NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_IRIX6 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_IRIX6 >& log.IRIX6.$DATE" < /dev/null &
-
-#    ssh -x titan  "cd $unixdir; gmake IRIX6_64 NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_IRIX6_64 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_IRIX6_64 >& log.IRIX6_64.$DATE" < /dev/null &
-
-#    ssh -x cupertino "cd $unixdir; gmake SOLARIS2 NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_SOLARIS2 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_SOLARIS2 >& log.SOLARIS2.$DATE" < /dev/null &
-
-#    ssh -x cupertino "cd $unixdir; gmake SOLARIS2_64 NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_SOLARIS2_64 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_SOLARIS2_64 >& log.SOLARIS2_64.$DATE" < /dev/null &
-
-#    ssh -x cancun "cd $unixdir; gmake SOLARISX86 SOLARISX86 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_SOLARISX86 >& log.SOLARISX86.$DATE" < /dev/null &
+    ssh -x asuncion "cd $unixdir; gmake LINUXAMD64 EXPATDYNAMIC=1 EXPATINC=-I/usr/include EXPATLIB=-L/usr/lib64 EXPATLDFLAGS=-lexpat HDFDYNAMIC=1 HDFINC='$HDFINC' HDFLIB=$HDFLIB/lib_LINUXAMD64 HDFLDFLAGS='$HDFLDFLAGS' NETCDFINC=$NETCDFINC NETCDFLIB=$NETCDFLIB/lib_LINUXAMD64 SQLITEDYNAMIC=1 SQLITEINC=$SQLITEINC SQLITELIB=$SQLITELIB/lib_LINUXAMD64 SQLITELDFLAGS=-lsqlite3 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_LINUXAMD64 >& log.LINUXAMD64.$DATE " < /dev/null &
 
     ssh -x cancun "cd $unixdir; gmake SOLARISX86_64 SOLARISX86_64 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_SOLARISX86_64 >& log.SOLARISX86_64.$DATE" < /dev/null &
 
-#    ssh -x ganymede "cd $unixdir; gmake HPUX11 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_HPUX11 >& log.HPUX11.$DATE" < /dev/null &
-
-#    ssh -x galatea "cd $unixdir; gmake TRU64 TCLINC=$TCLINC TCLLIB=$TCLLIB/lib_TRU64 >& log.TRU64.$DATE" < /dev/null &
-
+    wait;
+    echo ""
+exit
 
     ## Win32 include/link paths
     setenv windir /cygdrive/j/plugins

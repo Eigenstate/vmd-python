@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_render.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.14 $       $Date: 2016/11/28 03:05:08 $
+ *      $Revision: 1.15 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -21,40 +21,63 @@
 #include "py_commands.h"
 #include "VMDApp.h"
 
-// listall(): list the supported render methods
+static const char listall_doc[] =
+"List all supported render methods\n\n"
+"Returns:\n"
+"    (list of str): Supported render methods, suitable for calls to `render()`";
+static PyObject *py_listall(PyObject *self, PyObject *args)
+{
+  PyObject *newlist = NULL;
+  VMDApp *app;
+  int i;
 
-static PyObject *listall(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)""))
+  if (!(app = get_vmdapp()))
     return NULL;
 
-  PyObject *newlist = PyList_New(0);
-  VMDApp *app = get_vmdapp();
-  for (int i=0; i<app->filerender_num(); i++)
-#if PY_MAJOR_VERSION >= 3
-    PyList_Append(newlist, PyUnicode_FromString(app->filerender_name(i)));
-#else
-    PyList_Append(newlist, PyString_FromString(app->filerender_name(i)));
-#endif
+  if (!(newlist = PyList_New(0)))
+    goto failure;
 
+  // Need a tmp object here because PyList_Append increments refcount
+  for (i=0; i<app->filerender_num(); i++) {
+    PyObject *tmp = as_pystring(app->filerender_name(i));
+    PyList_Append(newlist, tmp);
+    Py_XDECREF(tmp);
+
+    if (PyErr_Occurred())
+      goto failure;
+  }
   return newlist;
+
+// Don't leak new list reference in case of a failure
+failure:
+  Py_XDECREF(newlist);
+  PyErr_SetString(PyExc_RuntimeError, "Problem listing render methods");
+  return NULL;
 }
 
-// render(method, filename)
-
-static PyObject *render(PyObject *self, PyObject *args, PyObject *keywds) {
+static const char render_doc[] =
+"Render the current scene with an external or internal renderer. For some\n"
+"rendering engines this entails writing an input file and then invoking an\n"
+"external program\n\n"
+"Args:\n"
+"    method (str): Render method. See `render.listall()` for supported values\n"
+"    filename (str): File name to render to. For external rendering engines,\n"
+"        filename may be input file to external program";
+static PyObject *py_render(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  const char *kwlist[] = {"method", "filename", NULL};
   char *method, *filename;
-  static char *kwlist[] = {
-    (char *)"method", (char *)"filename", NULL
-  };
+  VMDApp *app;
 
-  if (!PyArg_ParseTupleAndKeywords(args, keywds, (char *)"ss", kwlist,
-    &method, &filename))
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ss:render.render",
+                                   (char**) kwlist, &method, &filename))
     return NULL;
 
-  VMDApp *app = get_vmdapp();
+  if (!(app = get_vmdapp()))
+    return NULL;
 
   if (!app->filerender_render(method, filename, NULL)) {
-    PyErr_SetString(PyExc_ValueError, "Unable to render to file");
+    PyErr_Format(PyExc_RuntimeError, "Unable to render to file '%s'", filename);
     return NULL;
   }
 
@@ -63,26 +86,30 @@ static PyObject *render(PyObject *self, PyObject *args, PyObject *keywds) {
 }
 
 static PyMethodDef methods[] = {
-  {(char *)"listall", (vmdPyMethod)listall, METH_VARARGS},
-  {(char *)"render", (PyCFunction)render, METH_VARARGS | METH_KEYWORDS},
-  {NULL, NULL, 0, NULL}
+  {"listall", (PyCFunction)py_listall, METH_NOARGS, listall_doc},
+  {"render", (PyCFunction)py_render, METH_VARARGS | METH_KEYWORDS, render_doc},
+  {NULL, NULL}
 };
+
+static const char render_moddoc[] =
+"Methods to render the current scene in the GUI with an external rendering "
+"engine";
 
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef renderdef = {
-    PyModuleDef_HEAD_INIT,
-    "render",
-    NULL,
-    -1,
-    methods,
+  PyModuleDef_HEAD_INIT,
+  "render",
+  render_moddoc,
+  -1,
+  methods,
 };
 #endif
 
 PyObject* initrender(void) {
 #if PY_MAJOR_VERSION >= 3
-    PyObject *m = PyModule_Create(&renderdef);
+  PyObject *m = PyModule_Create(&renderdef);
 #else
-    PyObject *m = Py_InitModule((char *)"render", methods);
+  PyObject *m = Py_InitModule3("render", methods, render_moddoc);
 #endif
-    return m;
+  return m;
 }

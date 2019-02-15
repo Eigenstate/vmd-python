@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -41,7 +41,7 @@ class IsoSurface {
    ResizeArray<float>  n;         ///< normals
    ResizeArray<float>  c;         ///< colors
    ResizeArray<int>    f;         ///< facets
-   const VolumetricData * vol;    ///< volume data pointer
+   VolumetricData * vol;          ///< volume data pointer
    float xax[3], yax[3], zax[3];  ///< per-voxel/cell axes
    float xad[3], yad[3], zad[3];  ///< volume basis direction vectors
 
@@ -49,13 +49,13 @@ class IsoSurface {
    IsoSurface(); ///< constructor
 
    /// calculate isosurface for a given isovalue and step size
-   int compute(const VolumetricData *, float isovalue, long step); 
+   int compute(VolumetricData *, float isovalue, long step); 
 
    /// renormalize surface normals
    void normalize(void); 
 
    /// eliminate redundant vertices after the fact
-   int vertexfusion(const VolumetricData *, int offset, int len); 
+   int vertexfusion(int offset, int len); 
 
    /// assign a single color for the entire mesh
    int set_color_rgb3fv(const float *rgb); 

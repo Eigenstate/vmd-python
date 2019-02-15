@@ -11,7 +11,7 @@
 #               by Axel Kohlmeyer <akohlmey@gmail.com>
 # support for crossterms contributed by Josh Vermass <vermass2@illinois.edu>
 #
-# $Id: topotools.tcl,v 1.31 2016/11/04 05:57:55 johns Exp $
+# $Id: topotools.tcl,v 1.32 2017/04/13 09:31:08 johns Exp $
 
 namespace eval ::TopoTools:: {
     # for allowing compatibility checks in scripts
@@ -24,6 +24,8 @@ namespace eval ::TopoTools:: {
     variable topociteme 1
     # same for topogromacs
     variable gmxciteme 1
+    # flag to print warning about atomselect
+    variable masswarn 1
     # if nonzero, add a new representation with default settings,
     # when creating a new molecule. similar to what "mol new" does.
     variable newaddsrep 1
@@ -310,13 +312,14 @@ proc ::TopoTools::topo { args } {
         getbondlist bondtypenames numbondtypes numbonds setbondlist
         retypebonds clearbonds guessbonds addbond delbond getanglelist
         angletypenames numangletypes numangles setanglelist retypeangles
-        clearangles guessangles addangle delangle getdihedrallist
+        clearangles guessangles addangle delangle sortangles getdihedrallist
         dihedraltypenames numdihedraltypes numdihedrals setdihedrallist
         retypedihedrals cleardihedrals guessdihedrals adddihedral
-        deldihedral getimproperlist impropertypenames numimpropertypes
-        numimpropers setimproperlist retypeimpropers clearimpropers
-        guessimpropers addimproper delimproper getcrosstermlist numcrossterms
-        setcrosstermlist clearcrossterms addcrossterm delcrossterm}
+        deldihedral sortdihedrals getimproperlist impropertypenames
+        numimpropertypes numimpropers setimproperlist retypeimpropers
+        clearimpropers guessimpropers addimproper delimproper sortimpropers
+        getcrosstermlist numcrossterms setcrosstermlist clearcrossterms
+        addcrossterm delcrossterm}
     if {[lsearch -exact $validcmd $cmd] < 0} {
         vmdcon -err "Unknown topotools command '$cmd'"
         usage
@@ -734,7 +737,7 @@ proc ::TopoTools::citation_reminder {args} {
         vmdcon -info "======================"
         vmdcon -info "Please cite TopoTools as:"
         vmdcon -info "Axel Kohlmeyer, (2016). TopoTools: Release $version"
-        vmdcon -info "http://doi.org/10.5281/zenodo.50249"
+        vmdcon -info "http://doi.org/10.5281/zenodo.545655"
         vmdcon -info "======================\n"
         set topociteme 0
     }

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolItem.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.361 $	$Date: 2016/11/28 03:43:28 $
+ *	$Revision: 1.367 $	$Date: 2019/01/23 22:37:09 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -93,6 +93,7 @@ DrawMolItem::DrawMolItem(const char *nm, DrawMolecule *dm, AtomColor *ac,
   update_ss = 0;
   update_ts = 0;
   update_traj = 0;
+  update_instances = 0;
   isOn = TRUE;     // newly created reps default to on
 }
 
@@ -137,7 +138,7 @@ void DrawMolItem::update_lookups(AtomColor *ac, AtomSel *sel,
   for (i=0; i<MAXCOLORS; i++) {
     lookups[i].num = 0;
   }
-  for (i=0; i<sel->num_atoms; i++) {
+  for (i=sel->firstsel; i<=sel->lastsel; i++) {
     if (sel->on[i]) {
       int color = ac->color[i];
       lookups[color].append(i);
@@ -169,14 +170,57 @@ int DrawMolItem::get_pbc_images() const {
   return cmdList->npbc;
 }
 
+
+void DrawMolItem::set_instances(int inst) {
+  cmdList->instanceset = inst;
+  change_instances(); // tell rep to update instance matrices next prepare
+
+  // tell the molecule to notify its geometry monitors that the number of
+  // instance images has changed so that they can be turned off or on if
+  // necessary.  XXX This may not be currently implemented in GeometryMol.
+  mol->notify();
+}
+
+int DrawMolItem::get_instances() const {
+  return cmdList->instanceset;
+}
+
+
 static void parse_frames(const char *beg, int len, int maxframe, 
     ResizeArray<int>& frames) {
   if (!len) {
     msgErr << "parse_frames got zero-length string!" << sendmsg;
     return;
   }
-  const char *firstsep = NULL, *secondsep = NULL;
+  // Look first for a comma separated list of frames
   int i;
+  const char *firstsep = NULL, *secondsep = NULL;
+  char *endptr, *token;
+  for (i=0; i<len; i++) {
+    if (beg[i] == ',') {
+        firstsep = beg+i;
+        break;
+    }
+  }
+  long first, second, third;
+  if (firstsep) {
+      char *parseme = strndup(beg, len);
+      const char delim = ',';
+      while (true) {
+        token = strsep(&parseme, &delim);
+        if (!token) {
+            break;
+        }
+        first = strtol(token, &endptr, 0);
+        if (endptr == token) {
+            msgErr << "frame element is invalid: " << token << sendmsg;
+        }
+        frames.append((int) first);
+      }
+      free(parseme);
+      return;
+  }
+  
   for (i=0; i<len; i++) {
     if (beg[i] == ':') {
       firstsep = beg+i;
@@ -189,8 +233,6 @@ static void parse_frames(const char *beg, int len, int maxframe,
       break;
     }
   }
-  char *endptr;
-  long first, second, third;
   first = strtol(beg, &endptr, 0);
   if (endptr == beg) {
     msgErr << "frame element is invalid: " << beg << sendmsg;
@@ -765,6 +807,14 @@ void DrawMolItem::do_create_cmdlist(void) {
           (int)atomRep->get_data(AtomRep::LINETHICKNESS) - 1); // method
         place_picks(framepos);
         break;
+
+#ifdef VMDLATTICECUBES
+      case AtomRep::LATTICECUBES:          
+        draw_solid_cubes(framepos, atomRep->get_data(AtomRep::SPHERERAD));
+        place_picks(framepos);
+        break;
+#endif
+
       default:
         msgErr << "Illegal atom representation in DrawMolecule." << sendmsg;
     }
@@ -911,6 +961,13 @@ void DrawMolItem::prepare() {
     need_matrix_recalc(); // sets the _needUpdate flag
   }
 
+  // update instance image display
+  if ((update_instances || update_ts) && cmdList->instanceset) {
+    update_instance_transformations();
+    update_instances = 0;
+    need_matrix_recalc(); // sets the _needUpdate flag
+  }
+
   // update secondary structure
   if (update_ss) {
     if (atomRep->method() == AtomRep::STRUCTURE ||
@@ -980,6 +1037,19 @@ void DrawMolItem::update_pbc_transformations() {
   cmdList->transXinv.inverse();
   cmdList->transYinv.inverse();
   cmdList->transZinv.inverse();
+}
+
+
+void DrawMolItem::update_instance_transformations() {
+  cmdList->instances.clear();
+  int txcnt = mol->instances.num();
+#if 0
+  printf("drawmolitem::update_instance_trans(): cnt %d\n", txcnt);
+#endif
+  int i;
+  for (i=0; i<txcnt; i++) {
+    cmdList->instances.append(mol->instances[i]);
+  }
 }
 
 
@@ -1119,6 +1189,10 @@ void DrawMolItem::draw_lines(float *framepos, int thickness, float cutoff) {
     cmdColorIndex.putdata(i, cmdList); // set color for these half-bonds
   
     ResizeArray<float> verts;
+
+    // maintain total vert count for max OpenGL buffer size management
+    int totalverts=0;
+
     // loop over all half-bonds to be drawn in this color
     for (int j=0; j<cl.num; j++) { 
       const int id = cl.idlist[j];
@@ -1143,6 +1217,7 @@ void DrawMolItem::draw_lines(float *framepos, int thickness, float cutoff) {
             if (a2n > id) {
               verts.append3(&fp1[0]);
               verts.append3(&fp2[0]);
+              totalverts+=2;
             }
           } else {
             float mid[3];
@@ -1151,6 +1226,7 @@ void DrawMolItem::draw_lines(float *framepos, int thickness, float cutoff) {
             mid[2] = 0.5f * (fp1[2] + fp2[2]); 
             verts.append3(&fp1[0]);
             verts.append3(&mid[0]);
+            totalverts+=2;
           }
           bondsdrawn++;	               // increment counter of bonds to atom i
         }
@@ -1161,17 +1237,92 @@ void DrawMolItem::draw_lines(float *framepos, int thickness, float cutoff) {
         DispCmdPoint cmdPoint;
         cmdPoint.putdata(fp1, cmdList);
       }
+
+      // Ensure we don't generate a vertex buffer so large that 
+      // we'd crash from internal integer overflows in renderer 
+      // subclasses or back-end renderers
+      if (totalverts > VMDMAXVERTEXBUFSZ) {
+        DispCmdLineArray cmdLineArray;
+        cmdLineArray.putdata(&verts[0], verts.num()/6, cmdList);
+        verts.clear(); // clear vertex buffer
+        totalverts=0;  // reset counter
+      }
     }
 
     if (verts.num()) {
-      float *v = &(verts[0]);
       DispCmdLineArray cmdLineArray;
-      cmdLineArray.putdata(v, verts.num()/6, cmdList);
+      cmdLineArray.putdata(&verts[0], verts.num()/6, cmdList);
     }
   }
   if (cutoff > 0) {
     delete [] nbonds;
     delete [] bondlists;
+  }
+}
+
+
+// draw all lattice site particles as cubes
+// radius is normally set to half of lattice site cube side length dimension
+void DrawMolItem::draw_solid_cubes(float * framepos, float radscale) {
+  int i;
+
+  // set cube type and shading characteristics
+  sprintf(commentBuffer,"MoleculeID: %d ReprID: %d Beginning Cube",
+          mol->id(), repNumber);
+  cmdCommentX.putdata(commentBuffer, cmdList);
+  append(DMATERIALON); // turn on lighting
+
+  // maintain total vert count for max OpenGL buffer size management
+  int totalverts=0;
+
+  // draw cubes using cube array primitive
+  if (radscale > 0) {           // don't draw zero scaled cubes
+    long ind = 0;
+    ResizeArray<float> centers;
+    ResizeArray<float> radii;
+    ResizeArray<float> colors;
+    const float *radius = mol->radius();
+
+    ind = atomSel->firstsel * 3;    
+    for (i=atomSel->firstsel; i <= atomSel->lastsel; i++) {
+      // draw a cube for each selected lattice site particle
+      if (atomSel->on[i]) {
+        totalverts++;
+        float *fp = framepos + ind;
+        const float *cp; 
+
+        centers.append3(&fp[0]);
+        radii.append(radius[i]*radscale);
+     
+        cp = scene->color_value(atomColor->color[i]);
+        colors.append3(&cp[0]);
+      }
+      ind += 3;
+
+      // Ensure we don't generate a vertex buffer so large that 
+      // we'd crash from internal integer overflows in renderer 
+      // subclasses or back-end renderers
+      if (totalverts > VMDMAXVERTEXBUFSZ) {
+        cmdCubeArray.putdata((float *) &centers[0], 
+                             (float *) &radii[0], 
+                             (float *) &colors[0], 
+                             radii.num(), 
+                             cmdList);
+
+        centers.clear(); // clear vertices
+        radii.clear();   // clear vertices
+        colors.clear();  // clear vertices
+        totalverts=0;    // reset counter
+      }
+    }
+   
+    if (radii.num() > 0) {
+      cmdCubeArray.putdata((float *) &centers[0], 
+                           (float *) &radii[0], 
+                           (float *) &colors[0], 
+                           radii.num(), 
+                           cmdList);
+    }
   }
 }
 
@@ -1230,6 +1381,9 @@ void DrawMolItem::draw_solid_spheres(float * framepos, int res,
     } 
   }
 
+  // maintain total vert count for max OpenGL buffer size management
+  int totalverts=0;
+
   // draw spheres using new sphere array primitive
   if ((radscale + fixrad) > 0) {           // don't draw zero scaled spheres
     long ind = 0;
@@ -1242,10 +1396,8 @@ void DrawMolItem::draw_solid_spheres(float * framepos, int res,
     for (i=atomSel->firstsel; i <= atomSel->lastsel; i++) {
       // draw a sphere for each selected atom
       if (atomSel->on[i]) {
-        float *fp = framepos + ind;
-        const float *cp; 
-
-        centers.append3(&fp[0]);
+        totalverts++;
+        centers.append3(framepos + ind);
     
         float my_rad = 1.0f;
         if (modulatedata != NULL) {
@@ -1254,11 +1406,26 @@ void DrawMolItem::draw_solid_spheres(float * framepos, int res,
             my_rad = 1.0f;
         }
         radii.append(radius[i]*radscale*my_rad + fixrad);
-     
-        cp = scene->color_value(atomColor->color[i]);
-        colors.append3(&cp[0]);
+        colors.append3(scene->color_value(atomColor->color[i]));
       }
       ind += 3;
+
+      // Ensure we don't generate a vertex buffer so large that 
+      // we'd crash from internal integer overflows in renderer 
+      // subclasses or back-end renderers
+      if (totalverts > VMDMAXVERTEXBUFSZ) {
+        cmdSphereArray.putdata((float *) &centers[0], 
+                               (float *) &radii[0], 
+                               (float *) &colors[0], 
+                               radii.num(), 
+                               res,
+                               cmdList);
+
+        centers.clear(); // clear vertices
+        radii.clear();   // clear vertices
+        colors.clear();  // clear vertices
+        totalverts=0;    // reset counter
+      }
     }
    
     if (radii.num() > 0) {
@@ -1271,6 +1438,7 @@ void DrawMolItem::draw_solid_spheres(float * framepos, int res,
     }
   }
 }
+
 
 // draw residues as beads
 // radius is set to vdw radius * radscale + fixrad

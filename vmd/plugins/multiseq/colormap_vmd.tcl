@@ -2,11 +2,11 @@
 # Copyright 2004-2007 Luthey-Schulten Group, 
 # All rights reserved.
 #
-# $Id: colormap_vmd.tcl,v 1.6 2013/04/15 16:33:16 johns Exp $
+# $Id: colormap_vmd.tcl,v 1.7 2018/11/06 23:02:49 johns Exp $
 # 
 # Developed by: Luthey-Schulten Group
 # 			     University of Illinois at Urbana-Champaign
-# 			     http://www.scs.illinois.edu/~schulten
+# 			     http://faculty.scs.illinois.edu/schulten/
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
 # this software and associated documentation files (the Software), to deal with 

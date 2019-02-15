@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: P_SensorConfig.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.39 $	$Date: 2016/11/28 03:05:03 $
+ *	$Revision: 1.41 $	$Date: 2019/01/17 21:21:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -100,20 +100,25 @@ void SensorConfig::ScanSensorFiles (int behavior, SensorConfig *sensor, void* pa
 
 static int splitline(FILE *f, JString *argv, int maxarg) {
   int argc, pos;
-  char buf[100], word[100];
-  if(!fgets(buf,100,f)) return -1;
+  char buf[128], word[128];
+  memset(buf, 0, sizeof(buf));
+  memset(word, 0, sizeof(word));
+
+  if(!fgets(buf, sizeof(buf), f)) return -1;
 
   argc = 0;
   pos = 0;
-  while(argc<maxarg && pos<100 && buf[pos]!=0 && buf[pos]!='\n'
+  while (argc<maxarg && pos<100 && buf[pos]!=0 && buf[pos]!='\n'
 	&& buf[pos]!='\r') {
-    if(buf[pos]!=' ' && buf[pos]!='\t') {
-      sscanf(buf+pos,"%99s",word); 
+
+    if (buf[pos]!=' ' && buf[pos]!='\t') {
+      sscanf(buf+pos, "%99s", word); 
       pos += strlen(word);
       argv[argc] = (JString)word;
       argc++;
+    } else {
+      pos++;
     }
-    else pos++;
   }
   
   return argc;
@@ -121,7 +126,7 @@ static int splitline(FILE *f, JString *argv, int maxarg) {
 
 
 static int need_args(int argc,int need, int line) {
-  if(need!=argc) {
+  if (need!=argc) {
     msgErr << "SensorConfig: Wrong number of arguments at line " << line << "." << sendmsg;
     msgErr << "Expected " << need << ", got " << argc << "." << sendmsg;
     return 1;
@@ -150,7 +155,7 @@ void SensorConfig::parseconfigfordevice(FILE *file, void *) {
   int found=FALSE, argc;
   line = 0;
   JString argv[20];
-  while ((argc=splitline(file,argv,20))>=0) {
+  while ((argc=splitline(file, argv, 20))>=0) {
     line++;
     
     if (!argc) continue;
@@ -277,7 +282,7 @@ void SensorConfig::parseconfigfornames(FILE *f, void *ret_void) {
   int argc, line=0;
   JString argv[20];
   
-  while((argc=splitline(f,argv,20))>=0) {
+  while ((argc=splitline(f, argv, 20))>=0) {
     line++;
     
     if(!argc) continue;

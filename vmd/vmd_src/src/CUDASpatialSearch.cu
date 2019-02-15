@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2007-2011 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: CUDASpatialSearch.cu,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.2 $      $Date: 2014/05/27 15:31:50 $
+ *      $Revision: 1.8 $      $Date: 2019/01/17 21:38:55 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -34,6 +34,7 @@
 #include "WKFUtils.h"
 #include "CUDAKernels.h" 
 #include "CUDASpatialSearch.h"
+#include "CUDASort.h"
 
 #include "AtomSel.h"
 #include "VMDApp.h"
@@ -81,8 +82,6 @@
 // density computations by truncating the gaussian to a given radius
 // and only considering bins of atoms that fall within that radius.
 //
-#include <thrust/device_ptr.h> // need thrust sorting primitives
-#include <thrust/sort.h> // need thrust sorting primitives
 
 #define GRID_CELL_EMPTY 0xffffffff
 
@@ -249,18 +248,15 @@ int vmd_cuda_build_density_atom_grid(int natoms,
                             atomIndex_d, atomHash_d);
 
   // Sort atom indices by their grid cell address
-  // (wrapping the device pointers with vector iterators)
-  try {
+  // XXX no pre-allocated workspace yet...
+  if (dev_radix_sort_by_key(atomHash_d, atomIndex_d, natoms, 
+                            (unsigned int *) NULL, (unsigned int *) NULL,
+                            NULL, 0, 0U, 0U) != 0) {
     // It is common to encounter thrust memory allocation issues, so
     // we have to catch thrown exceptions here, otherwise we're guaranteed
     // to eventually have a crash.  If we get a failure, we have to bomb
     // out entirely and fall back to the CPU.
-    thrust::sort_by_key(thrust::device_ptr<unsigned int>(atomHash_d),
-                        thrust::device_ptr<unsigned int>(atomHash_d + natoms),
-                        thrust::device_ptr<unsigned int>(atomIndex_d));
-  }
-  catch (std::bad_alloc) {
-    printf("CUDA Thrust memory allocation failed: %s line %d\n", __FILE__, __LINE__);
+    printf("dev_radix_sort_by_key() failed: %s line %d\n", __FILE__, __LINE__);
     return -1;
   }
 
@@ -318,22 +314,22 @@ int vmd_cuda_build_density_atom_grid(int natoms,
                             atomIndex_d, atomHash_d);
 
   // Sort atom indices by their grid cell address
-  // (wrapping the device pointers with vector iterators)
-  try {
+  // XXX no pre-allocated workspace yet...
+  if (dev_radix_sort_by_key(atomHash_d, atomIndex_d, natoms,
+                            (unsigned int *) NULL, (unsigned int *) NULL,
+                            NULL, 0, 0U, 0U) != 0) {
     // It is common to encounter thrust memory allocation issues, so
     // we have to catch thrown exceptions here, otherwise we're guaranteed
     // to eventually have a crash.  If we get a failure, we have to bomb
     // out entirely and fall back to the CPU.
-  thrust::sort_by_key(thrust::device_ptr<unsigned int>(atomHash_d),
-                      thrust::device_ptr<unsigned int>(atomHash_d + natoms),
-                      thrust::device_ptr<unsigned int>(atomIndex_d));
-  }
-  catch (std::bad_alloc) {
-    printf("CUDA Thrust memory allocation failed: %s line %d\n", __FILE__, __LINE__);
+    printf("dev_radix_sort_by_key() failed: %s line %d\n", __FILE__, __LINE__);
+
+    // free memory allocations 
     cudaFree(sorted_xyzr_d);
     cudaFree(atomIndex_d);
     cudaFree(atomHash_d);
     cudaFree(cellStartEnd_d);
+
     return -1;
   }
 

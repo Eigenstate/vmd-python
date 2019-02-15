@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: CoorPluginData.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.30 $       $Date: 2016/11/28 03:04:59 $
+ *      $Revision: 1.33 $       $Date: 2019/01/17 21:20:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -116,6 +116,21 @@ CoorPluginData::CoorPluginData(const char *nm, Molecule *m, MolFilePlugin *p,
   } else {
     kbytesperframe = (long(m->nAtoms) * 12L) / 1024L;
   }
+
+  // Check if VMD has to use page-aligned memory allocations for
+  // timestep data, to allow for fast kernel-bypass unbuffered I/O APIs
+  if (plugin->can_read_pagealigned_timesteps()) {
+#if vmdplugin_ABIVERSION > 17
+    ts_page_align_sz = plugin->read_timestep_pagealign_size();
+#else
+#if 1
+    ts_page_align_sz = 1; // assume non-blocked I/O
+#else
+    // Enable VMD to cope with hard-coded revs of jsplugin if we want
+    ts_page_align_sz = MOLFILE_DIRECTIO_MAX_BLOCK_SIZE;
+#endif
+#endif
+  }
 }
 
 CoorPluginData::~CoorPluginData() {
@@ -147,7 +162,7 @@ CoorData::CoorDataState CoorPluginData::next(Molecule *m) {
       recentFrame += frameSkip;
     }
     if (endFrame < 0 || recentFrame <= endFrame) {
-      Timestep *ts = plugin->next(m); 
+      Timestep *ts = plugin->next(m, ts_page_align_sz); 
       if (ts) {
         m->append_frame(ts);
         totalframes++;

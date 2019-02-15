@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 2013-2014 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
 *
 *      $RCSfile: OptiXRenderer.C
 *      $Author: johns $      $Locker:  $               $State: Exp $
-*      $Revision: 1.308 $         $Date: 2016/11/28 05:50:57 $
+*      $Revision: 1.346 $         $Date: 2019/01/17 21:38:55 $
 *
 ***************************************************************************
 * DESCRIPTION:
@@ -42,6 +42,22 @@
 *   Symposium Workshops (IPDPSW), pp. 1048-1057, 2016.
 *   http://dx.doi.org/10.1109/IPDPSW.2016.121
 *
+*  "Omnidirectional Stereoscopic Projections for VR"
+*   John E. Stone.
+*   In, William R. Sherman, editor,
+*   VR Developer Gems, Taylor and Francis / CRC Press, Chapter 24, 2019.
+*
+*  "Interactive Ray Tracing Techniques for
+*   High-Fidelity Scientific Visualization"
+*   John E. Stone.
+*   In, Eric Haines and Tomas Akenine-Möller, editors,
+*   Ray Tracing Gems, Apress, 2019.
+*
+*  "A Planetarium Dome Master Camera"
+*   John E. Stone.
+*   In, Eric Haines and Tomas Akenine-Möller, editors,
+*   Ray Tracing Gems, Apress, 2019.
+*
 * Portions of this code are derived from Tachyon:
 *   "An Efficient Library for Parallel Ray Tracing and Animation"
 *   John E. Stone.  Master's Thesis, University of Missouri-Rolla,
@@ -61,8 +77,12 @@
 #include <string.h>
 
 #if defined(__linux)
-#include <unistd.h>   // needed for symlink() in movie recorder
+#include <unistd.h>         // needed for symlink() in movie recorder
 #endif
+
+#include "VMDApp.h"         // needed for video streaming
+#include "VideoStream.h"    // needed for video streaming
+#include "DisplayDevice.h"  // needed for video streaming
 
 #include "Inform.h"
 #include "ImageIO.h"
@@ -71,6 +91,7 @@
 #include "Matrix4.h"
 #include "utilities.h"
 #include "WKFUtils.h"
+#include "ProfileHooks.h"
 
 // Enable HMD if VMD compiled with Oculus VR SDK or OpenHMD
 #if defined(VMDUSEOPENHMD) 
@@ -99,6 +120,32 @@ static const char *onoffstr(int onoff) {
   return (onoff) ? "on" : "off";
 }
 #endif
+
+// OptiX 5.2 HW triangle APIs
+#define ORT_USE_HW_TRIANGLES 1
+
+// check environment for verbose timing/debugging output flags
+static OptiXRenderer::Verbosity get_verbose_flag(int inform=0) {
+  OptiXRenderer::Verbosity verbose = OptiXRenderer::RT_VERB_MIN;
+  char *verbstr = getenv("VMDOPTIXVERBOSE");
+  if (verbstr != NULL) {
+//    printf("OptiXRenderer) verbosity config request: '%s'\n", verbstr);
+    if (!strupcmp(verbstr, "MIN")) {
+      verbose = OptiXRenderer::RT_VERB_MIN;
+      if (inform)
+        printf("OptiXRenderer) verbose setting: minimum\n");
+    } else if (!strupcmp(verbstr, "TIMING")) {
+      verbose = OptiXRenderer::RT_VERB_TIMING;
+      if (inform)
+        printf("OptiXRenderer) verbose setting: timing data\n");
+    } else if (!strupcmp(verbstr, "DEBUG")) {
+      verbose = OptiXRenderer::RT_VERB_DEBUG;
+      if (inform)
+        printf("OptiXRenderer) verbose setting: full debugging data\n");
+    }
+  }
+  return verbose;
+}
 
 
 #if 0
@@ -172,6 +219,99 @@ static int vmd_timeout_cb(void) {
   }
 
 
+#if defined(ORT_USERTXAPIS)
+
+//
+// helper routines for OptiX RTX hardware triangle APIs
+//
+
+// helper function that tests triangles for degeneracy and 
+// computes geometric normals
+__forceinline__ int hwtri_test_calc_Ngeom(const __restrict__ float3 *vertices, 
+                                          float3 &Ngeometric) {
+  // Compute unnormalized geometric normal
+  float3 Ng = cross(vertices[1]-vertices[0], vertices[2]-vertices[0]);
+
+  // Cull any degenerate triangles
+  float area = length(Ng); // we want non-zero parallelogram area
+  if (area > 0.0f && !isinf(area)) {
+    // finish normalizing the geometric vector
+    Ngeometric = Ng * (1.0f / area);
+    return 0; // return success
+  }
+
+  return 1; // cull any triangle that fails area test
+}
+
+
+// helper function to allocate and map RT buffers for hardware triangles
+static void hwtri_alloc_bufs_v3f_n4u4_c4u(RTcontext ctx, int numfacets,
+                                          RTbuffer &vbuf, float3 *&vertices,
+                                          RTbuffer &nbuf, uint4 *&normals,
+                                          RTbuffer &cbuf, int numcolors,
+                                          uchar4 *&colors, 
+                                          const float *uniform_color) {
+  // Create and fill vertex/normal buffers
+  rtBufferCreate(ctx, RT_BUFFER_INPUT, &vbuf);
+  rtBufferSetFormat(vbuf, RT_FORMAT_FLOAT3);
+  rtBufferSetSize1D(vbuf, numfacets * 3);
+
+  rtBufferCreate(ctx, RT_BUFFER_INPUT, &nbuf);
+  rtBufferSetFormat(nbuf, RT_FORMAT_UNSIGNED_INT4);
+  rtBufferSetSize1D(nbuf, numfacets);
+
+  rtBufferCreate(ctx, RT_BUFFER_INPUT, &cbuf);
+  rtBufferSetFormat(cbuf, RT_FORMAT_UNSIGNED_BYTE4);
+  rtBufferSetSize1D(cbuf, numcolors);
+
+  rtBufferMap(vbuf, (void**) &vertices);
+  rtBufferMap(nbuf, (void**) &normals);
+  rtBufferMap(cbuf, (void**) &colors);
+
+  if ((numcolors == 1) && (uniform_color != NULL)) {
+    colors[0].x = uniform_color[0] * 255.0f;
+    colors[0].y = uniform_color[1] * 255.0f;
+    colors[0].z = uniform_color[2] * 255.0f;
+    colors[0].w = 255;
+  }
+}
+ 
+
+// helper function to set instance state variables to flag 
+// the availability of per-vertex normals and colors for the triangle mesh
+static void hwtri_set_vertex_flags(RTcontext ctx, 
+                                   RTgeometryinstance instance_hwtri,
+                                   RTbuffer nbuf, RTbuffer cbuf,
+                                   int has_vertex_normals, 
+                                   int has_vertex_colors) {
+  RTresult lasterror = RT_SUCCESS;
+
+  // register normal buffer
+  RTvariable nbuf_v;
+  RTERR( rtGeometryInstanceDeclareVariable(instance_hwtri, "normalBuffer", &nbuf_v) );
+  RTERR( rtVariableSetObject(nbuf_v, nbuf) );
+
+  // register color buffer
+  RTvariable cbuf_v;
+  RTERR( rtGeometryInstanceDeclareVariable(instance_hwtri, "colorBuffer", &cbuf_v) );
+  RTERR( rtVariableSetObject(cbuf_v, cbuf) );
+
+  // Enable/disable per-vertex normals (or use geometric normal)
+  RTvariable has_vertex_normals_v;
+  RTERR( rtGeometryInstanceDeclareVariable(instance_hwtri, "has_vertex_normals", &has_vertex_normals_v) );
+  RTERR( rtVariableSet1i(has_vertex_normals_v, has_vertex_normals) );
+
+  // Enable/disable per-vertex colors (or use uniform color) 
+  RTvariable has_vertex_colors_v;
+  RTERR( rtGeometryInstanceDeclareVariable(instance_hwtri, "has_vertex_colors", &has_vertex_colors_v) );
+  RTERR( rtVariableSet1i(has_vertex_colors_v, has_vertex_colors) );
+}
+
+#endif
+
+
+#if defined(VMDOPTIX_INTERACTIVE_OPENGL)
+
 static void print_ctx_devices(RTcontext ctx) {
   unsigned int devcount = 0;
   rtContextGetDeviceCount(ctx, &devcount);
@@ -193,7 +333,7 @@ static void print_ctx_devices(RTcontext ctx) {
       rtDeviceGetAttribute(devlist[d], RT_DEVICE_ATTRIBUTE_CUDA_DEVICE_ORDINAL, sizeof(int), &cudadev);
       rtDeviceGetAttribute(devlist[d], RT_DEVICE_ATTRIBUTE_TOTAL_MEMORY, sizeof(totalmem), &totalmem);
 
-      printf("OptiXRenderer) [%u] %-16s  CUDA[%d], %.1fGB RAM", 
+      printf("OptiXRenderer) [%u] %-19s  CUDA[%d], %.1fGB RAM", 
              d, devname, cudadev, totalmem / (1024.0*1024.0*1024.0));
       if (kto) {
         printf(", KTO");
@@ -205,6 +345,8 @@ static void print_ctx_devices(RTcontext ctx) {
     free(devlist); 
   }
 }
+
+#endif
 
 
 static int query_meminfo_ctx_devices(RTcontext &ctx, unsigned long &freemem, unsigned long &physmem) {
@@ -253,8 +395,109 @@ static int query_meminfo_ctx_devices(RTcontext &ctx, unsigned long &freemem, uns
 }
 
 
-int OptiXWriteImage(const char* filename, RTbuffer buffer,
-                    RTformat buffer_format,
+int OptiXPrintRayStats(RTbuffer raystats1_buffer, RTbuffer raystats2_buffer,
+                       double rtruntime) {
+  int rc = 0;
+  RTcontext ctx;
+  RTresult result;
+  RTsize buffer_width, buffer_height;
+  const char* error;
+
+  rtBufferGetContext(raystats1_buffer, &ctx);
+
+  // buffer must be 2-D (for now)
+  unsigned int bufdim;
+  if (rtBufferGetDimensionality(raystats1_buffer, &bufdim) != RT_SUCCESS) {
+    msgErr << "OptiXPrintRayStats: Failed to get ray stats buffer dimensions!" << sendmsg;
+    return -1;
+  }
+  if (bufdim != 2) {
+    msgErr << "OptiXPrintRayStats: Output buffer is not 2-D!" << sendmsg;
+    return -1;
+  }
+
+  result = rtBufferGetSize2D(raystats1_buffer, &buffer_width, &buffer_height);
+  if (result != RT_SUCCESS) {
+    // Get error from context
+    rtContextGetErrorString(ctx, result, &error);
+    msgErr << "OptiXRenderer) Error getting dimensions of buffers: " << error << sendmsg;
+    return -1;
+  }
+
+  volatile uint4 *raystats1, *raystats2;
+  result = rtBufferMap(raystats1_buffer, (void**) &raystats1);   
+  result = rtBufferMap(raystats2_buffer, (void**) &raystats2);   
+  if (result != RT_SUCCESS) {
+    rtContextGetErrorString(ctx, result, &error);
+    msgErr << "OptiXPrintRayStats: Error mapping stats buffers: "
+           << error << sendmsg;
+    return -1;
+  }
+
+  // no stats data
+  if (buffer_width < 1 || buffer_height < 1 || 
+      raystats1 == NULL || raystats2 == NULL) {
+    msgErr << "OptiXPrintRayStats: No data in ray stats buffers!" << sendmsg;
+    return -1;
+  }
+
+  // collect and sum all per-pixel ray stats
+  int i;
+  int totalsz = buffer_width * buffer_height;
+  unsigned long misses, transkips;
+  unsigned long primaryrays, shadowlights, shadowao, transrays, reflrays;
+  misses = transkips = primaryrays = shadowlights 
+         = shadowao = transrays = reflrays = 0;
+
+  // accumulate per-pixel ray stats into totals
+  for (i=0; i<totalsz; i++) {
+    primaryrays  += raystats1[i].x;
+    shadowlights += raystats1[i].y;
+    shadowao     += raystats1[i].z;
+    misses       += raystats1[i].w;
+    transrays    += raystats2[i].x;
+    transkips    += raystats2[i].y;
+    // XXX raystats2[i].z unused at present...
+    reflrays     += raystats2[i].w;
+
+  }
+  unsigned long totalrays = primaryrays + shadowlights + shadowao 
+                          + transrays + reflrays;
+
+  printf("OptiXRenderer)\n");
+  printf("OptiXRenderer) VMD/OptiX Scene Ray Tracing Statistics:\n");
+  printf("OptiXRenderer) ----------------------------------------\n");
+  printf("OptiXRenderer)                     Misses: %lu\n", misses);
+  printf("OptiXRenderer) Transmission Any-Hit Skips: %lu\n", transkips);
+  printf("OptiXRenderer) ----------------------------------------\n");
+  printf("OptiXRenderer)               Primary Rays: %lu\n", primaryrays);
+  printf("OptiXRenderer)      Dir-Light Shadow Rays: %lu\n", shadowlights);
+  printf("OptiXRenderer)             AO Shadow Rays: %lu\n", shadowao);
+  printf("OptiXRenderer)          Transmission Rays: %lu\n", transrays);
+  printf("OptiXRenderer)            Reflection Rays: %lu\n", reflrays);
+  printf("OptiXRenderer) ----------------------------------------\n");
+  printf("OptiXRenderer)                 Total Rays: %lu\n", totalrays); 
+  printf("OptiXRenderer)                 Total Rays: %g\n", totalrays * 1.0); 
+  if (rtruntime > 0.0) {
+    printf("OptiXRenderer)                   Rays/sec: %g\n", totalrays / rtruntime); 
+  }
+  printf("OptiXRenderer)\n");
+
+  result = rtBufferUnmap(raystats1_buffer);
+  result = rtBufferUnmap(raystats2_buffer);
+  if (result != RT_SUCCESS) {
+    rtContextGetErrorString(ctx, result, &error);
+    msgErr << "OptiXPrintRayStats: Error unmapping ray stats buffer: "
+           << error << sendmsg;
+    return -1;
+  }
+
+  return rc;
+}
+
+
+int OptiXWriteImage(const char* filename, int writealpha,
+                    RTbuffer buffer, RTformat buffer_format,
                     RTsize buffer_width, RTsize buffer_height) {
   RTresult result;
 
@@ -279,14 +522,27 @@ int OptiXWriteImage(const char* filename, RTbuffer buffer,
   // write the image to a file, according to the buffer format
   int xs = buffer_width;
   int ys = buffer_height;
+  int rc = 0;
   if (buffer_format == RT_FORMAT_FLOAT4) {
-    if (write_image_file_rgb4f(filename, (const float *) imageData, xs, ys))
-      return -1;
+    if (writealpha) {
+//printf("Writing rgba4f alpha channel output image 2\n");
+      if (write_image_file_rgba4f(filename, (const float *) imageData, xs, ys))
+        rc = -1;
+    } else {
+      if (write_image_file_rgb4f(filename, (const float *) imageData, xs, ys))
+        rc = -1;
+    }
   } else if (buffer_format == RT_FORMAT_UNSIGNED_BYTE4) {
-    if (write_image_file_rgb4u(filename, (const unsigned char *) imageData, xs, ys))
-      return -1;
+    if (writealpha) {
+//printf("Writing rgba4u alpha channel output image 2\n");
+      if (write_image_file_rgba4u(filename, (const unsigned char *) imageData, xs, ys))
+        rc = -1;
+    } else {
+      if (write_image_file_rgb4u(filename, (const unsigned char *) imageData, xs, ys))
+        rc = -1;
+    }
   } else {
-    return -1;
+    rc = -1;
   }
 
   result = rtBufferUnmap(buffer);
@@ -300,10 +556,11 @@ int OptiXWriteImage(const char* filename, RTbuffer buffer,
     return -1;
   }
 
-  return 0;
+  return rc;
 }
 
-int OptiXWriteImage(const char* filename, RTbuffer buffer) {
+
+int OptiXWriteImage(const char* filename, int writealpha, RTbuffer buffer) {
   RTresult result;
   RTformat buffer_format;
   RTsize buffer_width, buffer_height;
@@ -358,14 +615,28 @@ int OptiXWriteImage(const char* filename, RTbuffer buffer) {
   // write the image to a file, according to the buffer format
   int xs = buffer_width;
   int ys = buffer_height;
+  int rc = 0;
+
   if (buffer_format == RT_FORMAT_FLOAT4) {
-    if (write_image_file_rgb4f(filename, (const float *) imageData, xs, ys))
-      return -1;
+    if (writealpha) {
+//printf("Writing rgba4f alpha channel output image 1\n");
+      if (write_image_file_rgba4f(filename, (const float *) imageData, xs, ys))
+        rc = -1;
+    } else {
+      if (write_image_file_rgb4f(filename, (const float *) imageData, xs, ys))
+        rc = -1;
+    }
   } else if (buffer_format == RT_FORMAT_UNSIGNED_BYTE4) {
-    if (write_image_file_rgb4u(filename, (const unsigned char *) imageData, xs, ys))
-      return -1;
+    if (writealpha) {
+//printf("Writing rgba4u alpha channel output image 1\n");
+      if (write_image_file_rgba4u(filename, (const unsigned char *) imageData, xs, ys))
+        rc = -1;
+    } else {
+      if (write_image_file_rgb4u(filename, (const unsigned char *) imageData, xs, ys))
+        rc = -1;
+    }
   } else {
-    return -1;
+    rc = -1;
   }
 
   result = rtBufferUnmap(buffer);
@@ -379,11 +650,14 @@ int OptiXWriteImage(const char* filename, RTbuffer buffer) {
     return -1;
   }
 
-  return 0;
+  return rc;
 }
 
+
 /// constructor ... initialize some variables
-OptiXRenderer::OptiXRenderer(void *rdev) {
+OptiXRenderer::OptiXRenderer(VMDApp *vmdapp, void *rdev) {
+  PROFILE_PUSH_RANGE("OptiXRenderer::OptiXRenderer()", 0);
+  app = vmdapp;                   // store VMDApp ptr for video streaming
   ort_timer = wkf_timer_create(); // create and initialize timer
   wkf_timer_start(ort_timer);
 
@@ -397,9 +671,14 @@ OptiXRenderer::OptiXRenderer(void *rdev) {
   sprintf(shaderpath, "%s/shaders/%s", vmddir, "OptiXShaders.ptx");
 
   // allow runtime override of the default shader path for testing
-  if (getenv("VMDOPTIXSHADERPATH"))
+  if (getenv("VMDOPTIXSHADERPATH")) {
     strcpy(shaderpath, getenv("VMDOPTIXSHADERPATH"));
+    msgInfo << "User-override of OptiX shader path: " << getenv("VMDOPTIXSHADERPATH") << sendmsg;
+  }
 
+#if defined(ORT_USERTXAPIS)
+  hwtri_enabled = 1;           // RTX hardware triangle APIs enabled by default
+#endif
   lasterror = RT_SUCCESS;      // begin with no error state set 
   context_created = 0;         // no context yet
   buffers_allocated = 0;       // flag no buffer allocated yet
@@ -415,10 +694,10 @@ OptiXRenderer::OptiXRenderer(void *rdev) {
 
   // set default scene background state
   scene_background_mode = RT_BACKGROUND_TEXTURE_SOLID;
-  memset(scene_bg_color, 0, sizeof(scene_bg_color));
+  memset(scene_bg_color,    0, sizeof(scene_bg_color));
   memset(scene_bg_grad_top, 0, sizeof(scene_bg_grad_top));
   memset(scene_bg_grad_bot, 0, sizeof(scene_bg_grad_bot));
-  memset(scene_gradient, 0, sizeof(scene_gradient));
+  memset(scene_gradient,    0, sizeof(scene_gradient));
   scene_gradient_topval = 1.0f;
   scene_gradient_botval = 0.0f;
   // XXX this has to be recomputed prior to rendering..
@@ -479,31 +758,24 @@ OptiXRenderer::OptiXRenderer(void *rdev) {
 
   create_context();
   destroy_scene();        // zero out object counters, prepare for rendering
+
+  PROFILE_POP_RANGE();
 }
         
 /// destructor
 OptiXRenderer::~OptiXRenderer(void) {
+  PROFILE_PUSH_RANGE("OptiXRenderer::~OptiXRenderer()", 0);
+
   if (context_created)
     destroy_context(); 
   wkf_timer_destroy(ort_timer);
+
+  PROFILE_POP_RANGE();
 }
 
 
 void OptiXRenderer::check_verbose_env() {
-  char *verbstr = getenv("VMDOPTIXVERBOSE");
-  if (verbstr != NULL) {
-//    printf("OptiXRenderer) verbosity config request: '%s'\n", verbstr);
-    if (!strupcmp(verbstr, "MIN")) {
-      verbose = RT_VERB_MIN;
-      printf("OptiXRenderer) verbose setting: minimum\n");
-    } else if (!strupcmp(verbstr, "TIMING")) {
-      verbose = RT_VERB_TIMING;
-      printf("OptiXRenderer) verbose setting: timing data\n");
-    } else if (!strupcmp(verbstr, "DEBUG")) {
-      verbose = RT_VERB_DEBUG;
-      printf("OptiXRenderer) verbose setting: full debugging data\n");
-    }
-  }
+  verbose = get_verbose_flag(1);
 }
 
 
@@ -514,6 +786,10 @@ void OptiXRenderer::check_verbose_env() {
 RTRDev OptiXRenderer::remote_connect(const char *cluster,
                                      const char *user, 
                                      const char *passwd) {
+  OptiXRenderer::Verbosity dl_verbose = get_verbose_flag();
+  if (dl_verbose == RT_VERB_DEBUG)
+     printf("OptiXRenderer) OptiXRenderer::remote_connect()\n");
+
   msgInfo << "OptiX VCA remote connection" << sendmsg;
   msgInfo << "  URL: '" << cluster << "'" << sendmsg;
   msgInfo << " User: '" << user << "'" << sendmsg;
@@ -574,7 +850,7 @@ RTRDev OptiXRenderer::remote_connect(const char *cluster,
 
   if (getenv("VMDOPTIXVCACONFIG")) {
     unsigned int idx = atoi(getenv("VMDOPTIXVCACONFIG"));
-    if (idx >= 0 && idx < numconfigs)
+    if (idx < numconfigs)
       vcaconfigidx = idx;
 
     printf("OptiXRenderer) User-specified OptiX VCA config index: %d\n",
@@ -683,6 +959,10 @@ RTRDev OptiXRenderer::remote_connect(const char *cluster,
 
 
 void OptiXRenderer::remote_detach(RTRDev vrdev) {
+  OptiXRenderer::Verbosity dl_verbose = get_verbose_flag();
+  if (dl_verbose == RT_VERB_DEBUG)
+     printf("OptiXRenderer) OptiXRenderer::remote_detach()\n");
+
   RTremotedevice *rdev = (RTremotedevice *) vrdev;
 
   msgInfo << "OptiXRenderer) VCA: remote connection detach" << sendmsg;
@@ -705,14 +985,39 @@ void OptiXRenderer::remote_detach(RTRDev vrdev) {
 // particular GPUs, GPUs that have displays attached, and so on.
 //
 unsigned int OptiXRenderer::device_list(int **devlist, char ***devnames) {
+  OptiXRenderer::Verbosity dl_verbose = get_verbose_flag();
+  if (dl_verbose == RT_VERB_DEBUG)
+     printf("OptiXRenderer) OptiXRenderer::device_list()\n");
+
   unsigned int count=0;
-  if (rtDeviceGetDeviceCount(&count) != RT_SUCCESS) {
+  RTresult devcntresult = rtDeviceGetDeviceCount(&count);
+  if (devcntresult != RT_SUCCESS) {
+#if OPTIX_VERSION >= 50200
+    if (devcntresult == RT_ERROR_OPTIX_NOT_LOADED) {
+      printf("OptiXRenderer) ERROR: Failed to load the OptiX shared library.\n");
+      printf("OptiXRenderer)        NVIDIA driver may be too old.\n");
+      printf("OptiXRenderer)        Check/update NVIDIA driver\n");
+    }
+#endif
+
+    if (dl_verbose == RT_VERB_DEBUG) {
+      printf("OptiXRenderer)   rtDeviceGetDeviceCount() returned error %08x\n",
+             devcntresult);
+      printf("OptiXRenderer)   No GPUs available\n"); 
+    }
+
     count = 0;
     if (devlist != NULL)
       *devlist = NULL;
     if (devnames != NULL)
       *devnames = NULL;
+
     return 0;
+  }
+
+  if (dl_verbose == RT_VERB_DEBUG) {
+    printf("OptiXRenderer) OptiX rtDeviceGetDeviceCount() reports\n");
+    printf("OptiXRenderer) that %d GPUs are available\n", count);
   }
 
   // check to see if the user wants to limit what device(s) are used
@@ -749,7 +1054,11 @@ unsigned int OptiXRenderer::device_list(int **devlist, char ***devnames) {
   for (goodcount=0,i=0; i<count; i++) {
     // check user-defined GPU device mask for OptiX...
     if (!(gpumask & (1 << i))) {
-//      printf("  Excluded GPU[%d] due to user-specified device mask\n", i);
+      if (dl_verbose == RT_VERB_DEBUG) {
+        char msgbuf[1024];
+        sprintf(msgbuf, "  Excluded GPU[%d] due to user-specified device mask\n", i);
+        msgInfo << msgbuf << sendmsg;
+      }
       continue;
     } 
 
@@ -758,7 +1067,11 @@ unsigned int OptiXRenderer::device_list(int **devlist, char ***devnames) {
     rtDeviceGetAttribute(i, RT_DEVICE_ATTRIBUTE_EXECUTION_TIMEOUT_ENABLED, 
                          sizeof(int), &timeoutenabled);
     if (timeoutenabled && getenv("VMDOPTIXNODISPLAYGPUS")) {
-//      printf("  Excluded GPU[%d] due to user-specified display timeout exclusion \n", i);
+      if (dl_verbose == RT_VERB_DEBUG) {
+        char msgbuf[1024];
+        sprintf(msgbuf, "  Excluded GPU[%d] due to user-specified display timeout exclusion \n", i);
+        msgInfo << msgbuf << sendmsg;
+      }
       continue;
     } 
 
@@ -774,22 +1087,40 @@ unsigned int OptiXRenderer::device_list(int **devlist, char ***devnames) {
 #if OPTIX_VERSION <= 3051
     // exclude Maxwell and later GPUs if we're running OptiX 3.5.1 or earlier
     if (compute_capability[0] > 3) {
-//      printf("  Excluded GPU[%d] due to unsupported compute capability\n", i);
+      if (dl_verbose == RT_VERB_DEBUG) {
+        char msgbuf[1024];
+        sprintf(msgbuf, "  Excluded GPU[%d] due to unsupported compute capability\n", i);
+        msgInfo << msgbuf << sendmsg;
+      }
       continue;
     }
 #endif
 
     // record all usable GPUs we find...
-//    printf("Found usable GPU[%i]\n", i);
+    if (dl_verbose == RT_VERB_DEBUG) {
+      char msgbuf[1024];
+      sprintf(msgbuf, "Found usable GPU[%i]\n", i);
+      msgInfo << msgbuf << sendmsg;
+    }
+
     if (devlist != NULL) {
-//      printf("  Adding usable GPU[%i] to list[%d]\n", i, goodcount);
+      if (dl_verbose == RT_VERB_DEBUG) {
+        char msgbuf[1024];
+        sprintf(msgbuf, "  Adding usable GPU[%i] to list[%d]\n", i, goodcount);
+        msgInfo << msgbuf << sendmsg;
+      }
       (*devlist)[goodcount] = i;
     }
+
     if (devnames != NULL) {
       char *namebuf = (char *) calloc(1, 65 * sizeof(char));
       rtDeviceGetAttribute(i, RT_DEVICE_ATTRIBUTE_NAME, 
                            64*sizeof(char), namebuf);
-//      printf("  Adding usable GPU[%i] to list[%d]: '%s'\n", i, goodcount, namebuf);
+      if (dl_verbose == RT_VERB_DEBUG) {
+        char msgbuf[1024];
+        sprintf(msgbuf, "  Adding usable GPU[%i] to list[%d]: '%s'\n", i, goodcount, namebuf);
+        msgInfo << msgbuf << sendmsg;
+      }
       (*devnames)[goodcount] = namebuf;
     }
     goodcount++;
@@ -800,6 +1131,10 @@ unsigned int OptiXRenderer::device_list(int **devlist, char ***devnames) {
 
 
 unsigned int OptiXRenderer::device_count(void) {
+  OptiXRenderer::Verbosity dl_verbose = get_verbose_flag();
+  if (dl_verbose == RT_VERB_DEBUG)
+     printf("OptiXRenderer) OptiXRenderer::device_count()\n");
+
 #if 1
   return device_list(NULL, NULL);
 #else
@@ -812,6 +1147,10 @@ unsigned int OptiXRenderer::device_count(void) {
 
 
 unsigned int OptiXRenderer::optix_version(void) {
+  OptiXRenderer::Verbosity dl_verbose = get_verbose_flag();
+  if (dl_verbose == RT_VERB_DEBUG)
+     msgInfo << "OptiXRenderer) OptiXRenderer::optix_version()" << sendmsg;
+
   unsigned int version=0;
   if (rtGetVersion(&version) != RT_SUCCESS)
     version = 0;
@@ -837,6 +1176,55 @@ void OptiXRenderer::create_context() {
   double starttime = wkf_timer_timenow(ort_timer);
 
   if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating context...\n");
+
+#if defined(ORT_USERTXAPIS)
+  // OptiX 5.2 allows runtime manipulation of OptiX RTX execution strategy
+  // using a new API flag.  RTX mode is only supported on Maxwell and later
+  // GPUs, earlier Kepler hardware do not support RTX mode.
+  int rtxonoff = 1;
+  if (getenv("VMDOPTIXNORTX") != NULL) {
+    rtxonoff = 0;
+
+    // if the RTX mode isn't on, then we can't use the hardware triangle APIs.
+    hwtri_enabled = 0;
+  }
+
+  // XXX Presently, the execution strategy mode has to be set very early on,
+  //     otherwise the API call will return without error, but the OptiX
+  //     runtime will ignore the state change and continue with the existing
+  //     execution strategy (e.g. the default of '0' if set too late...)
+  if (rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_ENABLE_RTX, sizeof(rtxonoff), &rtxonoff) != RT_SUCCESS) {
+    printf("OptiXRenderer) Error setting RT_GLOBAL_ATTRIBUTE_ENABLE_RTX!!!\n");
+  } else {
+    if (verbose == RT_VERB_TIMING || verbose == RT_VERB_DEBUG)
+      printf("OptiXRenderer) OptiX RTX execution mode is %s.\n",
+             (rtxonoff) ? "on" : "off");
+  }
+#elif 0 && defined(ORT_USERTXAPIS)
+  // XXX this needs to go away when the production OptiX revs no longer 
+  //     allow runtime manipulation of OptiX RTX execution strategy
+  //     (it will be forced on/off by detection of the GPU hardware type)
+  int expexeconoff = 0;
+  if (getenv("VMDOPTIXEXPEXECSTRATEGY") != NULL) {
+    expexeconoff = 1;
+  } else {
+    // if the experimental execution strategy isn't on, then we can't
+    // use the hardware triangle APIs.
+    hwtri_enabled = 0;
+  }
+
+  // XXX Presently, the execution strategy mode has to be set very early on,
+  //     otherwise the API call will return without error, but the OptiX
+  //     runtime will ignore the state change and continue with the existing
+  //     execution strategy (e.g. the default of '0' if set too late...)
+  if (rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_EXPERIMENTAL_EXECUTION_STRATEGY, sizeof(expexeconoff), &expexeconoff) != RT_SUCCESS) {
+    printf("OptiXRenderer) Error setting RT_GLOBAL_ATTRIBUTE_EXPERIMENTAL_EXECUTION_STRATEGY!!!\n");
+  } else {
+    if (verbose == RT_VERB_TIMING || verbose == RT_VERB_DEBUG)
+      printf("OptiXRenderer) OptiX 5.2 experimental execution mode is %s.\n",
+             (expexeconoff) ? "on" : "off");
+  }
+#endif
 
   // Create our objects and set state
   RTresult ctxrc;
@@ -883,10 +1271,7 @@ void OptiXRenderer::create_context() {
 
   // declare various internal state variables
   RTERR( rtContextDeclareVariable(ctx, "max_depth", &max_depth_v) );
-  RTERR( rtContextDeclareVariable(ctx, "anim_interp", &anim_interp_v) );
-  anim_interp = -1.0f; // sentinel value to disable animation
-  RTERR( rtVariableSet1f(anim_interp_v, anim_interp) );
-
+  RTERR( rtContextDeclareVariable(ctx, "max_trans", &max_trans_v) );
   RTERR( rtContextDeclareVariable(ctx, "radiance_ray_type", &radiance_ray_type_v) );
   RTERR( rtContextDeclareVariable(ctx, "shadow_ray_type", &shadow_ray_type_v) );
   RTERR( rtContextDeclareVariable(ctx, "scene_epsilon", &scene_epsilon_v) );
@@ -978,7 +1363,6 @@ void OptiXRenderer::create_context() {
 
   if (verbose >= RT_VERB_TIMING) {
     printf("OptiXRenderer) creating shader programs...\n");
-    printf("OptiXRenderer)   ");
     fflush(stdout);
   }
 
@@ -987,9 +1371,15 @@ void OptiXRenderer::create_context() {
 
   double time_materials = wkf_timer_timenow(ort_timer); 
   if (verbose >= RT_VERB_TIMING) {
+    printf("OptiXRenderer)   ");
     printf("materials(%.1f) ", time_materials - starttime);
     fflush(stdout);
   }
+
+#if defined(ORT_RAYSTATS)
+  // program for clearing the raystats buffers
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "clear_raystats_buffers", &clear_raystats_buffers_pgm) );
+#endif
 
   // program for clearing the accumulation buffer
   RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "clear_accumulation_buffer", &clear_accumulation_buffer_pgm) );
@@ -1153,26 +1543,38 @@ void OptiXRenderer::setup_context(int w, int h) {
 
   check_verbose_env(); // update verbose flag if changed since last run
 
+  int maxdepth = 20;
   if (getenv("VMDOPTIXMAXDEPTH")) {
-    int maxdepth = atoi(getenv("VMDOPTIXMAXDEPTH"));
-    if (maxdepth > 0 && maxdepth <= 20) {
+    maxdepth = atoi(getenv("VMDOPTIXMAXDEPTH"));
+    if (maxdepth > 0 && maxdepth <= 30) {
       printf("OptiXRenderer) Setting maxdepth to %d...\n", maxdepth);
       RTERR( rtVariableSet1i(max_depth_v, maxdepth) );
     } else {
       printf("OptiXRenderer) ignoring out-of-range maxdepth to %d...\n", maxdepth);
     }
-  } else {
-    RTERR( rtVariableSet1i(max_depth_v, 20u) );
+  } 
+
+  int maxtrans = maxdepth;
+  if (getenv("VMDOPTIXMAXTRANS")) {
+    maxtrans = atoi(getenv("VMDOPTIXMAXTRANS"));
+    if (maxtrans > 0 && maxtrans <= 30) {
+      printf("OptiXRenderer) Setting maxtrans to %d...\n", maxtrans);
+      RTERR( rtVariableSet1i(max_trans_v, maxtrans) );
+    } else {
+      printf("OptiXRenderer) ignoring out-of-range maxtrans to %d...\n", maxtrans);
+    }
   }
 
+  // set maxdepth and maxtrans with new values
+  RTERR( rtVariableSet1i(max_depth_v, maxdepth) );
+  RTERR( rtVariableSet1i(max_trans_v, maxtrans) );
+
+  // assign indices to ray types
   RTERR( rtVariableSet1ui(radiance_ray_type_v, 0u) );
   RTERR( rtVariableSet1ui(shadow_ray_type_v, 1u) );
 
+  // set default scene epsilon
   float scene_epsilon = 5.e-5f;
-  if (getenv("VMDOPTIXSCENEEPSILON") != NULL) {
-    scene_epsilon = atof(getenv("VMDOPTIXSCENEEPSILON"));
-    printf("OptiXRenderer) user override of scene epsilon: %g\n", scene_epsilon);
-  }
   RTERR( rtVariableSet1f(scene_epsilon_v, scene_epsilon) );
 
   // Current accumulation subframe count, used as part of generating
@@ -1232,13 +1634,34 @@ void OptiXRenderer::destroy_scene() {
       RTERR( rtGeometryDestroy(geomlist[i]) );
     }
 
+    geominstancelist.clear();
+    geomlist.clear();
+
+#if defined(ORT_USERTXAPIS)
+    // OptiX RTX hardware-accelerated triangles API
+#if 0
+    // XXX this crashes the OptiX 5.2 DEV build w/ triangle API 0.3
+    //  -- reported to NVIDIA on 8/2/2018.  
+    int insttrianglescount = geomtrianglesinstancelist.num();
+    for (i=0; i<insttrianglescount; i++) {
+      RTERR( rtGeometryInstanceDestroy(geomtrianglesinstancelist[i]) );
+    }
+#endif
+
+    int geomtrianglescount = geomtriangleslist.num();
+    for (i=0; i<geomtrianglescount; i++) {
+      RTERR( rtGeometryTrianglesDestroy(geomtriangleslist[i]) );
+    }
+
+    geomtrianglesinstancelist.clear();
+    geomtriangleslist.clear();
+#endif
+
     int bufcount = bufferlist.num();
     for (i=0; i<bufcount; i++) {
       RTERR( rtBufferDestroy(bufferlist[i]) );
     }
 
-    geominstancelist.clear();
-    geomlist.clear();
     bufferlist.clear();
   }
 
@@ -1406,6 +1829,20 @@ void OptiXRenderer::update_rendering_state(int interactive) {
   if (!context_created)
     return;
 
+#if defined(ORT_USERTXAPIS)
+  // permit the hardware triangle API to be disabled at runtime
+  if (getenv("VMDOPTIXNOHWTRIANGLES") != NULL) {
+    hwtri_enabled = 0;
+  }
+#endif
+
+  // update scene epsilon if necessary
+  if (getenv("VMDOPTIXSCENEEPSILON") != NULL) {
+    float scene_epsilon = atof(getenv("VMDOPTIXSCENEEPSILON"));
+    printf("OptiXRenderer) user override of scene epsilon: %g\n", scene_epsilon);
+    RTERR( rtVariableSet1f(scene_epsilon_v, scene_epsilon) );
+  }
+
   int i;
   wkf_timer_start(ort_timer);
 
@@ -1524,6 +1961,7 @@ void OptiXRenderer::update_rendering_state(int interactive) {
   dlcount = (dlcount > DISP_LIGHTS) ? DISP_LIGHTS : dlcount;
   for (i=0; i<dlcount; i++) {
     vec_copy((float*)(&dir_lights.dirs[i]), directional_lights[i].dir);
+    vec_normalize((float*)&dir_lights.dirs[i]);
   }
   RTERR( rtVariableSetUserData(dir_light_list_v, sizeof(DirectionalLightList), &dir_lights) );
 
@@ -1539,9 +1977,10 @@ void OptiXRenderer::update_rendering_state(int interactive) {
 #else
   DirectionalLight *dlbuf;
   RTERR( rtBufferSetSize1D(dir_lightbuffer, directional_lights.num()) );
-  RTERR( rtBufferMap(lightbuffer, (void **) &dlbuf) );
+  RTERR( rtBufferMap(dir_lightbuffer, (void **) &dlbuf) );
   for (i=0; i<directional_lights.num(); i++) {
     vec_copy((float*)&dlbuf[i].dir, directional_lights[i].dir);
+    vec_normalize((float*)&dlbuf[i].dir);
   }
   RTERR( rtBufferUnmap(dir_lightbuffer) );
   RTERR( rtVariableSetObject(dir_lightbuffer_v, dir_lightbuffer) );
@@ -1550,13 +1989,13 @@ void OptiXRenderer::update_rendering_state(int interactive) {
   RTERR( rtBufferSetSize1D(pos_lightbuffer, positional_lights.num()) );
   RTERR( rtBufferMap(pos_lightbuffer, (void **) &plbuf) );
   for (i=0; i<positional_lights.num(); i++) {
-    vec_copy((float*)&plbuf[i].dir, positional_lights[i].dir);
+    vec_copy((float*)&plbuf[i].pos, positional_lights[i].pos);
   }
   RTERR( rtBufferUnmap(pos_lightbuffer) );
   RTERR( rtVariableSetObject(pos_lightbuffer_v, pos_lightbuffer) );
 #endif
 
-  if (verbose == RT_VERB_DEBUG) printf("Finalizing OptiX scene graph...\n");
+  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) Finalizing OptiX scene graph...\n");
 
   // create group to hold instances
   int instcount = geominstancelist.num();
@@ -1567,6 +2006,20 @@ void OptiXRenderer::update_rendering_state(int interactive) {
   for (i=0; i<instcount; i++) {
     RTERR( rtGeometryGroupSetChild(geometrygroup, i, geominstancelist[i]) );
   }
+
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware-accelerated triangles API
+  // create separate group for triangle instances
+  int insttrianglescount = geomtrianglesinstancelist.num();
+  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) triangle instance objects: %d\n", insttrianglescount);
+
+  RTERR( rtGeometryGroupCreate(ctx, &geometrytrianglesgroup) );
+  RTERR( rtGeometryGroupSetChildCount(geometrytrianglesgroup, insttrianglescount) );
+  for (i=0; i<insttrianglescount; i++) {
+    RTERR( rtGeometryGroupSetChild(geometrytrianglesgroup, i, geomtrianglesinstancelist[i]) );
+  }
+#endif
+
 
   // XXX we should create an acceleration object the instance shared
   //     by multiple PBC images
@@ -1632,10 +2085,27 @@ void OptiXRenderer::update_rendering_state(int interactive) {
   RTERR( rtGeometryGroupSetAcceleration(geometrygroup, acceleration) );
   RTERR( rtAccelerationMarkDirty(acceleration) );
 
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware-accelerated triangles API
+  // Acceleration structure for triangle geometry
+  RTERR( rtAccelerationCreate(ctx, &trianglesacceleration) );
+  RTERR( rtAccelerationSetBuilder(trianglesacceleration, "Trbvh") );
+  RTERR( rtAccelerationSetTraverser(trianglesacceleration, "Bvh") );
+  RTERR( rtGeometryGroupSetAcceleration(geometrytrianglesgroup, trianglesacceleration) );
+  RTERR( rtAccelerationMarkDirty(trianglesacceleration) );
+#endif
+
+
   // create the root node of the scene graph
   RTERR( rtGroupCreate(ctx, &root_group) );
+#if defined(ORT_USERTXAPIS)
+  RTERR( rtGroupSetChildCount(root_group, 2) );
+  RTERR( rtGroupSetChild(root_group, 0, geometrygroup) );
+  RTERR( rtGroupSetChild(root_group, 1, geometrytrianglesgroup) );
+#else
   RTERR( rtGroupSetChildCount(root_group, 1) );
   RTERR( rtGroupSetChild(root_group, 0, geometrygroup) );
+#endif
   RTERR( rtVariableSetObject(root_object_v, root_group) );
   RTERR( rtVariableSetObject(root_shadower_v, root_group) );
 
@@ -1721,14 +2191,17 @@ void OptiXRenderer::update_rendering_state(int interactive) {
 
   if (verbose == RT_VERB_DEBUG) {
     if (ext_aa_loops > 1)
-      printf("Running OptiX multi-pass: %d loops\n", ext_aa_loops);
+      printf("OptiXRenderer) Running OptiX multi-pass: %d loops\n", ext_aa_loops);
     else
-      printf("Running OptiX single-pass: %d total samples\n", 1+aa_samples);
+      printf("OptiXRenderer) Running OptiX single-pass: %d total samples\n", 1+aa_samples);
   }
 
   // set the ray generation program to the active camera code...
   RTERR( rtContextSetEntryPointCount(ctx, RT_RAY_GEN_COUNT) );
   RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_CLEAR_ACCUMULATION_BUFFER, clear_accumulation_buffer_pgm) );
+#if defined(ORT_RAYSTATS)
+  RTERR( rtContextSetRayGenerationProgram(ctx, RT_RAY_GEN_CLEAR_RAYSTATS, clear_raystats_buffers_pgm) );
+#endif
 
   // set the active color accumulation ray gen program based on the 
   // camera/projection mode, stereoscopic display mode, 
@@ -1788,8 +2261,8 @@ void OptiXRenderer::update_rendering_state(int interactive) {
   // allow runtime user override of the OptiX stack size in 
   // case we need to render a truly massive scene
   if (getenv("VMDOPTIXSTACKSIZE")) {
-    if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) user stack size override: %ld\n", ssz);
     newstacksize = atoi(getenv("VMDOPTIXSTACKSIZE"));
+    if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) user stack size override: %ld\n", newstacksize);
   }
   rtContextSetStackSize(ctx, newstacksize);
   rtContextGetStackSize(ctx, &ssz);
@@ -1855,6 +2328,7 @@ void OptiXRenderer::config_framebuffer(int fbwidth, int fbheight,
 
     // create intermediate GPU-local accumulation buffer
     RTERR( rtContextDeclareVariable(ctx, "accumulation_buffer", &accumulation_buffer_v) );
+
 #ifdef VMDOPTIX_PROGRESSIVEAPI
     if (interactive) {
       RTERR( rtBufferCreate(ctx, RT_BUFFER_OUTPUT, &accumulation_buffer) );
@@ -1869,6 +2343,22 @@ void OptiXRenderer::config_framebuffer(int fbwidth, int fbheight,
     RTERR( rtBufferSetFormat(accumulation_buffer, RT_FORMAT_FLOAT4) );
     RTERR( rtBufferSetSize2D(accumulation_buffer, fbwidth, fbheight) );
     RTERR( rtVariableSetObject(accumulation_buffer_v, accumulation_buffer) );
+
+#if defined(ORT_RAYSTATS)
+    // (re)create intermediate GPU-local ray stats buffers
+    // the ray stat buffers get cleared when clearing the accumulation buffer
+    RTERR( rtContextDeclareVariable(ctx, "raystats1_buffer", &raystats1_buffer_v) );
+    RTERR( rtBufferCreate(ctx, RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL, &raystats1_buffer) );
+    RTERR( rtBufferSetFormat(raystats1_buffer, RT_FORMAT_UNSIGNED_INT4) );
+    RTERR( rtBufferSetSize2D(raystats1_buffer, fbwidth, fbheight) );
+    RTERR( rtVariableSetObject(raystats1_buffer_v, raystats1_buffer) );
+
+    RTERR( rtContextDeclareVariable(ctx, "raystats2_buffer", &raystats2_buffer_v) );
+    RTERR( rtBufferCreate(ctx, RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL, &raystats2_buffer) );
+    RTERR( rtBufferSetFormat(raystats2_buffer, RT_FORMAT_UNSIGNED_INT4) );
+    RTERR( rtBufferSetSize2D(raystats2_buffer, fbwidth, fbheight) );
+    RTERR( rtVariableSetObject(raystats2_buffer_v, raystats2_buffer) );
+#endif
 
     // create output framebuffer
 #ifdef VMDOPTIX_PROGRESSIVEAPI
@@ -1926,6 +2416,10 @@ void OptiXRenderer::resize_framebuffer(int fbwidth, int fbheight) {
 
     RTERR( rtBufferSetSize2D(framebuffer, width, height) );
     RTERR( rtBufferSetSize2D(accumulation_buffer, width, height) );
+#if defined(ORT_RAYSTATS)
+    RTERR( rtBufferSetSize2D(raystats1_buffer, width, height) );
+    RTERR( rtBufferSetSize2D(raystats2_buffer, width, height) );
+#endif
   }
 }
 
@@ -1935,6 +2429,12 @@ void OptiXRenderer::destroy_framebuffer() {
     return;
 
   if (buffers_allocated) {
+#if defined(ORT_RAYSTATS)
+    RTERR( rtContextRemoveVariable(ctx, raystats1_buffer_v) );
+    RTERR( rtBufferDestroy(raystats1_buffer) );
+    RTERR( rtContextRemoveVariable(ctx, raystats2_buffer_v) );
+    RTERR( rtBufferDestroy(raystats2_buffer) );
+#endif
     RTERR( rtContextRemoveVariable(ctx, accumulation_buffer_v) );
     RTERR( rtBufferDestroy(accumulation_buffer) );
 #ifndef VMDOPTIX_PROGRESSIVEAPI
@@ -2046,7 +2546,7 @@ void OptiXRenderer::render_compile_and_validate(void) {
   }
 #endif
 
-  if (verbose == RT_VERB_DEBUG) printf("Finalizing OptiX rendering kernels...\n");
+  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) Finalizing OptiX rendering kernels...\n");
   RTERR( rtContextValidate(ctx) );
   if (lasterror != RT_SUCCESS) {
     printf("OptiXRenderer) An error occured validating the context. Rendering is aborted.\n");
@@ -2210,7 +2710,8 @@ static void interactive_viewer_usage(RTcontext ctx, void *win) {
 }
 
 
-void OptiXRenderer::render_to_glwin(const char *filename) {
+
+void OptiXRenderer::render_to_glwin(const char *filename, int writealpha) {
   int i;
 
   if (!context_created)
@@ -2221,34 +2722,12 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
   RtMouseMode mm = RTMM_ROT;
   RtMouseDown mousedown = RTMD_NONE;
 
-  // animation free-run flag and interpolation state variable
-  int anim_freerun = 0;
-
-  // user-override of value-range clamping for anim interpolant
-  float anim_interp_min = 0.0f;
-  float anim_interp_max = 1.0f;
-  float anim_interp_inc = 0.03f;
-  if (getenv("VMDOPTIXANIMINTERPMIN")) {
-    anim_interp_min = atof(getenv("VMDOPTIXANIMINTERPMIN"));
-    printf("OptiXRenderer) User-override of anim_interp min value: %f\n", anim_interp_min);
-  }
-  if (getenv("VMDOPTIXANIMINTERPMAX")) {
-    anim_interp_max = atof(getenv("VMDOPTIXANIMINTERPMAX"));
-    printf("OptiXRenderer) User-override of anim_interp max value: %f\n", anim_interp_max);
-  }
-  if (getenv("VMDOPTIXANIMINTERPINC")) {
-    anim_interp_inc = atof(getenv("VMDOPTIXANIMINTERPINC"));
-    printf("OptiXRenderer) User-override of anim_interp inc value: %f\n", anim_interp_inc);
-  }
-  float anim_interp_range = anim_interp_max - anim_interp_min;
-
-  anim_interp = -1.0f; // sentinel value to disable animation
-  RTERR( rtVariableSet1f(anim_interp_v, anim_interp) );
-
   // initialize HMD free-run flag to off until HMD code enumerates the 
   // hardware and passes all the way through initialization
   int hmd_freerun = 0;
+#if defined(VMDOPTIX_USE_HMD)
   void *hmd_warp = NULL;
+#endif
   int hmd_warp_drawmode=1;
 
   // default HMD distortion correction coefficients assume an Oculus DK2 HMD
@@ -2364,7 +2843,13 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
   // flag to enable automatic AO sample count adjustment for FPS rate control
 #if defined(VMDOPTIX_PROGRESSIVEAPI)
   int vcarunning=0;      // flag to indicate VCA streaming active/inactive
-  int autosamplecount=0; // disable when targeting VCA for now
+#if 1
+  int autosamplecount=0; // leave disabled for now
+#else
+  int autosamplecount=1; // works partially in current revs of progressive API
+  if (remote_device != NULL)
+    autosamplecount=0;  // re-disable when targeting VCA for now
+#endif
 #else
   int autosamplecount=1;
 #endif
@@ -2464,7 +2949,19 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
 #endif
 
   // create the display window
-  void *win = createoptixwindow("VMD TachyonL-OptiX Interactive Ray Tracer", width, height);
+  const char *windowtitle;
+#if 1
+  windowtitle = "VMD TachyonL-OptiX Interactive Ray Tracer";
+#else
+  // useful for demos and perf comparisons
+  if (getenv("VMDOPTIXNORTX") != NULL || hwtri_enabled==0) {
+    windowtitle = "VMD TachyonL-OptiX Interactive Ray Tracer -- Turing RTX DISABLED";
+  } else {
+    windowtitle = "VMD TachyonL-OptiX Interactive Ray Tracer -- Turing RTX ENABLED";
+  }
+#endif
+
+  void *win = createoptixwindow(windowtitle, width, height);
   interactive_viewer_usage(ctx, win);
   
   // check for stereo-capable display
@@ -2518,9 +3015,99 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
   double mapbuftotaltime=0.0;
   
   double oldtime = wkf_timer_timenow(ort_timer);
+#if defined(VMDOPTIX_USE_HMD)
   double hmdoldtime = oldtime;
+#endif
   while (!done) { 
     int winevent=0;
+
+#if 1
+    if (app->uivs && app->uivs->srv_connected()) {
+      if (app->uivs->srv_check_ui_event()) {
+        int eventtype;
+        app->uivs->srv_get_last_event_type(eventtype);
+        switch (eventtype) {
+          case VideoStream::VS_EV_ROTATE_BY:
+            { int axis;
+              float angle;
+              app->uivs->srv_get_last_rotate_by(angle, axis);
+              Matrix4 rm;
+
+              switch (axis) {
+                case 'x':
+                  rm.rotate_axis(cam_U, -angle * M_PI/180.0f);
+                  break;
+
+                case 'y':
+                  rm.rotate_axis(cam_V, -angle * M_PI/180.0f);
+                  break;
+
+                case 'z':
+                  rm.rotate_axis(cam_W, -angle * M_PI/180.0f);
+                  break;
+              }
+              rm.multpoint3d(cam_pos, cam_pos);
+              rm.multnorm3d(cam_U, cam_U);
+              rm.multnorm3d(cam_V, cam_V);
+              rm.multnorm3d(cam_W, cam_W);
+
+              if (xformgradientsphere) {
+                rm.multnorm3d(scene_gradient, scene_gradient);
+              }
+
+              if (xformlights) {
+                // update light directions (comparatively costly)
+                for (i=0; i<directional_lights.num(); i++) {
+                  rm.multnorm3d((float*)&cur_dlights[i].dir, (float*)&cur_dlights[i].dir);
+                }
+              }
+              winredraw = 1;
+            }
+            break;
+
+          case VideoStream::VS_EV_TRANSLATE_BY:
+            {
+              float dU[3], dV[3], dW[3];
+              float tx, ty, tz;
+              app->uivs->srv_get_last_translate_by(tx, ty, tz);
+              vec_scale(dU, -tx, cam_U);
+              vec_scale(dV, -ty, cam_V);
+              vec_scale(dW, -tz, cam_W);
+              vec_add(cam_pos, cam_pos, dU);
+              vec_add(cam_pos, cam_pos, dV);
+              vec_add(cam_pos, cam_pos, dW);
+              winredraw = 1;
+            }
+            break;
+
+          case VideoStream::VS_EV_SCALE_BY:
+            { float zoominc;
+              app->uivs->srv_get_last_scale_by(zoominc);
+              cam_zoom *= 1.0f / zoominc;
+              winredraw = 1;
+            }
+            break;
+
+#if 0
+              } else if (mm == RTMM_DOF) {
+                cam_dof_fnumber += txdx * 20.0f;
+                if (cam_dof_fnumber < 1.0f) cam_dof_fnumber = 1.0f;
+                cam_dof_focal_dist += -txdy;
+                if (cam_dof_focal_dist < 0.01f) cam_dof_focal_dist = 0.01f;
+                winredraw = 1;
+              }
+            }
+#endif
+
+          case VideoStream::VS_EV_NONE: 
+                  default:
+            // should never happen...
+            break;
+        }
+      }
+    }              
+#endif
+
 
     while ((winevent = glwin_handle_events(win, GLWIN_EV_POLL_NONBLOCK)) != 0) {
       int evdev, evval;
@@ -2535,21 +3122,6 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
         winredraw = 0;
       } else if (evdev == GLWIN_EV_KBD) {
         switch (evkey) {
-          case 'A': 
-            anim_freerun = !(anim_freerun);
-            printf("OptiXRenderer) Toggling RT animation %s\n",
-                   (anim_freerun) ? "on" : "off");
-
-            if (anim_freerun)
-              anim_interp = 0.0f; // set to animation start point
-            else
-              anim_interp = -1.0f;  // sentinel value to disable animation 
-
-            // apply user-defined anim scaling and offset factors 
-            RTERR( rtVariableSet1f(anim_interp_v, anim_interp_min + (anim_interp * anim_interp_range)) );
-            winredraw=1;
-            break;
-
           case '`': autosamplecount=0; samples_per_pass=1; 
                     force_ao_1 = (!force_ao_1); winredraw=1; 
                     printf("OptiXRenderer) Toggling forced single AO sample per pass: %s\n",
@@ -2640,7 +3212,7 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
             {
               char snapfilename[256];
               sprintf(snapfilename, "vmdsnapshot.%04d.tga", snapshotcount);
-              if (OptiXWriteImage(snapfilename, framebuffer) != -1) {
+              if (OptiXWriteImage(snapfilename, writealpha, framebuffer) != -1) {
                 printf("OptiXRenderer) Saved snapshot to '%s'             \n",
                        snapfilename);
               }
@@ -2797,10 +3369,6 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
           case GLWIN_EV_KBD_F3: /* turn DoF on/off */
             gl_dof_on = (!gl_dof_on);
             printf("\n");
-            if ((camera_projection == RT_ORTHOGRAPHIC) && gl_dof_on) {
-              gl_dof_on=0; 
-              printf("OptiXRenderer) Depth-of-field not available in orthographic mode\n");
-            }
             printf("OptiXRenderer) Depth-of-field %s\n",
                    (gl_dof_on) ? "enabled" : "disabled");
             winredraw = 1;
@@ -3235,22 +3803,6 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
 #endif
 
 
-    // 
-    // handle RT animation (currently a hack)
-    //
-    if (anim_freerun) {
-      anim_interp = fmodf(anim_interp + anim_interp_inc, 1.0f);
-
-      // apply user-defined anim scaling and offset factors 
-      RTERR( rtVariableSet1f(anim_interp_v, anim_interp_min + (anim_interp * anim_interp_range)) );
-#if 0
-      printf("\nanim freerun: %f, scaled: %f\n", anim_interp,
-             anim_interp_min + (anim_interp * anim_interp_range));
-#endif
-
-      winredraw=1;
-    } 
-
     //
     // handle window resizing, stereoscopic mode changes,
     // destroy and recreate affected OptiX buffers
@@ -3527,6 +4079,9 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
 #else
           RTERR( rtContextLaunch2D(ctx, RT_RAY_GEN_CLEAR_ACCUMULATION_BUFFER, width, height) );
 #endif
+#if defined(ORT_RAYSTATS)
+          RTERR( rtContextLaunch2D(ctx, RT_RAY_GEN_CLEAR_RAYSTATS, width, height) );
+#endif
           winredraw=0;
         }
 
@@ -3548,7 +4103,7 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
 #endif
 
         if (lasterror == RT_SUCCESS) {
-          if (frame_ready || hmd_freerun || anim_freerun) {
+          if (frame_ready || hmd_freerun) {
             double bufnewtime = wkf_timer_timenow(ort_timer);
 
 
@@ -3636,6 +4191,16 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
 #else
               glwin_draw_image_rgb3u(win, (stereoon!=0)*GLWIN_STEREO_OVERUNDER, width, height, img);
 #endif
+
+#if 1
+              // push latest frame into the video streaming pipeline
+              // and pump the event handling mechanism afterwards
+              if (app->uivs && app->uivs->srv_connected()) {
+                app->uivs->video_frame_pending(img, width, height);             
+                app->uivs->check_event();             
+              }              
+#endif
+
               rtBufferUnmap(framebuffer);
               mapbuftotaltime = wkf_timer_timenow(ort_timer) - bufnewtime;
 
@@ -3679,7 +4244,7 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
                
               // write the new movie frame               
               sprintf(moviefilename, movie_recording_filebase, fidx);
-              if (OptiXWriteImage(moviefilename, framebuffer,
+              if (OptiXWriteImage(moviefilename, writealpha, framebuffer,
                                   RT_FORMAT_UNSIGNED_BYTE4, width, height) == -1) {
                 movie_recording_on = 0;
                 printf("\n");
@@ -3734,7 +4299,11 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
   if (lasterror == RT_SUCCESS) {
     wkf_timer_start(ort_timer);
     // write output image
-    OptiXWriteImage(filename, framebuffer);
+    OptiXWriteImage(filename, writealpha, framebuffer);
+#if defined(ORT_RAYSTATS)
+    OptiXPrintRayStats(raystats1_buffer, raystats2_buffer, 0.0);
+#endif
+
     wkf_timer_stop(ort_timer);
 
     if (verbose == RT_VERB_TIMING || verbose == RT_VERB_DEBUG) {
@@ -3766,7 +4335,734 @@ void OptiXRenderer::render_to_glwin(const char *filename) {
 #endif
 
 
-void OptiXRenderer::render_to_file(const char *filename) {
+
+void OptiXRenderer::render_to_videostream(const char *filename, int writealpha) {
+  int i;
+
+  if (!context_created)
+    return;
+
+  // flags to interactively enable/disable shadows, AO, DoF
+#if defined(USE_REVERSE_SHADOW_RAYS) && defined(USE_REVERSE_SHADOW_RAYS_DEFAULT)
+  int gl_shadows_on=(shadows_enabled) ? RT_SHADOWS_ON_REVERSE : RT_SHADOWS_OFF;
+#else
+  int gl_shadows_on=(shadows_enabled) ? RT_SHADOWS_ON : RT_SHADOWS_OFF;
+#endif
+
+  int gl_fs_on=0; // fullscreen window state
+  int fsowsx=0, fsowsy=0; // store last win size before fullscreen
+  int owsx=0, owsy=0; // last win size
+  int gl_ao_on=(ao_samples > 0);
+  int gl_dof_on, gl_dof_on_old;
+  gl_dof_on=gl_dof_on_old=dof_enabled; 
+  int gl_fog_on=(fog_mode != RT_FOG_NONE);
+  int gl_clip_on=(clipview_mode != RT_CLIP_NONE);
+  int gl_headlight_on=(headlight_mode != RT_HEADLIGHT_OFF);
+
+  // Enable live recording of a session to a stream of image files indexed
+  // by their display presentation time, mapped to the nearest frame index
+  // in a fixed-frame-rate image sequence (e.g. 24, 30, or 60 FPS), 
+  // to allow subsequent encoding into a standard movie format.
+  // XXX this feature is disabled by default at present, to prevent people
+  //     from accidentally turning it on during a live demo or the like
+  int movie_recording_enabled = (getenv("VMDOPTIXLIVEMOVIECAPTURE") != NULL);
+  int movie_recording_on = 0;
+  double movie_recording_start_time = 0.0;
+  int movie_recording_fps = 30;
+  int movie_framecount = 0;
+  int movie_lastframeindex = 0;
+  const char *movie_recording_filebase = "vmdlivemovie.%05d.tga";
+  if (getenv("VMDOPTIXLIVEMOVIECAPTUREFILEBASE"))
+    movie_recording_filebase = getenv("VMDOPTIXLIVEMOVIECAPTUREFILEBASE");
+
+  // total AA/AO sample count
+  int totalsamplecount=0;
+
+  // counter for snapshots of live image...
+  int snapshotcount=0;
+
+  // flag to enable automatic AO sample count adjustment for FPS rate control
+#if defined(VMDOPTIX_PROGRESSIVEAPI)
+  int vcarunning=0;      // flag to indicate VCA streaming active/inactive
+#if 1
+  int autosamplecount=0; // leave disabled for now
+#else
+  int autosamplecount=1; // works partially in current revs of progressive API
+  if (remote_device != NULL)
+    autosamplecount=0;  // re-disable when targeting VCA for now
+#endif
+#else
+  int autosamplecount=1;
+#endif
+
+  // flag to enable transformation of lights and gradient sky sphere, 
+  // so that they track camera orientation as they do in the VMD OpenGL display
+  int xformlights=1, xformgradientsphere=1;
+
+  //
+  // allocate or reconfigure the framebuffer, accumulation buffer, 
+  // and output streams required for progressive rendering, either
+  // using the new progressive APIs, or using our own code.
+  //
+  // Unless overridden by environment variables, we use the incoming
+  // window size parameters from VMD to initialize the RT image dimensions.
+  // If image size is overridden, often when using HMDs, the incoming 
+  // dims are window dims are used to size the GL window, but the image size
+  // is set independently.
+  int wsx=width, wsy=height;
+  const char *imageszstr = getenv("VMDOPTIXIMAGESIZE");
+  if (imageszstr) {
+    if (sscanf(imageszstr, "%d %d", &width, &height) != 2) {
+      width=wsx;
+      height=wsy;
+    } 
+  } 
+
+  config_framebuffer(width, height, 1);
+
+  // prepare the majority of OptiX rendering state before we go into 
+  // the interactive rendering loop
+  update_rendering_state(1);
+  render_compile_and_validate();
+
+  // make a copy of state we're going to interactively manipulate,
+  // so that we can recover to the original state on-demand
+  int samples_per_pass = 1;
+  int force_ao_1 = 0; // whether or not to force AO count per pass to 1
+  int cur_aa_samples = aa_samples;
+  int cur_ao_samples = ao_samples;
+  float cam_zoom_orig = cam_zoom;
+  float scene_gradient_orig[3] = {0.0f, 1.0f, 0.0f};
+  vec_copy(scene_gradient_orig, scene_gradient);
+
+  float cam_pos_orig[3] = {0.0f, 0.0f, 2.0f};
+  float cam_U_orig[3] = {1.0f, 0.0f, 0.0f};
+  float cam_V_orig[3] = {0.0f, 1.0f, 0.0f};
+  float cam_W_orig[3] = {0.0f, 0.0f, -1.0f};
+  float cam_pos[3], cam_U[3], cam_V[3], cam_W[3];
+  float hmd_U[3], hmd_V[3], hmd_W[3];
+
+  vec_copy(cam_pos, cam_pos_orig);
+  vec_copy(cam_U, cam_U_orig);
+  vec_copy(cam_V, cam_V_orig);
+  vec_copy(cam_W, cam_W_orig);
+
+  // copy light directions
+  DirectionalLight *cur_dlights = (DirectionalLight *) calloc(1, directional_lights.num() * sizeof(DirectionalLight));
+  for (i=0; i<directional_lights.num(); i++) {
+    vec_copy((float*)&cur_dlights[i].dir, directional_lights[i].dir);
+    vec_normalize((float*)&cur_dlights[i].dir);
+  }
+
+  // check for stereo-capable display
+  int havestereo=0, havestencil=0;
+  int stereoon=0, stereoon_old=0;
+  // glwin_get_wininfo(win, &havestereo, &havestencil);
+
+  // Override AA/AO sample counts since we're doing progressive rendering.
+  // Choosing an initial AO sample count of 1 will give us the peak progressive 
+  // display update rate, but we end up wasting time on re-tracing many
+  // primary rays.  The automatic FPS optimization scheme below will update
+  // the number of samples per rendering pass and assign the best values for
+  // AA/AO samples accordingly.
+  cur_aa_samples = samples_per_pass;
+  if (cur_ao_samples > 0) {
+    cur_aa_samples = 1;
+    cur_ao_samples = samples_per_pass;
+  }
+
+  const char *statestr = "|/-\\.";
+  int done=0, winredraw=1, accum_count=0;
+  int state=0, mousedownx=0, mousedowny=0;
+  float cur_cam_zoom = cam_zoom_orig;
+
+  double fpsexpave=0.0; 
+  double mapbuftotaltime=0.0;
+  
+  double oldtime = wkf_timer_timenow(ort_timer);
+  // Note: we immediately terminate the rendering loop if
+  //       the videostream server loses its client connection(s)
+  while (!done &&
+         app->uivs && app->uivs->srv_connected()) { 
+    int winevent=0;
+
+#if 1
+    if (app->uivs && app->uivs->srv_connected()) {
+      if (app->uivs->srv_check_ui_event()) {
+        int eventtype;
+        app->uivs->srv_get_last_event_type(eventtype);
+        switch (eventtype) {
+          case VideoStream::VS_EV_ROTATE_BY:
+            { int axis;
+              float angle;
+              app->uivs->srv_get_last_rotate_by(angle, axis);
+              Matrix4 rm;
+
+              switch (axis) {
+                case 'x':
+                  rm.rotate_axis(cam_U, -angle * M_PI/180.0f);
+                  break;
+
+                case 'y':
+                  rm.rotate_axis(cam_V, -angle * M_PI/180.0f);
+                  break;
+
+                case 'z':
+                  rm.rotate_axis(cam_W, -angle * M_PI/180.0f);
+                  break;
+              }
+              rm.multpoint3d(cam_pos, cam_pos);
+              rm.multnorm3d(cam_U, cam_U);
+              rm.multnorm3d(cam_V, cam_V);
+              rm.multnorm3d(cam_W, cam_W);
+
+              if (xformgradientsphere) {
+                rm.multnorm3d(scene_gradient, scene_gradient);
+              }
+
+              if (xformlights) {
+                // update light directions (comparatively costly)
+                for (i=0; i<directional_lights.num(); i++) {
+                  rm.multnorm3d((float*)&cur_dlights[i].dir, (float*)&cur_dlights[i].dir);
+                }
+              }
+              winredraw = 1;
+            }
+            break;
+
+          case VideoStream::VS_EV_TRANSLATE_BY:
+            {
+              float dU[3], dV[3], dW[3];
+              float tx, ty, tz;
+              app->uivs->srv_get_last_translate_by(tx, ty, tz);
+              vec_scale(dU, -tx, cam_U);
+              vec_scale(dV, -ty, cam_V);
+              vec_scale(dW, -tz, cam_W);
+              vec_add(cam_pos, cam_pos, dU);
+              vec_add(cam_pos, cam_pos, dV);
+              vec_add(cam_pos, cam_pos, dW);
+              winredraw = 1;
+            }
+            break;
+
+          case VideoStream::VS_EV_SCALE_BY:
+            { float zoominc;
+              app->uivs->srv_get_last_scale_by(zoominc);
+              cam_zoom *= 1.0f / zoominc;
+              winredraw = 1;
+            }
+            break;
+
+#if 0
+              } else if (mm == RTMM_DOF) {
+                cam_dof_fnumber += txdx * 20.0f;
+                if (cam_dof_fnumber < 1.0f) cam_dof_fnumber = 1.0f;
+                cam_dof_focal_dist += -txdy;
+                if (cam_dof_focal_dist < 0.01f) cam_dof_focal_dist = 0.01f;
+                winredraw = 1;
+              }
+            }
+#endif
+          case VideoStream::VS_EV_KEYBOARD:
+            { int keydev, keyval, shift_state;
+              app->uivs->srv_get_last_keyboard(keydev, keyval, shift_state);
+              switch (keydev) {
+                case DisplayDevice::WIN_KBD:
+                  {
+                    switch (keyval) {
+                      // update sample counts
+                      case  '1': autosamplecount=0; samples_per_pass=1; winredraw=1; break;
+                      case  '2': autosamplecount=0; samples_per_pass=2; winredraw=1; break;
+                      case  '3': autosamplecount=0; samples_per_pass=3; winredraw=1; break;
+                      case  '4': autosamplecount=0; samples_per_pass=4; winredraw=1; break;
+                      case  '5': autosamplecount=0; samples_per_pass=5; winredraw=1; break;
+                      case  '6': autosamplecount=0; samples_per_pass=6; winredraw=1; break;
+                      case  '7': autosamplecount=0; samples_per_pass=7; winredraw=1; break;
+                      case  '8': autosamplecount=0; samples_per_pass=8; winredraw=1; break;
+                      case  '9': autosamplecount=0; samples_per_pass=9; winredraw=1; break;
+                      case  '0': autosamplecount=0; samples_per_pass=10; winredraw=1; break;
+
+                      case  '=': /* recover back to initial state */
+                        vec_copy(scene_gradient, scene_gradient_orig);
+                        cam_zoom = cam_zoom_orig;
+                        vec_copy(cam_pos, cam_pos_orig);
+                        vec_copy(cam_U, cam_U_orig);
+                        vec_copy(cam_V, cam_V_orig);
+                        vec_copy(cam_W, cam_W_orig);
+
+                        // restore original light directions
+                        for (i=0; i<directional_lights.num(); i++) {
+                          vec_copy((float*)&cur_dlights[i].dir, directional_lights[i].dir);
+                          vec_normalize((float*)&cur_dlights[i].dir);
+                        }
+                        winredraw = 1;
+                        break;
+
+                      case  'q': /* 'q' key */
+                      case  'Q': /* 'Q' key */
+                        printf("\nOptiXRenderer) Exiting on user input.               \n");
+                        done=1; /* exit from interactive RT window */
+                        break;
+                    }
+                  }
+                  break;
+
+                case DisplayDevice::WIN_KBD_ESCAPE:
+                  printf("\nOptiXRenderer) Exiting on user input.               \n");
+                  done=1; /* exit from interactive RT window */
+                  break;
+
+                case DisplayDevice::WIN_KBD_F1:
+#if defined(USE_REVERSE_SHADOW_RAYS) && defined(USE_REVERSE_SHADOW_RAYS_DEFAULT)
+                  gl_shadows_on=(!gl_shadows_on) ? RT_SHADOWS_ON_REVERSE : RT_SHADOWS_OFF;
+#else
+                  gl_shadows_on=(!gl_shadows_on) ? RT_SHADOWS_ON : RT_SHADOWS_OFF;
+                  // gl_shadows_on = (!gl_shadows_on);
+#endif
+
+                  printf("\n");
+#if defined(USE_REVERSE_SHADOW_RAYS) && defined(USE_REVERSE_SHADOW_RAYS_DEFAULT)
+                  printf("OptiXRenderer) Shadows %s\n",
+                         (gl_shadows_on) ? "enabled (reversal opt.)" : "disabled");
+#else
+                  printf("OptiXRenderer) Shadows %s\n",
+                         (gl_shadows_on) ? "enabled" : "disabled");
+#endif
+                  winredraw = 1;
+                  break;
+
+                case DisplayDevice::WIN_KBD_F2:
+                  gl_ao_on = (!gl_ao_on);
+                  printf("\n");
+                  printf("OptiXRenderer) Ambient occlusion %s\n",
+                         (gl_ao_on) ? "enabled" : "disabled");
+                  winredraw = 1;
+                  break;
+
+                case DisplayDevice::WIN_KBD_F3:
+                  gl_dof_on = (!gl_dof_on);
+                  printf("\n");
+                  printf("OptiXRenderer) Depth-of-field %s\n",
+                         (gl_dof_on) ? "enabled" : "disabled");
+                  winredraw = 1;
+                  break;
+              }
+            }
+            break;
+
+          case VideoStream::VS_EV_NONE: 
+                  default:
+            // should never happen...
+            break;
+        }
+      }
+    }              
+#endif
+
+    // if there is no HMD, we use the camera orientation directly  
+    vec_copy(hmd_U, cam_U);
+    vec_copy(hmd_V, cam_V);
+    vec_copy(hmd_W, cam_W);
+
+    //
+    // handle window resizing, stereoscopic mode changes,
+    // destroy and recreate affected OptiX buffers
+    //
+    int resize_buffers=0;
+
+    {
+      // only process image/window resizing when not drawing spheremaps
+      if (wsx != width) {
+        width = wsx;
+        resize_buffers=1;
+      }
+ 
+      if (wsy != height || (stereoon != stereoon_old)) {
+        if (stereoon) {
+          if (height != wsy * 2) {
+            height = wsy * 2; 
+            resize_buffers=1;
+          }
+        } else {
+          height = wsy;
+          resize_buffers=1;
+        }
+      }
+    }
+
+
+// XXX Prior to OptiX 3.8, we had to manually stop progressive 
+//     mode before changing any OptiX state.
+#if defined(VMDOPTIX_PROGRESSIVEAPI) && OPTIX_VERSION < 3080
+    // 
+    // Check for all conditions that would require modifying OptiX state
+    // and tell the VCA to stop progressive rendering before we modify 
+    // the rendering state, 
+    //
+    if (done || winredraw || resize_buffers ||
+        (stereoon != stereoon_old) || (gl_dof_on != gl_dof_on_old)) {
+      // need to issue stop command before editing optix objects
+      if (vcarunning) {
+        rtContextStopProgressive(ctx);
+        vcarunning=0;
+      }
+    }
+#endif
+
+    // check if stereo mode or DoF mode changed, both cases
+    // require changing the active color accumulation ray gen program
+    if ((stereoon != stereoon_old) || (gl_dof_on != gl_dof_on_old)) {
+      // when stereo mode changes, we have to regenerate the
+      // the RNG, accumulation buffer, and framebuffer
+      if (stereoon != stereoon_old) {
+        resize_buffers=1;
+      }
+
+      // update stereo and DoF state
+      stereoon_old = stereoon;
+      gl_dof_on_old = gl_dof_on;
+
+      // set the active color accumulation ray gen program based on the 
+      // camera/projection mode, stereoscopic display mode, 
+      // and depth-of-field state
+      set_accum_raygen_pgm(camera_projection, stereoon, gl_dof_on);
+    }
+
+    if (resize_buffers) {
+      resize_framebuffer(width, height);
+
+      // when movie recording is enabled, print the window size as a guide
+      // since the user might want to precisely control the size or 
+      // aspect ratio for a particular movie format, e.g. 1080p, 4:3, 16:9
+      if (movie_recording_enabled) {
+        printf("\rOptiXRenderer) Window resize: %d x %d                               \n", width, height);
+      }
+
+      winredraw=1;
+    }
+
+    int frame_ready = 1; // Default to true for the non-VCA case
+    unsigned int subframe_count = 1;
+    if (!done) {
+      //
+      // If the user interacted with the window in a meaningful way, we
+      // need to update the OptiX rendering state, recompile and re-validate
+      // the context, and then re-render...
+      //
+      if (winredraw) {
+        // update camera parameters
+        RTERR( rtVariableSet1f( cam_zoom_v, cam_zoom) );
+        RTERR( rtVariableSet3fv( cam_pos_v, cam_pos) );
+        RTERR( rtVariableSet3fv(   cam_U_v, hmd_U) );
+        RTERR( rtVariableSet3fv(   cam_V_v, hmd_V) );
+        RTERR( rtVariableSet3fv(   cam_W_v, hmd_W) );
+        RTERR( rtVariableSet3fv(scene_gradient_v, scene_gradient) );
+ 
+        // update shadow state 
+        RTERR( rtVariableSet1i(shadows_enabled_v, gl_shadows_on) );
+
+        // update depth cueing state
+        RTERR( rtVariableSet1i(fog_mode_v, 
+                 (int) (gl_fog_on) ? fog_mode : RT_FOG_NONE) );
+
+        // update clipping sphere state
+        RTERR( rtVariableSet1i(clipview_mode_v, 
+                 (int) (gl_clip_on) ? clipview_mode : RT_CLIP_NONE) );
+
+        // update headlight state 
+        RTERR( rtVariableSet1i(headlight_mode_v, 
+                 (int) (gl_headlight_on) ? RT_HEADLIGHT_ON : RT_HEADLIGHT_OFF) );
+ 
+        // update/recompute DoF values 
+        RTERR( rtVariableSet1f(cam_dof_focal_dist_v, cam_dof_focal_dist) );
+        RTERR( rtVariableSet1f(cam_dof_aperture_rad_v, cam_dof_focal_dist / (2.0f * cam_zoom * cam_dof_fnumber)) );
+
+        //
+        // Update light directions in the OptiX light buffer or user object.
+        // Only update when xformlights is set, otherwise we take a 
+        // speed hit when using a remote VCA cluster for rendering.
+        //
+        // We only transform directional lights, since our positional lights
+        // are normally affixed to the model coordinate system rather than 
+        // the camera.
+        //
+        if (xformlights) {
+#if defined(VMDOPTIX_LIGHTUSEROBJS)
+          DirectionalLightList dlights;
+          memset(&dlights, 0, sizeof(DirectionalLightList) );
+          dlights.num_lights = directional_lights.num();
+          int dlcount = directional_lights.num();
+          dlcount = (dlcount > DISP_LIGHTS) ? DISP_LIGHTS : dlcount;
+          for (i=0; i<dlcount; i++) {
+            //vec_copy( (float*)( &lights.dirs[i] ), cur_dlights[i].dir );
+            dlights.dirs[i] = cur_dlights[i].dir;
+          }
+          RTERR( rtVariableSetUserData(dir_light_list_v, sizeof(DirectionalLightList), &dlights) );
+#else
+          DirectionalLight *dlbuf;
+          RTERR( rtBufferMap(dir_lightbuffer, (void **) &dlbuf) );
+          for (i=0; i<directional_lights.num(); i++) {
+            vec_copy((float*)&dlbuf[i].dir, (float*)&cur_dlights[i].dir);
+          }
+          RTERR( rtBufferUnmap(dir_lightbuffer) );
+#endif
+        }
+
+        // reset accumulation buffer 
+        accum_count=0;
+        totalsamplecount=0;
+
+
+        // 
+        // Sample count updates and OptiX state must always remain in 
+        // sync, so if we only update sample count state during redraw events,
+        // that's the only time we should recompute the sample counts, since
+        // they also affect normalization factors for the accumulation buffer
+        // in the non-VCA case.
+        //
+
+        // Update sample counts to achieve target interactivity
+        if (autosamplecount) {
+          if (fpsexpave > 37)
+            samples_per_pass++;
+          else if (fpsexpave < 30) 
+            samples_per_pass--;
+    
+          // clamp sample counts to a "safe" range
+          if (samples_per_pass > 14)
+            samples_per_pass=14;
+          if (samples_per_pass < 1)
+            samples_per_pass=1;
+        } 
+
+        // split samples per pass either among AA and AO, depending on
+        // whether DoF and AO are enabled or not. 
+        if (force_ao_1) {
+          cur_aa_samples = samples_per_pass;
+          cur_ao_samples = 1;
+        } else if (gl_shadows_on && gl_ao_on) {
+          if (gl_dof_on) {
+            if (samples_per_pass < 4) {
+              cur_aa_samples=samples_per_pass;
+              cur_ao_samples=1;
+            } else {
+              int s = (int) sqrtf(samples_per_pass);
+              cur_aa_samples=s;
+              cur_ao_samples=s;
+            }
+          } else {
+            cur_aa_samples=1;
+            cur_ao_samples=samples_per_pass;
+          }
+        } else {
+          cur_aa_samples=samples_per_pass;
+          cur_ao_samples=0;
+        }
+
+        // update the current AA/AO sample counts since they may be changing if
+        // FPS autotuning is enabled...
+        RTERR( rtVariableSet1i(aa_samples_v, cur_aa_samples) );
+
+        // observe latest AO enable/disable flag, and sample count
+        if (gl_shadows_on && gl_ao_on) {
+          RTERR( rtVariableSet1i(ao_samples_v, cur_ao_samples) );
+        } else {
+          cur_ao_samples = 0;
+          RTERR( rtVariableSet1i(ao_samples_v, 0) );
+        }
+
+#ifdef VMDOPTIX_PROGRESSIVEAPI
+        RTERR( rtVariableSet1f(accum_norm_v, 1.0f / float(cur_aa_samples)) );
+#endif
+
+        // updated cached copy of previous window dimensions so we can
+        // trigger updates on HMD spheremaps and FBOs as necessary
+        owsx = wsx;
+        owsy = wsy;
+      } 
+
+
+      //
+      // The non-VCA code path must handle the accumulation buffer 
+      // for itself, correctly rescaling the accumulated samples when
+      // drawing to the output framebuffer.  
+      //
+      // The VCA code path takes care of normalization for itself.
+      //
+#ifndef VMDOPTIX_PROGRESSIVEAPI
+      // The accumulation buffer normalization factor must be updated
+      // to reflect the total accumulation count before the accumulation
+      // buffer is drawn to the output framebuffer
+      RTERR( rtVariableSet1f(accum_norm_v, 1.0f / float(cur_aa_samples + accum_count)) );
+
+      // The accumulation buffer subframe index must be updated to ensure that
+      // the RNGs for AA and AO get correctly re-seeded
+      RTERR( rtVariableSet1ui(accum_count_v, accum_count) );
+
+      // Force context compilation/validation
+      // If no state has changed, there's no need to recompile/validate.
+      // This call can be omitted since OptiX will do this automatically
+      // at the next rtContextLaunchXXX() call.
+//      render_compile_and_validate();
+#endif
+
+
+      //
+      // run the renderer 
+      //
+      frame_ready = 1; // Default to true for the non-VCA case
+      subframe_count = 1;
+      if (lasterror == RT_SUCCESS) {
+        if (winredraw) {
+#ifdef VMDOPTIX_PROGRESSIVEAPI
+          // start the VCA doing progressive rendering...
+          RTERR( rtContextLaunchProgressive2D(ctx, RT_RAY_GEN_ACCUMULATE, width, height, 0) );
+          vcarunning=1;
+#else
+          RTERR( rtContextLaunch2D(ctx, RT_RAY_GEN_CLEAR_ACCUMULATION_BUFFER, width, height) );
+#endif
+#if defined(ORT_RAYSTATS)
+          RTERR( rtContextLaunch2D(ctx, RT_RAY_GEN_CLEAR_RAYSTATS, width, height) );
+#endif
+          winredraw=0;
+        }
+
+#ifdef VMDOPTIX_PROGRESSIVEAPI
+        // Wait for the next frame to arrive
+        RTERR( rtBufferGetProgressiveUpdateReady(framebuffer, &frame_ready, &subframe_count, 0) );
+        if (frame_ready) 
+          totalsamplecount = subframe_count * samples_per_pass;
+#else
+        // iterate, adding to the accumulation buffer...
+        RTERR( rtContextLaunch2D(ctx, RT_RAY_GEN_ACCUMULATE, width, height) );
+        subframe_count++; // increment subframe index
+        totalsamplecount += samples_per_pass;
+        accum_count += cur_aa_samples;
+
+        // copy the accumulation buffer image data to the framebuffer and
+        // perform type conversion and normaliztion on the image data...
+        RTERR( rtContextLaunch2D(ctx, RT_RAY_GEN_COPY_FINISH, width, height) );
+#endif
+
+        if (lasterror == RT_SUCCESS) {
+          if (frame_ready) {
+            double bufnewtime = wkf_timer_timenow(ort_timer);
+
+            // display output image
+            const unsigned char * img;
+            rtBufferMap(framebuffer, (void **) &img);
+
+#if 1
+            // push latest frame into the video streaming pipeline
+            // and pump the event handling mechanism afterwards
+            if (app->uivs && app->uivs->srv_connected()) {
+              app->uivs->video_frame_pending(img, width, height);             
+              app->uivs->check_event();             
+            }              
+#endif
+
+            rtBufferUnmap(framebuffer);
+            mapbuftotaltime = wkf_timer_timenow(ort_timer) - bufnewtime;
+
+
+            // if live movie recording is on, we save every displayed frame
+            // to a sequence sequence of image files, with each file numbered
+            // by its frame index, which is computed by the multiplying image 
+            // presentation time by the image sequence fixed-rate-FPS value.
+            if (movie_recording_enabled && movie_recording_on) {
+              char moviefilename[2048];
+
+              // compute frame number from wall clock time and the
+              // current fixed-rate movie playback frame rate
+              double now = wkf_timer_timenow(ort_timer);
+              double frametime = now - movie_recording_start_time;
+              int fidx = frametime * movie_recording_fps;
+
+              // always force the first recorded frame to be 0
+              if (movie_framecount==0)
+                fidx=0;
+              movie_framecount++;
+
+#if defined(__linux)
+              // generate symlinks for frame indices between the last written
+              // frame and the current one so that video encoders such as
+              // ffmpeg and mencoder can be fed the contiguous frame sequence
+              // at a fixed frame rate, as they require
+              sprintf(moviefilename, movie_recording_filebase, 
+                      movie_lastframeindex);
+              int symidx;
+              for (symidx=movie_lastframeindex; symidx<fidx; symidx++) {
+                char symlinkfilename[2048];
+                sprintf(symlinkfilename, movie_recording_filebase, symidx);
+                symlink(moviefilename, symlinkfilename);
+              }
+#endif
+               
+              // write the new movie frame               
+              sprintf(moviefilename, movie_recording_filebase, fidx);
+              if (OptiXWriteImage(moviefilename, writealpha, framebuffer,
+                                  RT_FORMAT_UNSIGNED_BYTE4, width, height) == -1) {
+                movie_recording_on = 0;
+                printf("\n");
+                printf("OptiXRenderer) ERROR during writing image during movie recording!\n");
+                printf("OptiXRenderer) Movie recording STOPPED\n");
+              }
+
+              movie_lastframeindex = fidx; // update last frame index written
+            }
+          }
+        } else {
+          printf("OptiXRenderer) An error occured during rendering. Rendering is aborted.\n");
+          done=1;
+          break;
+        }
+      } else {
+        printf("OptiXRenderer) An error occured in AS generation. Rendering is aborted.\n");
+        done=1;
+        break;
+      }
+    }
+
+    if (!done && frame_ready) {
+      double newtime = wkf_timer_timenow(ort_timer);
+      double frametime = (newtime-oldtime) + 0.00001f;
+      oldtime=newtime;
+
+      // compute exponential moving average for exp(-1/10)
+      double framefps = 1.0f/frametime;
+      fpsexpave = (fpsexpave * 0.90) + (framefps * 0.10);
+
+      printf("OptiXRenderer) %c AA:%2d AO:%2d, %4d tot RT FPS: %.1f  %.4f s/frame sf: %d  \r",
+             statestr[state], cur_aa_samples, cur_ao_samples, 
+             totalsamplecount, fpsexpave, frametime, subframe_count);
+
+      fflush(stdout);
+      state = (state+1) & 3;
+    }
+
+  } // end of per-cycle event processing
+
+  printf("\n");
+
+  // write the output image upon exit...
+  if (lasterror == RT_SUCCESS) {
+    wkf_timer_start(ort_timer);
+    // write output image
+    OptiXWriteImage(filename, writealpha, framebuffer);
+#if defined(ORT_RAYSTATS)
+    OptiXPrintRayStats(raystats1_buffer, raystats2_buffer, 0.0);
+#endif
+
+    wkf_timer_stop(ort_timer);
+
+    if (verbose == RT_VERB_TIMING || verbose == RT_VERB_DEBUG) {
+      printf("OptiXRenderer) image file I/O time: %f secs\n", wkf_timer_time(ort_timer));
+    }
+  }
+}
+
+
+void OptiXRenderer::render_to_file(const char *filename, int writealpha) {
   if (!context_created)
     return;
 
@@ -3794,6 +5090,9 @@ void OptiXRenderer::render_to_file(const char *filename) {
   if (lasterror == RT_SUCCESS) {
     // clear the accumulation buffer
     RTERR( rtContextLaunch2D(ctx, RT_RAY_GEN_CLEAR_ACCUMULATION_BUFFER, width, height) );
+#if defined(ORT_RAYSTATS)
+    RTERR( rtContextLaunch2D(ctx, RT_RAY_GEN_CLEAR_RAYSTATS, width, height) );
+#endif
 
     // Render to the accumulation buffer for the required number of passes
     if (getenv("VMDOPTIXNORENDER") == NULL) {
@@ -3816,8 +5115,11 @@ void OptiXRenderer::render_to_file(const char *filename) {
     if (lasterror == RT_SUCCESS) {
       // write output image to a file unless we are benchmarking
       if (getenv("VMDOPTIXNOSAVE") == NULL) {
-        OptiXWriteImage(filename, framebuffer);
+        OptiXWriteImage(filename, writealpha, framebuffer);
       }
+#if defined(ORT_RAYSTATS)
+      OptiXPrintRayStats(raystats1_buffer, raystats2_buffer, time_ray_tracing);
+#endif
       time_image_io = wkf_timer_timenow(ort_timer) - rtendtime;
     } else {
       printf("OptiXRenderer) Error during rendering.  Rendering aborted.\n");
@@ -3895,7 +5197,11 @@ void OptiXRenderer::init_materials() {
   if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) init_materials()\n");
 
   // pre-register all of the hit programs to be shared by all materials
-  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "closest_hit_radiance_general", &closest_hit_pgm_general ) );
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "closest_hit_radiance_general", &closest_hit_pgm_general) );
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX triangle API
+  RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, "closest_hit_radiance_general_hwtri", &closest_hit_pgm_general_hwtri) );
+#endif
 
 #if defined(ORT_USE_TEMPLATE_SHADERS)
   // build up the list of closest hit programs from all combinations
@@ -3928,6 +5234,11 @@ void OptiXRenderer::init_materials() {
              onoffstr(i &   1));
 
     RTERR( rtProgramCreateFromPTXFile(ctx, shaderpath, ch_program_name, &closest_hit_pgm_special[i] ) );
+
+#if defined(ORT_USERTXAPIS)
+  #error OptiX RTX triangle API not implemented for template shader expansion
+#endif
+
   } 
 #endif
 
@@ -3938,6 +5249,14 @@ void OptiXRenderer::init_materials() {
   RTERR( rtMaterialCreate(ctx, &material_general) );
   RTERR( rtMaterialSetClosestHitProgram(material_general, RT_RAY_TYPE_RADIANCE, closest_hit_pgm_general) );
   RTERR( rtMaterialSetAnyHitProgram(material_general, RT_RAY_TYPE_SHADOW, any_hit_pgm_clip_sphere) );
+
+
+#if defined(ORT_USERTXAPIS)
+  RTERR( rtMaterialCreate(ctx, &material_general_hwtri) );
+  RTERR( rtMaterialSetClosestHitProgram(material_general_hwtri, RT_RAY_TYPE_RADIANCE, closest_hit_pgm_general_hwtri) );
+  RTERR( rtMaterialSetAnyHitProgram(material_general_hwtri, RT_RAY_TYPE_SHADOW, any_hit_pgm_clip_sphere) );
+#endif
+
 
 #if defined(ORT_USE_TEMPLATE_SHADERS)
   // build up the list of materials from all combinations of shader parameters
@@ -3956,6 +5275,10 @@ void OptiXRenderer::init_materials() {
       }
     }
 
+#if defined(ORT_USERTXAPIS)
+  #error OptiX RTX triangle API not implemented for template shader expansion
+#endif
+
     // zero out the array of material usage counts for the scene
     material_special_counts[i] = 0;
   }
@@ -3963,7 +5286,7 @@ void OptiXRenderer::init_materials() {
 }
 
 
-void OptiXRenderer::set_material(RTgeometryinstance instance, int matindex, float *uniform_color) {
+void OptiXRenderer::set_material(RTgeometryinstance instance, int matindex, float *uniform_color, int hwtri) {
   if (!context_created)
     return;
 
@@ -3971,6 +5294,13 @@ void OptiXRenderer::set_material(RTgeometryinstance instance, int matindex, floa
   RTvariable ka, kd, ks, phongexp, krefl;
   RTvariable opacity, outline, outlinewidth, transmode, uniform_col;
   RTmaterial material = material_general; 
+
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware-triangle APIs require special material handling
+  if (hwtri) {
+    material = material_general_hwtri;
+  }
+#endif
 
 #if defined(ORT_USE_TEMPLATE_SHADERS)
   if (getenv("VMDOPTIXFORCEGENERALSHADER") == NULL) {
@@ -4369,6 +5699,93 @@ void OptiXRenderer::sphere_array_color(Matrix4 & wtrans, float rscale,
 }
 
 
+#if defined(ORT_USERTXAPIS)
+void OptiXRenderer::tricolor_list_hwtri(Matrix4 & wtrans, int numtris, 
+                                        float *vnc, int matindex) {
+  if (!context_created) return;
+//if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating tricolor list: %d...\n", numtris);
+  tricolor_cnt += numtris;
+
+  RTbuffer vbuf, nbuf, cbuf;
+  RTgeometryinstance instance_hwtri;
+  RTgeometrytriangles geom_hwtri;
+  
+  // Create and fill vertex/normal/color buffers
+  float3 *vertices; 
+  uint4 *normals;
+  uchar4 *colors;
+  hwtri_alloc_bufs_v3f_n4u4_c4u(ctx, numtris, vbuf, vertices, nbuf, normals, 
+                                cbuf, 1, colors, NULL);
+
+  int i, ind, tcnt;
+  for (i=0,ind=0,tcnt=0; i<numtris; i++,ind+=27) {
+    int taddr = 3 * tcnt;
+
+    // transform to eye coordinates
+    wtrans.multpoint3d(&vnc[ind     ], (float*) &vertices[taddr + 0]);
+    wtrans.multpoint3d(&vnc[ind +  3], (float*) &vertices[taddr + 1]);
+    wtrans.multpoint3d(&vnc[ind +  6], (float*) &vertices[taddr + 2]);
+
+    // Compute geometric normal, detect and cull degenerate triangles
+    float3 Ng;
+    if (hwtri_test_calc_Ngeom(&vertices[taddr], Ng)) {
+      continue; // cull any triangle that fails degeneracy tests
+    }
+
+    float3 n0, n1, n2;
+    wtrans.multnorm3d(&vnc[ind +  9], (float*) &n0);
+    wtrans.multnorm3d(&vnc[ind + 12], (float*) &n1);
+    wtrans.multnorm3d(&vnc[ind + 15], (float*) &n2);
+
+    // Pack normals
+    normals[tcnt].x = packNormal(Ng);
+    normals[tcnt].y = packNormal(n0);
+    normals[tcnt].z = packNormal(n1);
+    normals[tcnt].w = packNormal(n2);
+
+    // convert color format
+    colors[taddr + 0].x = vnc[ind + 18] * 255.0f;
+    colors[taddr + 0].y = vnc[ind + 19] * 255.0f;
+    colors[taddr + 0].z = vnc[ind + 20] * 255.0f;
+
+    colors[taddr + 1].x = vnc[ind + 21] * 255.0f;
+    colors[taddr + 1].y = vnc[ind + 22] * 255.0f;
+    colors[taddr + 1].z = vnc[ind + 23] * 255.0f;
+
+    colors[taddr + 2].x = vnc[ind + 24] * 255.0f;
+    colors[taddr + 2].y = vnc[ind + 25] * 255.0f;
+    colors[taddr + 2].z = vnc[ind + 26] * 255.0f;
+
+    tcnt++; // count non-culled triangles
+  }
+
+  rtBufferUnmap(vbuf);
+  rtBufferUnmap(nbuf);
+  rtBufferUnmap(cbuf);
+
+  RTERR( rtGeometryTrianglesCreate(ctx, &geom_hwtri) );
+  RTERR( rtGeometryTrianglesSetTriangles(geom_hwtri, tcnt, vbuf, 
+                                         0, sizeof(float3), RT_FORMAT_FLOAT3, 
+                                         RT_GEOMETRYBUILDFLAGS_RELEASE_BUFFERS) 
+);
+
+  // create a geometry instance and bind materials to this geometry
+  RTERR( rtGeometryInstanceCreate(ctx, &instance_hwtri) );
+  RTERR( rtGeometryInstanceSetGeometryTriangles(instance_hwtri, geom_hwtri) );
+
+  // Enable per-vertex normals, enable per-vertex colors
+  hwtri_set_vertex_flags(ctx, instance_hwtri, nbuf, cbuf, 1, 1);
+
+  // We have to pass the explicit hardware triangle parameter for this geometry
+  set_material(instance_hwtri, matindex, NULL, 1);
+
+  // The vertex buffer is released automatically after construction. 
+  // We need to keep track of normal and color buffers for ourselves.
+  append_objects(nbuf, cbuf, geom_hwtri, instance_hwtri);
+}
+#endif
+
+
 void OptiXRenderer::tricolor_list(Matrix4 & wtrans, int numtris, float *vnc,
                                   int matindex) {
   if (!context_created) return;
@@ -4426,10 +5843,111 @@ void OptiXRenderer::tricolor_list(Matrix4 & wtrans, int numtris, float *vnc,
 }
 
 
+#if defined(ORT_USERTXAPIS)
+void OptiXRenderer::trimesh_c4n3v3_hwtri(Matrix4 & wtrans, int numverts,
+                                         float *cnv, 
+                                         int numfacets, int * facets,
+                                         int matindex) {
+  if (!context_created) return;
+  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating trimesh_c4n3v3_hwtri: %d...\n", numfacets);
+  trimesh_c4u_n3b_v3f_cnt += numfacets;
+
+  RTbuffer vbuf, nbuf, cbuf;
+  RTgeometryinstance instance_hwtri;
+  RTgeometrytriangles geom_hwtri;
+
+  // Create and fill vertex/normal/color buffers
+  float3 *vertices; 
+  uint4 *normals;
+  uchar4 *colors;
+  hwtri_alloc_bufs_v3f_n4u4_c4u(ctx, numfacets, vbuf, vertices, nbuf, normals, 
+                                cbuf, numfacets * 3, colors, NULL);
+
+  int i, ind, tcnt;
+  for (i=0,ind=0,tcnt=0; i<numfacets; i++,ind+=3) {
+    int taddr = 3 * tcnt;
+
+    int v0 = facets[ind    ] * 10;
+    int v1 = facets[ind + 1] * 10;
+    int v2 = facets[ind + 2] * 10;
+
+    // transform to eye coordinates
+    wtrans.multpoint3d(cnv + v0 + 7, (float*) &vertices[taddr + 0]);
+    wtrans.multpoint3d(cnv + v1 + 7, (float*) &vertices[taddr + 1]);
+    wtrans.multpoint3d(cnv + v2 + 7, (float*) &vertices[taddr + 2]);
+
+    // Compute geometric normal, detect and cull degenerate triangles
+    float3 Ng;
+    if (hwtri_test_calc_Ngeom(&vertices[taddr], Ng)) {
+      continue; // cull any triangle that fails degeneracy tests
+    }
+
+    float3 n0, n1, n2;
+    wtrans.multnorm3d(cnv + v0 + 4, (float*) &n0);
+    wtrans.multnorm3d(cnv + v1 + 4, (float*) &n1);
+    wtrans.multnorm3d(cnv + v2 + 4, (float*) &n2);
+
+    // Pack normals
+    normals[tcnt].x = packNormal(Ng);
+    normals[tcnt].y = packNormal(n0);
+    normals[tcnt].z = packNormal(n1);
+    normals[tcnt].w = packNormal(n2);
+
+    // convert color format
+    colors[taddr + 0].x = cnv[v0 + 0] * 255.0f;
+    colors[taddr + 0].y = cnv[v0 + 1] * 255.0f;
+    colors[taddr + 0].z = cnv[v0 + 2] * 255.0f;
+
+    colors[taddr + 1].x = cnv[v1 + 0] * 255.0f;
+    colors[taddr + 1].y = cnv[v1 + 1] * 255.0f;
+    colors[taddr + 1].z = cnv[v1 + 2] * 255.0f;
+
+    colors[taddr + 2].x = cnv[v2 + 0] * 255.0f;
+    colors[taddr + 2].y = cnv[v2 + 1] * 255.0f;
+    colors[taddr + 2].z = cnv[v2 + 2] * 255.0f;
+
+    tcnt++; // count non-culled triangles
+  }
+
+  rtBufferUnmap(vbuf);
+  rtBufferUnmap(nbuf);
+  rtBufferUnmap(cbuf);
+
+  RTERR( rtGeometryTrianglesCreate(ctx, &geom_hwtri) );
+  RTERR( rtGeometryTrianglesSetTriangles(geom_hwtri, tcnt, vbuf, 
+                                         0, sizeof(float3), RT_FORMAT_FLOAT3, 
+                                         RT_GEOMETRYBUILDFLAGS_RELEASE_BUFFERS) );
+
+  // create a geometry instance and bind materials to this geometry
+  RTERR( rtGeometryInstanceCreate(ctx, &instance_hwtri) );
+  RTERR( rtGeometryInstanceSetGeometryTriangles(instance_hwtri, geom_hwtri) );
+
+  // Enable per-vertex normals, enable per-vertex colors
+  hwtri_set_vertex_flags(ctx, instance_hwtri, nbuf, cbuf, 1, 1);
+
+  // We have to pass the explicit hardware triangle parameter for this geometry
+  set_material(instance_hwtri, matindex, NULL, 1);
+
+  // The vertex buffer is released automatically after construction. 
+  // We need to keep track of normal and color buffers for ourselves.
+  append_objects(nbuf, cbuf, geom_hwtri, instance_hwtri);
+}
+#endif
+
+
 void OptiXRenderer::trimesh_c4n3v3(Matrix4 & wtrans, int numverts,
                                    float *cnv, int numfacets, int * facets,
                                    int matindex) {
   if (!context_created) return;
+
+#if defined(ORT_USERTXAPIS)
+  // OptiX 5.2 hardware-accelerated triangle API
+  if (hwtri_enabled) {
+    trimesh_c4n3v3_hwtri(wtrans, numverts, cnv, numfacets, facets, matindex);
+    return;
+  }
+#endif
+
   if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating trimesh_c4n3v3: %d...\n", numfacets);
   trimesh_c4u_n3b_v3f_cnt += numfacets;
 
@@ -4487,6 +6005,104 @@ void OptiXRenderer::trimesh_c4n3v3(Matrix4 & wtrans, int numverts,
 }
 
 
+#if defined(ORT_USERTXAPIS)
+// 
+// This implementation translates from the most-compact host representation
+// to a GPU-specific organization that balances performance vs. memory 
+// storage efficiency.
+//
+void OptiXRenderer::trimesh_c4u_n3b_v3f_hwtri(Matrix4 & wtrans, 
+                                              unsigned char *c, char *n, 
+                                              float *v, int numfacets, 
+                                              int matindex) {
+  if (!context_created) return;
+  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating trimesh_c4u_n3b_v3f_hwtri: %d...\n", numfacets);
+  trimesh_c4u_n3b_v3f_cnt += numfacets;
+
+  RTbuffer vbuf, nbuf, cbuf;
+  RTgeometryinstance instance_hwtri;
+  RTgeometrytriangles geom_hwtri;
+
+  // Create and fill vertex/normal/color buffers
+  float3 *vertices; 
+  uint4 *normals;
+  uchar4 *colors;
+  hwtri_alloc_bufs_v3f_n4u4_c4u(ctx, numfacets, vbuf, vertices, nbuf, normals, 
+                                cbuf, numfacets * 3, colors, NULL);
+
+  const float ci2f = 1.0f / 255.0f;
+  const float cn2f = 1.0f / 127.5f;
+  int i, j, ind, tcnt;
+  for (ind=0,i=0,j=0,tcnt=0; ind<numfacets; ind++,i+=9,j+=12) {
+    float norm[9];
+    int taddr = 3 * tcnt;
+
+    // transform to eye coordinates
+    wtrans.multpoint3d(v + i    , (float*) &vertices[taddr + 0]);
+    wtrans.multpoint3d(v + i + 3, (float*) &vertices[taddr + 1]);
+    wtrans.multpoint3d(v + i + 6, (float*) &vertices[taddr + 2]);
+
+    // Compute geometric normal, detect and cull degenerate triangles
+    float3 Ng;
+    if (hwtri_test_calc_Ngeom(&vertices[taddr], Ng)) {
+      continue; // cull any triangle that fails degeneracy tests
+    }
+
+    // conversion from GLbyte format, Table 2.6, p. 44 of OpenGL spec 1.2.1
+    // float = (2c+1)/(2^8-1)
+    norm[0] = n[i    ] * cn2f + ci2f;
+    norm[1] = n[i + 1] * cn2f + ci2f;
+    norm[2] = n[i + 2] * cn2f + ci2f;
+    norm[3] = n[i + 3] * cn2f + ci2f;
+    norm[4] = n[i + 4] * cn2f + ci2f;
+    norm[5] = n[i + 5] * cn2f + ci2f;
+    norm[6] = n[i + 6] * cn2f + ci2f;
+    norm[7] = n[i + 7] * cn2f + ci2f;
+    norm[8] = n[i + 8] * cn2f + ci2f;
+
+    // conversion to GLbyte format, Table 2.6, p. 44 of OpenGL spec 1.2.1
+    float3 n0, n1, n2;
+    wtrans.multnorm3d(&norm[0], (float*) &n0);
+    wtrans.multnorm3d(&norm[3], (float*) &n1);
+    wtrans.multnorm3d(&norm[6], (float*) &n2);
+
+    // Pack normals
+    normals[tcnt].x = packNormal(Ng);
+    normals[tcnt].y = packNormal(n0);
+    normals[tcnt].z = packNormal(n1);
+    normals[tcnt].w = packNormal(n2);
+
+    memcpy(&colors[tcnt * 3], &c[j], 12); // copy colors (same memory format)
+
+    tcnt++; // count non-culled triangles
+  }
+
+  rtBufferUnmap(vbuf);
+  rtBufferUnmap(nbuf);
+  rtBufferUnmap(cbuf);
+
+  RTERR( rtGeometryTrianglesCreate(ctx, &geom_hwtri) );
+  RTERR( rtGeometryTrianglesSetTriangles(geom_hwtri, tcnt, vbuf, 
+                                         0, sizeof(float3), RT_FORMAT_FLOAT3, 
+                                         RT_GEOMETRYBUILDFLAGS_RELEASE_BUFFERS) );
+
+  // create a geometry instance and bind materials to this geometry
+  RTERR( rtGeometryInstanceCreate(ctx, &instance_hwtri) );
+  RTERR( rtGeometryInstanceSetGeometryTriangles(instance_hwtri, geom_hwtri) );
+
+  // Enable per-vertex normals, enable per-vertex colors
+  hwtri_set_vertex_flags(ctx, instance_hwtri, nbuf, cbuf, 1, 1);
+
+  // We have to pass the explicit hardware triangle parameter for this geometry
+  set_material(instance_hwtri, matindex, NULL, 1);
+
+  // The vertex buffer is released automatically after construction. 
+  // We need to keep track of normal and color buffers for ourselves.
+  append_objects(nbuf, cbuf, geom_hwtri, instance_hwtri);
+}
+#endif
+
+
 // 
 // This implementation translates from the most-compact host representation
 // to a GPU-specific organization that balances performance vs. memory 
@@ -4496,6 +6112,15 @@ void OptiXRenderer::trimesh_c4u_n3b_v3f(Matrix4 & wtrans, unsigned char *c,
                                         char *n, float *v, int numfacets, 
                                         int matindex) {
   if (!context_created) return;
+
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware-accelerated triangle API
+  if (hwtri_enabled) {
+    trimesh_c4u_n3b_v3f_hwtri(wtrans, c, n, v, numfacets, matindex);
+    return;
+  }
+#endif
+
   if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating trimesh_c4u_n3b_v3f: %d...\n", numfacets);
   trimesh_n3b_v3f_cnt += numfacets;
 
@@ -4573,10 +6198,101 @@ void OptiXRenderer::trimesh_c4u_n3b_v3f(Matrix4 & wtrans, unsigned char *c,
 }
 
 
+#if defined(ORT_USERTXAPIS)
+void OptiXRenderer::trimesh_c4u_n3f_v3f_hwtri(Matrix4 & wtrans, 
+                                              unsigned char *c, 
+                                              float *n, float *v, 
+                                              int numfacets, 
+                                              int matindex) {
+  if (!context_created) return;
+  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating trimesh_c4u_n3f_v3f: %d...\n", numfacets);
+  tricolor_cnt += numfacets;
+
+  RTbuffer vbuf, nbuf, cbuf;
+  RTgeometryinstance instance_hwtri;
+  RTgeometrytriangles geom_hwtri;
+  
+  // Create and fill vertex/normal/color buffers
+  float3 *vertices; 
+  uint4 *normals;
+  uchar4 *colors;
+  hwtri_alloc_bufs_v3f_n4u4_c4u(ctx, numfacets, vbuf, vertices, nbuf, normals, 
+                                cbuf, 1, colors, NULL);
+
+  const float ci2f = 1.0f / 255.0f;
+  int i, j, ind, tcnt;
+  for (ind=0,i=0,j=0,tcnt=0; ind<numfacets; ind++,i+=9,j+=12) {
+    int taddr = 3 * tcnt;
+
+    // transform to eye coordinates
+    wtrans.multpoint3d(v + i    , (float*) &vertices[taddr + 0]);
+    wtrans.multpoint3d(v + i + 3, (float*) &vertices[taddr + 1]);
+    wtrans.multpoint3d(v + i + 6, (float*) &vertices[taddr + 2]);
+
+    // Compute geometric normal, detect and cull degenerate triangles
+    float3 Ng;
+    if (hwtri_test_calc_Ngeom(&vertices[taddr], Ng)) {
+      continue; // cull any triangle that fails degeneracy tests
+    }
+
+    float3 n0, n1, n2;
+    wtrans.multnorm3d(n + i    , (float*) &n0);
+    wtrans.multnorm3d(n + i + 3, (float*) &n1);
+    wtrans.multnorm3d(n + i + 6, (float*) &n2);
+
+    // Pack normals
+    normals[tcnt].x = packNormal(Ng);
+    normals[tcnt].y = packNormal(n0);
+    normals[tcnt].z = packNormal(n1);
+    normals[tcnt].w = packNormal(n2);
+
+    memcpy(&colors[taddr + 0], &c[j  ], sizeof(uchar4));
+    memcpy(&colors[taddr + 1], &c[j+4], sizeof(uchar4));
+    memcpy(&colors[taddr + 2], &c[j+8], sizeof(uchar4));
+
+    tcnt++; // count non-culled triangles
+  }
+
+  rtBufferUnmap(vbuf);
+  rtBufferUnmap(nbuf);
+  rtBufferUnmap(cbuf);
+
+  RTERR( rtGeometryTrianglesCreate(ctx, &geom_hwtri) );
+  RTERR( rtGeometryTrianglesSetTriangles(geom_hwtri, tcnt, vbuf, 
+                                         0, sizeof(float3), RT_FORMAT_FLOAT3, 
+                                         RT_GEOMETRYBUILDFLAGS_RELEASE_BUFFERS) 
+);
+
+  // create a geometry instance and bind materials to this geometry
+  RTERR( rtGeometryInstanceCreate(ctx, &instance_hwtri) );
+  RTERR( rtGeometryInstanceSetGeometryTriangles(instance_hwtri, geom_hwtri) );
+
+  // Enable per-vertex normals, enable per-vertex colors
+  hwtri_set_vertex_flags(ctx, instance_hwtri, nbuf, cbuf, 1, 1);
+
+  // We have to pass the explicit hardware triangle parameter for this geometry
+  set_material(instance_hwtri, matindex, NULL, 1);
+
+  // The vertex buffer is released automatically after construction. 
+  // We need to keep track of normal and color buffers for ourselves.
+  append_objects(nbuf, cbuf, geom_hwtri, instance_hwtri);
+}
+#endif
+
+
 void OptiXRenderer::trimesh_c4u_n3f_v3f(Matrix4 & wtrans, unsigned char *c, 
                                         float *n, float *v, int numfacets, 
                                         int matindex) {
   if (!context_created) return;
+
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware-accelerated triangle API
+  if (hwtri_enabled) {
+    trimesh_c4u_n3f_v3f_hwtri(wtrans, c, n, v, numfacets, matindex);
+    return;
+  }
+#endif
+
   if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating trimesh_c4u_n3f_v3f: %d...\n", numfacets);
   tricolor_cnt += numfacets;
 
@@ -4638,17 +6354,116 @@ void OptiXRenderer::trimesh_c4u_n3f_v3f(Matrix4 & wtrans, unsigned char *c,
   RTERR( rtGeometryInstanceCreate(ctx, &instance) );
   RTERR( rtGeometryInstanceSetGeometry(instance, geom) );
 
-  // materialIndex: XXX need to do something with material properties yet...
   set_material(instance, matindex, NULL);
 
   append_objects(buf, geom, instance);
 }
 
 
+#if defined(ORT_USERTXAPIS)
+void OptiXRenderer::trimesh_n3b_v3f_hwtri(Matrix4 & wtrans, 
+                                          float *uniform_color, 
+                                          char *n, float *v, int numfacets, 
+                                          int matindex) {
+  if (!context_created) return;
+  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating trimesh_n3b_v3f_hwtri: %d...\n", numfacets);
+  trimesh_n3b_v3f_cnt += numfacets;
+
+  RTbuffer vbuf, nbuf, cbuf;
+  RTgeometryinstance instance_hwtri;
+  RTgeometrytriangles geom_hwtri;
+
+  // Create and fill vertex/normal/color buffers
+  float3 *vertices; 
+  uint4 *normals;
+  uchar4 *colors;
+  hwtri_alloc_bufs_v3f_n4u4_c4u(ctx, numfacets, vbuf, vertices, nbuf, normals, 
+                                cbuf, 1, colors, uniform_color);
+
+  const float ci2f = 1.0f / 255.0f;
+  const float cn2f = 1.0f / 127.5f;
+  int i, ind, tcnt;
+  for (ind=0,i=0,tcnt=0; ind<numfacets; ind++,i+=9) {
+    float norm[9];
+    int taddr = 3 * tcnt;
+
+    // transform to eye coordinates
+    wtrans.multpoint3d(v + i    , (float*) &vertices[taddr + 0]);
+    wtrans.multpoint3d(v + i + 3, (float*) &vertices[taddr + 1]);
+    wtrans.multpoint3d(v + i + 6, (float*) &vertices[taddr + 2]);
+
+    // Compute geometric normal, detect and cull degenerate triangles
+    float3 Ng;
+    if (hwtri_test_calc_Ngeom(&vertices[taddr], Ng)) {
+      continue; // cull any triangle that fails degeneracy tests
+    }
+
+    // conversion from GLbyte format, Table 2.6, p. 44 of OpenGL spec 1.2.1
+    // float = (2c+1)/(2^8-1)
+    norm[0] = n[i    ] * cn2f + ci2f;
+    norm[1] = n[i + 1] * cn2f + ci2f;
+    norm[2] = n[i + 2] * cn2f + ci2f;
+    norm[3] = n[i + 3] * cn2f + ci2f;
+    norm[4] = n[i + 4] * cn2f + ci2f;
+    norm[5] = n[i + 5] * cn2f + ci2f;
+    norm[6] = n[i + 6] * cn2f + ci2f;
+    norm[7] = n[i + 7] * cn2f + ci2f;
+    norm[8] = n[i + 8] * cn2f + ci2f;
+
+    // conversion to GLbyte format, Table 2.6, p. 44 of OpenGL spec 1.2.1
+    float3 n0, n1, n2;
+    wtrans.multnorm3d(&norm[0], (float*) &n0);
+    wtrans.multnorm3d(&norm[3], (float*) &n1);
+    wtrans.multnorm3d(&norm[6], (float*) &n2);
+
+    // Pack normals
+    normals[tcnt].x = packNormal(Ng);
+    normals[tcnt].y = packNormal(n0);
+    normals[tcnt].z = packNormal(n1);
+    normals[tcnt].w = packNormal(n2);
+
+    tcnt++; // count non-culled triangles
+  }
+
+  rtBufferUnmap(vbuf);
+  rtBufferUnmap(nbuf);
+  rtBufferUnmap(cbuf);
+
+  RTERR( rtGeometryTrianglesCreate(ctx, &geom_hwtri) );
+  RTERR( rtGeometryTrianglesSetTriangles(geom_hwtri, tcnt, vbuf, 
+                                         0, sizeof(float3), RT_FORMAT_FLOAT3, 
+                                         RT_GEOMETRYBUILDFLAGS_RELEASE_BUFFERS) );
+
+  // create a geometry instance and bind materials to this geometry
+  RTERR( rtGeometryInstanceCreate(ctx, &instance_hwtri) );
+  RTERR( rtGeometryInstanceSetGeometryTriangles(instance_hwtri, geom_hwtri) );
+
+  // Enable per-vertex normals, disable per-vertex colors (use uniform color) 
+  hwtri_set_vertex_flags(ctx, instance_hwtri, nbuf, cbuf, 1, 0);
+
+  // We have to pass the explicit hardware triangle parameter for this geometry
+  set_material(instance_hwtri, matindex, uniform_color, 1);
+
+  // The vertex buffer is released automatically after construction. 
+  // We need to keep track of normal and color buffers for ourselves.
+  append_objects(nbuf, cbuf, geom_hwtri, instance_hwtri);
+}
+#endif
+
+
 void OptiXRenderer::trimesh_n3b_v3f(Matrix4 & wtrans, float *uniform_color, 
                                     char *n, float *v, int numfacets, 
                                     int matindex) {
   if (!context_created) return;
+
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware-accelerated triangle API
+  if (hwtri_enabled) {
+    trimesh_n3b_v3f_hwtri(wtrans, uniform_color, n, v, numfacets, matindex);
+    return;
+  }
+#endif
+
   if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating trimesh_n3b_v3f: %d...\n", numfacets);
   trimesh_n3b_v3f_cnt += numfacets;
 
@@ -4722,10 +6537,94 @@ void OptiXRenderer::trimesh_n3b_v3f(Matrix4 & wtrans, float *uniform_color,
 }
 
 
+#if defined(ORT_USERTXAPIS)
+void OptiXRenderer::trimesh_n3f_v3f_hwtri(Matrix4 & wtrans, 
+                                          float *uniform_color,
+                                          float *n, float *v, int numfacets,
+                                          int matindex) {
+  if (!context_created) return;
+  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating trimesh_n3f_v3f_hwtri: %d...\n", numfacets);
+  trimesh_n3f_v3f_cnt += numfacets;
+
+  RTbuffer vbuf, nbuf, cbuf;
+  RTgeometryinstance instance_hwtri;
+  RTgeometrytriangles geom_hwtri;
+
+  // Create and fill vertex/normal/color buffers
+  float3 *vertices; 
+  uint4 *normals;
+  uchar4 *colors;
+  hwtri_alloc_bufs_v3f_n4u4_c4u(ctx, numfacets, vbuf, vertices, nbuf, normals, 
+                                cbuf, 1, colors, uniform_color);
+
+  float3 n0, n1, n2;
+  int i, tcnt;
+  for (i=0, tcnt=0; i < numfacets; i++) {
+    int taddr = 3 * tcnt;
+
+    // transform to eye coordinates
+    wtrans.multpoint3d(v + 9 * i + 0, (float*) &vertices[taddr + 0]);
+    wtrans.multpoint3d(v + 9 * i + 3, (float*) &vertices[taddr + 1]);
+    wtrans.multpoint3d(v + 9 * i + 6, (float*) &vertices[taddr + 2]);
+   
+    // Compute geometric normal, detect and cull degenerate triangles
+    float3 Ng;
+    if (hwtri_test_calc_Ngeom(&vertices[taddr], Ng)) {
+      continue; // cull any triangle that fails degeneracy tests
+    }
+
+    wtrans.multnorm3d(n + 9 * i + 0, (float*) &n0.x);
+    wtrans.multnorm3d(n + 9 * i + 3, (float*) &n1.x);
+    wtrans.multnorm3d(n + 9 * i + 6, (float*) &n2.x);
+
+    // Pack normals
+    normals[i].x = packNormal(Ng);
+    normals[i].y = packNormal(n0);
+    normals[i].z = packNormal(n1);
+    normals[i].w = packNormal(n2);
+
+    tcnt++; // count non-culled triangles
+  }
+
+  rtBufferUnmap(vbuf);
+  rtBufferUnmap(nbuf);
+  rtBufferUnmap(cbuf);
+
+  RTERR( rtGeometryTrianglesCreate(ctx, &geom_hwtri) );
+  RTERR( rtGeometryTrianglesSetTriangles(geom_hwtri, tcnt, vbuf, 
+                                         0, sizeof(float3), RT_FORMAT_FLOAT3, 
+                                         RT_GEOMETRYBUILDFLAGS_RELEASE_BUFFERS) );
+
+  // create a geometry instance and bind materials to this geometry
+  RTERR( rtGeometryInstanceCreate(ctx, &instance_hwtri) );
+  RTERR( rtGeometryInstanceSetGeometryTriangles(instance_hwtri, geom_hwtri) );
+
+  // Enable per-vertex normals, disable per-vertex colors (use uniform color) 
+  hwtri_set_vertex_flags(ctx, instance_hwtri, nbuf, cbuf, 1, 0);
+
+  // We have to pass the explicit hardware triangle parameter for this geometry
+  set_material(instance_hwtri, matindex, uniform_color, 1);
+
+  // The vertex buffer is released automatically after construction. 
+  // We need to keep track of normal and color buffers for ourselves.
+  append_objects(nbuf, cbuf, geom_hwtri, instance_hwtri);
+}
+#endif
+
+
 void OptiXRenderer::trimesh_n3f_v3f(Matrix4 & wtrans, float *uniform_color, 
                                     float *n, float *v, int numfacets, 
                                     int matindex) {
   if (!context_created) return;
+
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware-accelerated triangle API
+  if (hwtri_enabled) {
+    trimesh_n3f_v3f_hwtri(wtrans, uniform_color, n, v, numfacets, matindex);
+    return;
+  }
+#endif
+
   if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating trimesh_n3f_v3f: %d...\n", numfacets);
   trimesh_n3f_v3f_cnt += numfacets;
 
@@ -4775,9 +6674,85 @@ void OptiXRenderer::trimesh_n3f_v3f(Matrix4 & wtrans, float *uniform_color,
 }
 
 
+#if defined(ORT_USERTXAPIS)
+void OptiXRenderer::trimesh_v3f_hwtri(Matrix4 & wtrans, float *uniform_color,
+                                      float *v, int numfacets, int matindex) {
+  if (!context_created) return;
+  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating trimesh_v3f_hwtri: %d...\n", numfacets);
+  trimesh_v3f_cnt += numfacets;
+
+  RTbuffer vbuf, nbuf, cbuf;
+  RTgeometryinstance instance_hwtri;
+  RTgeometrytriangles geom_hwtri;
+  
+  // Create and fill vertex/normal/color buffers
+  float3 *vertices; 
+  uint4 *normals;
+  uchar4 *colors;
+  hwtri_alloc_bufs_v3f_n4u4_c4u(ctx, numfacets, vbuf, vertices, nbuf, normals, 
+                                cbuf, 1, colors, uniform_color);
+
+  int i, tcnt;
+  for (i=0, tcnt=0; i < numfacets; i++) {
+    int taddr = 3 * tcnt;
+
+    // transform to eye coordinates
+    wtrans.multpoint3d(v + 9 * i + 0, (float*) &vertices[taddr + 0]);
+    wtrans.multpoint3d(v + 9 * i + 3, (float*) &vertices[taddr + 1]);
+    wtrans.multpoint3d(v + 9 * i + 6, (float*) &vertices[taddr + 2]);
+
+    // Compute geometric normal, detect and cull degenerate triangles
+    float3 Ng;
+    if (hwtri_test_calc_Ngeom(&vertices[taddr], Ng)) {
+      continue; // cull any triangle that fails degeneracy tests
+    }
+
+    // Pack normal (we don't have per-vertex normals, so leave them empty)
+    normals[i].x = packNormal(Ng);
+    // XXX we could initialize the others for paranoia's sake...
+    // normals[i].y = normals[i].z = normals[i].w = normals[i].x;
+
+    tcnt++; // count non-culled triangles
+  }
+
+  rtBufferUnmap(vbuf);
+  rtBufferUnmap(nbuf);
+  rtBufferUnmap(cbuf);
+
+  RTERR( rtGeometryTrianglesCreate(ctx, &geom_hwtri) );
+  RTERR( rtGeometryTrianglesSetTriangles(geom_hwtri, tcnt, vbuf, 
+                                         0, sizeof(float3), RT_FORMAT_FLOAT3, 
+                                         RT_GEOMETRYBUILDFLAGS_RELEASE_BUFFERS) );
+
+  // create a geometry instance and bind materials to this geometry
+  RTERR( rtGeometryInstanceCreate(ctx, &instance_hwtri) );
+  RTERR( rtGeometryInstanceSetGeometryTriangles(instance_hwtri, geom_hwtri) );
+
+  // Disable per-vertex normals, disable per-vertex colors (use uniform color) 
+  hwtri_set_vertex_flags(ctx, instance_hwtri, nbuf, cbuf, 0, 0);
+
+  // We have to pass the explicit hardware triangle parameter for this geometry
+  set_material(instance_hwtri, matindex, uniform_color, 1);
+
+  // The vertex buffer is released automatically after construction. 
+  // We need to keep track of normal and color buffers for ourselves.
+  append_objects(nbuf, cbuf, geom_hwtri, instance_hwtri);
+}
+#endif
+
+
 void OptiXRenderer::trimesh_v3f(Matrix4 & wtrans, float *uniform_color, 
                                 float *v, int numfacets, int matindex) {
   if (!context_created) return;
+
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware-accelerated triangle API
+  if (hwtri_enabled) {
+    trimesh_v3f_hwtri(wtrans, uniform_color, v, numfacets, matindex);
+    return;
+  }
+#endif
+
   if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating trimesh_v3f: %d...\n", numfacets);
   trimesh_v3f_cnt += numfacets;
 
@@ -4823,6 +6798,117 @@ void OptiXRenderer::trimesh_v3f(Matrix4 & wtrans, float *uniform_color,
 }
 
 
+#if defined(ORT_USERTXAPIS)
+void OptiXRenderer::tristrip_hwtri(Matrix4 & wtrans, int numverts, 
+                                   const float * cnv,
+                                   int numstrips, const int *vertsperstrip,
+                                   const int *facets, int matindex) {
+  if (!context_created) return;
+  int i;
+  int numfacets = 0;
+  for (i=0; i<numstrips; i++) 
+    numfacets += (vertsperstrip[i] - 2);  
+
+  if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating tristrip_hwtri: %d...\n", numfacets);
+  tricolor_cnt += numfacets;
+
+  RTbuffer vbuf, nbuf, cbuf;
+  RTgeometryinstance instance_hwtri;
+  RTgeometrytriangles geom_hwtri;
+
+  // Create and fill vertex/normal/color buffers
+  float3 *vertices; 
+  uint4 *normals;
+  uchar4 *colors;
+  hwtri_alloc_bufs_v3f_n4u4_c4u(ctx, numfacets, vbuf, vertices, nbuf, normals, 
+                                cbuf, numfacets * 3, colors, NULL);
+
+  // render triangle strips one triangle at a time
+  // triangle winding order is:
+  //   v0, v1, v2, then v2, v1, v3, then v2, v3, v4, etc.
+  int strip, t, v = 0;
+  int stripaddr[2][3] = { {0, 1, 2}, {1, 0, 2} };
+
+  // loop over all of the triangle strips
+  int tcnt=0; // set triangle index to 0
+  for (strip=0; strip < numstrips; strip++) {
+    // loop over all triangles in this triangle strip
+    for (t = 0; t < (vertsperstrip[strip] - 2); t++) {
+      int taddr = 3 * tcnt;
+
+      // render one triangle, using lookup table to fix winding order
+      int v0 = facets[v + (stripaddr[t & 0x01][0])] * 10;
+      int v1 = facets[v + (stripaddr[t & 0x01][1])] * 10;
+      int v2 = facets[v + (stripaddr[t & 0x01][2])] * 10;
+
+      // transform to eye coordinates
+      wtrans.multpoint3d(cnv + v0 + 7, (float*) &vertices[taddr + 0]);
+      wtrans.multpoint3d(cnv + v1 + 7, (float*) &vertices[taddr + 1]);
+      wtrans.multpoint3d(cnv + v2 + 7, (float*) &vertices[taddr + 2]);
+
+      // Compute geometric normal, detect and cull degenerate triangles
+      float3 Ng;
+      if (hwtri_test_calc_Ngeom(&vertices[taddr], Ng)) {
+        v++;      // move on to next vertex
+        continue; // cull any triangle that fails degeneracy tests
+      }
+
+      float3 n0, n1, n2;
+      wtrans.multnorm3d(cnv + v0 + 4, (float*) &n0);
+      wtrans.multnorm3d(cnv + v1 + 4, (float*) &n1);
+      wtrans.multnorm3d(cnv + v2 + 4, (float*) &n2);
+
+      // Pack normals
+      normals[tcnt].x = packNormal(Ng);
+      normals[tcnt].y = packNormal(n0);
+      normals[tcnt].z = packNormal(n1);
+      normals[tcnt].w = packNormal(n2);
+
+      // convert color format
+      colors[taddr + 0].x = cnv[v0 + 0] * 255.0f;
+      colors[taddr + 0].y = cnv[v0 + 1] * 255.0f;
+      colors[taddr + 0].z = cnv[v0 + 2] * 255.0f;
+
+      colors[taddr + 1].x = cnv[v1 + 0] * 255.0f;
+      colors[taddr + 1].y = cnv[v1 + 1] * 255.0f;
+      colors[taddr + 1].z = cnv[v1 + 2] * 255.0f;
+
+      colors[taddr + 2].x = cnv[v2 + 0] * 255.0f;
+      colors[taddr + 2].y = cnv[v2 + 1] * 255.0f;
+      colors[taddr + 2].z = cnv[v2 + 2] * 255.0f;
+
+      v++;    // move on to next vertex
+      tcnt++; // count non-culled triangles
+    }
+    v+=2; // last two vertices are already used by last triangle
+  }
+
+  rtBufferUnmap(vbuf);
+  rtBufferUnmap(nbuf);
+  rtBufferUnmap(cbuf);
+
+  RTERR( rtGeometryTrianglesCreate(ctx, &geom_hwtri) );
+  RTERR( rtGeometryTrianglesSetTriangles(geom_hwtri, tcnt, vbuf, 
+                                         0, sizeof(float3), RT_FORMAT_FLOAT3, 
+                                         RT_GEOMETRYBUILDFLAGS_RELEASE_BUFFERS) );
+
+  // create a geometry instance and bind materials to this geometry
+  RTERR( rtGeometryInstanceCreate(ctx, &instance_hwtri) );
+  RTERR( rtGeometryInstanceSetGeometryTriangles(instance_hwtri, geom_hwtri) );
+
+  // Enable per-vertex normals, enable per-vertex colors
+  hwtri_set_vertex_flags(ctx, instance_hwtri, nbuf, cbuf, 1, 1);
+
+  // We have to pass the explicit hardware triangle parameter for this geometry
+  set_material(instance_hwtri, matindex, NULL, 1);
+
+  // The vertex buffer is released automatically after construction. 
+  // We need to keep track of normal and color buffers for ourselves.
+  append_objects(nbuf, cbuf, geom_hwtri, instance_hwtri);
+}
+#endif
+
+
 void OptiXRenderer::tristrip(Matrix4 & wtrans, int numverts, const float * cnv,
                              int numstrips, const int *vertsperstrip,
                              const int *facets, int matindex) {
@@ -4831,6 +6917,15 @@ void OptiXRenderer::tristrip(Matrix4 & wtrans, int numverts, const float * cnv,
   int numfacets = 0;
   for (i=0; i<numstrips; i++) 
     numfacets += (vertsperstrip[i] - 2);  
+
+#if defined(ORT_USERTXAPIS)
+  // OptiX RTX hardware-accelerated triangle API
+  if (hwtri_enabled) {
+    tristrip_hwtri(wtrans, numverts, cnv, numstrips, 
+                   vertsperstrip, facets, matindex);
+    return;
+  }
+#endif
 
   if (verbose == RT_VERB_DEBUG) printf("OptiXRenderer) creating tristrip: %d...\n", numfacets);
   tricolor_cnt += numfacets;

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,10 +10,10 @@
  *
  *      $RCSfile: VMDApp.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.520 $      $Date: 2016/11/28 03:05:05 $
+ *      $Revision: 1.558 $      $Date: 2019/01/17 21:21:02 $
  *
  ***************************************************************************/
-
+ 
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
@@ -78,9 +78,9 @@
 #if defined(VMDNVENC)
 #include "NVENCMgr.h"  // GPU-accelerated H.26[45] video encode/decode
 #endif
-
+#include "VideoStream.h" // GPU-accelerated H.26[45] video streaming 
 #if defined(VMDLIBOPTIX)
-#include "OptiXRenderer.h"
+#include "OptiXRenderer.h" // GPU-accelerated ray tracing engines
 #endif
 
 #if defined(VMDTHREADS) // System-specific threads code
@@ -117,7 +117,7 @@
 #ifdef VMDFLTK           // If using FLTK GUI include FLTK objects
 #include "FL/forms.H"
 
-// New Fltk menus
+// New Fltk menus 
 #include "MainFltkMenu.h"
 #include "ColorFltkMenu.h"
 #include "MaterialFltkMenu.h"
@@ -149,7 +149,7 @@
 #endif
 
 #ifdef VMDMPI
-#include "VMDMPI.h"
+#include "VMDMPI.h" 
 #endif
 
 #include "VMDApp.h"
@@ -164,12 +164,12 @@ static unsigned long texserialnum;
 // static initialization
 JString VMDApp::text_message;
 
-#if defined(VMDXPLOR)
+#if defined(VMDXPLOR)  
 VMDApp* VMDApp::obj = 0; ///< global object pointer used by VMD-XPLOR builds
 #endif
 
 VMDApp::VMDApp(int argc, char **argv, int mpion) {
-#if defined(VMDXPLOR)
+#if defined(VMDXPLOR)  
   if (!obj) obj = this; ///< global object pointer used by VMD-XPLOR builds
 #endif
 
@@ -178,7 +178,7 @@ VMDApp::VMDApp(int argc, char **argv, int mpion) {
   argv_m = (const char **)argv;
   mpienabled = mpion; // flag to enable/disable MPI functionality at runtime...
   menulist = NULL;
-  nextMolID = 0;
+  nextMolID = 0; 
   stride_firsttime = 1;
   eofexit = 0;
   mouse = NULL;
@@ -187,11 +187,12 @@ VMDApp::VMDApp(int argc, char **argv, int mpion) {
 #ifdef WIN32
   win32joystick = NULL;
 #endif
-  vmdTitle = NULL;
+  vmdTitle = NULL; 
   fileRenderList = NULL;
   pluginMgr = NULL;
   uiText = NULL;
   uivr = NULL;
+  uivs = NULL;
 #ifdef VMDIMD
   imdMgr = NULL;
 #endif
@@ -225,24 +226,152 @@ VMDApp::VMDApp(int argc, char **argv, int mpion) {
   highlighted_molid  = highlighted_rep = -1;
 }
 
+
+
+// Permanently bind worker threads to CPUs to achieve 
+// peak performance and reducing run-to-run jitter for
+// graphics related algorithms.  This code simply performs
+// a one-to-one mapping of threads to CPUs at present, and
+// doesn't handle other cases with any greater logic yet.
+extern "C" void * affinitize_threads(void *voidparms) {
+  int tid, numthreads;
+  wkf_threadpool_worker_getid(voidparms, &tid, &numthreads);
+  int physcpus = wkf_thread_numphysprocessors();
+  int setthreadaffinity=1; // enable affinity assignment by default
+
+  // XXX need to add some kind of check to skip trying to set affinity
+  //     if the OS, batch system, or other external CPU set management
+  //     system has already restricted or set of CPUs we can use
+
+#if defined(ARCH_SUMMIT)
+  // XXX On the ORNL Summit system, the IBM LSF scheduler and 'jsrun'
+  //     handle pinning of threads to CPU sockets/cores, and the application
+  //     appears to have absolutely no control over this at present.   
+  //     To prevent runtime errors when we try to map out and set
+  //     the affinity of VMD CPU thread pool, we skip setting the affinity
+  //     and live with whatever the scheduler has assigned.
+  setthreadaffinity=0;
+#endif
+
+  if ((physcpus > 0) && setthreadaffinity) {
+    int taffinity;
+ 
+#if defined(ARCH_SUMMIT) || defined(ARCH_OPENPOWER)
+#if 1
+    int *affinitylist=NULL;
+    int affinitycount=0;
+    affinitylist = wkf_cpu_affinitylist(&affinitycount);
+
+#if 0
+    if (tid == 0) {
+      printf("CPU affinity count: %d\n", affinitycount);
+      int t;
+      for (t=0; t<affinitycount; t++) {
+        printf("thread[0] affinity[%d]: %d\n", t, affinitylist[t]);
+      }
+    }
+#endif
+
+    if (tid < affinitycount) {
+      setthreadaffinity=1;
+      taffinity=affinitylist[tid];
+//      printf("thread[%d] affinity binding: %d\n", tid, taffinity);
+    } else {
+      setthreadaffinity=0;
+//      printf("Skipping thread[%d] affinity binding\n", tid);
+    }
+
+    free(affinitylist);
+
+#else
+
+    // On POWER8/P9 SMT core hardware thread slots are numbered consecutively. 
+    // To spread threads across all physical cores, threads are assigned by
+    // multiplying threadID * SMT depth, modulo the total SMT core count.
+    // Calculation of the active P8/P9 SMT state is a nightmarish exercise 
+    // involving digging through tens of files in /proc and building up 
+    // and cross referencing various CPU state tables, so far now we skip 
+    // this entirely and use a hard-coded value that's applicable to the
+    // HPC oriented systems in the field.  Alternately, we might use a 
+    // scheme that decomposes the incoming thread affinity masks, since
+    // that's another factor on production HPC systems.
+    if (numthreads == physcpus) {
+      taffinity=tid * 8 % physcpus;
+    } else {
+#if !defined(VMDMPI)
+      if (tid == 0) 
+        msgWarn << "Thread affinity binding: physical cpus != numthreads" << sendmsg;
+#endif
+      taffinity=tid * 8 % physcpus;
+    }
+#endif
+
+#else
+    // On Intel/AMD hardware, physically distinct CPU cores are numbered 
+    // consecutively, and additional SMT "cores" appear as additional multiples
+    // of the physical CPU core count.  It is therefore sufficient to 
+    // use consecutive CPU indices to spread worker threads fully across CPUs
+    // and SMT hardware threads
+    if (numthreads == physcpus) {
+      taffinity=tid; // set affinity of tid to same CPU id if numthreads == cpus
+    } else {
+#if !defined(VMDMPI)
+      if (tid == 0) 
+        msgWarn << "Thread affinity binding: physical cpus != numthreads" << sendmsg;
+#endif
+
+      taffinity=tid; // set affinity of tid to same CPU id if numthreads == cpus
+    }
+#endif
+
+    // printf("Affinitizing thread[%d] to CPU[%d]...\n", tid, taffinity);
+    wkf_thread_set_self_cpuaffinity(taffinity);
+  }
+
+  // mark CPU threads for display in profiling tools
+  char threadname[1024];
+  sprintf(threadname, "VMD CPU threadpool[%d]", tid);
+  PROFILE_NAME_THREAD(threadname);
+
+  return NULL;
+}
+
+
+
 // initialization routine for the library globals
-int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
+int VMDApp::VMDinit(int argc, char **argv, const char *displaytype, 
                     int *displayLoc, int *displaySize) {
 #if defined(VMDTHREADS)
+  PROFILE_PUSH_RANGE("CPU thread pool init", 3);
   thrpool=wkf_threadpool_create(wkf_thread_numprocessors(), WKF_THREADPOOL_DEVLIST_CPUSONLY);
+
+  // affinitize persistent threadpool to the available CPUs
+  wkf_tasktile_t tile;
+  memset(&tile, 0, sizeof(tile));
+  wkf_threadpool_launch((wkf_threadpool_t *) thrpool, 
+                        affinitize_threads, NULL, 1);
+  PROFILE_POP_RANGE();
 #endif
 
 #if defined(VMDCUDA)
+  PROFILE_PUSH_RANGE("GPU device pool init", 0);
+
   // register all usable CUDA GPU accelerator devices
   cuda = new CUDAAccel();
+
+  PROFILE_POP_RANGE();
 #endif
 
 #if defined(VMDMPI)
   if (mpienabled) {
+    PROFILE_PUSH_RANGE("MPI init", 5);
+
     // initialize MPI node info and print output here
-    vmd_mpi_nodescan(&noderank, &nodecount,
-                     nodename, sizeof(nodename),
+    vmd_mpi_nodescan(&noderank, &nodecount, 
+                     nodename, sizeof(nodename), 
                      (cuda != NULL) ? cuda->num_devices() : 0);
+
+    PROFILE_POP_RANGE();
   }
 #endif
 
@@ -259,13 +388,15 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
 
 #if defined(VMDNVENC)
   // It may eventually be desirable to relocate NVENC initialization after
-  // OpenGL or Vulkan initialization has completed so that we have access
-  // to window handles and OpenGL or Vulkan context info at the point
+  // OpenGL or Vulkan initialization has completed so that we have access 
+  // to window handles and OpenGL or Vulkan context info at the point 
   // where video streaming is setup.  There don't presently appear to be
-  // any APIs for graphics interop w/ NVENC.  We may need to instead use
+  // any APIs for graphics interop w/ NVENC.  We may need to instead use 
   // the GRID IFR library to achieve zero-copy streaming for OpenGL / Vulkan.
   // Direct use of NVENC seems most appropriate for ray tracing however, since
   // it allows CUDA interop.
+
+  PROFILE_PUSH_RANGE("NVENC init", 0);
   nvenc = new NVENCMgr;
   int nvencrc;
   if ((nvencrc = nvenc->init()) == NVENCMGR_SUCCESS) {
@@ -275,16 +406,20 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
     msgInfo << "NVENC GPU-accelerated video streaming available."
             << sendmsg;
   } else {
-    msgInfo << "NVENC GPU-accelerated video streaming is not available."
+    msgInfo << "NVENC GPU-accelerated video streaming is not available." 
             << sendmsg;
   }
+  PROFILE_POP_RANGE();
 #endif
 
+
+  PROFILE_PUSH_RANGE("UIObject init", 1);
 
   //
   // create commandQueue before all UIObjects!
   //
-  commandQueue = new CommandQueue();
+  commandQueue = new CommandQueue(); 
+
 
   // XXX This is currently only used for 64-bit MacOS X builds using Cocoa...
   // XXX Francois-Xavier Coudert has noted that this code path also corrected
@@ -297,6 +432,9 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
   // details of Cocoa-based Tk and FLTK code required for 64-bit MacOS X.
   uiText = new UIText(this, (strcmp(displaytype, "TEXT") != 0), 0); // text user interface
 #endif
+
+  PROFILE_POP_RANGE();
+  PROFILE_PUSH_RANGE("DisplayDevice init", 0);
 
   // initialize the display
   int *dloc = (displayLoc[0]  > 0 ? displayLoc  : (int *) NULL);
@@ -325,7 +463,7 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
     if (!display->init(argc, argv, this, dsiz, dloc)) {
       VMDexit("Unable to create OpenGL window.", 1, 7);
       return FALSE;
-    }
+    } 
 #endif
 #endif
   }
@@ -337,13 +475,13 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
     if (!display->init(argc, argv, this, dsiz, dloc)) {
       VMDexit("Unable to create OpenGL Pbuffer context.", 1, 7);
       return FALSE;
-    }
+    } 
   }
 #endif
 
 #ifdef VMDCAVE
   if (!strcmp(displaytype, "CAVE") || !strcmp(displaytype, "CAVEFORMS")) {
-    // The CAVE scene is allocated from shared memory and can be
+    // The CAVE scene is allocated from shared memory and can be 
     // accessed by all of the rendering processes by virtue of its
     // class-specific operator new.
     scene = new CaveScene(this);
@@ -357,7 +495,7 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
 
     // XXX this may cure a problem with specular highlights in CAVElib
     // by default CAVElib messes with the OpenGL modelview matrix, this
-    // option prevents it from doing so, which should allow specular
+    // option prevents it from doing so, which should allow specular 
     // highlights to look right on multiple walls, but it breaks depth cueing.
     // CAVESetOption(CAVE_PROJ_USEMODELVIEW, 0);
     CAVESetOption(CAVE_GL_SAMPLES, 8); // enable multisample antialiasing
@@ -376,7 +514,7 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
 
 #ifdef VMDFREEVR
   if (!strcmp(displaytype, "FREEVR") || !strcmp(displaytype, "FREEVRFORMS")) {
-    // The FreeVR scene is allocated from shared memory and can be
+    // The FreeVR scene is allocated from shared memory and can be 
     // accessed by all of the rendering processes by virtue of its
     // class-specific operator new.
     scene = new FreeVRScene(this);
@@ -389,7 +527,7 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
     set_freevr_pointers(scene, display);
 
     // set the function pointer for the per-screen renderers
-    vrFunctionSetCallback(VRFUNC_ALL_DISPLAY, vrCallbackCreate(freevr_renderer, 1, &display));
+    vrFunctionSetCallback(VRFUNC_ALL_DISPLAY, vrCallbackCreate(freevr_renderer, 1, &display));  
     vrStart();                         // fork off the rendering processes
     vrSystemSetName("VMD using FreeVR display form");
     vrSystemSetAuthors("John Stone, Justin Gullingsrud, Bill Sherman");
@@ -426,13 +564,16 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
 
   // print any useful informational messages now that the display is setup
   if (display->get_num_processes() > 1) {
-    msgInfo << "Started " << display->get_num_processes()
+    msgInfo << "Started " << display->get_num_processes() 
             << " slave rendering processes." << sendmsg;
   }
+
+  PROFILE_POP_RANGE();
 
   //
   // create other global objects for the program
   //
+  PROFILE_PUSH_RANGE("Internal state init", 1);
 
   rocker = new DisplayRocker(&(scene->root));
 
@@ -450,7 +591,7 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
   // create other useful graphics objects
   axes = new Axes(display, &(scene->root));
   pickList->add_pickable(axes);
-
+  
   fps = new FPS(display, &(scene->root));
   fps->off();
 
@@ -469,7 +610,7 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
   menulist = new NameList<VMDMenu *>;
 
   // If the text UI hasn't already been initialized then initialize it here.
-  // Cocoa-based FLTK/Tk builds of VMD for 64-bit MacOS X must
+  // Cocoa-based FLTK/Tk builds of VMD for 64-bit MacOS X must 
   // initialize Tcl/Tk first, so that FLTK works correctly.
   if (uiText == NULL)
     uiText = new UIText(this, display->supports_gui(), mpienabled); // text interface
@@ -494,6 +635,12 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
   imdMgr->On();
 #endif
 
+#if 1 || defined(VMDNVPIPE)
+  // only create a video streaming object if we have back-end encoder support
+  uivs = new VideoStream(this);
+  uivs->On();
+#endif
+
   stage = new Stage(&(scene->root));
   pickList->add_pickable(stage);
 
@@ -506,20 +653,26 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
   display->queue_events(); // begin accepting UI events in graphics window
 
   // Create the menus; XXX currently this must be done _before_ calling
-  // uiText->read_init() because otherwise the new menus created by the
+  // uiText->read_init() because otherwise the new menus created by the 
   // plugins loaded by the iit script won't be added to the main menu.
   activate_menus();
 
+  PROFILE_POP_RANGE();
+  PROFILE_PUSH_RANGE("Plugin shared obj init", 5);
+  
   // XXX loading static plugins should be controlled by a startup option
   pluginMgr->load_static_plugins();
 
   // plugin_update must take place _after_ creation of uiText.
   plugin_update();
 
+  PROFILE_POP_RANGE();
+  PROFILE_PUSH_RANGE("Interp loop init", 3);
+
   VMDupdate(VMD_IGNORE_EVENTS); // flush cmd queue, prepare to enter event loop
 
   // Read the initialization code for the text interpreter.
-  // We wait to do it now since that script might contain commands that use
+  // We wait to do it now since that script might contain commands that use 
   // the event queue
   uiText->read_init();
 
@@ -537,6 +690,8 @@ int VMDApp::VMDinit(int argc, char **argv, const char *displaytype,
       new TclEvalEvent("parallel swift_clone_communicator"));
   }
 #endif
+  
+  PROFILE_POP_RANGE();
 
   // successful initialization.  Turn off the exit flag return success
   exitFlag = FALSE;
@@ -548,17 +703,17 @@ int VMDApp::num_menus() { return menulist->num(); }
 int VMDApp::add_menu(VMDMenu *m) {
   if (menulist->typecode(m->get_name()) != -1) {
     msgErr << "Menu " << m->get_name() << " already exists." << sendmsg;
-    return 0;
+    return 0;  
   }
   menulist->add_name(m->get_name(), m);
   return 1;
 }
-
+ 
 int VMDApp::remove_menu(const char *name) {
   int id = menulist->typecode(name);
   if (id == -1) {
     msgErr << "Menu " << name << " does not exist." << sendmsg;
-    return 0;
+    return 0;  
   }
   NameList<VMDMenu *> *newmenulist = new NameList<VMDMenu *>;
   for (int i=0; i<menulist->num(); i++) {
@@ -573,7 +728,7 @@ int VMDApp::remove_menu(const char *name) {
   menulist = newmenulist;
   return 1;
 }
-
+ 
 void VMDApp::menu_add_extension(const char *shortname, const char *menu_path) {
   commandQueue->runcommand(new CmdMenuExtensionAdd(shortname,menu_path));
 }
@@ -582,7 +737,13 @@ void VMDApp::menu_remove_extension(const char *shortname) {
   commandQueue->runcommand(new CmdMenuExtensionRemove(shortname));
 }
 
-const char *VMDApp::menu_name(int i) { return menulist->name(i); }
+const char *VMDApp::menu_name(int i) {
+  return menulist->name(i);
+}
+
+int VMDApp::menu_id(const char *name) {
+  return menulist->typecode(name);
+}
 
 int VMDApp::menu_status(const char *name) {
   int id = menulist->typecode(name);
@@ -626,6 +787,8 @@ int VMDApp::menu_select_mol(const char *name, int molno) {
 
 // redraw the screen and update all things that need updating
 int VMDApp::VMDupdate(int check_for_events) {
+  PROFILE_PUSH_RANGE("VMDApp::VMDupdate()", 5);
+
   // clear background processing flag
   background_processing_clear();
 
@@ -649,69 +812,92 @@ int VMDApp::VMDupdate(int check_for_events) {
     }
 #endif
 #endif
-  }
-
+  } 
+  
   // check if the user has requested to exit the program.
-  if (exitFlag)
+  if (exitFlag) {
+    PROFILE_POP_RANGE();
     return FALSE;
-
+  }
+ 
   commandQueue->execute_all(); // execute commands still in the queue
 
-  int needupdate = 0;
+  //
+  // if video streaming is active and we're a client with an active
+  // connection, all local rendering is disabled..
+  //
+  if (uivs == NULL || !uivs->cli_connected()) {
+    int needupdate = 0;
 #if 1
-  // Only prepare objects if display update is enabled
-  // XXX avoid N^2 behavior when loading thousdands of molecules,
-  // don't prepare for drawing unless we have to.
-  if (UpdateDisplay) {
-    // If a resetview is pending, take care of it now before drawing
-    if (ResetViewPending)
-      scene_resetview_newmoldata();
+    // Only prepare objects if display update is enabled
+    // XXX avoid N^2 behavior when loading thousdands of molecules, 
+    // don't prepare for drawing unless we have to.
+    if (UpdateDisplay) {
+      // If a resetview is pending, take care of it now before drawing
+      if (ResetViewPending) 
+        scene_resetview_newmoldata();
 
-    needupdate = scene->prepare(); // prepare all objects for drawing
-  } else {
-    // XXX this has to be done currently to force trajectories to continue
-    //     loading frames since they don't have their own UIObject yet.
-    int molnum = moleculeList->num();
-    int i;
-    for (i=0; i<molnum; i++) {
-      Molecule *mol = moleculeList->molecule(i);
-      if (mol != NULL) {
-        if (mol->get_new_frames()) {
-          needupdate = 1; // need to update if any new frames were loaded
+      needupdate = scene->prepare(); // prepare all objects for drawing
+    } else {
+      // XXX this has to be done currently to force trajectories to continue
+      //     loading frames since they don't have their own UIObject yet.
+      int molnum = moleculeList->num();
+      int i;
+      for (i=0; i<molnum; i++) {
+        Molecule *mol = moleculeList->molecule(i);
+        if (mol != NULL) {
+          if (mol->get_new_frames()) {
+            needupdate = 1; // need to update if any new frames were loaded
+          }
         }
       }
     }
-  }
 #else
-  // XXX this has to be done currently to force trajectories to continue
-  //     loading frames since they don't have their own UIObject yet.
-  needupdate = scene->prepare(); // prepare all objects for drawing
+    // XXX this has to be done currently to force trajectories to continue
+    //     loading frames since they don't have their own UIObject yet.
+    needupdate = scene->prepare(); // prepare all objects for drawing
 #endif
 
-  // turn off the spinning vmd when molecules are loaded
-  if (vmdTitle && moleculeList->num() > 0) {
-    delete vmdTitle;
-    vmdTitle = NULL;
-  }
+    // turn off the spinning vmd when molecules are loaded
+    if (vmdTitle && moleculeList->num() > 0) {
+      delete vmdTitle;
+      vmdTitle = NULL;
+    }
+  
+    // Update the display (or sleep a tiny bit).
+    if (UpdateDisplay && (needupdate || display->needRedraw())) {
+      scene->draw(display);   // make the display redraw if necessary
+      scene->draw_finished(); // perform any necessary post-drawing cleanup
 
-  // Update the display (or sleep a tiny bit).
-  if (UpdateDisplay && (needupdate || display->needRedraw())) {
-    scene->draw(display);   // make the display redraw if necessary
-    scene->draw_finished(); // perform any necessary post-drawing cleanup
-  } else {
-    // if not updating the display or doing background I/O,
-    // we sleep so we don't hog CPU.
-    if (!needupdate && !background_processing())
-      vmd_msleep(1); // sleep for 1 millisecond or more
-  }
+      // if video streaming is active, we tell the encoder a new frame is ready
+      if (uivs != NULL && uivs->srv_connected()) {
+#if 0
+        int xs, ys;
+        unsigned char *img = display->readpixels_rgba4u(xs, ys);
+        if (img != NULL) {
+          uivs->srv_send_frame(img, xs * 4, xs, ys, 0);
+          free(img);
+        }
+#elif 0
+        uivs->video_frame_pending();
+#endif
+      }
+    } else {
+      // if not updating the display or doing background I/O, 
+      // we sleep so we don't hog CPU.
+      if (!needupdate && !background_processing())
+        vmd_msleep(1); // sleep for 1 millisecond or more
+    }
+  } // no active video-streaming-client connection
 
   // XXX A hack to decrease CPU utilization on machines that have
   //     problems keeping up with the 3-D draw rate at full speed.
   if (getenv("VMDMSECDELAYHACK") != NULL) {
-    // Delay the whole program for a user-specified number of milliseconds.
-    vmd_msleep(atoi(getenv("VMDMSECDELAYHACK")));
+    // Delay the whole program for a user-specified number of milliseconds.  
+    vmd_msleep(atoi(getenv("VMDMSECDELAYHACK"))); 
   }
 
+  PROFILE_POP_RANGE();
   return TRUE;
 }
 
@@ -728,7 +914,7 @@ void VMDApp::VMDexit(const char *exitmsg, int exitcode, int pauseseconds) {
 #if defined(VMDMPI)
   // If MPI parallel execution is in effect, help console output complete before
   // final shutdown.
-  if (mpienabled) {
+  if (mpienabled) { 
     fflush(stdout);
     vmd_mpi_barrier(); // wait for peers before printing final messages
     if (noderank == 0)
@@ -738,7 +924,7 @@ void VMDApp::VMDexit(const char *exitmsg, int exitcode, int pauseseconds) {
 
   // only print exit status output on the first exit call
   if (exitFlag == 0 || (exitmsg != NULL && strlen(exitmsg))) {
-    msgInfo << VERSION_MSG << sendmsg;
+    msgInfo << VERSION_MSG << sendmsg; 
     if (exitmsg && strlen(exitmsg)) {
       msgInfo << exitmsg << sendmsg;
     } else {
@@ -770,6 +956,10 @@ VMDApp::~VMDApp() {
 #endif
 
   if (uivr)           delete uivr;
+
+  if (uivs)           delete uivs;
+  uivs = NULL;        // prevent free mem accesses in event loops
+
   if (geometryList)   delete geometryList;
 
 #ifdef VMDIMD
@@ -798,7 +988,7 @@ VMDApp::~VMDApp() {
   // Close all GUI windows
 #ifdef VMDFLTK
   if (display->supports_gui()) {
-    Fl::wait(0); // Give Fltk a chance to close the menu windows.
+    Fl::wait(0); // Give Fltk a chance to close the menu windows.  
   }
 #endif
 #endif
@@ -806,7 +996,7 @@ VMDApp::~VMDApp() {
   // Tcl/Python interpreters can only be deleted after Tk forms are shutdown
   if (uiText)         delete uiText;
 
-  // delete the list of user keys and descriptions
+  // delete the list of user keys and descriptions 
   for (i=0; i<userKeys.num(); i++)
     delete [] userKeys.data(i);
 
@@ -828,7 +1018,7 @@ VMDApp::~VMDApp() {
   // picklist can't be deleted until the molecule is deleted, since
   // the DrawMolecule destructor needs it.
   delete pickList;
-
+ 
   delete display;
   delete scene;
 
@@ -859,7 +1049,7 @@ void VMDApp::show_stride_message() {
      "In any publication of scientific results based in part or\n"
      "completely on the use of the program STRIDE, please reference:\n"
      " Frishman,D & Argos,P. (1995) Knowledge-based secondary structure\n"
-     " assignment. Proteins: structure, function and genetics, 23, 566-579."
+     " assignment. Proteins: structure, function and genetics, 23, 566-579." 
       << "\n" << sendmsg;
   }
 }
@@ -868,24 +1058,24 @@ void VMDApp::show_stride_message() {
 // properly.
 
 #ifdef VMDTK
-#include <tcl.h>
+#include <tcl.h> 
 #endif
 
 char *VMDApp::vmd_choose_file(const char *title,
-	const char *extension,
+	const char *extension, 
 	const char *extension_label, int do_save) {
-
+  
  char *chooser = getenv("VMDFILECHOOSER");
  if (!chooser || !strupcmp(chooser, "TK")) {
-
+    
 #ifdef VMDTK
   JString t = title;
   JString ext = extension;
   JString label = extension_label;
   char *cmd = new char[300 + t.length() +ext.length() + label.length()];
-  // no default extension for for saves/loads , because otherwise it
-  // automatically adds the file extension whether you specify it or not, and
-  // when the extension is * it won't let you save/load a file without an
+  // no default extension for for saves/loads , because otherwise it 
+  // automatically adds the file extension whether you specify it or not, and 
+  // when the extension is * it won't let you save/load a file without an 
   // extension!
   if (do_save) {
     sprintf(cmd, "tk_getSaveFile -title {%s} -filetypes {{{%s} {%s}} {{All files} {*}}}", (const char *)t, (const char *)extension_label, (const char *)extension);
@@ -908,7 +1098,7 @@ char *VMDApp::vmd_choose_file(const char *title,
   // fall through to next level on failure
 #endif
 
- }
+ } 
 
 #ifdef VMDFLTK
   return stringdup(fl_file_chooser(title, extension, NULL));
@@ -920,7 +1110,7 @@ char *VMDApp::vmd_choose_file(const char *title,
 
   return result;
 }
-
+ 
 // file renderer API
 int VMDApp::filerender_num() {
   return fileRenderList->num();
@@ -949,7 +1139,7 @@ int VMDApp::filerender_aosamples(const char *method, int aosamples) {
 }
 int VMDApp::filerender_imagesize(const char *method, int *w, int *h) {
   if (!w || !h) return FALSE;
-  return fileRenderList->imagesize(method, w, h);
+  return fileRenderList->imagesize(method, w, h); 
 }
 int VMDApp::filerender_has_imagesize(const char *method) {
   return fileRenderList->has_imagesize(method);
@@ -993,13 +1183,18 @@ const char *VMDApp::filerender_option(const char *m, const char *o) {
 // XXX The Scene doesn't return error codes, so I don't know if the commands
 // worked or not.  I do what error checking I can here and hope that it works.
 int VMDApp::scene_rotate_by(float angle, char ax, float incr) {
+  if (uivs && uivs->cli_connected()) {
+    uivs->cli_send_rotate_by(angle, ax);
+    return TRUE;
+  }
+
   if (ax < 'x' || ax > 'z') return FALSE;  // failed
   rocker->stop_rocking();
   if (incr) {
     int nsteps = (int)(fabs(angle / incr) + 0.5);
     incr = (float) (angle < 0.0f ? -fabs(incr) : fabs(incr));
     rocker->start_rocking(incr, ax, nsteps, TRUE);
-    commandQueue->runcommand(new CmdRotate(angle, ax, CmdRotate::BY, incr));
+    commandQueue->runcommand(new CmdRotate(angle, ax, CmdRotate::BY, incr)); 
   } else {
     scene->root.add_rot(angle, ax);
     commandQueue->runcommand(new CmdRotate(angle, ax, CmdRotate::BY));
@@ -1026,6 +1221,11 @@ int VMDApp::scene_rotate_to(const float *m) {
   return TRUE;
 }
 int VMDApp::scene_translate_by(float x, float y, float z) {
+  if (uivs && uivs->cli_connected()) {
+    uivs->cli_send_translate_by(x, y, z);
+    return TRUE;
+  }
+
   scene->root.add_glob_trans(x, y, z);
   commandQueue->runcommand(new CmdTranslate(x,y,z,CmdTranslate::BY));
   return TRUE;
@@ -1036,13 +1236,18 @@ int VMDApp::scene_translate_to(float x, float y, float z) {
   return TRUE;
 }
 int VMDApp::scene_scale_by(float s) {
-  if (s <= 0) return FALSE;
+  if (uivs && uivs->cli_connected()) {
+    uivs->cli_send_scale_by(s);
+    return TRUE;
+  }
+
+  if (s <= 0) return FALSE; 
   scene->root.mult_scale(s);
   commandQueue->runcommand(new CmdScale(s, CmdScale::BY));
   return TRUE;
 }
 int VMDApp::scene_scale_to(float s) {
-  if (s <= 0) return FALSE;
+  if (s <= 0) return FALSE; 
   scene->root.set_scale(s);
   commandQueue->runcommand(new CmdScale(s, CmdScale::TO));
   return TRUE;
@@ -1087,7 +1292,7 @@ int VMDApp::scene_rockoff() {
   rocker->stop_rocking();
   commandQueue->runcommand(new CmdRockOff);
   return TRUE;
-}
+} 
 int VMDApp::scene_stoprotation() {
   rocker->stop_rocking();
   mouse->stop_rotation();
@@ -1100,9 +1305,9 @@ int VMDApp::animation_num_dirs() {
 
 const char *VMDApp::animation_dir_name(int i) {
   if (i < 0 || i >= Animation::ANIM_TOTAL_DIRS) return NULL;
-  return animationDirName[i];
+  return animationDirName[i]; 
 }
-
+   
 int VMDApp::animation_set_dir(int d) {
   Animation::AnimDir dir = (Animation::AnimDir)d;
   anim->anim_dir(dir);
@@ -1159,9 +1364,9 @@ const char *VMDApp::filerender_default_filename(const char *m) {
   }
   return ren->default_filename();
 }
+ 
 
-
-// plugin stuff
+// plugin stuff 
 
 vmdplugin_t *VMDApp::get_plugin(const char *type, const char *name) {
   if (!pluginMgr) return NULL;
@@ -1171,15 +1376,15 @@ vmdplugin_t *VMDApp::get_plugin(const char *type, const char *name) {
   if (pluginMgr->plugins(p, type, name)) {
     plugin = p[0];
 
-    // loop over plugins and select the highest version number for a
+    // loop over plugins and select the highest version number for a 
     // given plugin type/name combo.
     for (int i=1; i<p.num(); i++) {
       vmdplugin_t *curplugin = p[i];
-      if (curplugin->majorv > plugin->majorv ||
+      if (curplugin->majorv > plugin->majorv || 
           (curplugin->majorv == plugin->majorv && curplugin->minorv > plugin->minorv))
         plugin = curplugin;
     }
-  }
+  } 
   return plugin;
 }
 
@@ -1276,7 +1481,7 @@ int VMDApp::color_index(const char *color) {
   }
   // look up the color by name.
   return scene->color_index(color);
-}
+} 
 int VMDApp::color_value(const char *colorname, float *r, float *g, float *b) {
   int colIndex = color_index(colorname);
   if (colIndex < 0) return 0;
@@ -1296,13 +1501,13 @@ int VMDApp::color_default_value(const char *colorname, float *r, float *g, float
   return 1;
 }
 const char *VMDApp::color_mapping(const char *category, const char *item) {
-
+  
   int colCatIndex = scene->category_index(category);
   if (colCatIndex < 0) return 0;
 
   int colNameIndex = scene->category_item_index(colCatIndex, item);
   if (colNameIndex < 0) return 0;
-
+  
   int ind = scene->category_item_value(colCatIndex, colNameIndex);
   return scene->color_name(ind);
 }
@@ -1351,14 +1556,14 @@ int VMDApp::colorscale_method_index(const char *method) {
     }
   }
   return -1;
-}
+}  
 
-int VMDApp::get_colorscale_colors(int whichScale,
+int VMDApp::get_colorscale_colors(int whichScale, 
       float min[3], float mid[3], float max[3]) {
   return scene->get_colorscale_colors(whichScale, min, mid, max);
 }
 
-int VMDApp::set_colorscale_colors(int whichScale,
+int VMDApp::set_colorscale_colors(int whichScale, 
       const float min[3], const float mid[3], const float max[3]) {
   if (scene->set_colorscale_colors(whichScale, min, mid, max)) {
     commandQueue->runcommand(new CmdColorScaleColors(
@@ -1368,50 +1573,78 @@ int VMDApp::set_colorscale_colors(int whichScale,
   return FALSE;
 }
 
-int VMDApp::color_changename(const char *category, const char *colorname,
-                     const char *color) {
+
+int VMDApp::color_change_name(const char *category, const char *colorname, 
+                              const char *color) {
 
   if (!category || !colorname || !color) return 0;
 
   int colCatIndex = scene->category_index(category);
   if (colCatIndex < 0) return 0;
-
+  
   int colNameIndex = scene->category_item_index(colCatIndex, colorname);
   if (colNameIndex < 0) return 0;
 
   int newIndex = color_index(color);
   if (newIndex < 0) return 0;
-
+ 
   // all systems go...
   scene->set_category_item(colCatIndex, colNameIndex, newIndex);
-
+  
   // tell the rest of the world
   commandQueue->runcommand(new CmdColorName(category, colorname, color));
   return 1;
 }
 
-int VMDApp::color_get_from_name(const char *category, const char *colorname,
+
+int VMDApp::color_change_namelist(int numcols, char **category, 
+                                  char **colorname, char **color) {
+  if (numcols < 1 || !category || !colorname || !color) return 0;
+
+  int i;
+  for (i=0; i<numcols; i++) {
+    int colCatIndex = scene->category_index(category[i]);
+    if (colCatIndex < 0) return 0;
+  
+    int colNameIndex = scene->category_item_index(colCatIndex, colorname[i]);
+    if (colNameIndex < 0) return 0;
+
+    int newIndex = color_index(color[i]);
+    if (newIndex < 0) return 0;
+ 
+    // all systems go...
+    scene->set_category_item(colCatIndex, colNameIndex, newIndex);
+  }
+ 
+  // XXX need a new command for this 
+  // commandQueue->runcommand(new CmdColorName(category, colorname, color));
+  return 1;
+}
+
+
+
+int VMDApp::color_get_from_name(const char *category, const char *colorname, 
                      const char **color) {
 
   if (!category || !colorname) return 0;
 
   int colCatIndex = scene->category_index(category);
   if (colCatIndex < 0) return 0;
-
+  
   int colNameIndex = scene->category_item_index(colCatIndex, colorname);
   if (colNameIndex < 0) return 0;
-
+ 
   // all systems go...
   int colIndex = scene->get_category_item(colCatIndex, colNameIndex);
   if (colIndex < 0) return 0;
-
+  
   *color = color_name(colIndex);
-
+      
   return 1;
 }
 
 
-int VMDApp::color_changevalue(const char *color, float r, float g, float b) {
+int VMDApp::color_change_rgb(const char *color, float r, float g, float b) {
   int ind = color_index(color);
   if (ind < 0) return 0;
   float rgb[3] = {r, g, b};
@@ -1420,6 +1653,23 @@ int VMDApp::color_changevalue(const char *color, float r, float g, float b) {
   return 1;
 }
 
+
+int VMDApp::color_change_rgblist(int numcols, const char **colors, float *rgb3fv) {
+  if (numcols < 1) return 0;
+
+  int i;
+  for (i=0; i<numcols; i++) {
+    int ind = color_index(colors[i]);
+    if (ind < 0) return 0;
+    scene->set_color_value(ind, &rgb3fv[i*3]);
+  }
+
+  // XXX need a new command for this
+  // commandQueue->runcommand(new CmdColorChange(color, r, g, b));
+  return 1;
+}
+  
+  
 int VMDApp::colorscale_setvalues(float mid, float min, float max) {
   scene->set_colorscale_value(min, mid, max);
   commandQueue->runcommand(new CmdColorScaleSettings(mid, min, max));
@@ -1433,8 +1683,8 @@ int VMDApp::colorscale_setmethod(int method) {
         scene->colorscale_method_name(method)));
   return 1;
 }
-
-
+  
+  
 int VMDApp::logfile_read(const char *path) {
   uiText->read_from_file(path);
   return 1;
@@ -1453,7 +1703,7 @@ int VMDApp::save_state() {
   delete [] file;
   return retval;
 }
-
+ 
 int VMDApp::num_molecules() {
   return moleculeList->num();
 }
@@ -1461,6 +1711,8 @@ int VMDApp::num_molecules() {
 
 // This creates a blank molecule, for use by "mol new atoms" and the like...
 int VMDApp::molecule_new(const char *name, int natoms, int docallbacks) {
+  PROFILE_PUSH_RANGE("VMDApp::molecule_new()", 5);
+
   // if we aren't given a name for the molecule, use a temp name
   Molecule *newmol = new Molecule((name == NULL) ? "molecule" : name,
                                   this, &(scene->root));
@@ -1474,12 +1726,12 @@ int VMDApp::molecule_new(const char *name, int natoms, int docallbacks) {
     sprintf(buf, "molecule%d", molid);
 #if 1
     // We rename the molecule for ourselves without calling molecule_rename()
-    // in order to avoid triggering extra callbacks that cause expensive
+    // in order to avoid triggering extra callbacks that cause expensive 
     // GUI redraws.
     newmol->rename(buf);
 
     // Add item to Molecule color category; default color should be the same as
-    // the original molecule.
+    // the original molecule.  
     int ind = moleculeList->colorCatIndex[MLCAT_MOLECULES];
     scene->add_color_item(ind, buf, molid % VISCLRS);
 #else
@@ -1532,8 +1784,315 @@ int VMDApp::molecule_new(const char *name, int natoms, int docallbacks) {
     commandQueue->runcommand(new InitializeStructureEvent(molid, 1));
   }
 
-  return molid;
-}
+  PROFILE_POP_RANGE();
+
+  return molid; 
+} 
+
+
+int VMDApp::molecule_from_selection_list(const char *name, int mergemode,
+                                         int numsels, AtomSel **sellist, 
+                                         int docallbacks) {
+  PROFILE_PUSH_RANGE("VMDApp::molecule_from_selection_lis()", 3);
+
+  // sanity check on contents of atom selection list
+  int natoms=0;
+  int selidx, i=0, j=0;
+  int havecoords=0, allhavecoords=0;
+  for (selidx=0; selidx<numsels; selidx++) {
+    natoms += sellist[selidx]->selected;
+    if (sellist[selidx]->coordinates(moleculeList) != NULL)
+      havecoords++;
+  } 
+  if (havecoords==numsels) {
+    allhavecoords=1;
+  }
+  havecoords = (havecoords != 0);
+  msgInfo << "Building new molecule with " << natoms 
+          << " atoms from " << numsels << " selections." << sendmsg;
+  if (allhavecoords) {
+    msgInfo << "All atoms will be assigned atomic coordinates." << sendmsg;
+  } else if (havecoords) {
+    msgInfo << "Some atoms will be assigned atomic coordinates." << sendmsg;
+  } else {
+    msgInfo << "No atomic atomic coordinates assigned from selection list." << sendmsg;
+  }
+
+  // if we aren't given a name for the molecule, use a temp name
+  Molecule *newmol = new Molecule((name == NULL) ? "molecule" : name,
+                                  this, &(scene->root));
+  moleculeList->add_molecule(newmol);
+  int molid = newmol->id();
+
+  // If we aren't given a name for the molecule, we auto-generate one
+  // from the assigned molid.
+  if (name == NULL) {
+    char buf[30];
+    sprintf(buf, "molecule%d", molid);
+#if 1
+    // We rename the molecule for ourselves without calling molecule_rename()
+    // in order to avoid triggering extra callbacks that cause expensive 
+    // GUI redraws.
+    newmol->rename(buf);
+
+    // Add item to Molecule color category; default color should be the same as
+    // the original molecule.  
+    int ind = moleculeList->colorCatIndex[MLCAT_MOLECULES];
+    scene->add_color_item(ind, buf, molid % VISCLRS);
+#else
+    molecule_rename(molid, buf);
+#endif
+  }
+
+  // initialize molecule and copy data from selected atoms into the
+  // final molecule structure 
+  newmol->init_atoms(natoms);
+
+  // add a timestep for atomic coordinates, if we have them
+  Timestep *ts = NULL;
+  if (havecoords) {
+    ts = new Timestep(natoms);
+    newmol->append_frame(ts);
+  }
+
+  float *charge = newmol->charge();
+  float *mass = newmol->mass();
+  float *radius = newmol->radius();
+  float *beta = newmol->beta();
+  float *occupancy = newmol->occupancy();
+
+  int naidx=0;
+  for (selidx=0; selidx<numsels; selidx++) {
+    const AtomSel *s = sellist[selidx];
+    Molecule *sm = moleculeList->mol_from_id(s->molid());
+
+#if 0
+    printf("selected mol[%d]: '%s'\n" 
+           "                 %d atoms, %d residues, %d frags, %d protein, %d nucleic,\n"
+           "                 %d selected first: %d last: %d\n", 
+      s->molid(), sm->molname(),
+      sm->nAtoms, sm->nResidues, sm->nFragments, 
+      sm->nProteinFragments, sm->nNucleicFragments,
+      s->selected, s->firstsel, s->lastsel);
+#endif
+
+    // build a mapping from original atom indices to new atom indices
+    int *atomindexmap = (int *) calloc(1, sm->nAtoms*sizeof(int));
+
+    // initialize the atom index map to an invalid atom index value, so that
+    // we can use this to eliminate bonds to atoms that aren't selected.
+    for (j=0; j<sm->nAtoms; j++)
+      atomindexmap[j] = -1;
+
+    const float *s_charge = sm->charge();
+    const float *s_mass = sm->mass();
+    const float *s_radius = sm->radius();
+    const float *s_beta = sm->beta();
+    const float *s_occupancy = sm->occupancy();
+
+    const Timestep *s_ts = s->timestep(moleculeList);
+
+    // copy PBC unit cell information from first selection, when possible
+    if (selidx == 0 && ts != NULL && s_ts != NULL) {
+      ts->a_length = s_ts->a_length;
+      ts->b_length = s_ts->b_length;
+      ts->c_length = s_ts->c_length;
+      ts->alpha = s_ts->alpha;
+      ts->beta  = s_ts->beta;
+      ts->gamma = s_ts->gamma;
+    }
+
+    int saidx=s->firstsel;
+    while (saidx<=s->lastsel) {
+      if (s->on[saidx]) {
+        const MolAtom *satm = sm->atom(saidx);
+#if 0
+        printf("Adding satom[%d, %p] as atom[%d] nameidx: %d '%s'\n", 
+               saidx, satm, naidx, satm->nameindex,
+               sm->atomNames.name(satm->nameindex));
+#endif
+
+        newmol->add_atoms(1, 
+                          sm->atomNames.name(satm->nameindex), 
+                          sm->atomTypes.name(satm->typeindex),
+                          satm->atomicnumber,
+                          sm->resNames.name(satm->resnameindex),
+                          satm->resid,
+                          sm->chainNames.name(satm->chainindex),
+                          sm->segNames.name(satm->segnameindex),
+                          satm->insertionstr,
+                          sm->altlocNames.name(satm->altlocindex));
+
+        // copy atomic coordinates and other per-atom data if possible
+        if (ts != NULL && s_ts != NULL) {
+#if 0
+          printf("Copying atomic coordinates for atom[%d] from orig[%d]...\n", naidx, saidx);
+#endif
+          long naddr = naidx*3;
+          long saddr = saidx*3;
+
+          // copy atomic coordinates
+          ts->pos[naddr    ] = s_ts->pos[saddr    ];
+          ts->pos[naddr + 1] = s_ts->pos[saddr + 1];
+          ts->pos[naddr + 2] = s_ts->pos[saddr + 2];
+
+          // XXX copy velocities, user fields, etc
+        }
+
+        // copy contents of the other per-atom fields
+        charge[naidx] = s_charge[saidx];
+        mass[naidx] = s_mass[saidx];
+        radius[naidx] = s_radius[saidx];
+        beta[naidx] = s_beta[saidx];
+        occupancy[naidx] = s_occupancy[saidx];
+     
+        // build index map for bond/angle/dihedral/cterms
+        atomindexmap[saidx] = naidx;
+
+        naidx++; // increment total count of atoms built in new mol
+      }
+
+      // copy dataset flags from parent molecule(s)
+      newmol->datasetflags |= sm->datasetflags;
+
+      saidx++; // increment selected molecule atom index
+    }
+
+    // copy bonds to atoms that are also included in the selection
+    j=0;
+    for (saidx=s->firstsel; saidx<=s->lastsel; saidx++) {
+      if (s->on[saidx]) {
+        int newidx = naidx - s->selected + j; // index of new atom
+        const MolAtom *satm = sm->atom(saidx);
+#if 0
+        printf("atom[%d] (orig[%d]): %d bonds\n", newidx, saidx, satm->bonds);
+#endif
+        int k;
+        for (k=0; k<satm->bonds; k++) {
+          float bondorder = 1;
+          int bondtype = -1;
+          int bto = satm->bondTo[k];
+          int btmap = atomindexmap[bto];
+          if (btmap >= 0) {
+#if 0
+            printf("+bond from[%d] to [%d]\n", newidx, btmap);
+#endif
+            // we must ensure that we do not duplicate bonds, so we
+            // only add bonds to atoms with a higher index than our own
+            if (btmap > newidx)
+              newmol->add_bond(newidx, btmap, bondorder, bondtype);
+          } 
+#if 0
+          else {
+            printf("-bond from[%d] to [%d] (%d to %d)\n", newidx, btmap, saidx, bto);
+          }
+#endif
+        }
+        j++;
+      }
+    }
+
+#if 0
+    printf("processing angles...\n");
+#endif
+    // copy angles/dihedrals/impropers that are included in the selection
+    int numangles = sm->num_angles();
+    int numdihedrals = sm->num_dihedrals();
+    int numimpropers = sm->num_impropers();
+    int numcterms = sm->num_cterms();
+
+    for (i=0; i<numangles; i++) {
+      long i3addr = i*3L;
+      int idx0 = atomindexmap[sm->angles[i3addr    ]];
+      int idx1 = atomindexmap[sm->angles[i3addr + 1]];
+      int idx2 = atomindexmap[sm->angles[i3addr + 2]];
+      if ((idx0 >= 0) && (idx1 >= 0) && (idx2 >= 0)) {
+        newmol->add_angle(idx0, idx1, idx2); 
+      }
+    }
+
+#if 0
+    printf("processing dihedrals...\n");
+#endif
+    for (i=0; i<numdihedrals; i++) {
+      long i4addr = i*4L;
+      int idx0 = atomindexmap[sm->dihedrals[i4addr    ]];
+      int idx1 = atomindexmap[sm->dihedrals[i4addr + 1]];
+      int idx2 = atomindexmap[sm->dihedrals[i4addr + 2]];
+      int idx3 = atomindexmap[sm->dihedrals[i4addr + 3]];
+      if ((idx0 >= 0) && (idx1 >= 0) && (idx2 >= 0) && (idx3 >= 0)) {
+        newmol->add_dihedral(idx0, idx1, idx2, idx3);
+      }
+    }
+
+#if 0
+    printf("processing numimpropers...\n");
+#endif
+    for (i=0; i<numimpropers; i++) {
+      long i4addr = i*4L;
+      int idx0 = atomindexmap[sm->impropers[i4addr    ]];
+      int idx1 = atomindexmap[sm->impropers[i4addr + 1]];
+      int idx2 = atomindexmap[sm->impropers[i4addr + 2]];
+      int idx3 = atomindexmap[sm->impropers[i4addr + 3]];
+      if ((idx0 >= 0) && (idx1 >= 0) && (idx2 >= 0) && (idx3 >= 0)) {
+        newmol->add_improper(idx0, idx1, idx2, idx3);
+      }
+    }
+
+#if 0
+    printf("processing numcterms...\n");
+#endif
+    for (i=0; i<numcterms; i++) {
+      long i8addr = i*8L;
+      int idx0 = atomindexmap[sm->cterms[i8addr    ]];
+      int idx1 = atomindexmap[sm->cterms[i8addr + 1]];
+      int idx2 = atomindexmap[sm->cterms[i8addr + 2]];
+      int idx3 = atomindexmap[sm->cterms[i8addr + 3]];
+      int idx4 = atomindexmap[sm->cterms[i8addr + 4]];
+      int idx5 = atomindexmap[sm->cterms[i8addr + 5]];
+      int idx6 = atomindexmap[sm->cterms[i8addr + 6]];
+      int idx7 = atomindexmap[sm->cterms[i8addr + 7]];
+
+      if ((idx0 >= 0) && (idx1 >= 0) && (idx2 >= 0) && (idx3 >= 0) &&
+          (idx4 >= 0) && (idx5 >= 0) && (idx6 >= 0) && (idx7 >= 0)) {
+        newmol->add_cterm(idx0, idx1, idx2, idx3, 
+                          idx4, idx5, idx6, idx7);
+      }
+    }
+
+    // XXX need to implement handling for 
+    // angle types, dihedral types, and improper types (names)
+
+    free(atomindexmap);
+  }
+
+
+#if 0
+    // add all of the atoms in a single call, looping internally in add_atoms()
+    if (0 > newmol->add_atoms(natoms, "X", "X", 0, "UNK", 0, "", "", " ", "")) {
+      // if an error occured while adding an atom, we should delete
+      // the offending molecule since the data is presumably inconsistent,
+      // or at least not representative of what we tried to load
+      msgErr << "VMDApp::molecule_new: molecule creation aborted" << sendmsg;
+      PROFILE_POP_RANGE();
+      return -1; // signal failure
+    }
+#endif
+
+  // Cause VMD to analyze the newly-created atomic structure, so that
+  // data such as the "residue" field get populated.
+  newmol->analyze();
+
+  if (docallbacks) {
+    commandQueue->runcommand(new CmdMolNew);
+    commandQueue->runcommand(new MoleculeEvent(molid, MoleculeEvent::MOL_NEW));
+    commandQueue->runcommand(new InitializeStructureEvent(molid, 1));
+  }
+
+  PROFILE_POP_RANGE();
+
+  return molid; 
+} 
 
 
 const char *VMDApp::guess_filetype(const char *filename) {
@@ -1557,7 +2116,7 @@ const char *VMDApp::guess_filetype(const char *filename) {
   const char *bestname = NULL;
   int bestrank = 9999;
   for (int i=0; i<plugins.num(); i++) {
-    // check against comma separated list of filename extensions,
+    // check against comma separated list of filename extensions, 
     // no spaces, as in: "pdb,ent,foo,bar,baz,ban"
     // Also keep track of the place in the list that the extension was
     // found - thus a plugin that lists the extension first can override
@@ -1567,9 +2126,9 @@ const char *VMDApp::guess_filetype(const char *filename) {
     char *extbuf = strdup(p.extension());
     int extlen = strlen(extbuf);
     char *extcur = extbuf;
-    char *extnext = NULL;
+    char *extnext = NULL; 
     int currank = 1;
-    while ((extcur - extbuf) < extlen) {
+    while ((extcur - extbuf) < extlen) { 
       extnext = strchr(extcur, ','); // find next extension string
       if (extnext) {
         *extnext = '\0'; // NUL terminate this extension string
@@ -1592,7 +2151,7 @@ const char *VMDApp::guess_filetype(const char *filename) {
   return bestname;
 }
 
-int VMDApp::molecule_load(int molid, const char *filename,
+int VMDApp::molecule_load(int molid, const char *filename, 
                           const char *filetype, const FileSpec *spec) {
   int original_molid = molid;
 
@@ -1613,7 +2172,7 @@ int VMDApp::molecule_load(int molid, const char *filename,
   if (!filetype) {
     filetype = guess_filetype(filename);
     if (!filetype) {
-      msgErr << "Could not determine filetype of file '" << filename
+      msgErr << "Could not determine filetype of file '" << filename 
              << "' from its name." << sendmsg;
       return -1;
     }
@@ -1626,7 +2185,7 @@ int VMDApp::molecule_load(int molid, const char *filename,
     waitfor = 1;
     msgWarn << "Will load one coordinate frame for new molecule." << sendmsg;
   }
-
+  
   // Prefer to use a direct reader plugin over a translator, if one
   // is available.  If not, then attempt to use a translator.
   vmdplugin_t *p = get_plugin("mol file reader", filetype);
@@ -1641,6 +2200,23 @@ int VMDApp::molecule_load(int molid, const char *filename,
     delete plugin;
     return -1;
   }
+
+  // Check if VMD has to use page-aligned memory allocations for
+  // timestep data, to allow for fast kernel-bypass unbuffered I/O APIs
+  // Note: we make this call after the plugin's open_read() API has been
+  // called, but before the first call to read_structure(), to ensure
+  // that the called plugin sees that we have queried the required memory
+  // alignment page size for all per-timestep data. 
+  int ts_page_align_sz = 1;
+  if (plugin->can_read_pagealigned_timesteps()) {
+#if vmdplugin_ABIVERSION > 17
+    ts_page_align_sz = plugin->read_timestep_pagealign_size();
+#endif
+  }
+
+  // to avoid excessive error handling cleanup, we only push the 
+  // profiler marker when we've made it through 80% of the error checks
+  PROFILE_PUSH_RANGE("VMDApp::molecule_load()", 5);
 
   Molecule *newmol = NULL;
   if (molid == -1) {
@@ -1659,6 +2235,7 @@ int VMDApp::molecule_load(int molid, const char *filename,
   if (!newmol) {
     msgErr << "Invalid molecule " << molid << sendmsg;
     delete plugin;
+    PROFILE_POP_RANGE();
     return -1;
   }
 
@@ -1669,60 +2246,74 @@ int VMDApp::molecule_load(int molid, const char *filename,
   // to process the filename when the InitializeStructure even occurs.
   char specstr[8192];
   sprintf(specstr, "first %d last %d step %d filebonds %d autobonds %d",
-          spec->first, spec->last, spec->stride,
+          spec->first, spec->last, spec->stride, 
           spec->filebonds, spec->autobonds);
   newmol->record_file(filename, filetype, specstr);
 
   //
   // Molecule file metadata
-  //
+  // 
   if (plugin->can_read_metadata()) {
     if (plugin->read_metadata(newmol)) {
       msgErr << "Error reading metadata." << sendmsg;
-    }
+    } 
   } else {
-    // each file must have something, even if blank
+    // each file must have something, even if blank 
     newmol->record_database("", "");
     newmol->record_remarks("");
   }
-
-  //
+ 
+  // 
   // Atomic structure and coordinate data
   //
   if (plugin->can_read_structure()) {
     if (!newmol->has_structure()) {
-      msgInfo << "Using plugin " << filetype << " for structure file "
-              << filename << sendmsg;
+      // if the plugin can read structure data and there are a non-zero
+      // number of atoms, we proceed with reading it, otherwise we bail out
+      // of reading the structure, consider the outcome as having no structure,
+      // and continue parsing for other data, e.g., file blocks containing
+      // rawgraphics, density maps, or other contents independent of atomic
+      // structure information.  Handling of the zero-atoms case is
+      // required for correct handling of some of the (nascent) 
+      // PDB hybrid modeling structure files hosted at PDB-Dev that contain
+      // no atomic structure and only graphics glyph objects.
+      if (plugin->natoms() > 0) {
+        msgInfo << "Using plugin " << filetype << " for structure file " 
+                << filename << sendmsg;
 
-      int rc = plugin->read_structure(newmol, spec->filebonds, spec->autobonds);
+        int rc = plugin->read_structure(newmol, spec->filebonds, spec->autobonds);
 
-      // it's not an error to get no structure data from formats that
-      // don't always contain it, so only report an error when we
-      // expected to get structure data and got an error instead.
-      if (rc != MOLFILE_SUCCESS && rc != MOLFILE_NOSTRUCTUREDATA) {
-        // tell the user something went wrong, but keep going and try to
-        // read other information in the file.  Perhaps it's better to
-        // stop immediately and create no molecule if something goes wrong
-        // at this stage?
-        msgErr << "molecule_structure: Unable to read structure for molecule "
-               << molid << sendmsg;
-        if (rc == MOLFILE_ERROR) {
-          msgErr << "molecule_structure: severe error indicated by plugin "
-                 << "aborting loading of molecule " << molid << sendmsg;
-          delete plugin;
-          return -1;
+        // it's not an error to get no structure data from formats that
+        // don't always contain it, so only report an error when we 
+        // expected to get structure data and got an error instead.
+        if (rc != MOLFILE_SUCCESS && rc != MOLFILE_NOSTRUCTUREDATA) {
+          // tell the user something went wrong, but keep going and try to
+          // read other information in the file.  Perhaps it's better to
+          // stop immediately and create no molecule if something goes wrong
+          // at this stage?
+          msgErr << "molecule_structure: Unable to read structure for molecule "
+                 << molid << sendmsg;
+          if (rc == MOLFILE_ERROR) {
+            msgErr << "molecule_structure: severe error indicated by plugin "
+                   << "aborting loading of molecule " << molid << sendmsg;
+            delete plugin;
+            PROFILE_POP_RANGE();
+            return -1;
+          }
+        }
+
+        // initialize structure if we loaded with no errors
+        if (rc == MOLFILE_SUCCESS) {
+          first_structure = 1;
+          commandQueue->runcommand(new InitializeStructureEvent(molid, 1));
         }
       }
-
-      // initialize structure if we loaded with no errors
-      if (rc == MOLFILE_SUCCESS) {
-        first_structure = 1;
-        commandQueue->runcommand(new InitializeStructureEvent(molid, 1));
-      }
     } else {
+      // the molecule already has structure information, so we only look for
+      // extra/optional structure data.
       int rc = plugin->read_optional_structure(newmol, spec->filebonds);
       if (rc != MOLFILE_SUCCESS && rc != MOLFILE_NOSTRUCTUREDATA) {
-        msgErr <<
+        msgErr << 
           "Error reading optional structure information from coordinate file "
           << filename << sendmsg;
         msgErr << "Will ignore structure information in this file." << sendmsg;
@@ -1743,17 +2334,19 @@ int VMDApp::molecule_load(int molid, const char *filename,
   //
   // Read QM metadata and the actual data in one swoop
   // for now. We might have to separate these later.
-  //
+  // 
   if (plugin->can_read_qm()) {
     if (plugin->read_qm_data(newmol)) {
       msgErr << "Error reading metadata." << sendmsg;
-    }
+    } 
   }
-
+  
 
   //
   // Volumetric data
-  //
+  //   We proceed with attempting to volumetric density maps for any plugin
+  //   that advertises the possibility of their existence.  This is done 
+  //   independently of the availability of any atomic structure information. 
   if (plugin->can_read_volumetric()) {
     if (plugin->read_volumetric(newmol, spec->nvolsets, spec->setids)) {
       msgErr << "Error reading volumetric data." << sendmsg;
@@ -1764,9 +2357,11 @@ int VMDApp::molecule_load(int molid, const char *filename,
   }
 
 
-  //
+  // 
   // Raw graphics
-  //
+  //   We proceed with attempting to read graphics objects for any plugin
+  //   that advertises the possibility of their existence.  This is done 
+  //   independently of the availability of any atomic structure information. 
   if (plugin->can_read_graphics()) {
     if (plugin->read_rawgraphics(newmol, scene)) {
       msgErr << "Reading raw graphics failed." << sendmsg;
@@ -1775,10 +2370,21 @@ int VMDApp::molecule_load(int molid, const char *filename,
     }
   }
 
-  // Timesteps
-  if (plugin->can_read_timesteps() || plugin->can_read_qm_timestep()) {
-    msgInfo << "Using plugin " << filetype << " for coordinates from file "
+  //
+  // Timesteps:
+  //   At present we only read timesteps if we have a non-zero atom count.
+  //   It may become necessary to alter this logic if we later on have
+  //   trajectory file formats that mix in non-atomic information that is
+  //   present independent of any atomic coordinates.
+  if ((plugin->can_read_timesteps() || plugin->can_read_qm_timestep()) &&
+      (plugin->natoms() > 0)) {
+    msgInfo << "Using plugin " << filetype << " for coordinates from file " 
             << filename << sendmsg;
+
+    // Report use of direct block-based I/O when applicable
+    if (ts_page_align_sz > 1)
+      msgInfo << "  Direct I/O block size: " << ts_page_align_sz << sendmsg;
+
     if (!newmol->nAtoms) {
       msgErr << "Some frames from file '" << filename << "' could not be loaded"
         << sendmsg;
@@ -1786,9 +2392,25 @@ int VMDApp::molecule_load(int molid, const char *filename,
         << sendmsg;
       msgErr << "structure file first, then try loading this file again." << sendmsg;
     } else {
-
+      // CoorPluginData also checks whether it has to use page-aligned 
+      // memory allocations for incoming timestep data, to allow for 
+      // fast kernel-bypass unbuffered I/O APIs, handling of padded and
+      // aligned allocations is then taken care of in Timestep constructors
       CoorPluginData *data = new CoorPluginData(
           filename, newmol, plugin, 1, spec->first, spec->stride, spec->last);
+
+      // Abort if there was a problem initializing coordinates, such as if
+      // number of atoms doesn't match the topology. The plugin field is
+      // used as a canary in the CoorPluginData constructor for this purpose.
+      if (!data->is_valid()) {
+        msgErr << "Problem loading coordinate data. Aborting loading of "
+               << "molecule " << molid << sendmsg;
+        delete data;
+        delete plugin;
+        PROFILE_POP_RANGE();
+        return -1;
+      }
+
       newmol->add_coor_file(data);
       if (waitfor < 0) {
         // drain the I/O queue of all frames, even those that didn't necessarily
@@ -1801,7 +2423,7 @@ int VMDApp::molecule_load(int molid, const char *filename,
       }
     }
   } else {
-    // Delete the plugin unless timesteps were loaded, in which case the
+    // Delete the plugin unless timesteps were loaded, in which case the 
     // plugin will be deleted by the CoorPluginData object.
     delete plugin;
     plugin = NULL;
@@ -1811,17 +2433,17 @@ int VMDApp::molecule_load(int molid, const char *filename,
   // timesteps first.
   if (first_structure) {
     // build structure information for this molecule
-    newmol->analyze();
+    newmol->analyze(); 
 
     // Must add color names here because atom names and such aren't defined
     // until there's a molecular structure.
     moleculeList->add_color_names(moleculeList->mol_index_from_id(molid));
 
-    // force all colors and reps to be recalculated, since this may be
+    // force all colors and reps to be recalculated, since this may be 
     // loaded into a molecule that didn't previously contain atomic data
     newmol->force_recalc(DrawMolItem::COL_REGEN | DrawMolItem::SEL_REGEN);
 
-    // since atom color definitions are now established, create a new
+    // since atom color definitions are now established, create a new 
     // representation using the default parameters.
     moleculeList->set_color((char *)moleculeList->default_color());
     moleculeList->set_representation((char *)moleculeList->default_representation());
@@ -1838,13 +2460,15 @@ int VMDApp::molecule_load(int molid, const char *filename,
     molecule_addrep(newmol->id());
   }
 
-  commandQueue->runcommand(new CmdMolLoad(original_molid, filename, filetype,
+  commandQueue->runcommand(new CmdMolLoad(original_molid, filename, filetype, 
                            spec));
+
+  PROFILE_POP_RANGE();
   return molid;
 }
 
 
-int VMDApp::molecule_savetrajectory(int molid, const char *fname,
+int VMDApp::molecule_savetrajectory(int molid, const char *fname, 
                                     const char *type, const FileSpec *spec) {
   Molecule *newmol = moleculeList->mol_from_id(molid);
   if (!newmol) {
@@ -1885,9 +2509,9 @@ int VMDApp::molecule_savetrajectory(int molid, const char *fname,
       msgErr << "Invalid last frame: " << last << sendmsg;
       return -1;
     }
-
+    
     if (stride == -1 || stride == 0)
-      stride = 1; // save all frames
+      stride = 1; // save all frames 
 
     if (stride < 1) {
       msgErr << "Invalid stride: " << stride << sendmsg;
@@ -1930,18 +2554,21 @@ int VMDApp::molecule_savetrajectory(int molid, const char *fname,
   if (data == NULL) {
     msgErr << "NULL data returned by plugin " << sendmsg;
     return -1;
-  }
+  }    
   msgInfo << "Opened coordinate file " << fname << " for writing.";
   msgInfo << sendmsg;
 
-  // XXX if writing volume sets was requested, do it here, since CoorPluginData
+  // to avoid excessive error handling cleanup, we only push the 
+  // profiler marker when we've made it through 80% of the error checks
+  PROFILE_PUSH_RANGE("VMDApp::molecule_savetrajectory()", 5);
+
+  // XXX if writing volume sets was requested, do it here, since CoorPluginData 
   // doesn't know about that type of data.  CoorPluginData should be using
   // a FileSpec struct.
   if (savevoldata) {
-#if vmdplugin_ABIVERSION > 9
     if (plugin->can_write_volumetric()) {
       for (int i=0; i<spec->nvolsets; i++) {
-        if (plugin->write_volumetric(newmol, spec->setids[i]) !=
+        if (plugin->write_volumetric(newmol, spec->setids[i]) != 
             MOLFILE_SUCCESS) {
           msgErr << "Failed to write volume set " << spec->setids[i]
                  << sendmsg;
@@ -1950,18 +2577,15 @@ int VMDApp::molecule_savetrajectory(int molid, const char *fname,
     } else {
       msgErr << "Cannot write volsets to files of type " << type << sendmsg;
     }
-#else
-    msgInfo << "Writing of volume data not supported by current plugin ABI." << sendmsg;
-#endif
   }
-
+  
   // write waitfor frames before adding to the Molecule's queue.
   int numwritten = 0;
   if (waitfor < 0) {
     while (data->next(newmol) == CoorData::NOTDONE)
       numwritten++;
-
-    // Don't add to the I/O queue, just complete the I/O transaction
+  
+    // Don't add to the I/O queue, just complete the I/O transaction 
     // synchronously and trigger any necessary callbacks.
     // This prevents analysis scripts that don't return control to the
     // main loop from queueing up large amounts of I/Os that only needed
@@ -1973,18 +2597,21 @@ int VMDApp::molecule_savetrajectory(int molid, const char *fname,
         numwritten++;
     }
 
-    // Add the I/O to the asynchronous queue and let it continue
+    // Add the I/O to the asynchronous queue and let it continue 
     // with subsequent main loop event polling/updates.
     newmol->add_coor_file(data);
   }
 
   commandQueue->runcommand(new CmdAnimWriteFile(molid, fname, type,
                            first, last, stride));
+
+  PROFILE_POP_RANGE();
+
   return numwritten;
 }
+ 
 
-
-int VMDApp::molecule_deleteframes(int molid, int first, int last,
+int VMDApp::molecule_deleteframes(int molid, int first, int last, 
                                    int stride) {
   Molecule *mol = moleculeList->mol_from_id(molid);
   if (!mol) {
@@ -1999,13 +2626,13 @@ int VMDApp::molecule_deleteframes(int molid, int first, int last,
     msgErr << "Invalid last frame: " << last << sendmsg;
     return 0;
   }
-
+  
   if (stride==-1) stride=0; //delete all frames in range
   if (stride < 0) {
     msgErr << "Invalid stride: " << stride << sendmsg;
     return 0;
   }
-
+  
   // keep every stride frame btw first and last
   int indexshift = first; // as frames are deleted, indices are shifted
   for (int i=0; i<=last-first; i++) {
@@ -2048,11 +2675,11 @@ int VMDApp::molecule_delete(int molid) {
     commandQueue->runcommand(new MoleculeEvent(molid, MoleculeEvent::MOL_DELETE));
     // XXX this has the side effect of altering the 'top' molecule.
     // At present the GUI is checking for MOL_DEL in addition to MOL_TOP,
-    // but really it'd be nicer if we generated appropriate events for
+    // but really it'd be nicer if we generated appropriate events for 
     // side effect cases like this.
     return 1;
   }
-  return 0;
+  return 0; 
 }
 
 int VMDApp::molecule_delete_all(void) {
@@ -2062,7 +2689,7 @@ int VMDApp::molecule_delete_all(void) {
   rc = 0;
   nummols = num_molecules();
   molidlist = new int[nummols];
-
+ 
   // save molid translation list before we delete them all
   for (i=0; i<nummols; i++) {
     molidlist[i] = moleculeList->molecule(i)->id();
@@ -2079,14 +2706,14 @@ int VMDApp::molecule_delete_all(void) {
 
     // XXX this has the side effect of altering the 'top' molecule.
     // At present the GUI is checking for MOL_DEL in addition to MOL_TOP,
-    // but really it'd be nicer if we generated appropriate events for
+    // but really it'd be nicer if we generated appropriate events for 
     // side effect cases like this.
     rc=1;
   }
 
   delete [] molidlist;
 
-  return rc;
+  return rc; 
 }
 
 int VMDApp::molecule_activate(int molid, int onoff) {
@@ -2191,7 +2818,7 @@ const char *VMDApp::molrep_get_selection(int molid, int repid) {
 int VMDApp::molrep_set_selection(int molid, int repid, const char *selection) {
   int ind = moleculeList->mol_index_from_id(molid);
   if (ind < 0) return FALSE;
-  if (!moleculeList->change_repsel(repid, ind, selection))
+  if (!moleculeList->change_repsel(repid, ind, selection)) 
       return FALSE;
   commandQueue->runcommand(
     new CmdMolChangeRepItem(repid, molid, CmdMolChangeRepItem::SEL, selection));
@@ -2232,7 +2859,7 @@ const char *VMDApp::molecule_get_color() {
   return moleculeList->color();
 }
 int VMDApp::molecule_set_color(const char *color) {
-  if (!moleculeList->set_color((char *)color))
+  if (!moleculeList->set_color((char *)color)) 
     return 0;
   commandQueue->runcommand(new CmdMolColor(color));
   return 1;
@@ -2268,7 +2895,7 @@ int VMDApp::molecule_modrep(int molid, int repid) {
   if (!moleculeList->change_rep(repid, ind)) return 0;
   commandQueue->runcommand(new CmdMolChangeRep(molid, repid));
   return 1;
-}
+} 
 int VMDApp::molrep_delete(int molid, int repid) {
   int ind = moleculeList->mol_index_from_id(molid);
   if (ind < 0) return 0;
@@ -2282,8 +2909,8 @@ int VMDApp::molrep_get_selupdate(int molid, int repid) {
   DrawMolItem *item = moleculeList->mol_from_id(molid)->component(repid);
   if (item == NULL || item->atomSel == NULL)
     return 0;
-  return item->atomSel->do_update;
-}
+  return item->atomSel->do_update; 
+} 
 int VMDApp::molrep_set_selupdate(int molid, int repid, int onoff) {
   if (repid >= num_molreps(molid)) return 0;
   DrawMolItem *item = moleculeList->mol_from_id(molid)->component(repid);
@@ -2292,7 +2919,7 @@ int VMDApp::molrep_set_selupdate(int molid, int repid, int onoff) {
   item->atomSel->do_update = onoff;
   commandQueue->runcommand(new CmdMolRepSelUpdate(repid, molid, onoff));
   return 1;
-}
+} 
 
 int VMDApp::molrep_set_colorupdate(int molid, int repid, int onoff) {
   if (repid >= num_molreps(molid)) return 0;
@@ -2303,7 +2930,7 @@ int VMDApp::molrep_set_colorupdate(int molid, int repid, int onoff) {
   if (onoff) item->force_recalc(DrawMolItem::COL_REGEN);
   commandQueue->runcommand(new CmdMolRepColorUpdate(repid, molid, onoff));
   return 1;
-}
+} 
 int VMDApp::molrep_get_colorupdate(int molid, int repid) {
   if (repid >= num_molreps(molid)) return 0;
   DrawMolItem *item = moleculeList->mol_from_id(molid)->component(repid);
@@ -2356,6 +2983,40 @@ int VMDApp::molrep_get_pbc_images(int molid, int repid) {
   return item->get_pbc_images();
 }
 
+
+int VMDApp::molecule_add_instance(int molid, Matrix4 & inst) {
+  Molecule *m = moleculeList->mol_from_id(molid);
+  if (!m) return 0;
+  m->add_instance(inst);
+
+  // commandQueue->runcommand(new CmdMolVolume(molid));
+  return 1;
+}
+int VMDApp::molecule_num_instances(int molid) {
+  Molecule *m = moleculeList->mol_from_id(molid);
+  if (!m) return -1;
+  return m->num_instances();
+}
+int VMDApp::molecule_delete_all_instances(int molid) {
+  Molecule *m = moleculeList->mol_from_id(molid);
+  if (!m) return -1;
+  m->clear_instances();
+  // commandQueue->runcommand(new CmdMolVolume(molid));
+  return 1;
+}
+
+int VMDApp::molrep_set_instances(int molid, int repid, int inst) {
+  if (repid < 0 || repid >= num_molreps(molid)) return FALSE;
+  DrawMolItem *item = moleculeList->mol_from_id(molid)->component(repid);
+  item->set_instances(inst);
+  commandQueue->runcommand(new CmdMolShowInstances(molid, repid, inst));
+  return TRUE;
+}
+int VMDApp::molrep_get_instances(int molid, int repid) {
+  if (repid < 0 || repid >= num_molreps(molid)) return FALSE;
+  const DrawMolItem *item = moleculeList->mol_from_id(molid)->component(repid);
+  return item->get_instances();
+}
 
 int VMDApp::molecule_set_dataset_flag(int molid, const char *dataflagstr,
                                       int setval) {
@@ -2416,9 +3077,9 @@ int VMDApp::molecule_set_dataset_flag(int molid, const char *dataflagstr,
 
   // set/unset the flag if we recognized it
   if (setval)
-    m->set_dataset_flag(dataflag);
+    m->set_dataset_flag(dataflag); 
   else
-    m->unset_dataset_flag(dataflag);
+    m->unset_dataset_flag(dataflag); 
 
   return 1;
 }
@@ -2432,7 +3093,7 @@ int VMDApp::molecule_reanalyze(int molid) {
   m->analyze();
 
   // force all reps and selections to be recalculated
-  m->force_recalc(DrawMolItem::COL_REGEN |
+  m->force_recalc(DrawMolItem::COL_REGEN | 
                   DrawMolItem::MOL_REGEN |
                   DrawMolItem::SEL_REGEN);
 
@@ -2468,12 +3129,12 @@ int VMDApp::molecule_numframes(int molid) {
   Molecule *m = moleculeList->mol_from_id(molid);
   if (!m) return -1;
   return m->numframes();
-}
+} 
 int VMDApp::molecule_frame(int molid) {
   Molecule *m = moleculeList->mol_from_id(molid);
   if (!m) return -1;
   return m->frame();
-}
+} 
 int VMDApp::molecule_dupframe(int molid, int frame) {
   Molecule *m = moleculeList->mol_from_id(molid);
   if (!m) {
@@ -2497,18 +3158,18 @@ const char *VMDApp::molecule_name(int molid) {
   Molecule *m = moleculeList->mol_from_id(molid);
   if (!m) return NULL;
   return m->molname();
-}
+} 
 int VMDApp::molecule_rename(int molid, const char *newname) {
   Molecule *m = moleculeList->mol_from_id(molid);
   if (!m) return 0;
   if (!newname) return 0;
   if (!m->rename(newname)) return 0;
-
+  
   // Add item to Molecule color category; default color should be the same as
-  // the original molecule.
+  // the original molecule.  
   int ind = moleculeList->colorCatIndex[MLCAT_MOLECULES];
   scene->add_color_item(ind, newname, m->id() % VISCLRS);
-
+  
   commandQueue->runcommand(new CmdMolRename(molid, newname));
   commandQueue->runcommand(new MoleculeEvent(molid, MoleculeEvent::MOL_RENAME));
   return 1;
@@ -2537,31 +3198,37 @@ int VMDApp::molecule_orblocalize(int molid, int waveid) {
   return 1;
 }
 
-int VMDApp::molecule_add_volumetric(int molid, const char *dataname,
+int VMDApp::molecule_add_volumetric(int molid, const char *dataname, 
     const float origin[3], const float xaxis[3], const float yaxis[3],
     const float zaxis[3], int xsize, int ysize, int zsize, float *datablock) {
-
+  PROFILE_PUSH_RANGE("VMDApp::molecule_add_volumetric()", 3);
+ 
   Molecule *m = moleculeList->mol_from_id(molid);
   if (!m) return 0;
-  m->add_volume_data(dataname, origin, xaxis, yaxis, zaxis, xsize, ysize,
+  m->add_volume_data(dataname, origin, xaxis, yaxis, zaxis, xsize, ysize, 
     zsize, datablock);
 
   scene_resetview_newmoldata(); // reset the view so we can see the dataset.
   commandQueue->runcommand(new CmdMolVolume(molid));
+
+  PROFILE_POP_RANGE();
   return 1;
 }
 
-int VMDApp::molecule_add_volumetric(int molid, const char *dataname,
+int VMDApp::molecule_add_volumetric(int molid, const char *dataname, 
     const double origin[3], const double xaxis[3], const double yaxis[3],
     const double zaxis[3], int xsize, int ysize, int zsize, float *datablock) {
-
+  PROFILE_PUSH_RANGE("VMDApp::molecule_add_volumetric()", 3);
+  
   Molecule *m = moleculeList->mol_from_id(molid);
   if (!m) return 0;
-  m->add_volume_data(dataname, origin, xaxis, yaxis, zaxis, xsize, ysize,
+  m->add_volume_data(dataname, origin, xaxis, yaxis, zaxis, xsize, ysize, 
     zsize, datablock);
 
   scene_resetview_newmoldata(); // reset the view so we can see the dataset.
   commandQueue->runcommand(new CmdMolVolume(molid));
+
+  PROFILE_POP_RANGE();
   return 1;
 }
 
@@ -2621,15 +3288,15 @@ int VMDApp::molrep_set_clipstatus(int molid, int repid, int clipid, int mode) {
   if (!d) return 0;
   return d->set_clip_status(clipid, mode);
 }
-
+ 
 const char *VMDApp::molrep_get_name(int molid, int repid) {
-  Molecule *mol = moleculeList->mol_from_id(molid);
+  Molecule *mol = moleculeList->mol_from_id(molid);  
   if (!mol) return NULL;
   return mol->get_component_name(repid);
 }
 
 int VMDApp::molrep_get_by_name(int molid, const char *name) {
-  Molecule *mol = moleculeList->mol_from_id(molid);
+  Molecule *mol = moleculeList->mol_from_id(molid);  
   if (!mol) return -1;
   return mol->get_component_by_name(name);
 }
@@ -2704,8 +3371,8 @@ int VMDApp::molrep_is_shown(int molid, int repid) {
 // IMD methods
 //
 int VMDApp::imd_connect(int molid, const char *host, int port) {
-#ifdef VMDIMD
-  Molecule *mol = moleculeList->mol_from_id(molid);
+#ifdef VMDIMD 
+  Molecule *mol = moleculeList->mol_from_id(molid);  
   if (!mol) return 0;
   if (!imdMgr) return 0;
   if (imdMgr->connect(mol, host, port)) {
@@ -2748,6 +3415,48 @@ int VMDApp::imd_disconnect(int molid) {
   return FALSE;
 }
 
+
+//
+// VideoStream methods
+//
+int VMDApp::vs_connect(const char *host, int port) {
+#ifdef VMDNVPIPE
+  if (!uivs) return 0;
+  if (uivs->cli_connect(host, port)) {
+    // tell the world
+//    commandQueue->runcommand(new CmdVSConnect(host, port));
+msgInfo << "VMDApp: VideoStream connected" << sendmsg;
+    return 1;
+  }
+#endif
+  return 0;
+}
+
+int VMDApp::vs_connected() {
+#ifdef VMDNVPIPE
+  if (!uivs) return 0;
+  // XXX check for connection here
+#endif
+  return 0;
+}
+
+int VMDApp::vs_disconnect() {
+#ifdef VMDNVPIPE
+  if (!uivs) return FALSE;
+  if (uivs) {
+    uivs->cli_disconnect();
+    return TRUE;
+  }
+#endif
+  return FALSE;
+}
+
+
+
+//
+// Display methods
+//
+
 void VMDApp::display_set_screen_height(float ht) {
   if (!display) return;
   display->screen_height(ht);
@@ -2781,7 +3490,7 @@ void VMDApp::display_set_size(int w, int h) {
   if (display) {
     display->resize_window(w, h);
     // do an update so that the new size of the window becomes immediately
-    // available.
+    // available.  
     display_update_ui();
   }
 }
@@ -2799,7 +3508,7 @@ void VMDApp::display_titlescreen() {
 }
 
 int VMDApp::display_set_stereo(const char *mode) {
-  if (!mode)
+  if (!mode) 
     return FALSE;
 
   int i, j;
@@ -2812,11 +3521,11 @@ int VMDApp::display_set_stereo(const char *mode) {
   }
 
   // Backwards compatibility with old scripts...
-  const char *OldStereoNames[] = {
-    "CrystalEyes", "CrystalEyesReversed", "CrossEyes"
+  const char *OldStereoNames[] = { 
+    "CrystalEyes", "CrystalEyesReversed", "CrossEyes" 
   };
   const char *NewStereoNames[] = {
-    "QuadBuffered", "QuadBuffered", "SideBySide"
+    "QuadBuffered", "QuadBuffered", "SideBySide" 
   };
   for (j=0; j<3; j++) {
     if (!strcmp(mode, OldStereoNames[j])) {
@@ -2828,8 +3537,8 @@ int VMDApp::display_set_stereo(const char *mode) {
           // preserve the swapped eye behavior of the old stereo mode names
           if (!strcmp(mode, "CrystalEyesReversed") ||
               !strcmp(mode, "CrossEyes")) {
-            display_set_stereo_swap(1);
-          }
+            display_set_stereo_swap(1); 
+          } 
           return TRUE;
         }
       }
@@ -2939,7 +3648,7 @@ int VMDApp::display_set_background_mode(int mode) {
 
 int VMDApp::display_set_nearclip(float amt, int isdelta) {
   if (isdelta) {
-    display->addto_near_clip(amt);
+    display->addto_near_clip(amt); 
     commandQueue->runcommand(new CmdDisplayClipNearRel(amt));
   } else {
     // prevent illegal near clipping plane values from causing problems
@@ -2953,7 +3662,7 @@ int VMDApp::display_set_nearclip(float amt, int isdelta) {
 
 int VMDApp::display_set_farclip(float amt, int isdelta) {
   if (isdelta) {
-    display->addto_far_clip(amt);
+    display->addto_far_clip(amt); 
     commandQueue->runcommand(new CmdDisplayClipFarRel(amt));
   } else {
     display->set_far_clip(amt);
@@ -3053,13 +3762,13 @@ int VMDApp::display_set_shadows(int onoff) {
   if (!display->set_shadow_mode(onoff)) return FALSE;
   commandQueue->runcommand(new CmdDisplayShadowOn(onoff));
   return TRUE;
-}
+} 
 
 int VMDApp::display_set_ao(int onoff) {
   if (!display->set_ao_mode(onoff)) return FALSE;
   commandQueue->runcommand(new CmdDisplayAOOn(onoff));
   return TRUE;
-}
+} 
 
 int VMDApp::display_set_ao_ambient(float val) {
   if (!display->set_ao_ambient(val)) return FALSE;
@@ -3077,7 +3786,7 @@ int VMDApp::display_set_dof(int onoff) {
   if (!display->set_dof_mode(onoff)) return FALSE;
   commandQueue->runcommand(new CmdDisplayDoFOn(onoff));
   return TRUE;
-}
+} 
 
 int VMDApp::display_set_dof_fnumber(float f) {
   if (!display->set_dof_fnumber(f)) return FALSE;
@@ -3097,7 +3806,7 @@ void VMDApp::deactivate_uitext_stdin() {
 }
 
 int VMDApp::activate_menus() {
-  // XXX This should control Tk menus as well; at present Tk menus are
+  // XXX This should control Tk menus as well; at present Tk menus are 
   // available whenever the display supports GUI's.
 
 #ifdef VMDGUI
@@ -3134,21 +3843,21 @@ int VMDApp::activate_menus() {
   }
   return TRUE;
 #endif /*VMDGUI*/
-
+  
   // no menus available
   return FALSE;
 }
 
-int VMDApp::label_add(const char *category, int n, const int *molids,
+int VMDApp::label_add(const char *category, int n, const int *molids, 
     const int *atomids, const int *cells, float k, int toggle) {
   if (!category || !molids || !atomids) return -1;
-  int rc = geometryList->add_geometry(category, molids, atomids, cells, k,
+  int rc = geometryList->add_geometry(category, molids, atomids, cells, k, 
       toggle);
   if (rc >= 0) {
     if (!strcmp(category, "Springs"))
       commandQueue->runcommand(new CmdLabelAddspring(molids[0], atomids[0],
           atomids[1], k));
-    else
+    else 
       commandQueue->runcommand(new CmdLabelAdd(category, n, (int *)molids, (int *)atomids));
   }
   return rc;
@@ -3287,7 +3996,7 @@ int VMDApp::material_rename(const char *prevname, const char *newname) {
   char * oldname = stringdup(prevname);
   int ind = materialList->material_index(oldname);
   if (ind < 0) {
-    msgErr << "material rename: '" << oldname << "' does not exist."
+    msgErr << "material rename: '" << oldname << "' does not exist."   
            << sendmsg;
     delete [] oldname;
     return FALSE;
@@ -3303,7 +4012,7 @@ int VMDApp::material_rename(const char *prevname, const char *newname) {
     }
   }
   if (materialList->material_index(newname) >= 0) {
-    msgErr << "material rename: '" << newname << "' already exists."
+    msgErr << "material rename: '" << newname << "' already exists." 
            << sendmsg;
     delete [] oldname;
     return FALSE;
@@ -3345,7 +4054,7 @@ int VMDApp::mouse_set_mode(int mm, int ms) {
     msgErr << "Illegal mouse mode: " << mm << " " << ms << sendmsg;
     return FALSE;
   }
-
+  
   // If mouse mode is a picking mode, set it here
   switch (mm) {
     case Mouse::PICK:        pickModeList->set_pick_mode(PickModeList::PICK); break;
@@ -3366,7 +4075,7 @@ int VMDApp::mouse_set_mode(int mm, int ms) {
     case Mouse::ADDBOND:     pickModeList->set_pick_mode(PickModeList::ADDBOND); break;
     default: break;
   }
-
+  
   commandQueue->runcommand(new CmdMouseMode(mm, ms));
   return TRUE;
 }
@@ -3385,8 +4094,8 @@ int VMDApp::mobile_get_mode() {
   return mobile->get_move_mode();
 }
 
-void VMDApp::mobile_get_client_list(ResizeArray <JString*>* &nick,
-                         ResizeArray <JString*>* &ip, ResizeArray <bool>* &active)
+void VMDApp::mobile_get_client_list(ResizeArray <JString*>* &nick, 
+                         ResizeArray <JString*>* &ip, ResizeArray <bool>* &active) 
 {
   mobile->get_client_list(nick, ip, active);
 }
@@ -3411,7 +4120,7 @@ int VMDApp::mobile_set_activeClient(const char *nick, const char *ip) {
 }
 
   /// Send a message to a specific client
-int VMDApp::mobile_sendMsg(const char *nick, const char *ip,
+int VMDApp::mobile_sendMsg(const char *nick, const char *ip, 
                            const char *msgType, const char *msg) {
   return mobile->sendMsgToClient(nick, ip, msgType, msg);
 }

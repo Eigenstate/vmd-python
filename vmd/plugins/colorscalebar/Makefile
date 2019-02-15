@@ -1,7 +1,7 @@
 .SILENT:
 
 VMFILES = colorscalebar.tcl pkgIndex.tcl
-VMVERSION = 1.4
+VMVERSION = 3.0
 DIR = $(PLUGINDIR)/noarch/tcl/colorscalebar$(VMVERSION)
 
 bins:

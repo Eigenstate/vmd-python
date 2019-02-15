@@ -3,7 +3,7 @@
  *
  *      $RCSfile: vaspoutcarplugin.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.9 $       $Date: 2014/10/10 14:41:01 $
+ *      $Revision: 1.10 $       $Date: 2017/10/27 18:03:58 $
  *
  ***************************************************************************/
 
@@ -134,7 +134,7 @@ static int read_vaspoutcar_structure(void *mydata, int *optflags, molfile_atom_t
    * that contains the name of the element (H, He, C etc.).
    * Otherwise try to find similar mass in periodic table.
    */
-  if (strstr(potcarfile, "OUTCAR")) {
+  if (strstr(data->filename, "OUTCAR")) {
     strcpy(potcarfile, data->filename);
     strcpy(strstr(potcarfile, "OUTCAR"), "POTCAR");
     potcar = fopen(potcarfile, "r");
@@ -269,7 +269,7 @@ int VMDPLUGIN_init() {
   plugin.prettyname = "VASP_OUTCAR";
   plugin.author = "Sung Sakong";
   plugin.majorv = 0;
-  plugin.minorv = 7;
+  plugin.minorv = 8;
   plugin.is_reentrant = VMDPLUGIN_THREADUNSAFE;
   plugin.filename_extension = "OUTCAR";
   plugin.open_file_read = open_vaspoutcar_read;

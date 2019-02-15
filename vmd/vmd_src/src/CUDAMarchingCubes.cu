@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -10,7 +10,7 @@
  *
  *      $RCSfile: CUDAMarchingCubes.cu,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.30 $       $Date: 2016/11/28 03:04:58 $
+ *      $Revision: 1.35 $       $Date: 2019/01/17 21:20:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -25,14 +25,17 @@
 //
 // Description: This class computes an isosurface for a given density grid
 //              using a CUDA Marching Cubes (MC) alorithm. 
-//              The implementation is based on the MC demo from the 
-//              Nvidia GPU Computing SDK, but has been improved 
-//              and extended.  This implementation achieves higher 
-//              performance by reducing the number of temporary memory
-//              buffers, reduces the number of scan calls by using vector
-//              integer types, and allows extraction of per-vertex normals 
-//              optionally computes per-vertex colors if provided with a 
-//              volumetric texture map.
+//
+//              The implementation is loosely based on the MC demo from 
+//              the Nvidia GPU Computing SDK, but the design has been 
+//              improved and extended in several ways.  
+//
+//              This implementation achieves higher performance
+//              by reducing the number of temporary memory
+//              buffers, reduces the number of scan calls by using 
+//              vector integer types, and allows extraction of 
+//              per-vertex normals and optionally computes 
+//              per-vertex colors if a volumetric texture map is provided.
 //
 // Author: Michael Krone <michael.krone@visus.uni-stuttgart.de>
 //         John Stone <johns@ks.uiuc.edu>
@@ -47,8 +50,10 @@
 #include <thrust/scan.h>
 #include <thrust/functional.h>
 
+#include "CUDAParPrefixOps.h"
+
 //
-// Restrict macro to make it easy to do perf tuning tess
+// Restrict macro to make it easy to do perf tuning tests
 //
 #if 0
 #define RESTRICT __restrict__
@@ -171,6 +176,11 @@ texture<unsigned int, 1, cudaReadModeElementType> numVertsTex;
 texture<float, 3, cudaReadModeElementType> volumeTex;
 
 // sample volume data set at a point p, p CAN NEVER BE OUT OF BOUNDS
+// XXX The sampleVolume() call underperforms vs. peak memory bandwidth
+//     because we don't strictly enforce coalescing requirements in the
+//     layout of the input volume presently.  If we forced X/Y dims to be
+//     warp-multiple it would become possible to use wider fetches and
+//     a few other tricks to improve global memory bandwidth 
 __device__ float sampleVolume(const float * RESTRICT data, 
                               uint3 p, uint3 gridSize) {
     return data[(p.z*gridSize.x*gridSize.y) + (p.y*gridSize.x) + p.x];
@@ -593,6 +603,43 @@ void bindVolumeTexture(cudaArray *d_vol, cudaChannelFormatDesc desc) {
 }
 
 
+#if 0
+
+void ThrustScanWrapperUint2(uint2* output, uint2* input, unsigned int numElements) {
+  const uint2 zero = make_uint2(0, 0);
+  long scanwork_sz = 0;
+  scanwork_sz = dev_excl_scan_sum_tmpsz(input, ((long) numElements), output, zero);
+  void *scanwork_d = NULL;
+  cudaMalloc(&scanwork_d, scanwork_sz);
+  dev_excl_scan_sum(input, ((long) numElements), output, scanwork_d, scanwork_sz, zero);
+  cudaFree(scanwork_d);
+}
+
+#elif CUDART_VERSION >= 9000
+//
+// XXX CUDA 9.0RC breaks the usability of Thrust scan() prefix sums when
+//     used with the built-in uint2 vector integer types.  To workaround
+//     the problem we have to define our own type and associated conversion
+//     routines etc.
+//
+
+// XXX workaround for uint2 breakage in all CUDA revs 9.0 through 10.0
+struct myuint2 : uint2 {
+  __host__ __device__ myuint2() : uint2(make_uint2(0, 0)) {}
+  __host__ __device__ myuint2(int val) : uint2(make_uint2(val, val)) {}
+  __host__ __device__ myuint2(uint2 val) : uint2(make_uint2(val.x, val.y)) {}
+};
+
+void ThrustScanWrapperUint2(uint2* output, uint2* input, unsigned int numElements) {
+    const uint2 zero = make_uint2(0, 0);
+    thrust::exclusive_scan(thrust::device_ptr<myuint2>((myuint2*)input),
+                           thrust::device_ptr<myuint2>((myuint2*)input + numElements),
+                           thrust::device_ptr<myuint2>((myuint2*)output),
+                           (myuint2) zero);
+}
+
+#else
+
 void ThrustScanWrapperUint2(uint2* output, uint2* input, unsigned int numElements) {
     const uint2 zero = make_uint2(0, 0);
     thrust::exclusive_scan(thrust::device_ptr<uint2>(input),
@@ -601,6 +648,7 @@ void ThrustScanWrapperUint2(uint2* output, uint2* input, unsigned int numElement
                            zero);
 }
 
+#endif
 
 void ThrustScanWrapperArea(float* output, float* input, unsigned int numElements) {
     thrust::inclusive_scan(thrust::device_ptr<float>(input), 

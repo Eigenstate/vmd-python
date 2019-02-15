@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2007-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: CUDAVolCPotential.cu,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.42 $      $Date: 2011/01/13 18:39:13 $
+ *      $Revision: 1.44 $      $Date: 2019/01/17 21:38:55 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -119,11 +119,9 @@ __constant__ static float4 atominfo[MAXATOMS];
 #endif
 
 __global__ static void cenergy(int numatoms, float gridspacing, float * energygrid) {
-  unsigned int xindex  = __umul24(blockIdx.x, blockDim.x) * UNROLLX
-                         + threadIdx.x;
-  unsigned int yindex  = __umul24(blockIdx.y, blockDim.y) + threadIdx.y;
-  unsigned int outaddr = (__umul24(gridDim.x, blockDim.x) * UNROLLX) * yindex
-                         + xindex;
+  unsigned int xindex  = blockIdx.x * blockDim.x * UNROLLX + threadIdx.x;
+  unsigned int yindex  = blockIdx.y * blockDim.y + threadIdx.y;
+  unsigned int outaddr = gridDim.x * blockDim.x * UNROLLX * yindex + xindex;
 
   float coory = gridspacing * yindex;
   float coorx = gridspacing * xindex;

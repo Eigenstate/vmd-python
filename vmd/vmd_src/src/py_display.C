@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: py_display.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.33 $       $Date: 2016/11/28 03:05:08 $
+ *      $Revision: 1.34 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -22,123 +22,188 @@
 #include "VMDApp.h"
 #include "DisplayDevice.h"
 
-// update()
-// force a screen update, but not a GUI or TUI update
-static PyObject *update(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)":display.update"))
+static const char update_doc[] =
+"Force a render window update, without updating FLTK menus";
+static PyObject* py_update(PyObject *self, PyObject *args)
+{
+  VMDApp *app;
+  if (!(app = get_vmdapp()))
     return NULL;
 
-  VMDApp *app = get_vmdapp();
   app->display_update();
-
   Py_INCREF(Py_None);
   return Py_None;
 }
 
-// update_ui()
-// update the screen as well as all user interfaces
-static PyObject *update_ui(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)":display.update_ui"))
+static const char update_ui_doc[] =
+"Update the render window and all user interfaces";
+static PyObject* py_update_ui(PyObject *self, PyObject *args)
+{
+  VMDApp *app;
+  if (!(app = get_vmdapp()))
     return NULL;
 
-  VMDApp *app = get_vmdapp();
   app->display_update_ui();
 
   Py_INCREF(Py_None);
   return Py_None;
 }
 
-// update_on: Tell VMD to regularly update the screen
-static PyObject *update_on(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)":display.update_on"))
+static const char update_on_doc[] =
+"Tell VMD to regularly update display and GUI menus";
+static PyObject* py_update_on(PyObject *self, PyObject *args)
+{
+  VMDApp *app;
+  if (!(app = get_vmdapp()))
     return NULL;
 
-  VMDApp *app = get_vmdapp();
   app->display_update_on(1);
 
   Py_INCREF(Py_None);
   return Py_None;
 }
 
-// update_off: Tell VMD not to update the screen
-static PyObject *update_off(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)":display.update_off"))
+static const char update_off_doc[] =
+"Stop updating the display. Updates will only occur when `update()` is called";
+static PyObject* py_update_off(PyObject *self, PyObject *args)
+{
+  VMDApp *app;
+  if (!(app = get_vmdapp()))
     return NULL;
 
-  VMDApp *app = get_vmdapp();
   app->display_update_on(0);
 
   Py_INCREF(Py_None);
   return Py_None;
 }
 
-static char *kwlist[] = {
-  (char *)"eyesep", (char *)"focallength", (char *)"height",
-  (char *)"distance", (char *)"nearclip", (char *)"farclip",
-  (char *)"antialias", (char *)"depthcue", (char *)"culling",
-  (char *)"stereo", (char *)"projection", (char *)"size",
-  (char *)"ambientocclusion", (char *)"aoambient", (char *)"aodirect", (char *) "shadows",
-  (char *)"dof", (char *)"dof_fnumber", (char *)"dof_focaldist",
-  NULL };
-static const int num_keys = 19;
+static const char set_doc[] =
+"Sets display properties. One or more properties may be set at a time.\n\n"
+"Args:\n"
+"    eyesep (float): Eye separation\n"
+"    focallength (float): Focal length\n"
+"    height (float): Screen height relative to the camera\n"
+"    distance (float): Screen distance relative to the camera\n"
+"    nearclip (float): Near clipping plane distance\n"
+"    farclip (float): Far clipping plane distance\n"
+"    antialias (bool): If antialiasing is on\n"
+"    depthcueue (bool): If depth cueuing is used\n"
+"    culling (bool): If backface culling is used. Can reduce performance\n"
+"    stereo (bool): If stereo mode is on\n"
+"    projection (str): Projection mode, in [Perspective, Orthographic]\n"
+"    size (list of 2 ints): Display window size, in px\n"
+"    ambientocclusion (bool): If ambient occlusion is used\n"
+"    aoambient (float): Amount of ambient light\n"
+"    aodirect (float): Amount of direct light\n"
+"    shadows (bool): If shadows should be rendered\n"
+"    dof (bool): If depth of field effects should be rendered\n"
+"    dof_fnumber (float): F-number for depth of field effects\n"
+"    dof_focaldist (float): Focal distance for depth of field effects";
+static PyObject* py_set(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  const char *kwlist[] = {"eyesep", "focallength", "height", "distance",
+                          "nearclip", "farclip", "antialias", "depthcue",
+                          "culling", "stereo", "projection", "size",
+                          "ambientocclusion", "aoambient", "aodirect",
+                          "shadows", "dof", "dof_fnumber", "dof_focaldist",
+                          NULL};
 
-// set(keywords)
-static PyObject *set(PyObject *self, PyObject *args, PyObject *keywds) {
-
-  float eyesep, focallength, height, distance, nearclip, farclip, aoambient, aodirect, dof_fnumber, dof_focaldist;
-  PyObject *antialias, *depthcue, *culling, *dof, *ao, *shadows;
+  float eyesep, focallength, height, distance, nearclip, farclip;
+  float aoambient, aodirect, dof_fnumber, dof_focaldist;
+  int antialias, depthcue, culling, ao, shadows, dof;
   char *stereo, *projection;
+  int num_keys = 19;
   PyObject *size;
+  VMDApp *app;
+  int i, w, h;
 
-  if (!PyArg_ParseTupleAndKeywords(args, keywds, (char *)"|ffffffOOOssOOffOOff:display.set", kwlist,
-    &eyesep, &focallength, &height, &distance, &nearclip, &farclip,
-    &antialias, &depthcue, &culling, &stereo,
-    &projection, &size, &ao, &aoambient, &aodirect, &shadows, &dof, &dof_fnumber, &dof_focaldist))
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                   "|ffffffO&O&O&ssOO&ffO&O&ff:display.set",
+                                   (char**) kwlist, &eyesep, &focallength,
+                                   &height, &distance, &nearclip, &farclip,
+                                   convert_bool, &antialias, convert_bool,
+                                   &depthcue, convert_bool, &culling, &stereo,
+                                   &projection, &size, convert_bool, &ao,
+                                   &aoambient, &aodirect, convert_bool,
+                                   &shadows, convert_bool, &dof, &dof_fnumber,
+                                   &dof_focaldist))
     return NULL;
 
-  // Figure out which keys were set, and queue the corresponding command
-  VMDApp *app = get_vmdapp();
-  int w, h;
-  for (int i=0; i<num_keys; i++) {
-    if (PyDict_GetItemString(keywds, kwlist[i]) == NULL)
+  if (!(app = get_vmdapp()))
+    return NULL;
+
+
+  /*
+   * If both nearclip and farclip will be set, the setting can fail even if
+   * both new values define a valid range, as the setting is performed on one
+   * clip plane at a time and it is compared to the *current* value of the
+   * other. Here, we set both clip planes to be in valid locations beforehand
+   * so this failure won't happen.
+   */
+  if (PyDict_GetItemString(kwargs, "nearclip")
+   && PyDict_GetItemString(kwargs, "farclip")) {
+    if (nearclip >= farclip)
+      goto cliperror;
+
+    if (nearclip >= app->display->far_clip())
+      app->display_set_farclip(nearclip + 1.0, 0);
+
+    if (farclip <= app->display->near_clip())
+      app->display_set_nearclip(farclip - 1.0, 0);
+  }
+
+  // Use the kwargs dictionary directly to get the commands
+  for (i = 0; i < num_keys; i++) {
+
+    if (! PyDict_GetItemString(kwargs, kwlist[i]))
       continue;
+
     switch (i) {
       case 0: app->display_set_eyesep(eyesep); break;
       case 1: app->display_set_focallen(focallength); break;
       case 2: app->display_set_screen_height(height); break;
       case 3: app->display_set_screen_distance(distance); break;
-      case 4: app->display_set_nearclip(nearclip, 0); break;
-      case 5: app->display_set_farclip(farclip, 0); break;
-      case 6: app->display_set_aa(PyObject_IsTrue(antialias)); break;
-      case 7: app->display_set_depthcue(PyObject_IsTrue(depthcue)); break;
-      case 8: app->display_set_culling(PyObject_IsTrue(culling)); break;
+      case 4:
+        if (nearclip >= app->display->far_clip())
+          goto cliperror;
+        app->display_set_nearclip(nearclip, 0);
+        break;
+      case 5:
+        if (farclip <= app->display->near_clip())
+          goto cliperror;
+        app->display_set_farclip(farclip, 0);
+        break;
+      case 6: app->display_set_aa(antialias); break;
+      case 7: app->display_set_depthcue(depthcue); break;
+      case 8: app->display_set_culling(culling); break;
       case 9: app->display_set_stereo(stereo); break;
       case 10:
         if (!app->display_set_projection(projection)) {
           PyErr_SetString(PyExc_ValueError, "Invalid projection");
-          return NULL;
+          goto failure;
         }
         break;
       case 11:
-        if (!PyList_Check(size) || PyList_Size(size) != 2) {
-          PyErr_SetString(PyExc_ValueError, "size argument must be a two-element list");
-          return NULL;
+        if (!PySequence_Check(size) || PySequence_Size(size) != 2
+            || is_pystring(size)) {
+          PyErr_SetString(PyExc_ValueError,
+                          "size argument must be a two-element list or tuple");
+          goto failure;
         }
-#if PY_MAJOR_VERSION >= 3
-        w = PyLong_AsLong(PyList_GET_ITEM(size, 0));
-        h = PyLong_AsLong(PyList_GET_ITEM(size, 1));
-#else
-        w = PyInt_AsLong(PyList_GET_ITEM(size, 0));
-        h = PyInt_AsLong(PyList_GET_ITEM(size, 1));
-#endif
-        if (PyErr_Occurred()) return NULL;
+        w = as_int(PySequence_GetItem(size, 0));
+        h = as_int(PySequence_GetItem(size, 1));
+        if (PyErr_Occurred())
+            goto failure;
+
         app->display_set_size(w, h);
+
         break;
-      case 12: app->display_set_ao(PyObject_IsTrue(ao)); break;
+      case 12: app->display_set_ao(ao); break;
       case 13: app->display_set_ao_ambient(aoambient); break;
       case 14: app->display_set_ao_direct(aodirect); break;
-      case 15: app->display_set_shadows(PyObject_IsTrue(shadows)); break;
-      case 16: app->display_set_dof(PyObject_IsTrue(dof)); break;
+      case 15: app->display_set_shadows(shadows); break;
+      case 16: app->display_set_dof(dof); break;
       case 17: app->display_set_dof_fnumber(dof_fnumber); break;
       case 18: app->display_set_dof_focal_dist(dof_focaldist); break;
       default: ;
@@ -147,113 +212,177 @@ static PyObject *set(PyObject *self, PyObject *args, PyObject *keywds) {
 
   Py_INCREF(Py_None);
   return Py_None;
+
+cliperror:
+PyErr_SetString(PyExc_ValueError, "Invalid clip plane settings. Near clip "
+                "plane cannot be larger than far clip plane");
+failure:
+    return NULL;
 }
 
-static char *get_kwlist[] = {
-  (char *)"eyesep", (char *)"focallength", (char *)"height",
-  (char *)"distance", (char *)"nearclip", (char *)"farclip",
-  (char *)"antialias", (char *)"depthcue", (char *)"culling",
-  (char *)"stereo", (char *)"projection", (char *)"size",
-  (char *)"ambientocclusion", (char *)"aoambient", (char *)"aodirect", (char *) "shadows",
-  (char *)"dof", (char *)"dof_fnumber", (char *)"dof_focaldist"
-};
-
-static const int num_get_keys = 19;
-
-// get(key)
-static PyObject *get(PyObject *self, PyObject *args) {
-
+static char get_doc[] =
+"Query display properties\n\n"
+"Args:\n"
+"    query (str): Property to query. See keywords for `display.set()` for a\n"
+"        comprehensive list of properties.\n"
+"Returns:\n"
+"    (either float, bool, list of 2 ints, or str): Value of queried parameter\n"
+"        with datatype depending on the parameter type. See `display.set()`\n"
+"        for a list of all parameters and types.";
+static PyObject* py_get(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+  const char *kwlist[] = {"query", NULL};
+  PyObject *result = NULL;
+  DisplayDevice *disp;
+  VMDApp *app;
   char *key;
-  if (!PyArg_ParseTuple(args, (char *)"s:display.get", &key))
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s:display.get",
+                                  (char**) kwlist,  &key))
     return NULL;
 
-  int i=0;
-  for (; i<num_get_keys; i++)
-    if (!strcmp(key, get_kwlist[i]))
-      break;
-  if (i == num_get_keys) {
-    PyErr_SetString(PyExc_ValueError, "Invalid attribute");
+  if (!(app = get_vmdapp()))
     return NULL;
+
+  disp = app->display;
+
+  if (!strcmp(key, "eyesep")) {
+    result = PyFloat_FromDouble(disp->eyesep());
+
+  } else if (!strcmp(key, "focallength")) {
+    result = PyFloat_FromDouble(disp->eye_dist());
+
+  } else if (!strcmp(key, "height")) {
+    result = PyFloat_FromDouble(disp->screen_height());
+
+  } else if (!strcmp(key, "distance")) {
+    result = PyFloat_FromDouble(disp->distance_to_screen());
+
+  } else if (!strcmp(key, "nearclip")) {
+    result = PyFloat_FromDouble(disp->near_clip());
+
+  } else if (!strcmp(key, "farclip")) {
+    result = PyFloat_FromDouble(disp->far_clip());
+
+  } else if (!strcmp(key, "antialias")) {
+    result = disp->aa_enabled() ? Py_True : Py_False;
+    Py_INCREF(result);
+
+  } else if (!strcmp(key, "depthcue")) {
+    result = disp->cueing_enabled() ? Py_True : Py_False;
+    Py_INCREF(result);
+
+  } else if (!strcmp(key, "culling")) {
+    result = disp->culling_enabled() ? Py_True : Py_False;
+    Py_INCREF(result);
+
+  } else if (!strcmp(key, "stereo")) {
+    result = as_pystring(disp->stereo_name(disp->stereo_mode()));
+
+  } else if (!strcmp(key, "projection")) {
+    result = as_pystring(disp->get_projection());
+
+  } else if (!strcmp(key, "size")) {
+    int w, h;
+    app->display_get_size(&w, &h);
+    result = Py_BuildValue("[i,i]", w, h);
+
+  } else if (!strcmp(key, "ambientocclusion")) {
+    result = disp->ao_enabled() ? Py_True : Py_False;
+    Py_INCREF(result);
+
+  } else if (!strcmp(key, "aoambient")) {
+    result = PyFloat_FromDouble(disp->get_ao_ambient());
+
+  } else if (!strcmp(key, "aodirect")) {
+    result = PyFloat_FromDouble(disp->get_ao_direct());
+
+  } else if (!strcmp(key, "shadows")) {
+    result = disp->shadows_enabled() ? Py_True : Py_False;
+    Py_INCREF(result);
+
+  } else if (!strcmp(key, "dof")) {
+    result = disp->dof_enabled() ? Py_True : Py_False;
+    Py_INCREF(result);
+
+  } else if (!strcmp(key, "dof_fnumber")) {
+    result = PyFloat_FromDouble(disp->get_dof_fnumber());
+
+  } else if (!strcmp(key, "dof_focaldist")) {
+    result = PyFloat_FromDouble(disp->get_dof_focal_dist());
+
+  } else {
+    PyErr_Format(PyExc_ValueError, "Invalid query '%s'", key);
+    goto failure;
   }
-  VMDApp *app = get_vmdapp();
-  DisplayDevice *disp = app->display;
-  int w, h;
-  switch (i) {
-    case 0: return PyFloat_FromDouble(disp->eyesep());
-    case 1: return PyFloat_FromDouble(disp->eye_dist());
-    case 2: return PyFloat_FromDouble(disp->screen_height());
-    case 3: return PyFloat_FromDouble(disp->distance_to_screen());
-    case 4: return PyFloat_FromDouble(disp->near_clip());
-    case 5: return PyFloat_FromDouble(disp->far_clip());
-#if PY_MAJOR_VERSION >= 3
-    case 6: return PyLong_FromLong(disp->aa_enabled() ? 1 : 0);
-    case 7: return PyLong_FromLong(disp->cueing_enabled() ? 1 : 0);
-    case 8: return PyLong_FromLong(disp->culling_enabled() ? 1 : 0);
-    case 9: return PyUnicode_FromString(
-              disp->stereo_name(disp->stereo_mode()));
-    case 10: return PyUnicode_FromString(
-              disp->get_projection());
-    case 12: return PyLong_FromLong(disp->ao_enabled() ? 1 : 0);
-    case 15: return PyLong_FromLong(disp->shadows_enabled() ? 1 : 0);
-    case 16: return PyLong_FromLong(disp->dof_enabled() ? 1 : 0);
-#else
-    case 6: return PyInt_FromLong(disp->aa_enabled() ? 1 : 0);
-    case 7: return PyInt_FromLong(disp->cueing_enabled() ? 1 : 0);
-    case 8: return PyInt_FromLong(disp->culling_enabled() ? 1 : 0);
-    case 9: return PyString_FromString(
-              disp->stereo_name(disp->stereo_mode()));
-    case 10: return PyString_FromString(
-              disp->get_projection());
-    case 12: return PyInt_FromLong(disp->ao_enabled() ? 1 : 0);
-    case 15: return PyInt_FromLong(disp->shadows_enabled() ? 1 : 0);
-    case 16: return PyInt_FromLong(disp->dof_enabled() ? 1 : 0);
-#endif
-    case 11:
-             app->display_get_size(&w, &h);
-             return Py_BuildValue((char *)"[i,i]", w, h);
-    case 13: return PyFloat_FromDouble(disp->get_ao_ambient());
-    case 14: return PyFloat_FromDouble(disp->get_ao_direct());
-    case 17: return PyFloat_FromDouble(disp->get_dof_fnumber());
-    case 18: return PyFloat_FromDouble(disp->get_dof_focal_dist());
-    default: ;
+
+  if (PyErr_Occurred()) {
+    PyErr_SetString(PyExc_RuntimeError, "Problem getting display attribute");
+    goto failure;
   }
-  PyErr_SetString(PyExc_RuntimeError, "Internal error in get()");
+
+  return result;
+
+failure:
+  Py_XDECREF(result);
   return NULL;
 }
 
-static PyObject *stereomodes(PyObject *self, PyObject *args) {
-  if (!PyArg_ParseTuple(args, (char *)":display.stereomodes"))
+static const char stereomodes_doc[] =
+"Get available stereo modes\n\n"
+"Returns:\n"
+"    (list of str): Available modes";
+static PyObject* py_stereomodes(PyObject *self, PyObject *args)
+{
+  PyObject *newlist = NULL;
+  DisplayDevice *disp;
+  VMDApp *app;
+  int j, num;
+
+  if (!(app = get_vmdapp()))
     return NULL;
 
-  DisplayDevice *disp = get_vmdapp()->display;
-  int num = disp->num_stereo_modes();
-  PyObject *newlist = PyList_New(num);
-  for (int j=0; j<num; j++)
-#if PY_MAJOR_VERSION >= 3
-    PyList_SET_ITEM(newlist, j, PyUnicode_FromString(disp->stereo_name(j)));
-#else
-    PyList_SET_ITEM(newlist, j, PyString_FromString(disp->stereo_name(j)));
-#endif
+  disp = app->display;
+  num = disp->num_stereo_modes();
+
+  newlist = PyList_New(num);
+  if (!newlist || PyErr_Occurred())
+    goto failure;
+
+  for (j = 0; j < num; j++) {
+    PyList_SET_ITEM(newlist, j, as_pystring(disp->stereo_name(j)));
+    if (PyErr_Occurred())
+      goto failure;
+  }
+
   return newlist;
+
+failure:
+  PyErr_SetString(PyExc_RuntimeError, "Problem listing stero modes");
+  Py_XDECREF(newlist);
+  return NULL;
 }
 
 static PyMethodDef DisplayMethods[] = {
-  {(char *)"update", (vmdPyMethod)update, METH_VARARGS },
-  {(char *)"update_ui", (vmdPyMethod)update_ui, METH_VARARGS },
-  {(char *)"update_on", (vmdPyMethod)update_on, METH_VARARGS },
-  {(char *)"update_off", (vmdPyMethod)update_off, METH_VARARGS },
-  {(char *)"set", (PyCFunction)set, METH_VARARGS | METH_KEYWORDS},
-  {(char *)"get", (vmdPyMethod)get, METH_VARARGS},
-  {(char *)"stereomodes", (vmdPyMethod)stereomodes, METH_VARARGS},
-  {NULL, NULL, 0, NULL}
+  {"update", (PyCFunction)py_update, METH_NOARGS, update_doc},
+  {"update_ui", (PyCFunction)py_update_ui, METH_NOARGS, update_ui_doc},
+  {"update_on", (PyCFunction)py_update_on, METH_NOARGS, update_on_doc},
+  {"update_off", (PyCFunction)py_update_off, METH_NOARGS, update_off_doc},
+  {"set", (PyCFunction)py_set, METH_VARARGS | METH_KEYWORDS, set_doc},
+  {"get", (PyCFunction)py_get, METH_VARARGS | METH_KEYWORDS, get_doc},
+  {"stereomodes", (PyCFunction)py_stereomodes, METH_NOARGS, stereomodes_doc},
+  {NULL, NULL}
 };
 
+static const char disp_moddoc[] =
+"Contains methods to set various parameters in the graphical display, as "
+"well as controlling how the UI and render window are updated";
 
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef displaydef = {
   PyModuleDef_HEAD_INIT,
   "display",
-  NULL,
+  disp_moddoc,
   -1,
   DisplayMethods,
 };
@@ -261,9 +390,9 @@ static struct PyModuleDef displaydef = {
 
 PyObject* initdisplay() {
 #if PY_MAJOR_VERSION >= 3
-   PyObject *m = PyModule_Create(&displaydef);
+  PyObject *m = PyModule_Create(&displaydef);
 #else
-  PyObject *m = Py_InitModule((char *)"display", DisplayMethods);
+  PyObject *m = Py_InitModule3("display", DisplayMethods, disp_moddoc);
 #endif
   // XXX elminate these hard-coded string names
   PyModule_AddStringConstant(m, (char *)"PROJ_PERSP", (char *)"Perspective");

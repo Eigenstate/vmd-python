@@ -1,17 +1,16 @@
 #
-# $Id: fftk_BondAngleOpt.tcl,v 1.15 2015/12/31 05:17:51 gumbart Exp $
+# $Id: fftk_BondAngleOpt.tcl,v 1.20 2018/08/16 00:20:00 gumbart Exp $
 #
 
 #======================================================
 namespace eval ::ForceFieldToolKit::BondAngleOpt {
 
-    variable psf
-    variable pdb
+    #variable psf ; # replaced by general configuration version of chargeOptPSF
+    #variable pdb ; # replaced by general configuration version of geomOptPDB
     variable hessLog
     variable moleculeID
     
     variable minName
-    variable namdbin
     variable outFile
     variable outFileName
 
@@ -64,13 +63,12 @@ namespace eval ::ForceFieldToolKit::BondAngleOpt {
 #======================================================
 proc ::ForceFieldToolKit::BondAngleOpt::init {} {
     # localize + initialize variables
-    variable psf {}
-    variable pdb {}
+    #variable psf {}
+    #variable pdb {}
     variable hessLog {}
     variable moleculeID {}
     
     variable minName "min-bondangles"
-    variable namdbin "namd2"
     variable outFile {}
     variable outFileName "BondedOpt.log"
 
@@ -129,12 +127,13 @@ proc ::ForceFieldToolKit::BondAngleOpt::sanityCheck {} {
     # returns 0 if there are problems
     
     # localize relevant BondAngleOpt variables
-    variable psf
-    variable pdb
+    #variable psf
+    set psf $::ForceFieldToolKit::Configuration::chargeOptPSF
+    #variable pdb
+    set pdb $::ForceFieldToolKit::Configuration::geomOptPDB
     variable hessLog
     variable parInProg
     variable parlist
-    variable namdbin
     variable outFileName
 
     variable inputBondPars
@@ -188,6 +187,7 @@ proc ::ForceFieldToolKit::BondAngleOpt::sanityCheck {} {
     }
     
     # make sure namd2 command and/or file exists
+    set namdbin $::ForceFieldToolKit::Configuration::namdBin
     if { $namdbin eq "" } {
         lappend errorList "NAMD binary file (or command if in PATH) was not specified."
     } else { if { [::ExecTool::find $namdbin] eq "" } { lappend errorList "Cannot find NAMD binary file." } }
@@ -283,13 +283,14 @@ proc ::ForceFieldToolKit::BondAngleOpt::sanityCheck {} {
 #======================================================
 proc ::ForceFieldToolKit::BondAngleOpt::optimize {} {
     # localize relevant variables
-    variable psf
-    variable pdb
+    #variable psf
+    set psf $::ForceFieldToolKit::Configuration::chargeOptPSF
+    #variable pdb
+    set pdb $::ForceFieldToolKit::Configuration::geomOptPDB
     variable hessLog
     variable moleculeID
     
     variable minName
-    variable namdbin
     variable outFile
     variable outFileName
 
@@ -563,7 +564,7 @@ proc ::ForceFieldToolKit::BondAngleOpt::optimize {} {
     ::ForceFieldToolKit::SharedFcns::writeMinConf $minName $psf $pdb $parlist
     
     # build the namdEnergy cmd (will need access to this in other procs)
-    set namdEnCommand "namdenergy -silent -psf [list $psf] -exe [list $namdbin] -all -sel \$sel -cutoff 1000"
+    set namdEnCommand "namdenergy -silent -psf [list $psf] -exe [list $::ForceFieldToolKit::Configuration::namdBin] -all -sel \$sel -cutoff 1000"
     foreach par $parlist { 
         set namdEnCommand [concat $namdEnCommand "-par [list $par]"]
     }
@@ -603,8 +604,12 @@ proc ::ForceFieldToolKit::BondAngleOpt::optimize {} {
     # optimizer-related variables together in an ~organized fashion
     # (noting that this would turn a local variable into a namespace variable)
     set scale 2.0
+
     $opt configure -bounds $baBounds
     $opt initsimplex $baInitial $scale
+
+    # start counter
+    set optCount 1
 
     if { $debug } {
         puts $debugLog "DONE"
@@ -682,12 +687,12 @@ proc ::ForceFieldToolKit::BondAngleOpt::optBondsAngles { baInput } {
     # baInput format: { bondFC1 bondEq1 bondFC2 bondEq2 ... angleFC1 angleEq1 ...}
     
     # localize necessary variables
-    variable psf
+    #variable psf
+    set psf $::ForceFieldToolKit::Configuration::chargeOptPSF
     variable moleculeID
     variable tempParName
     variable outFile
     variable minName
-    variable namdbin
     
     variable uniqueTypes 
     variable baInitial 
@@ -706,6 +711,7 @@ proc ::ForceFieldToolKit::BondAngleOpt::optBondsAngles { baInput } {
     variable guiMode
     variable optCount
 
+    variable dhIter
     #-------------------------------------------------------
     
     if { $debug } {
@@ -745,7 +751,7 @@ proc ::ForceFieldToolKit::BondAngleOpt::optBondsAngles { baInput } {
     }
 
     # run the NAMD minimization
-    ::ExecTool::exec $namdbin $minName.conf
+    ::ExecTool::exec $::ForceFieldToolKit::Configuration::namdBin $minName.conf
     mol addfile $minName.coor $moleculeID
     
     if { $debug } {
@@ -767,13 +773,10 @@ proc ::ForceFieldToolKit::BondAngleOpt::optBondsAngles { baInput } {
 #    foreach ele $baIndList {
 #        lappend targetlist [lindex $ele 2 2]
 #    }
-###   puts "baIndlist $baIndList\n"
-###   puts "mmEnList: $mmEnList\n"
     
 
     set i 0
     foreach entry $baIndList mmEn $mmEnList {
-######        puts "mmEn: [lindex $mmEn 0]  qmEn?: [lindex $entry 2 2 0] "        
         set baCur [lindex $entry 0]
         if { [llength $baCur] == 2 } {
             set baCurVal [measure bond "[lindex $baCur 0] [lindex $baCur 1]" last]
@@ -809,9 +812,14 @@ proc ::ForceFieldToolKit::BondAngleOpt::optBondsAngles { baInput } {
 
     # update the status in the gui
     if { $guiMode } {
-        incr optCount
-        set ::ForceFieldToolKit::gui::baoptStatus "Running...Optimizing(iter:$optCount)"
-        update idletasks
+        if { $optCount } {
+          set ::ForceFieldToolKit::gui::baoptStatus "Running...Optimizing(iter:$optCount)"
+          update idletasks
+          incr optCount
+	} else {
+          set ::ForceFieldToolKit::gui::baoptStatus "Initializing..."
+          update idletasks          
+	}
     }
 
     return $totalObj
@@ -823,12 +831,11 @@ proc ::ForceFieldToolKit::BondAngleOpt::buildScript { scriptFilename } {
     # localize variables
     #--------------------------
     # variables from optimize proc
-    variable psf
-    variable pdb
+    #variable psf
+    #variable pdb
     variable hessLog
     variable moleculeID    
     variable minName
-    variable namdbin
     variable outFile
     variable outFileName
     variable inputBondPars
@@ -882,19 +889,20 @@ proc ::ForceFieldToolKit::BondAngleOpt::buildScript { scriptFilename } {
     puts $scriptFile "package require optimization"
     puts $scriptFile "package require topotools"
     puts $scriptFile "package require forcefieldtoolkit"
+    #puts $scriptfile "::ForceFieldToolKit::Configuration::init"
 
     # check for tk, required by the qmtool dependency
     # NOTE: this prevents the build script from being run with VMD in text mode
     puts $scriptFile "if { !\[info exists tk_version\] } { puts \"ffTK BondAngleOpt build script cannot execute without tk due to dependency in QMtool.\"; exit }"
     
     # Variables to set
-    puts $scriptFile "set ::ForceFieldToolKit::BondAngleOpt::psf $psf"
-    puts $scriptFile "set ::ForceFieldToolKit::BondAngleOpt::pdb $pdb"
+    puts $scriptFile "set ::ForceFieldToolKit::Configuration::chargeOptPSF $::ForceFieldToolKit::Configuration::chargeOptPSF"
+    puts $scriptFile "set ::ForceFieldToolKit::Configuration::geomOptPDB   $::ForceFieldToolKit::Configuration::geomOptPDB"
     puts $scriptFile "set ::ForceFieldToolKit::BondAngleOpt::hessLog $hessLog"
     # moleculeID is set internally
     puts $scriptFile "set ::ForceFieldToolKit::BondAngleOpt::minName $minName"
 
-    puts $scriptFile "set ::ForceFieldToolKit::BondAngleOpt::namdbin $namdbin"
+    puts $scriptFile "set ::ForceFieldToolKit::Configuration::namdBin $::ForceFieldToolKit::Configuration::namdBin"
     # outfile is set internally
     puts $scriptFile "set ::ForceFieldToolKit::BondAngleOpt::outFileName $outFileName"
     puts $scriptFile "set ::ForceFieldToolKit::BondAngleOpt::inputBondPars [list $inputBondPars]"
@@ -963,13 +971,13 @@ proc ::ForceFieldToolKit::BondAngleOpt::printSettings { outfile } {
     puts $outfile ""
     
     puts $outfile "INPUT"
-    puts $outfile "psf: $::ForceFieldToolKit::BondAngleOpt::psf"
-    puts $outfile "pdb: $::ForceFieldToolKit::BondAngleOpt::pdb"
+    puts $outfile "psf: $::ForceFieldToolKit::Configuration::chargeOptPSF"
+    puts $outfile "pdb: $::ForceFieldToolKit::Configuration::geomOptPDB"
     puts $outfile "Parameter Files:"
     puts $outfile "\tIn-Progress PAR File: $::ForceFieldToolKit::BondAngleOpt::parInProg"
     puts $outfile "\tAll PAR Files (in-progress + associated):"
     foreach par $::ForceFieldToolKit::BondAngleOpt::parlist { puts $outfile "\t\t$par" }
-    puts $outfile "namdbin: $::ForceFieldToolKit::BondAngleOpt::namdbin"
+    puts $outfile "namdBin: $::ForceFieldToolKit::Configuration::namdBin"
     puts $outfile "outFileName: $::ForceFieldToolKit::BondAngleOpt::outFileName"
     puts $outfile "----------------------------------"
     puts $outfile ""
@@ -1090,7 +1098,6 @@ proc ::ForceFieldToolKit::BondAngleOpt::computePESqm { molid { BAonly 1} } {
       set energy {0 0 0}
 ###      #set h1 $dx
 ###      if {[regexp "angle|lbend|dihed|imprp" $type]} {
-###         puts "huh??? $h1"
 ###	 set h1 [expr {$deg2rad*$h1}]
 ###      }
 
@@ -1285,6 +1292,7 @@ proc ::ForceFieldToolKit::BondAngleOpt::computePESmm { molid baIndList namdEn { 
    set sel [atomselect $molid all]
    set energyout [eval $namdEn]
    set minEn [lindex $energyout $minFrame end]
+   $sel delete
 
 ###   animate write dcd mm-all.dcd beg $minFrame $molid
 
@@ -1560,8 +1568,6 @@ proc ::ForceFieldToolKit::BondAngleOpt::make_distortion {molid type arrpos arrat
    $sel2 frame [expr {$last+1}];
 
    if {[string match "*bond" $type]} {
-      # FIXME: Should have a bondring type in which we correct for the change of 
-      # neighboring bonds
       set bondvec [vecsub $pos(0) $pos(1)]
       set dir     [vecnorm $bondvec]
 
@@ -1577,14 +1583,7 @@ proc ::ForceFieldToolKit::BondAngleOpt::make_distortion {molid type arrpos arrat
       set x       [veclength $bondvec]
 
    } elseif {[regexp "bondring" $type]} {
-      puts "DO WE EVER MATCH THIS?  BONDRING"
-      puts "DO WE EVER MATCH THIS?  BONDRING"
-      puts "DO WE EVER MATCH THIS?  BONDRING"
-      puts "DO WE EVER MATCH THIS?  BONDRING"
-      puts "DO WE EVER MATCH THIS?  BONDRING"
-      puts "DO WE EVER MATCH THIS?  BONDRING"
-      puts "DO WE EVER MATCH THIS?  BONDRING"
-      puts "DO WE EVER MATCH THIS?  BONDRING"
+      #  puts "DO WE EVER MATCH THIS?  BONDRING"
       set bondvec [vecsub $pos(0) $pos(1)]
       set dir     [vecnorm $bondvec]
 
@@ -1616,15 +1615,7 @@ proc ::ForceFieldToolKit::BondAngleOpt::make_distortion {molid type arrpos arrat
       set x  [veclength $bondvec]
       set del [expr {($xupper-$x)/2.0}]
    } elseif {[regexp "anglering" $type]} {
-      puts "DO WE EVER MATCH THIS?  ANGLERING"
-      puts "DO WE EVER MATCH THIS?  ANGLERING"
-      puts "DO WE EVER MATCH THIS?  ANGLERING"
-      puts "DO WE EVER MATCH THIS?  ANGLERING"
-      puts "DO WE EVER MATCH THIS?  ANGLERING"
-      puts "DO WE EVER MATCH THIS?  ANGLERING"
-      puts "DO WE EVER MATCH THIS?  ANGLERING"
-      puts "DO WE EVER MATCH THIS?  ANGLERING"
-      puts "DO WE EVER MATCH THIS?  ANGLERING"
+      #  puts "DO WE EVER MATCH THIS?  ANGLERING"
       set x  [angle_from_coords $pos(0) $pos(1) $pos(2)]
 
       set deg2rad 0.0174532925199;

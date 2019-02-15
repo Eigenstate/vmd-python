@@ -65,7 +65,7 @@ proc generate_maps {sel maps refs mask mask_res mask_cutoff avg} {
       if {[lindex $mask $i]} {
         puts "masking map..."
         volmap mask $sel -res [lindex $mask_res $i] -cutoff [lindex $mask_cutoff $i] -o "mask.dx" 
-        volutil -mult "xmdff_density$i.dx" "mask.dx" -o "xmdff_density$i.dx"
+        voltool mult -i1 "xmdff_density$i.dx" -i2 "mask.dx" -o "xmdff_density$i.dx"
         mdff griddx -i "xmdff_density$i.dx" -o "$map"
         #mdff griddx -i "$map" -o "xmdff_density.dx"
       }
@@ -121,7 +121,7 @@ proc avg_maps {sel maps refs mask mask_res mask_cutoff avg} {
       if {[lindex $mask $i]} {
         puts "masking map..."
         volmap mask $sel -res [lindex $mask_res $i] -cutoff [lindex $mask_cutoff $i] -o "mask.dx" 
-        volutil -mult "xmdff_density$i.dx" "mask.dx" -o "xmdff_density$i.dx"
+        voltool mult -i1 "xmdff_density$i.dx" -i2 "mask.dx" -o "xmdff_density$i.dx"
         mdff griddx -i "xmdff_density$i.dx" -o "$map"
         #mdff griddx -i "$map" -o "xmdff_density.dx"
       }

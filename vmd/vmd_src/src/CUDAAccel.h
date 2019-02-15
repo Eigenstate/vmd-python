@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: CUDAAccel.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.20 $	$Date: 2016/11/28 03:04:58 $
+ *	$Revision: 1.22 $	$Date: 2019/01/17 21:20:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -38,7 +38,7 @@ typedef struct {
   int computemode;
 } cudadevprops;
 
-/// manages enumeration and initialization of OpenGL programmable shaders
+/// manages enumeration and initialization of CUDA devices
 class CUDAAccel {
 private:
   int cudaavail;   // whether or not the CUDA runtime is operable for VMD
@@ -53,7 +53,7 @@ private:
   // convenience enum to match CUDA driver APIs
   enum { computeModeDefault=0, 
          computeModeExclusive=1,
-         computeModeProhibited=2 } computeMode;
+         computeModeProhibited=2 }; // computeMode;
  
 public:
   CUDAAccel(void);

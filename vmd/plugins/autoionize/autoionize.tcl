@@ -3,7 +3,7 @@
 # Ilya Balabin, July 15, 2003
 # 
 # Partially rewritten by Leonardo Trabuco, July 2010
-# $Id: autoionize.tcl,v 1.25 2015/04/20 20:41:13 ryanmcgreevy Exp $
+# $Id: autoionize.tcl,v 1.27 2017/04/26 15:14:39 johns Exp $
 
 # TODO:
 # - allow user to specify topology file
@@ -13,7 +13,7 @@
 
 package require psfgen
 package require readcharmmtop
-package provide autoionize 1.4
+package provide autoionize 1.5
 
 namespace eval ::autoionize:: {
   namespace export autoionize
@@ -93,6 +93,7 @@ proc ::autoionize::autoionize_core {args} {
   variable defaultBetweenDistance
   variable defaultPrefix
   variable defaultSegname
+  global tk_version
   global env
 
   set n [llength $args]
@@ -636,7 +637,9 @@ proc ::autoionize::autoionize_core {args} {
   $sel delete
   puts "Autoionize) System net charge after adding ions: ${netCharge}e."
   if {[expr abs($netCharge - round($netCharge))] > 0.001} {
-    if {[winfo exists .autoigui]} {
+    # only put up a Tk dialog if the VMD session is running with Tk, and the user has
+    # run autoionize with the graphical interface rather than the text interface.
+    if {[info exists tk_version] && [winfo exists .autoigui]} {
       tk_messageBox -icon warning -message "System has a non-integer total charge. There was likely a problem in the process of building it."
     } else {
       puts "Autoionize) WARNING: System has a non-integer total charge. There was likely a problem in the process of building it."

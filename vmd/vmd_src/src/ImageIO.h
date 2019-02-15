@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: ImageIO.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.14 $       $Date: 2016/11/28 03:05:00 $
+ *      $Revision: 1.17 $       $Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -44,9 +44,19 @@ int write_image_file_rgb3u(const char *filename,
 int write_image_file_rgb4u(const char *filename,
                            const unsigned char *rgb4u, int xs, int ys);
 
+/// Write an unsigned RGBA 32-bit color image, with alpha channel, by 
+/// filename extension
+int write_image_file_rgba4u(const char *filename,
+                            const unsigned char *rgba4u, int xs, int ys);
+
 /// Write an float RGBA 128-bit color image, by filename extension
 int write_image_file_rgb4f(const char *filename,
                            const float *rgb4f, int xs, int ys);
+
+/// Write an float RGBA 128-bit color image, with alpha channel,
+/// by filename extension
+int write_image_file_rgba4f(const char *filename,
+                            const float *rgb4f, int xs, int ys);
 
 /// Write 24-bit uncompressed SGI RGB image file
 void vmd_writergb(FILE *dfile, const unsigned char * img, int xs, int ys);
@@ -61,8 +71,11 @@ void vmd_writeppm(FILE *dfile, const unsigned char * img, int xs, int ys);
 void vmd_writetga(FILE *dfile, const unsigned char * img, int xs, int ys);
 
 #if defined(VMDLIBPNG)
-/// Write 24-bit uncompressed PNG file
+/// Write 24-bit RGB compressed PNG file
 void vmd_writepng(FILE *dfile, const unsigned char * img, int xs, int ys);
+
+/// Write 32-bit RGBA compressed PNG file
+void vmd_writepng_alpha(FILE *dfile, const unsigned char * img, int xs, int ys);
 #endif
 
 #endif

@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: TclMeasure.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.156 $	$Date: 2016/11/28 03:05:05 $
+ *	$Revision: 1.171 $	$Date: 2019/01/23 22:28:10 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <tcl.h>
 #include <ctype.h>
+#include <math.h>
 #include "TclCommands.h"
 #include "AtomSel.h"
 #include "Matrix4.h"
@@ -37,27 +38,26 @@
 #include "Atom.h"
 #include "Molecule.h"
 
+// needed by VolInterior commands
+#include "QuickSurf.h"
+#include "MDFF.h"
+#include "CUDAMDFF.h"
+#include "MeasureVolInterior.h"
 
-// compute the center of mass
-// Takes an atom selection and one of three possible weights
-//  1) if weight == NULL, uses weights of 1
-//  2) if num == sel.selected ; assumes there is one weight per
-//           selected atom
-//  3) if num == sel.num_atoms; assumes weight[i] is for atom[i]
-// returns center coordinate in float com[3]
-// returns 0 if valid data or an appropriate MEASURE_ERR_xxx code otherwise.
 
-// get weights from a Tcl item.  data must have space to hold sel->selected
-// items.
-// If there is no item, or if it's "none", return a list of ones.
-// If the item matches an atom selection keyword, and the keyword returns 
-// floating point data, return that data, otherwise error.
-// Otherwise, the item must be a list of floats.  Set the selected items
-// from the list.   
+// Get weights from a Tcl obj.  Data must hold sel->selected items, or natoms.
+// If there is no obj, or if it's "none", return a list of ones.
+// If the obj matches an atom selection keyword/field, and the field returns 
+// floating point data, return that data, otherwise return error.
+// Otherwise, the obj must be a list of floats to use for the weights,
+// with either a size == sel->selected,  or size == natoms.  
+//
+// NOTE: this routine cannot be used on selections that change between frames.
+//
 int tcl_get_weights(Tcl_Interp *interp, VMDApp *app, AtomSel *sel, 
-                       Tcl_Obj *weight_obj, float *data) {
-
+                    Tcl_Obj *weight_obj, float *data) {
   char *weight_string = NULL;
+
   if (!sel) return MEASURE_ERR_NOSEL;
   if (!app->molecule_valid_id(sel->molid())) return MEASURE_ERR_NOMOLECULE;
   if (weight_obj)
@@ -67,10 +67,12 @@ int tcl_get_weights(Tcl_Interp *interp, VMDApp *app, AtomSel *sel,
     for (int i=0; i<sel->selected; i++) {
       data[i] = 1.0;
     }
-    return 0;
+    return MEASURE_NOERR;
   }
+
   // if a selection string was given, check the symbol table
   SymbolTable *atomSelParser = app->atomSelParser; 
+
   // weights must return floating point values, so the symbol must not 
   // be a singleword, so macro is NULL.
   atomsel_ctxt context(atomSelParser, 
@@ -79,26 +81,27 @@ int tcl_get_weights(Tcl_Interp *interp, VMDApp *app, AtomSel *sel,
 
   int fctn = atomSelParser->find_attribute(weight_string);
   if (fctn >= 0) {
-    // the keyword exists, so get the data
-    // first, check to see that the function returns floats.
-    // if it doesn't, it makes no sense to use it as a weight
+    // the keyword exists, so get the data if it is type float, otherwise fail
     if (atomSelParser->fctns.data(fctn)->returns_a != SymbolTableElement::IS_FLOAT) {
       Tcl_AppendResult(interp, 
         "weight attribute must have floating point values", NULL);
       return MEASURE_ERR_BADWEIGHTPARM;  // can't understand weight parameter 
     }
+
     double *tmp_data = new double[sel->num_atoms];
-    atomSelParser->fctns.data(fctn)->keyword_double(
-        &context, sel->num_atoms,tmp_data, sel->on);
-    int j=0;
-    for (int i=0; i<sel->num_atoms; i++) {
+    atomSelParser->fctns.data(fctn)->keyword_double(&context, 
+                              sel->num_atoms, tmp_data, sel->on);
+
+    for (int i=sel->firstsel, j=0; i<=sel->lastsel; i++) {
       if (sel->on[i])
         data[j++] = (float)tmp_data[i];
     }
+
     delete [] tmp_data;
-    return 0;
+    return MEASURE_NOERR;
   }
-  // and see if this is a Tcl list with the right number of atoms
+
+  // Determine if weights are a Tcl list with the right number of atoms
   int list_num;
   Tcl_Obj **list_data;
   if (Tcl_ListObjGetElements(interp, weight_obj, &list_num, &list_data) 
@@ -108,23 +111,103 @@ int tcl_get_weights(Tcl_Interp *interp, VMDApp *app, AtomSel *sel,
   if (list_num != sel->selected && list_num != sel->num_atoms) 
     return MEASURE_ERR_BADWEIGHTNUM;
   
-  int j = 0;
-  for (int i=0; i<list_num; i++) {
+  for (int i=0, j=0; i<list_num; i++) {
     double tmp_data;
+
     if (Tcl_GetDoubleFromObj(interp, list_data[i], &tmp_data) != TCL_OK) 
       return MEASURE_ERR_NONNUMBERPARM;
+
     if (list_num == sel->selected) {
-      //assert(i < sel->selected);
-      data[i] = (float)tmp_data;
+      data[i] = (float)tmp_data; // one weight list item per selected atom
     } else {
       if (sel->on[i]) {
-        //assert(j < sel->selected);
-        data[j++] = (float)tmp_data;
+        data[j++] = (float)tmp_data; // one weight list item for each atom
       }
     }
   }
+
+  return MEASURE_NOERR;
+}
+
+
+int atomsel_default_weights(AtomSel *sel, float *weights) {
+  if (sel->firstsel > 0)
+    memset(&weights[0], 0, sel->firstsel * sizeof(float)); 
+
+  for (int i=sel->firstsel; i<=sel->lastsel; i++) {
+    // Use the standard "on" check instead of typecasting the array elements
+    weights[i] = sel->on[i] ? 1.0f : 0.0f;
+  }
+
+  if (sel->lastsel < (sel->num_atoms - 1))
+    memset(&weights[sel->lastsel+1], 0, ((sel->num_atoms - 1) - sel->lastsel) * sizeof(float)); 
+
   return 0;
 }
+
+
+int get_weights_from_tcl_list(Tcl_Interp *interp, VMDApp *app, AtomSel *sel,
+                              Tcl_Obj *weights_obj, float *weights) {
+  int list_num = 0;
+  Tcl_Obj **list_elems = NULL;
+  if (Tcl_ListObjGetElements(interp, weights_obj, &list_num, &list_elems)
+      != TCL_OK) {
+    return MEASURE_ERR_BADWEIGHTPARM;
+  }
+  if (list_num != sel->num_atoms) {
+    return MEASURE_ERR_BADWEIGHTNUM;
+  }
+  for (int i = 0; i < sel->num_atoms; i++) {
+    double tmp_data = 0.0;
+    if (Tcl_GetDoubleFromObj(interp, list_elems[i], &tmp_data) != TCL_OK) {
+      return TCL_ERROR;
+    }
+    weights[i] = static_cast<float>(tmp_data);
+  }
+  return 0;
+}
+
+
+// This routine eliminates the need to include SymbolTable.h,
+// and allows the caller to determine if a per-atom attribute/field
+// exists or not.
+int get_attribute_index(VMDApp *app, char const *string) {
+  SymbolTable *atomSelParser = app->atomSelParser;
+  return atomSelParser->find_attribute(string);
+}
+
+
+int get_weights_from_attribute(VMDApp *app, AtomSel *sel,
+                               char const *weights_string, float *weights) {
+  SymbolTable *atomSelParser = app->atomSelParser;
+  int fctn = atomSelParser->find_attribute(weights_string);
+  // first, check to see that the function returns floats.
+  // if it doesn't, it makes no sense to use it as a weight
+  if (atomSelParser->fctns.data(fctn)->returns_a !=
+      SymbolTableElement::IS_FLOAT) {
+    return MEASURE_ERR_BADWEIGHTPARM;  // can't understand weight parameter
+  }
+  atomsel_ctxt context(atomSelParser,
+                       app->moleculeList->mol_from_id(sel->molid()),
+                       sel->which_frame, NULL);
+  double *tmp_data = new double[sel->num_atoms];
+  atomSelParser->fctns.data(fctn)->keyword_double(&context, sel->num_atoms,
+                                                  tmp_data, sel->on);
+
+  if (sel->firstsel > 0)
+    memset(&weights[0], 0, sel->firstsel * sizeof(float)); 
+
+  for (int i=sel->firstsel; i<=sel->lastsel; i++) {
+    weights[i] = sel->on[i] ? static_cast<float>(tmp_data[i]) : 0.0;
+  }
+
+  if (sel->lastsel < (sel->num_atoms - 1))
+    memset(&weights[sel->lastsel+1], 0, ((sel->num_atoms - 1) - sel->lastsel) * sizeof(float)); 
+
+  delete [] tmp_data;
+  return 0;
+}
+
 
 // get the  atom index re-ordering list for use by measure_fit
 int tcl_get_orders(Tcl_Interp *interp, int selnum, 
@@ -149,32 +232,32 @@ int tcl_get_orders(Tcl_Interp *interp, int selnum,
       return MEASURE_ERR_BADORDERINDEX; // order index is out of range
   }
 
-  return 0;
+  return MEASURE_NOERR;
 }
 
-/*
-Function:  vmd_measure_center
-Parameters:  <selection>               // computes with weight == 1
-Parameters:  <selection> weight [none|atom value|string array] 
-  computes with the weights based on the following:
-      none   => weights all 1
-      atom value => value from atomSelParser (eg
-         mass  => use weight based on mass
-         index => use weight based on atom index (0 to n-1)
-      string => use string to get weights for each atom.  The string can
-         have number == number of selected atoms or total number of atoms
 
- Examples: 
-    vmd_measure_center atomselect12
-    vmd_measure_center atomselect12 weight mass
-    vmd_measure_center atomselect12 {12 13} [atomselect top "index 2 3"]
- If no weight is given, no weight term is used (computes center of number)
- */
-static int vmd_measure_center(VMDApp *app, int argc, Tcl_Obj *const objv[], Tcl_Interp *interp)
-{
+//
+// Function:  vmd_measure_center
+// Parameters:  <selection>               // computes with weight == 1
+// Parameters:  <selection> weight [none | atom field | list] 
+//   computes with the weights based on the following:
+//       none       => weights all 1
+//       atom field => value from atomSelParser (eg
+//                     mass  => use weight based on mass
+//                     index => use weight based on atom index (0 to n-1)
+//             list => use list to get weights for each atom.  
+//                     The list can have length == number of selected atoms,
+//                     or it can have length == the total number of atoms
+// 
+//  Examples: 
+//     vmd_measure_center atomselect12
+//     vmd_measure_center atomselect12 weight mass
+//     vmd_measure_center atomselect12 {12 13} [atomselect top "index 2 3"]
+//  If no weight is given, no weight term is used (computes center of number)
+//
+static int vmd_measure_center(VMDApp *app, int argc, Tcl_Obj *const objv[], Tcl_Interp *interp) {
   if (argc != 2 && argc != 4 ) {
-    Tcl_WrongNumArgs(interp, 2, objv-1, 
-      (char *)"<sel> [weight <weights>]");
+    Tcl_WrongNumArgs(interp, 2, objv-1, (char *)"<sel> [weight <weights>]");
     return TCL_ERROR;
   }
   if (argc == 4 && strcmp(Tcl_GetStringFromObj(objv[2],NULL), "weight")) {
@@ -191,38 +274,99 @@ static int vmd_measure_center(VMDApp *app, int argc, Tcl_Obj *const objv[], Tcl_
 
   // get the weight
   float *weight = new float[sel->selected];
-  {
-    int ret_val;
-    if (argc == 2) {          // only from atom selection, so weight is 1
-      ret_val = tcl_get_weights(interp, app, sel, NULL, weight);
-    } else {
-      ret_val = tcl_get_weights(interp, app, sel, objv[3], weight);
-    }
-    if (ret_val < 0) {
-      Tcl_AppendResult(interp, "measure center: ", measure_error(ret_val),
-		       NULL);
-      delete [] weight;
-      return TCL_ERROR;
-    }
+  int ret_val=0;
+  if (argc == 2) {          // only from atom selection, so weight is 1
+    ret_val = tcl_get_weights(interp, app, sel, NULL, weight);
+  } else {
+    ret_val = tcl_get_weights(interp, app, sel, objv[3], weight);
+  }
+  if (ret_val < 0) {
+    Tcl_AppendResult(interp, "measure center: ", measure_error(ret_val), NULL);
+    delete [] weight;
+    return TCL_ERROR;
   }
 
   // compute the center of "mass"
-  {
-    float com[3];
-    const float *framepos = sel->coordinates(app->moleculeList);
-    int ret_val = measure_center(sel, framepos, weight, com);
-    delete [] weight;
-    if (ret_val < 0) {
-      Tcl_AppendResult(interp, "measure center: ", measure_error(ret_val),
-		       NULL);
-      return TCL_ERROR;
-    }
-    Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewDoubleObj(com[0]));
-    Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewDoubleObj(com[1]));
-    Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewDoubleObj(com[2]));
-    Tcl_SetObjResult(interp, tcl_result);
+  float com[3];
+  const float *framepos = sel->coordinates(app->moleculeList);
+  ret_val = measure_center(sel, framepos, weight, com);
+  delete [] weight;
+  if (ret_val < 0) {
+    Tcl_AppendResult(interp, "measure center: ", measure_error(ret_val), NULL);
+    return TCL_ERROR;
   }
+
+  Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
+  Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewDoubleObj(com[0]));
+  Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewDoubleObj(com[1]));
+  Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewDoubleObj(com[2]));
+  Tcl_SetObjResult(interp, tcl_result);
+
+  return TCL_OK;
+}
+
+
+static int vmd_measure_centerperresidue(VMDApp *app, int argc, Tcl_Obj *const objv[], Tcl_Interp *interp) {
+  int ret_val = 0;
+
+  // check argument counts for valid combinations
+  if (argc != 2 && argc != 4 ) {
+    Tcl_WrongNumArgs(interp, 2, objv-1, (char *)"<sel> [weight <weights>]");
+    return TCL_ERROR;
+  }
+
+  // the only valid optional parameter is "weight"
+  if (argc == 4 && strcmp(Tcl_GetStringFromObj(objv[2], NULL), "weight")) {
+    Tcl_SetResult(interp, (char *) "measure centerperresidue: parameter can only be 'weight'", TCL_STATIC);
+    return TCL_ERROR;
+  }
+  
+  // get the selection
+  AtomSel *sel = tcl_commands_get_sel(interp, Tcl_GetStringFromObj(objv[1], NULL));
+  if (!sel) {
+    Tcl_SetResult(interp, (char *) "measure centerperresidue: no atom selection", TCL_STATIC);
+    return TCL_ERROR;
+  }
+
+  // get the weight
+  float *weight = new float[sel->selected];
+  if (argc == 2) {
+    // only from atom selection, so weights are all set to 1
+    ret_val = tcl_get_weights(interp, app, sel, NULL, weight);
+  } else {
+    // from a per-atom field or a list
+    ret_val = tcl_get_weights(interp, app, sel, objv[3], weight);
+  }
+  if (ret_val < 0) {
+    Tcl_AppendResult(interp, "measure centerperresidue: ", 
+                     measure_error(ret_val), NULL);
+    delete [] weight;
+    return TCL_ERROR;
+  }
+
+  // compute the center of "mass"
+  float *com = new float[3*sel->selected];
+  const float *framepos = sel->coordinates(app->moleculeList);
+  ret_val = measure_center_perresidue(app->moleculeList, sel, 
+                                      framepos, weight, com);
+  delete [] weight;
+  if (ret_val < 0) {
+    Tcl_AppendResult(interp, "measure centerperresidue: ", 
+                     measure_error(ret_val), NULL);
+    return TCL_ERROR;
+  }
+
+  // generate lists of CoMs from results
+  Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
+  for (int i=0; i<ret_val; i++) {
+    Tcl_Obj *m = Tcl_NewListObj(0, NULL);
+    for (int j=0; j<3; j++) {
+      Tcl_ListObjAppendElement(interp, m, Tcl_NewDoubleObj(com[3*i+j]));
+    }
+    Tcl_ListObjAppendElement(interp, tcl_result, m);
+  }
+  Tcl_SetObjResult(interp, tcl_result);
+  delete [] com;
 
   return TCL_OK;
 }
@@ -249,30 +393,26 @@ static int vmd_measure_sumweights(VMDApp *app, int argc, Tcl_Obj *const objv[], 
 
   // get the weight
   float *weight = new float[sel->selected];
-  {
-    int ret_val = tcl_get_weights(interp, app, sel, objv[3], weight);
-    if (ret_val < 0) {
-      Tcl_AppendResult(interp, "measure center: ", measure_error(ret_val),
-                       NULL);
-      delete [] weight;
-      return TCL_ERROR;
-    }
+  int ret_val = 0;
+  ret_val = tcl_get_weights(interp, app, sel, objv[3], weight);
+  if (ret_val < 0) {
+    Tcl_AppendResult(interp, "measure center: ", measure_error(ret_val), NULL);
+    delete [] weight;
+    return TCL_ERROR;
   }
 
   // compute the sum of the weights
-  {
-    float weightsum;
-    int ret_val = measure_sumweights(sel, sel->selected, weight, &weightsum);
-    delete [] weight;
-    if (ret_val < 0) {
-      Tcl_AppendResult(interp, "measure center: ", measure_error(ret_val),
-                       NULL);
-      return TCL_ERROR;
-    }
-    Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewDoubleObj(weightsum));
-    Tcl_SetObjResult(interp, tcl_result);
+  float weightsum=0;
+  ret_val = measure_sumweights(sel, sel->selected, weight, &weightsum);
+  delete [] weight;
+  if (ret_val < 0) {
+    Tcl_AppendResult(interp, "measure center: ", measure_error(ret_val), NULL);
+    return TCL_ERROR;
   }
+
+  Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
+  Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewDoubleObj(weightsum));
+  Tcl_SetObjResult(interp, tcl_result);
 
   return TCL_OK;
 }
@@ -339,7 +479,6 @@ static int vmd_measure_avpos(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_
   }
 
   Tcl_SetObjResult(interp, tcl_result);
-
   delete [] avpos;
 
   return TCL_OK;
@@ -352,14 +491,13 @@ static int vmd_measure_dipole(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl
   const char *opt;
   int unitsdebye=0; // default units are elementary charges/Angstrom
   int usecenter=1;  // remove net charge at the center of mass (-1), geometrical center (1), don't (0)
-  
 
   if ((argc < 2) || (argc > 4)) {
     Tcl_WrongNumArgs(interp, 2, objv-1, (char *) "<sel> [-elementary|-debye] [-geocenter|-masscenter|-origincenter]");
     return TCL_ERROR;
   }
-  AtomSel *sel = tcl_commands_get_sel(interp, Tcl_GetStringFromObj(objv[1], NULL)
-);
+  AtomSel *sel;
+  sel = tcl_commands_get_sel(interp, Tcl_GetStringFromObj(objv[1], NULL));
   if (!sel) {
     Tcl_AppendResult(interp, "measure dipole: no atom selection", NULL);
     return TCL_ERROR;
@@ -404,20 +542,16 @@ static int vmd_measure_dipole(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl
 //  Returns: the dihedral angle for the specified atoms
 static int vmd_measure_dihed(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
   int first=-1, last=-1, frame=-1;
-
-  if(argc<2) {
+  if (argc < 2) {
     Tcl_WrongNumArgs(interp, 2, objv-1, (char *) "{{<atomid1> [<molid1>]} {<atomid2> [<molid2>]} {<atomid3> [<molid3>]} {<atomid4> [<molid4>]}} [molid <default molid>] [frame <frame|all|last> | first <first> last <last>]");
     return TCL_ERROR;
   }
 
-  int molid[4];
-  int atmid[4];
-  int defmolid = -1;
+  int molid[4], atmid[4], defmolid = -1;
   bool allframes = false;
 
   // Get the geometry type dihed/imprp
   char *geomname = Tcl_GetStringFromObj(objv[0],NULL);
-
 
   // Read the atom list
   int numatms;
@@ -425,20 +559,18 @@ static int vmd_measure_dihed(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_
   if (Tcl_ListObjGetElements(interp, objv[1], &numatms, &data) != TCL_OK) {
     Tcl_AppendResult(interp, " measure ", geomname, ": bad syntax", NULL);
     Tcl_AppendResult(interp, " Usage: measure ", geomname, " {{<atomid1> [<molid1>]} {<atomid2> [<molid2>]} {<atomid3> [<molid3>]} {<atomid4> [<molid4>]}} [molid <default molid>] [frame <frame|all|last> | first <first> last <last>]", NULL);
-
     return TCL_ERROR;
   }
 
-  if (numatms!=4) {
+  if (numatms != 4) {
     Tcl_AppendResult(interp, " measure dihed: must specify exactly four atoms in a list", NULL);
     return TCL_ERROR;
   }
-    
 
-  if (argc>3) {
+  if (argc > 3) {
     int i;
     for (i=2; i<argc; i+=2) {
-      char *argvcur = Tcl_GetStringFromObj(objv[i],NULL);
+      char *argvcur = Tcl_GetStringFromObj(objv[i], NULL);
       if (!strupncmp(argvcur, "molid", CMDLEN)) {
 	if (Tcl_GetIntFromObj(interp, objv[i+1], &defmolid) != TCL_OK) {
 	  Tcl_AppendResult(interp, " measure ", geomname, ": bad molid", NULL);
@@ -456,16 +588,16 @@ static int vmd_measure_dihed(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_
 	}
      } else if (!strupncmp(argvcur, "frame", CMDLEN)) {
 	if (!strupcmp(Tcl_GetStringFromObj(objv[i+1],NULL), "all")) {
-	   allframes = true;
-	} else if (!strupcmp(Tcl_GetStringFromObj(objv[i+1],NULL), "last")) {
-	  frame=-2;
-	} else if (Tcl_GetIntFromObj(interp, objv[i+1], &frame) != TCL_OK) {
-	  Tcl_AppendResult(interp, " measure ", geomname, ": bad frame value", NULL);
-	  return TCL_ERROR;
-	}
+          allframes = true;
+        } else if (!strupcmp(Tcl_GetStringFromObj(objv[i+1],NULL), "last")) {
+          frame=-2;
+        } else if (Tcl_GetIntFromObj(interp, objv[i+1], &frame) != TCL_OK) {
+          Tcl_AppendResult(interp, " measure ", geomname, ": bad frame value", NULL);
+          return TCL_ERROR;
+        }
       } else {
-	Tcl_AppendResult(interp, "measure ", geomname, ": invalid syntax, no such keyword: ", argvcur, NULL);
-	return TCL_ERROR;
+        Tcl_AppendResult(interp, "measure ", geomname, ": invalid syntax, no such keyword: ", argvcur, NULL);
+        return TCL_ERROR;
       }
     }
   }
@@ -506,14 +638,13 @@ static int vmd_measure_dihed(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_
       }
     } else molid[i] = defmolid;
   }
-  
 
   // Compute the value
   ResizeArray<float> gValues(1024);
   int ret_val;
-  ret_val = measure_geom(app->moleculeList, molid, atmid, &gValues, frame, first, last,
-			 defmolid, MEASURE_DIHED);
-  if (ret_val<0) {
+  ret_val = measure_geom(app->moleculeList, molid, atmid, &gValues, 
+                         frame, first, last, defmolid, MEASURE_DIHED);
+  if (ret_val < 0) {
     Tcl_AppendResult(interp, measure_error(ret_val), NULL);
     return TCL_ERROR;
   }
@@ -528,6 +659,7 @@ static int vmd_measure_dihed(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_
   return TCL_OK;
 }
 
+
 // Function: vmd_measure_angle {3 atoms as {<atomid> ?<molid>?}} ?molid <default molid>? 
 //                             ?frame [f|all|last]? | ?first <first>? ?last <last>?
 //  Returns: the bond angle for the specified atoms
@@ -539,9 +671,7 @@ static int vmd_measure_angle(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_
     return TCL_ERROR;
   }
 
-  int molid[3];
-  int atmid[3];
-  int defmolid = -1;
+  int molid[3], atmid[3], defmolid = -1;
   bool allframes = false;
 
   // Read the atom list
@@ -553,15 +683,13 @@ static int vmd_measure_angle(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_
     return TCL_ERROR;
   }
 
-  if (numatms!=3) {
+  if (numatms != 3) {
     Tcl_AppendResult(interp, " measure angle: must specify exactly three atoms in a list", NULL);
     return TCL_ERROR;
   }
-    
 
-  if (argc>3) {
-    int i;
-    for (i=2; i<argc; i+=2) {
+  if (argc > 3) {
+    for (int i=2; i<argc; i+=2) {
       char *argvcur = Tcl_GetStringFromObj(objv[i],NULL);
       if (!strupncmp(argvcur, "molid", CMDLEN)) {
 	if (Tcl_GetIntFromObj(interp, objv[i+1], &defmolid) != TCL_OK) {
@@ -630,13 +758,12 @@ static int vmd_measure_angle(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_
       }
     } else molid[i] = defmolid;
   }
-  
 
   // Compute the value
   ResizeArray<float> gValues(1024);
   int ret_val;
-  ret_val = measure_geom(app->moleculeList, molid, atmid, &gValues, frame, first, last,
-			 defmolid, MEASURE_ANGLE);
+  ret_val = measure_geom(app->moleculeList, molid, atmid, &gValues, 
+                         frame, first, last, defmolid, MEASURE_ANGLE);
   if (ret_val<0) {
     printf("ERROR\n %s\n", measure_error(ret_val));
     Tcl_AppendResult(interp, measure_error(ret_val), NULL);
@@ -653,24 +780,22 @@ static int vmd_measure_angle(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_
   return TCL_OK;
 }
 
-// Function: vmd_measure_bond {2 atoms as {<atomid> ?<molid>?}} ?molid <molid>? ?frame [f|all|last]? | ?first <first>? ?last <last>?
-//  Returns: the bond length for the specified atoms
+
+// vmd_measure_bond {2 atoms as {<atomid> ?<molid>?}} ?molid <molid>? ?frame [f|all|last]? | ?first <first>? ?last <last>?
+// Returns the bond length for the specified atoms
 static int vmd_measure_bond(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
   int first=-1, last=-1, frame=-1;
 
   if (argc<2) {
-    Tcl_WrongNumArgs(interp, 2, objv-1,
-		     (char *) "{{<atomid1> [<molid1>]} {<atomid2> [<molid2>]}} [molid <default molid>] [frame <frame|all|last> | first <first> last <last>]]");
+    Tcl_WrongNumArgs(interp, 2, objv-1, (char *) "{{<atomid1> [<molid1>]} {<atomid2> [<molid2>]}} [molid <default molid>] [frame <frame|all|last> | first <first> last <last>]]");
     return TCL_ERROR;
   }
   
-  int molid[2];
-  int atmid[2];
-  int defmolid = -1;
+  int molid[2], atmid[2], defmolid = -1;
   bool allframes = false;
 
   // Read the atom list
-  int numatms;
+  int numatms=0;
   Tcl_Obj **data;
   if (Tcl_ListObjGetElements(interp, objv[1], &numatms, &data) != TCL_OK) {
     Tcl_AppendResult(interp, " measure bond: bad syntax", NULL);
@@ -678,15 +803,13 @@ static int vmd_measure_bond(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_I
     return TCL_ERROR;
   }
 
-  if (numatms!=2) {
+  if (numatms != 2) {
     Tcl_AppendResult(interp, " measure bond: must specify exactly two atoms in a list", NULL);
     return TCL_ERROR;
   }
-    
 
-  if (argc>3) {
-    int i;
-    for (i=2; i<argc; i+=2) {
+  if (argc > 3) {
+    for (int i=2; i<argc; i+=2) {
       char *argvcur = Tcl_GetStringFromObj(objv[i],NULL);
       if (!strupncmp(argvcur, "molid", CMDLEN)) {
 	if (Tcl_GetIntFromObj(interp, objv[i+1], &defmolid) != TCL_OK) {
@@ -731,7 +854,7 @@ static int vmd_measure_bond(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_I
   if (defmolid<0) defmolid = app->molecule_top();
 
   // Assign atom IDs and molecule IDs
-  int i,numelem;
+  int i, numelem;
   Tcl_Obj **atmmol;
   for (i=0; i<numatms; i++) {
     if (Tcl_ListObjGetElements(interp, data[i], &numelem, &atmmol) != TCL_OK) {
@@ -755,14 +878,13 @@ static int vmd_measure_bond(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_I
       }
     } else molid[i] = defmolid;
   }
-  
 
   // Compute the value
   ResizeArray<float> gValues(1024);
   int ret_val;
-  ret_val = measure_geom(app->moleculeList, molid, atmid, &gValues, frame, first, last,
-			 defmolid, MEASURE_BOND);
-  if (ret_val<0) {
+  ret_val = measure_geom(app->moleculeList, molid, atmid, &gValues, 
+                         frame, first, last, defmolid, MEASURE_BOND);
+  if (ret_val < 0) {
     printf("ERROR\n %s\n", measure_error(ret_val));
     Tcl_AppendResult(interp, measure_error(ret_val), NULL);
     return TCL_ERROR;
@@ -777,6 +899,70 @@ static int vmd_measure_bond(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_I
 
   return TCL_OK;
 }
+
+
+// vmd_measure_rmsfperresidue <selection> first <first> last <last> step <step>
+// Returns: position variance of the selected atoms over the selected frames, 
+// returning one value per residue in the selection.
+// Example: measure rmsfperresidue atomselect76 0 20 1
+static int vmd_measure_rmsfperresidue(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
+  int first = 0;  // start with first frame by default
+  int last = -1;  // finish with last frame by default
+  int step = 1;   // use all frames by default
+
+  if (argc < 2 || argc > 8) {
+    Tcl_WrongNumArgs(interp, 2, objv-1, (char *)"<sel> [first <first>] [last <last>] [step <step>]");
+    return TCL_ERROR;
+  }
+  AtomSel *sel = tcl_commands_get_sel(interp, Tcl_GetStringFromObj(objv[1],NULL)
+);
+  if (!sel) {
+    Tcl_AppendResult(interp, "measure rmsfperresidue: no atom selection", NULL);
+    return TCL_ERROR;
+  }
+ 
+  int i;
+  for (i=2; i<argc; i+=2) {
+    char *argvcur = Tcl_GetStringFromObj(objv[i],NULL);
+    if (!strupncmp(argvcur, "first", CMDLEN)) {
+      if (Tcl_GetIntFromObj(interp, objv[i+1], &first) != TCL_OK) {
+        Tcl_AppendResult(interp, "measure rmsfperresidue: bad first frame value", NULL);
+        return TCL_ERROR;
+      }
+    } else if (!strupncmp(argvcur, "last", CMDLEN)) {
+      if (Tcl_GetIntFromObj(interp, objv[i+1], &last) != TCL_OK) {
+        Tcl_AppendResult(interp, "measure rmsfperresidue: bad last frame value", NULL);
+        return TCL_ERROR;
+      }
+    } else if (!strupncmp(argvcur, "step", CMDLEN)) {
+      if (Tcl_GetIntFromObj(interp, objv[i+1], &step) != TCL_OK) {
+        Tcl_AppendResult(interp, "measure rmsfperresidue: bad frame step value", NULL);
+        return TCL_ERROR;
+      }
+    } else {
+      Tcl_AppendResult(interp, "measure rmsfperresidue: invalid syntax, no such keyword: ", argvcur, NULL);
+      return TCL_ERROR;
+    }
+  }
+
+  float *rmsf = new float[sel->selected];
+  int ret_val = measure_rmsf_perresidue(sel, app->moleculeList, first, last, step, rmsf);
+  if (ret_val < 0) {
+    Tcl_AppendResult(interp, "measure rmsfperresidue: ", measure_error(ret_val), NULL);
+    delete [] rmsf;
+    return TCL_ERROR;
+  }
+
+  Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
+  for (i=0; i<ret_val; i++) {
+    Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewDoubleObj(rmsf[i]));
+  }
+  Tcl_SetObjResult(interp, tcl_result);
+  delete [] rmsf;
+
+  return TCL_OK;
+}
+
 
 // Function: vmd_measure_rmsf <selection> first <first> last <last> step <step>
 //  Returns: position variance of the selected atoms over the selected frames
@@ -830,25 +1016,21 @@ static int vmd_measure_rmsf(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_I
   }
 
   Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
-
   for (i=0; i<sel->selected; i++) {
     Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewDoubleObj(rmsf[i]));
   }
-
   Tcl_SetObjResult(interp, tcl_result);
 
   delete [] rmsf;
-
   return TCL_OK;
 }
 
 
 // measure radius of gyration for selected atoms
-static int vmd_measure_rgyr(VMDApp *app, int argc, Tcl_Obj *const objv[], Tcl_Interp *interp)
-{
-  if (argc != 2 && argc != 4 ) {
+static int vmd_measure_rgyr(VMDApp *app, int argc, Tcl_Obj *const objv[], Tcl_Interp *interp) {
+  if (argc != 2 && argc != 4) {
     Tcl_WrongNumArgs(interp, 2, objv-1,
-      (char *)"<selection> [weight <weights>]");
+                     (char *)"<selection> [weight <weights>]");
     return TCL_ERROR;
   }
   if (argc == 4 && strcmp(Tcl_GetStringFromObj(objv[2],NULL), "weight")) {
@@ -865,26 +1047,23 @@ static int vmd_measure_rgyr(VMDApp *app, int argc, Tcl_Obj *const objv[], Tcl_In
 
   // get the weight
   float *weight = new float[sel->selected];
-  {
-    int ret_val;
-    if (argc == 2) {          // only from atom selection, so weight is 1
-      ret_val = tcl_get_weights(interp, app, sel, NULL, weight);
-    } else {
-      ret_val = tcl_get_weights(interp, app, sel, objv[3], weight);
-    }
-    if (ret_val < 0) {
-      Tcl_AppendResult(interp, "measure rgyr: ", measure_error(ret_val),
-                       NULL);
-      delete [] weight;
-      return TCL_ERROR;
-    }
+  int ret_val = 0;
+  if (argc == 2) {          // only from atom selection, so weight is 1
+    ret_val = tcl_get_weights(interp, app, sel, NULL, weight);
+  } else {
+    ret_val = tcl_get_weights(interp, app, sel, objv[3], weight);
   }
+  if (ret_val < 0) {
+    Tcl_AppendResult(interp, "measure rgyr: ", measure_error(ret_val), NULL);
+    delete [] weight;
+    return TCL_ERROR;
+  }
+
   float rgyr;
-  int ret_val = measure_rgyr(sel, app->moleculeList, weight, &rgyr);
+  ret_val = measure_rgyr(sel, app->moleculeList, weight, &rgyr);
   delete [] weight;
   if (ret_val < 0) {
-    Tcl_AppendResult(interp, "measure rgyr: ", measure_error(ret_val),
-                     NULL);
+    Tcl_AppendResult(interp, "measure rgyr: ", measure_error(ret_val), NULL);
     return TCL_ERROR;
   }
   Tcl_SetObjResult(interp, Tcl_NewDoubleObj(rgyr));
@@ -926,7 +1105,7 @@ static int vmd_measure_minmax(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl
   int ret_val = measure_minmax(sel->num_atoms, sel->on, framepos, radii, 
                                min_coord, max_coord);
   if (ret_val < 0) {
-    Tcl_AppendResult(interp, "measure minmax: ", measure_error(ret_val));
+    Tcl_AppendResult(interp, "measure minmax: ", measure_error(ret_val), NULL);
     return TCL_ERROR;
   }
 
@@ -949,31 +1128,14 @@ static int vmd_measure_minmax(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl
   return TCL_OK;
 }
 
-/* Function: vmd_measure_rmsd <selection1> <selection2> 
-                       {weight [none|atom value|string array]}
 
-   Returns the RMSD between the two selection, taking the weight (if
-any) into account.  If number of elements in the weight != num_atoms
-in sel1 then (num in weight = num selected in sel1 = num selected in
-sel2) else (num in weight = total num in sel1 = total num in sel2).
-The weights are taken from the FIRST selection, if needed
-
-Examples:
-  set sel1 [atomselect 0 all]
-  set sel2 [atomselect 1 all]
-  measure rmsd $sel1 $sel2
-  measure rmsd $sel1 $sel2 weight mass
-  set sel3 [atomselect 0 "index 3 4 5"]
-  set sel4 [atomselect 1 "index 8 5 9"]    # gets turned to 5 8 9
-  measure rmsd $sel3 $sel4 weight occupancy
-*/
-static int vmd_measure_rmsd(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp)
-{
+static int vmd_measure_rmsdperresidue(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
   if (argc !=3 && argc != 5) {
     Tcl_WrongNumArgs(interp, 2, objv-1, 
-      (char *)"<sel1> <sel2> [weight <weights>]");
+                     (char *)"<sel1> <sel2> [weight <weights>]");
     return TCL_ERROR;
   }
+
   // get the selections
   AtomSel *sel1 = tcl_commands_get_sel(interp, Tcl_GetStringFromObj(objv[1],NULL));
   AtomSel *sel2 = tcl_commands_get_sel(interp, Tcl_GetStringFromObj(objv[2],NULL));
@@ -991,38 +1153,113 @@ static int vmd_measure_rmsd(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_I
     return TCL_ERROR;
   }
   float *weight = new float[sel1->selected];
-  {
-    int ret_val;
-    if (argc == 3) {
-      ret_val = tcl_get_weights(interp, app, sel1, NULL, weight);
-    } else {
-      ret_val = tcl_get_weights(interp, app, sel1, objv[4], weight);
-    }
-    if (ret_val < 0) {
-      Tcl_AppendResult(interp, "measure rmsd: ", measure_error(ret_val),
-		       NULL);
-      delete [] weight;
-      return TCL_ERROR;
-    }
+  int ret_val = 0;
+  if (argc == 3) {
+    ret_val = tcl_get_weights(interp, app, sel1, NULL, weight);
+  } else {
+    ret_val = tcl_get_weights(interp, app, sel1, objv[4], weight);
   }
-  // compute the rmsd
-  {
-    float rmsd = 0;
-    const float *x = sel1->coordinates(app->moleculeList);
-    const float *y = sel2->coordinates(app->moleculeList);
-    if (!x || !y) {
-      delete [] weight;
-      return TCL_ERROR;
-    }
-    int ret_val = measure_rmsd(sel1, sel2, sel1->selected, x, y, weight, &rmsd);
+  if (ret_val < 0) {
+    Tcl_AppendResult(interp, "measure rmsd: ", measure_error(ret_val), NULL);
     delete [] weight;
-    if (ret_val < 0) {
-      Tcl_AppendResult(interp, "measure rmsd: ", measure_error(ret_val),
-		       NULL);
-      return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, Tcl_NewDoubleObj(rmsd));
+    return TCL_ERROR;
   }
+
+  // compute the rmsd
+  float *rmsd = new float[sel1->selected];
+  int rc = measure_rmsd_perresidue(sel1, sel2, app->moleculeList, 
+                                   sel1->selected, weight, rmsd);
+  if (rc < 0) {
+    Tcl_AppendResult(interp, "measure rmsd: ", measure_error(rc), NULL);
+    delete [] weight;
+    delete [] rmsd;
+    return TCL_ERROR;
+  }
+  delete [] weight;
+  Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
+  int i;
+  for (i=0; i<rc; i++) {
+    Tcl_ListObjAppendElement(interp, tcl_result, Tcl_NewDoubleObj(rmsd[i]));
+  }
+  delete [] rmsd;
+  Tcl_SetObjResult(interp, tcl_result);
+
+  return TCL_OK;
+}
+
+// Function: vmd_measure_rmsd <selection1> <selection2> 
+//                     {weight [none|atom value|string array]}
+//
+// Returns the RMSD between the two selection, taking the weight (if
+// any) into account.  If number of elements in the weight != num_atoms
+// in sel1 then (num in weight = num selected in sel1 = num selected in
+// sel2) else (num in weight = total num in sel1 = total num in sel2).
+// The weights are taken from the FIRST selection, if needed
+// 
+// Examples:
+//   set sel1 [atomselect 0 all]
+//   set sel2 [atomselect 1 all]
+//   measure rmsd $sel1 $sel2
+//   measure rmsd $sel1 $sel2 weight mass
+//   set sel3 [atomselect 0 "index 3 4 5"]
+//   set sel4 [atomselect 1 "index 8 5 9"]    # gets turned to 5 8 9
+//   measure rmsd $sel3 $sel4 weight occupancy
+//
+static int vmd_measure_rmsd(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp)
+{
+  if (argc !=3 && argc != 5) {
+    Tcl_WrongNumArgs(interp, 2, objv-1, 
+      (char *)"<sel1> <sel2> [weight <weights>]");
+    return TCL_ERROR;
+  }
+
+  // get the selections
+  AtomSel *sel1 = tcl_commands_get_sel(interp, Tcl_GetStringFromObj(objv[1],NULL));
+  AtomSel *sel2 = tcl_commands_get_sel(interp, Tcl_GetStringFromObj(objv[2],NULL));
+  if (!sel1 || !sel2) {
+    Tcl_AppendResult(interp, "measure rmsd: no atom selection", NULL);
+    return TCL_ERROR;
+  }
+
+  if (sel1->selected != sel2->selected) {
+    Tcl_AppendResult(interp, "measure rmsd: selections must have the same number of atoms", NULL);
+    return TCL_ERROR;
+  }
+  if (!sel1->selected) {
+    Tcl_AppendResult(interp, "measure rmsd: no atoms selected", NULL);
+    return TCL_ERROR;
+  }
+
+  float *weight = new float[sel1->selected];
+  int ret_val = 0;
+  if (argc == 3) {
+    ret_val = tcl_get_weights(interp, app, sel1, NULL, weight);
+  } else {
+    ret_val = tcl_get_weights(interp, app, sel1, objv[4], weight);
+  }
+  if (ret_val < 0) {
+    Tcl_AppendResult(interp, "measure rmsd: ", measure_error(ret_val), NULL);
+    delete [] weight;
+    return TCL_ERROR;
+  }
+
+  // compute the rmsd
+  float rmsd = 0;
+  const float *x = sel1->coordinates(app->moleculeList);
+  const float *y = sel2->coordinates(app->moleculeList);
+  if (!x || !y) {
+    delete [] weight;
+    return TCL_ERROR;
+  }
+
+  ret_val = measure_rmsd(sel1, sel2, sel1->selected, x, y, weight, &rmsd);
+  delete [] weight;
+  if (ret_val < 0) {
+    Tcl_AppendResult(interp, "measure rmsd: ", measure_error(ret_val), NULL);
+    return TCL_ERROR;
+  }
+  Tcl_SetObjResult(interp, Tcl_NewDoubleObj(rmsd));
+
   return TCL_OK;
 }
 
@@ -1076,7 +1313,7 @@ static int vmd_measure_rmsd_qcp(VMDApp *app, int argc, Tcl_Obj * const objv[], T
       delete [] weight;
       return TCL_ERROR;
     }
-    int ret_val = measure_rmsd_qcp(sel1, sel2, sel1->selected, x, y, weight, &rmsd);
+    int ret_val = measure_rmsd_qcp(app, sel1, sel2, sel1->selected, x, y, weight, &rmsd);
     delete [] weight;
     if (ret_val < 0) {
       Tcl_AppendResult(interp, "measure rmsd: ", measure_error(ret_val),
@@ -1154,7 +1391,7 @@ static int vmd_measure_rmsdmat_qcp(VMDApp *app, int argc, Tcl_Obj * const objv[]
   float *rmsdmat = (float *) calloc(1, framecount * framecount * sizeof(float));
 
   // compute the rmsd matrix
-  int ret_val = measure_rmsdmat_qcp(sel, app->moleculeList, 
+  int ret_val = measure_rmsdmat_qcp(app, sel, app->moleculeList, 
                                     sel->selected, weight, 
                                     first, last, step, rmsdmat);
   delete [] weight;
@@ -1439,7 +1676,7 @@ static int vmd_measure_gofr(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_I
       if (Tcl_GetIntFromObj(interp, objv[i+1], &step) != TCL_OK)
         return TCL_ERROR;
     } else { // unknown keyword.
-      Tcl_AppendResult(interp, "unknown keyword '", opt, "'. usage: measure gofr ", argerrmsg,NULL);
+      Tcl_AppendResult(interp, "unknown keyword '", opt, "'. usage: measure gofr ", argerrmsg, NULL);
       return TCL_ERROR;
     }
   }
@@ -1574,7 +1811,7 @@ static int vmd_measure_rdf(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_In
       if (Tcl_GetIntFromObj(interp, objv[i+1], &step) != TCL_OK)
         return TCL_ERROR;
     } else { // unknown keyword.
-      Tcl_AppendResult(interp, "unknown keyword '", opt, "'. usage: measure rdf ", argerrmsg,NULL);
+      Tcl_AppendResult(interp, "unknown keyword '", opt, "'. usage: measure rdf ", argerrmsg, NULL);
       return TCL_ERROR;
     }
   }
@@ -1760,7 +1997,7 @@ static int vmd_measure_cluster(VMDApp *app, int argc, Tcl_Obj * const objv[], Tc
       if (Tcl_GetIntFromObj(interp, objv[i+1], &step) != TCL_OK)
         return TCL_ERROR;
     } else { // unknown keyword.
-      Tcl_AppendResult(interp, "unknown keyword '", opt, "'. usage: measure cluster ", argerrmsg,NULL);
+      Tcl_AppendResult(interp, "unknown keyword '", opt, "'. usage: measure cluster ", argerrmsg, NULL);
       return TCL_ERROR;
     }
   }
@@ -1879,7 +2116,7 @@ static int vmd_measure_clustsize(VMDApp *app, int argc, Tcl_Obj * const objv[], 
     } else if (!strcmp(opt, "storesize")) {
       storesize = Tcl_GetStringFromObj(objv[i+1], NULL);
     } else { // unknown keyword.
-      Tcl_AppendResult(interp, "unknown keyword '", opt, "'. usage: measure clustsize ", argerrmsg,NULL);
+      Tcl_AppendResult(interp, "unknown keyword '", opt, "'. usage: measure clustsize ", argerrmsg, NULL);
       return TCL_ERROR;
     }
   }
@@ -1928,7 +2165,7 @@ static int vmd_measure_clustsize(VMDApp *app, int argc, Tcl_Obj * const objv[], 
         if (atomSelParser->fctns.data(fctn)->returns_a == SymbolTableElement::IS_FLOAT) {
           double *tmp_data = new double[sel->num_atoms];
           int j=0;
-          for (int i=0; i<sel->num_atoms; i++) {
+          for (int i=sel->firstsel; i<=sel->lastsel; i++) {
             if (sel->on[i])
               tmp_data[i] = (double) clusternum[j++];
           }
@@ -1940,7 +2177,7 @@ static int vmd_measure_clustsize(VMDApp *app, int argc, Tcl_Obj * const objv[], 
         } else if (atomSelParser->fctns.data(fctn)->returns_a == SymbolTableElement::IS_INT) {
           int *tmp_data = new int[sel->num_atoms];
           int j=0;
-          for (int i=0; i<sel->num_atoms; i++) {
+          for (int i=sel->firstsel; i<=sel->lastsel; i++) {
             if (sel->on[i])
               tmp_data[i] = clusternum[j++];
           }
@@ -1965,7 +2202,7 @@ static int vmd_measure_clustsize(VMDApp *app, int argc, Tcl_Obj * const objv[], 
         if (atomSelParser->fctns.data(fctn)->returns_a == SymbolTableElement::IS_FLOAT) {
           double *tmp_data = new double[sel->num_atoms];
           int j=0;
-          for (int i=0; i<sel->num_atoms; i++) {
+          for (int i=sel->firstsel; i<=sel->lastsel; i++) {
             if (sel->on[i])
               tmp_data[i] = (double) clustersize[j++];
           }
@@ -1977,7 +2214,7 @@ static int vmd_measure_clustsize(VMDApp *app, int argc, Tcl_Obj * const objv[], 
         } else if (atomSelParser->fctns.data(fctn)->returns_a == SymbolTableElement::IS_INT) {
           int *tmp_data = new int[sel->num_atoms];
           int j=0;
-          for (int i=0; i<sel->num_atoms; i++) {
+          for (int i=sel->firstsel; i<=sel->lastsel; i++) {
             if (sel->on[i])
               tmp_data[i] = clustersize[j++];
           }
@@ -2074,70 +2311,42 @@ static int vmd_measure_hbonds(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl
 
   Molecule *mol = app->moleculeList->mol_from_id(sel1->molid());
 
-  const int *A = sel1->on;
-  const int *B = sel2 ? sel2->on : sel1->on;
- 
-  GridSearchPair *pairlist = vmd_gridsearch2(pos, sel1->num_atoms, A, B, (float) cutoff, sel1->num_atoms * 27L);
-  GridSearchPair *p, *tmp;
-  float donortoH[3], Htoacceptor[3];
-  Tcl_Obj *donlist = Tcl_NewListObj(0, NULL);
-  Tcl_Obj *hydlist = Tcl_NewListObj(0, NULL);
-  Tcl_Obj *acclist = Tcl_NewListObj(0, NULL);
-  for (p=pairlist; p != NULL; p=tmp) {
-    MolAtom *a1 = mol->atom(p->ind1); 
-    MolAtom *a2 = mol->atom(p->ind2); 
-    
-    // neither the donor nor acceptor may be hydrogens
-    if (mol->atom(p->ind1)->atomType == ATOMHYDROGEN ||
-        mol->atom(p->ind2)->atomType == ATOMHYDROGEN) {
-      tmp = p->next;
-      free(p);
-      continue;
-    } 
-    if (!a1->bonded(p->ind2)) {
-      int b1 = a1->bonds;
-      int b2 = a2->bonds;
-      const float *coor1 = pos + 3L*p->ind1;
-      const float *coor2 = pos + 3L*p->ind2;
-      int k;
-      // first treat sel1 as donor
-      for (k=0; k<b1; k++) {
-        const int hindex = a1->bondTo[k];
-        if (mol->atom(hindex)->atomType == ATOMHYDROGEN) {         
-          const float *hydrogen = pos + 3L*hindex;
-          vec_sub(donortoH,hydrogen,coor1);
-          vec_sub(Htoacceptor,coor2,hydrogen);
-          if (angle(donortoH, Htoacceptor)  < maxangle ) {
-            Tcl_ListObjAppendElement(interp, donlist, Tcl_NewIntObj(p->ind1));
-            Tcl_ListObjAppendElement(interp, acclist, Tcl_NewIntObj(p->ind2));
-            Tcl_ListObjAppendElement(interp, hydlist, Tcl_NewIntObj(hindex));
-          }
-        }
-      }
-      // if only one atom selection was given, treat sel2 as a donor as well
-      if (!sel2) {
-        for (k=0; k<b2; k++) {
-          const int hindex = a2->bondTo[k];
-          if (mol->atom(hindex)->atomType == ATOMHYDROGEN) {
-            const float *hydrogen = pos + 3L*hindex;
-            vec_sub(donortoH,hydrogen,coor2);
-            vec_sub(Htoacceptor,coor1,hydrogen);
-            if (angle(donortoH, Htoacceptor)  < maxangle ) {
-              Tcl_ListObjAppendElement(interp, donlist, Tcl_NewIntObj(p->ind2));
-              Tcl_ListObjAppendElement(interp, acclist, Tcl_NewIntObj(p->ind1));
-              Tcl_ListObjAppendElement(interp, hydlist, Tcl_NewIntObj(hindex));
-            }
-          }
-        }
-      } 
-    }
-    tmp = p->next;
-    free(p);
+  int *donlist, *hydlist, *acclist;
+  int maxsize = 2 * sel1->num_atoms; //This heuristic is based on ice, where there are < 2 hydrogen bonds per atom if hydrogens are in the selection, and exactly 2 if hydrogens are not considered.
+  donlist = new int[maxsize];
+  hydlist = new int[maxsize];
+  acclist = new int[maxsize];
+  int rc = measure_hbonds(mol, sel1, sel2, cutoff, maxangle, donlist, hydlist, acclist, maxsize);
+  if (rc > maxsize) {
+    delete [] donlist;
+    delete [] hydlist;
+    delete [] acclist;
+    maxsize = rc;
+    donlist = new int[maxsize];
+    hydlist = new int[maxsize];
+    acclist = new int[maxsize];
+    rc = measure_hbonds(mol, sel1, sel2, cutoff, maxangle, donlist, hydlist, acclist, maxsize);
   }
+  if (rc < 0) {
+    Tcl_AppendResult(interp, "measure hbonds: internal error to measure_hbonds", NULL);
+    return TCL_ERROR;
+  }
+  
+  Tcl_Obj *newdonlist = Tcl_NewListObj(0, NULL);
+  Tcl_Obj *newhydlist = Tcl_NewListObj(0, NULL);
+  Tcl_Obj *newacclist = Tcl_NewListObj(0, NULL);
+  for (int k = 0; k < rc; k++) {
+    Tcl_ListObjAppendElement(interp, newdonlist, Tcl_NewIntObj(donlist[k]));
+    Tcl_ListObjAppendElement(interp, newhydlist, Tcl_NewIntObj(hydlist[k]));
+    Tcl_ListObjAppendElement(interp, newacclist, Tcl_NewIntObj(acclist[k]));
+  }
+  delete [] donlist;
+  delete [] hydlist;
+  delete [] acclist;
   Tcl_Obj *result = Tcl_NewListObj(0, NULL);
-  Tcl_ListObjAppendElement(interp, result, donlist);
-  Tcl_ListObjAppendElement(interp, result, acclist);
-  Tcl_ListObjAppendElement(interp, result, hydlist);
+  Tcl_ListObjAppendElement(interp, result, newdonlist);
+  Tcl_ListObjAppendElement(interp, result, newacclist);
+  Tcl_ListObjAppendElement(interp, result, newhydlist);
   Tcl_SetObjResult(interp, result);
   return TCL_OK;
 }
@@ -2278,6 +2487,7 @@ printf("measure sasalist: invalid selection %d\n", s);
 
   int rc = measure_sasalist(app->moleculeList, (const AtomSel **) asels, 
                             numsels, (float) srad, sasalist, sampleptr);
+  free(asels);
   if (rc < 0) {
     Tcl_AppendResult(interp, "measure: sasalist: ", measure_error(rc), NULL);
     return TCL_ERROR;
@@ -2289,6 +2499,8 @@ printf("measure sasalist: invalid selection %d\n", s);
     Tcl_ListObjAppendElement(interp, listobj, Tcl_NewDoubleObj(sasalist[i]));
   }
   Tcl_SetObjResult(interp, listobj);
+  free(sasalist);
+
   return TCL_OK;
 }
 
@@ -3618,6 +3830,348 @@ static int vmd_measure_trans_overlap(VMDApp *app, int argc, Tcl_Obj * const objv
 
 
 
+//
+// Raycasting brute-force approach by Juan R. Perilla <juan@perilla.me>
+//
+int vmd_measure_volinterior(VMDApp *app, int argc, Tcl_Obj * const objv[], Tcl_Interp *interp) {
+  int verbose = 0;
+  if (argc < 3) {
+     // "     options: --allframes (average over all frames)\n"
+    Tcl_SetResult(interp, (char *) "usage: volinterior "
+ 		  " <selection1> [options]\n"
+		  "-res (default 10.0)\n"
+		  "-spacing (default res/3)\n"
+		  "-loadmap (load synth map)"
+		  "-mol molid [default: top]\n"
+		  "-vol volid [0]\n"
+		  "-nrays number of rays to cast [6]\n"
+		  "-isovalue [float: 1.0]\n"
+		  "-verbose\n"
+		  "-overwrite volid\n"
+,
+      TCL_STATIC);
+    return TCL_ERROR;
+  }
+
+  //atom selection
+  AtomSel *sel = NULL;
+  sel = tcl_commands_get_sel(interp, Tcl_GetStringFromObj(objv[1],NULL));
+  if (!sel) {
+    Tcl_AppendResult(interp, "volinterior: no atom selection.", NULL);
+    return TCL_ERROR;
+  }
+  if (!sel->selected) {
+    Tcl_AppendResult(interp, "volinterior: no atoms selected.", NULL);
+    return TCL_ERROR;
+  }
+  if (!app->molecule_valid_id(sel->molid())) {
+    Tcl_AppendResult(interp, "invalid mol id.", NULL);
+    return TCL_ERROR;
+  }
+  int loadsynthmap = 0;
+  int molid = -1;
+  int volid = -1;
+  int volidOverwrite = -1;
+  int overwrite=0;
+  int nrays=6;
+  long Nout = 0;
+  float isovalue=1.0;
+  float radscale;
+  double resolution = 10.0;
+  double gspacing;
+  MoleculeList *mlist = app->moleculeList;
+  Molecule *mymol = mlist->mol_from_id(sel->molid());
+//  const char *outputmap = NULL;
+
+  for (int i=0; i < argc; i++) {
+    char *opt = Tcl_GetStringFromObj(objv[i], NULL);
+    if (!strcmp(opt, "-mol")) {
+      if (i == argc-1) {
+        Tcl_AppendResult(interp, "No molid specified",NULL);
+        return TCL_ERROR;
+      } else if ( Tcl_GetIntFromObj(interp, objv[i+1], &molid) != TCL_OK) {
+        Tcl_AppendResult(interp, "\n molid incorrectly specified",NULL);
+        return TCL_ERROR;
+      }
+    }
+
+    if (!strcmp(opt, "-vol")) {
+      if (i == argc-1){
+        Tcl_AppendResult(interp, "No volume id specified",NULL);
+        return TCL_ERROR;
+      } else if ( Tcl_GetIntFromObj(interp, objv[i+1], &volid) != TCL_OK) {
+        Tcl_AppendResult(interp, "\n volume id incorrectly specified",NULL);
+        return TCL_ERROR;
+      }
+    }
+
+    if (!strcmp(opt, "-overwrite")) {
+      if (i == argc-1){
+        Tcl_AppendResult(interp, "No volume id specified",NULL);
+        return TCL_ERROR;
+      } else if ( Tcl_GetIntFromObj(interp, objv[i+1], &volidOverwrite) != TCL_OK) {
+        Tcl_AppendResult(interp, "\n volume id incorrectly specified",NULL);
+        return TCL_ERROR;
+      }
+      overwrite=1;
+    }
+
+    // Calculate synthmap
+    if (!strcmp(opt, "-loadmap")) {
+      loadsynthmap = 1;
+    }
+    if (!strcmp(opt, "-mol")) {
+      if (i == argc-1) {
+        Tcl_AppendResult(interp, "No molid specified",NULL);
+        return TCL_ERROR;
+      } else if ( Tcl_GetIntFromObj(interp, objv[i+1], &molid) != TCL_OK) {
+        Tcl_AppendResult(interp, "\n molid incorrectly specified",NULL);
+        return TCL_ERROR;
+      }
+    }
+   if (!strcmp(opt, "-res")) {
+      if (i == argc-1) {
+        Tcl_AppendResult(interp, "No resolution specified",NULL);
+        return TCL_ERROR;
+      } else if (Tcl_GetDoubleFromObj(interp, objv[i+1], &resolution) != TCL_OK) { 
+        Tcl_AppendResult(interp, "\nResolution incorrectly specified",NULL);
+        return TCL_ERROR;
+      }
+    }
+    if (!strcmp(opt, "-spacing")) {
+      if (i == argc-1) {
+        Tcl_AppendResult(interp, "No spacing specified",NULL);
+        return TCL_ERROR;
+      } else if ( Tcl_GetDoubleFromObj(interp, objv[i+1], &gspacing) != TCL_OK) {
+        Tcl_AppendResult(interp, "\nspacing incorrectly specified",NULL);
+        return TCL_ERROR;
+      }
+    }
+
+    if (!strcmp(opt,"-nrays")) {
+      if (i == argc-1) {
+        Tcl_AppendResult(interp, "No number of rays specified",NULL);
+        return TCL_ERROR;
+      } else if ( Tcl_GetIntFromObj(interp, objv[i+1], &nrays) != TCL_OK) {
+        Tcl_AppendResult(interp, "\n number of rays incorrectly specified",NULL);
+        return TCL_ERROR;
+      }
+    }
+
+    if (!strcmp(opt,"-isovalue")) {
+      double tmp;
+      if (i == argc-1) {
+	Tcl_AppendResult(interp,"No isovalue specified",NULL);
+	return TCL_ERROR;
+      } else if (Tcl_GetDoubleFromObj(interp,objv[i+1],&tmp) != TCL_OK) {
+	Tcl_AppendResult(interp,"\n Isovalue incorrectly specified", NULL);
+	  return TCL_ERROR;
+      }
+      isovalue=(float) tmp;
+    }
+
+//    if (!strcmp(opt, "-o")) {
+//      if (i == argc-1) {
+//	//	Tcl_AppendResult(interp, "No output file specified",NULL);
+//	//        return TCL_ERROR;
+//	if (verbose) 
+//	  printf("No output file specified.");
+//      } else {
+//        outputmap = Tcl_GetStringFromObj(objv[i+1], NULL);
+//      }
+//    }
+
+    if (!strcmp(opt, "-verbose") || (getenv("VMDVOLINVERBOSE") != NULL)) {
+      verbose = 1;
+    }
+  }
+
+
+  Molecule *volmolOverwrite = NULL;
+  VolumetricData *volmapOverwrite = NULL;
+  if (overwrite==1) {
+    volmolOverwrite = mlist->mol_from_id(molid);
+    volmapOverwrite = volmolOverwrite->modify_volume_data(volidOverwrite);
+    if(volmapOverwrite==NULL) {
+      Tcl_AppendResult(interp, "\n no overwrite volume correctly specified",NULL);
+      return TCL_ERROR;
+    }
+  }
+  
+  VolumetricData *target = NULL;
+  VolumetricData *volmapA = NULL;
+  const float *framepos = sel->coordinates(app->moleculeList);
+  const float *radii = mymol->radius();
+  radscale=.2*resolution;
+  if (gspacing == 0) {
+    gspacing=resolution*0.33;
+  }
+  int quality=0;
+  QuickSurf *qs = new QuickSurf();
+  if (resolution >= 9)
+    quality = 0;
+  else
+    quality = 3;
+  if (molid != -1 && volid != -1 ) {
+    Molecule *volmol = mlist->mol_from_id(molid);
+    volmapA = (VolumetricData *) volmol->get_volume_data(volid);
+    if(volmapA==NULL) {
+      Tcl_AppendResult(interp, "\n no target volume correctly specified",NULL);
+      return TCL_ERROR;
+    }
+  } else {
+    if (verbose) printf("\n Calculating grid ... \n");
+    int cuda_err=-1;
+#if defined(VMDCUDA)
+    cuda_err = vmd_cuda_calc_density(sel,app->moleculeList,quality,radscale,gspacing,&volmapA, NULL, NULL, verbose);
+#endif
+    if (cuda_err == -1 ) {
+      if (verbose) printf("Using CPU version of the code ... \n");
+	volmapA = qs->calc_density_map(sel,mymol,framepos,radii,
+				       quality,(float)radscale, (float) gspacing);
+      }
+    if (verbose) printf("Done.\n");
+  }
+
+  if (volmapA == NULL) {
+    Tcl_AppendResult(interp, "\n no test volume or molid correctly specified",NULL);
+    return TCL_ERROR;
+  }
+  target=CreateEmptyGrid(volmapA);    
+  // Normalize dir vector 
+  // TODO: Let user define direction vectors
+
+  //vec_normalize(rayDir);
+  
+  // Create Grid
+#if 0
+  float rayDir[3] = {1,0,0};
+  Nout += RaycastGrid((const) volmapA,target,isovalue,rayDir);
+  rayDir[0] = -1; rayDir[1]=0; rayDir[2]=0;
+  Nout += RaycastGrid((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  rayDir[0] = 0; rayDir[1]=1; rayDir[2]=0;
+  Nout += RaycastGrid((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  rayDir[0] = 0; rayDir[1]=-1; rayDir[2]=0;
+  Nout += RaycastGrid((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  rayDir[0] = 0; rayDir[1]=0; rayDir[2]=1;
+  Nout += RaycastGrid((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  rayDir[0] = 0; rayDir[1]=0; rayDir[2]=-1;
+  Nout += RaycastGrid((const VolumetricData *) volmapA,target,isovalue,rayDir);
+#endif
+#if 0
+  if (verbose) printf("Marking down boundary.\n");
+  long nVoxIso=markIsoGrid((const VolumetricData *) volmapA, target,isovalue);
+  if (verbose) printf("Casting rays ...\n");
+  float rayDir[3] = {0.1f,0.1f,1.0f};
+  Nout += volin_threaded((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  if (verbose) printf("Dir 1 %ld \n",Nout);
+  rayDir[0] = -0.1f; rayDir[1]=-0.1f; rayDir[2]=-1.0f;
+  Nout += volin_threaded((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  if (verbose) printf("Dir 2 %ld \n",Nout);
+  rayDir[0] = 0.1f; rayDir[1]=1.0f; rayDir[2]=0.1f;
+  Nout += volin_threaded((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  if (verbose) printf("Dir 3 %ld \n",Nout);
+  rayDir[0] = -0.1f; rayDir[1]=-1.0f; rayDir[2]=-0.1f;
+  Nout += volin_threaded((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  if (verbose) printf("Dir 4 %ld \n",Nout);
+  rayDir[0] = 1.0f; rayDir[1]=0.1f; rayDir[2]=0.1f;
+  Nout += volin_threaded((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  if (verbose) printf("Dir 5 %ld \n",Nout);
+  rayDir[0] = -1.0f; rayDir[1]=-0.1f; rayDir[2]=-0.1f;
+  Nout += volin_threaded((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  if (verbose) printf("Dir 6 %ld \n",Nout);
+  rayDir[0] = -0.5f; rayDir[1]=-0.5f; rayDir[2]=-0.5f;
+  Nout += volin_threaded((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  if (verbose) printf("Dir 7 %ld \n",Nout);
+  rayDir[0] = 0.5f; rayDir[1]=0.5f; rayDir[2]=0.5f;
+  Nout += volin_threaded((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  if (verbose) printf("Dir 9 %ld \n",Nout);
+  rayDir[0] = -0.5f; rayDir[1]=0.5f; rayDir[2]=0.5f;
+  Nout += volin_threaded((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  if (verbose) printf("Dir 10 %ld \n",Nout);
+  rayDir[0] = 0.5f; rayDir[1]=-0.5f; rayDir[2]=0.5f;
+  Nout += volin_threaded((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  if (verbose) printf("Dir 11 %ld \n",Nout);
+  rayDir[0] = 0.5f; rayDir[1]=0.5f; rayDir[2]=-0.5f;
+  Nout += volin_threaded((const VolumetricData *) volmapA,target,isovalue,rayDir);
+  if (verbose) printf("Dir 12 %ld \n",Nout);
+#endif
+  if (verbose) printf("Marking down boundary.\n");
+  long nVoxIso=markIsoGrid((const VolumetricData *) volmapA, target,isovalue);
+  if (verbose) printf("Casting rays ...\n");
+  float rayDir[3] = {0.1f,0.1f,1.0f};
+
+  static const float RAND_MAX_INV = 1.0f/VMD_RAND_MAX;
+  // Seed the random number generator before each calculation.  
+  vmd_srandom(103467829);
+  // Cast nrays uniformly over the sphere
+  for (int ray=0; ray < nrays; ray++) { 
+    float u1 = (float) vmd_random();
+    float u2 = (float) vmd_random();
+    float z = 2.0f*u1*RAND_MAX_INV -1.0f;
+    float phi = (float) (2.0f*VMD_PI*u2*RAND_MAX_INV);
+    float R = sqrtf(1.0f-z*z);
+    rayDir[0] = R*cosf(phi);
+    rayDir[1] = R*sinf(phi);
+    rayDir[2] = z;
+    Nout += volin_threaded((const VolumetricData *) volmapA,target,isovalue,rayDir);
+    if (verbose) printf("Ray(%d)  (%4.3f %4.3f %4.3f). Voxels : %ld \n",ray+1,rayDir[0],rayDir[1],rayDir[2],Nout);    
+  }
+  if (verbose) printf("Done.\n");
+
+
+  if (verbose) printf("Counting voxels above isovalue ...\n");
+  
+  Nout=countIsoGrids((const VolumetricData *) target,5.0f);
+  long nIn=countIsoGrids((const VolumetricData *) target,0.0f);
+  
+  if (loadsynthmap == 1 ) {
+    app->molecule_add_volumetric(molid, volmapA->name, volmapA->origin, 
+				 volmapA->xaxis, volmapA->yaxis, volmapA->zaxis,
+				 volmapA->xsize, volmapA->ysize, volmapA->zsize, volmapA->data);
+    volmapA->compute_volume_gradient();
+    volmapA->data = NULL; // prevent destruction of density array;  
+  }
+  if (overwrite != 1 ) {
+    app->molecule_add_volumetric(molid, target->name, target->origin, 
+				 target->xaxis, target->yaxis, target->zaxis,
+				 target->xsize, target->ysize, target->zsize, target->data);
+    target->compute_volume_gradient();
+    target->data = NULL; // prevent destruction of density array;  
+  } else {
+    if (verbose) printf("Overwriting volume ... \n");
+    volmapOverwrite->name = target -> name;
+    volmapOverwrite->xsize = target->xsize;
+    volmapOverwrite->ysize = target->ysize;
+    volmapOverwrite->zsize = target->zsize;
+    volmapOverwrite->data = target->data;
+    target->data=NULL;
+    volmapOverwrite->compute_volume_gradient();
+    if (verbose) printf("Freeing up memory.\n ");
+    //    delete(tmp);
+    if (verbose) printf("Done.\n ");
+  }
+
+  if (molid != -1 && volid != -1 ) {
+    target->data = NULL; // prevent destruction of density array;  
+  } else {
+    delete qs;
+    delete volmapA;
+  }
+  printf("VolIn: %ld external voxels.\n",Nout);
+
+  long Ntotal = target->xsize * target->ysize * target->zsize;
+  Tcl_Obj *tcl_result = Tcl_NewListObj(0,NULL);
+  Tcl_ListObjAppendElement(interp,tcl_result,Tcl_NewLongObj(Ntotal));
+  Tcl_ListObjAppendElement(interp,tcl_result,Tcl_NewLongObj(Nout));
+  Tcl_ListObjAppendElement(interp,tcl_result,Tcl_NewLongObj(nIn));
+  Tcl_ListObjAppendElement(interp,tcl_result,Tcl_NewLongObj(nVoxIso));
+  Tcl_SetObjResult(interp,tcl_result);
+  return TCL_OK;
+}
+
+
+
 int obj_measure(ClientData cd, Tcl_Interp *interp, int argc,
                             Tcl_Obj * const objv[]) {
 
@@ -3627,6 +4181,7 @@ int obj_measure(ClientData cd, Tcl_Interp *interp, int argc,
       "\nMeasure Commands:\n"
       "  avpos <sel> [first <first>] [last <last>] [step <step>] -- average position\n"
       "  center <sel> [weight <weights>]          -- geometrical (or weighted) center\n"
+      "  centerperresidue <sel> [weight <weights>]  -- geometrical center for every residue in sel\n"
       "  cluster <sel> [num <#clusters>] [distfunc <flag>] [cutoff <cutoff>]\n"
       "          [first <first>] [last <last>] [step <step>] [selupdate <bool>]\n"
       "          [weight <weights>]\n"
@@ -3649,7 +4204,9 @@ int obj_measure(ClientData cd, Tcl_Interp *interp, int argc,
       "  minmax <sel> [-withradii]                -- bounding box\n"
       "  rgyr <sel> [weight <weights>]            -- radius of gyration\n"
       "  rmsd <sel1> <sel2> [weight <weights>]    -- RMS deviation\n"
+      "  rmsdperresidue <sel1> <sel2> [weight <weights>] -- deviation per residue\n"
       "  rmsf <sel> [first <first>] [last <last>] [step <step>] -- RMS fluctuation\n"
+      "  rmsfperresidue <sel> [first <first>] [last <last>] [step <step>] -- fluctuation per residue\n"
       "  sasa <srad> <sel> [-points <varname>] [-restrict <restrictedsel>]\n"
       "     [-samples <numsamples>]               -- solvent-accessible surface area\n"
       "  sumweights <sel> weight <weights>        -- sum of selected weights\n"
@@ -3686,6 +4243,11 @@ int obj_measure(ClientData cd, Tcl_Interp *interp, int argc,
     return vmd_measure_avpos(app, argc-1, objv+1, interp);
   else if (!strupncmp(argv1, "center", CMDLEN))
     return vmd_measure_center(app, argc-1, objv+1, interp);
+#if 1
+  // XXX in test
+  else if (!strupncmp(argv1, "centerperresidue", CMDLEN))
+    return vmd_measure_centerperresidue(app, argc-1, objv+1, interp);
+#endif
   else if (!strupncmp(argv1, "cluster", CMDLEN))
     return vmd_measure_cluster(app, argc-1, objv+1, interp);
   else if (!strupncmp(argv1, "clustsize", CMDLEN))
@@ -3713,6 +4275,11 @@ int obj_measure(ClientData cd, Tcl_Interp *interp, int argc,
   else if (!strupncmp(argv1, "rmsd", CMDLEN))
     return vmd_measure_rmsd(app, argc-1, objv+1, interp);
 #if 1
+  // XXX in test
+  else if (!strupncmp(argv1, "rmsdperresidue", CMDLEN))
+    return vmd_measure_rmsdperresidue(app, argc-1, objv+1, interp);
+#endif
+#if 1
   else if (!strupncmp(argv1, "rmsd_qcp", CMDLEN))
     return vmd_measure_rmsd_qcp(app, argc-1, objv+1, interp);
   else if (!strupncmp(argv1, "rmsdmat_qcp", CMDLEN))
@@ -3720,6 +4287,11 @@ int obj_measure(ClientData cd, Tcl_Interp *interp, int argc,
 #endif
   else if (!strupncmp(argv1, "rmsf", CMDLEN))
     return vmd_measure_rmsf(app, argc-1, objv+1, interp);
+#if 1
+  // XXX in test
+  else if (!strupncmp(argv1, "rmsfperresidue", CMDLEN))
+    return vmd_measure_rmsfperresidue(app, argc-1, objv+1, interp);
+#endif
   else if (!strupncmp(argv1, "sasa", CMDLEN))
     return vmd_measure_sasa(app, argc-1, objv+1, interp);
 #if 1
@@ -3748,6 +4320,8 @@ int obj_measure(ClientData cd, Tcl_Interp *interp, int argc,
     return vmd_measure_trans_overlap(app, argc-1, objv+1, interp);
   else if (!strupncmp(argv1, "symmetry", CMDLEN))
     return vmd_measure_symmetry(app, argc-1, objv+1, interp);
+  else if (!strupncmp(argv1, "volinterior", CMDLEN))
+    return vmd_measure_volinterior(app, argc-1, objv+1, interp);
 
   Tcl_SetResult(interp, (char *) "Type 'measure' for summary of usage\n", TCL_VOLATILE);
   return TCL_OK;

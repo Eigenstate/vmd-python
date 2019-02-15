@@ -5,10 +5,10 @@
 # 
 # Partially rewritten by Leonardo Trabuco, July 2010.
 #
-# $Id: autoionizegui.tcl,v 1.12 2015/04/12 06:49:37 johns Exp $
+# $Id: autoionizegui.tcl,v 1.14 2018/04/20 18:49:42 jribeiro Exp $
 
 package require autoionize
-package provide autoionizegui 1.2
+package provide autoionizegui 1.5
 
 proc autoigui {} {
   return [::Autoi::autoi_gui]
@@ -373,8 +373,8 @@ proc ::Autoi::run_autoi {} {
         set cation "POT"
         set anion "CLA"
       }
-      CaCl {
-        set cation "CAL"
+      CsCl {
+        set cation "CES"
         set anion "CLA"
       }
       MgCl2 {

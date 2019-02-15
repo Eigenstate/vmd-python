@@ -1,7 +1,7 @@
 %{
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -12,7 +12,7 @@
  *
  *	$RCSfile: AtomParser.y,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.50 $	$Date: 2016/11/28 03:04:58 $
+ *	$Revision: 1.51 $	$Date: 2019/01/17 21:20:58 $
  *
  ***************************************************************************
  * DESCRIPTION:

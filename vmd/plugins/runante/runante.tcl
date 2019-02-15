@@ -1,5 +1,5 @@
 ##
-## $Id: runante.tcl,v 1.21 2012/01/12 15:54:11 johanstr Exp $
+## $Id: runante.tcl,v 1.22 2017/11/21 21:27:10 jribeiro Exp $
 ##
 package require exectool 
 package require runsqm 
@@ -472,9 +472,9 @@ proc ::ANTECHAMBER::run_ante_gui {} {
   set atomsel $atomselold
   if { [$mysel num] > 0 } {
       if {$inplace == 1} {
-        set result [namespace current]::ac_type_in_place $mysel $ante_qtype $totcharge $ante_type $spinmult $resname
+        set result [[namespace current]::ac_type_in_place $mysel $ante_qtype $totcharge $ante_type $spinmult $resname]
       } else {
-        set result [namespace current]::run_ac_typing $mysel $ante_qtype $totcharge $ante_type $spinmult $resname
+        set result [[namespace current]::run_ac_typing $mysel $ante_qtype $totcharge $ante_type $spinmult $resname]
       }
       if { $result != "0" } {
         tk_messageBox -message $result -type ok -title "Antechamber Error - Check Structure" -icon error

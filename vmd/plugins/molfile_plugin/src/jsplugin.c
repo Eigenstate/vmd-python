@@ -11,7 +11,7 @@
  *
  *      $RCSfile: jsplugin.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.77 $       $Date: 2016/11/30 23:28:53 $
+ *      $Revision: 1.80 $       $Date: 2018/05/04 16:24:56 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -118,7 +118,7 @@ static void *alloc_aligned_ptr(size_t sz, size_t blocksz, void **unalignedptr) {
 #define JSENDIANISM      0x12345678
 
 #define JSMAJORVERSION   2
-#define JSMINORVERSION   15
+#define JSMINORVERSION   16
 
 #define JSNFRAMESOFFSET  (strlen(JSHEADERSTRING) + 20)
 
@@ -171,6 +171,7 @@ typedef struct {
   char *path;                  /* path to file                          */
 
   /* info for block-based direct I/O */ 
+  int directio_pgsize_queried; /* caller has queried page/blocksz       */
   int directio_enabled;        /* block-based direct I/O is available   */
   fio_fd directio_fd;          /* block-based direct I/O using O_DIRECT */
   int directio_block_size;     /* block size to use for direct ts I/O   */
@@ -207,14 +208,30 @@ typedef struct {
   double tsdelta;
   int reverseendian;
   int with_unitcell;
-
 } jshandle;
+
+
+/* report the block size required to read this JS file */
+static int read_js_timestep_pagealign_size(void *v, int *pagealignsz) {
+  jshandle *js = (jshandle *)v;
+
+  // mark that the caller has queried the page alignment size
+  js->directio_pgsize_queried = 1;
+
+  /* assigne page alignment size based on file contents */
+  if (js->optflags & JSOPT_TS_BLOCKIO) 
+    *pagealignsz = js->directio_block_size;
+  else 
+    *pagealignsz = 1;
+
+  return 0;
+}
 
 
 /* Use block-based I/O by default when writing structures larger */
 /* than JSBLOCKIO_THRESH atoms, or when directed by the user and */
 /* not otherwise prohibited...                                   */
-static int js_blockio_check_and_set(jshandle *js) {
+static void js_blockio_check_and_set(jshandle *js) {
   if ((getenv("VMDJSNOBLOCKIO") == NULL) && 
       ((js->natoms > JSBLOCKIO_THRESH) || getenv("VMDJSBLOCKIO"))) {
     js->optflags |= JSOPT_TS_BLOCKIO;
@@ -249,6 +266,7 @@ static void *open_js_read(const char *path, const char *filetype, int *natoms) {
   js->directio_ucell_ptr = NULL;
   js->directio_ucell_blkbuf = NULL;
 
+  js->directio_pgsize_queried=0;
   js->directio_enabled=0;
   js->ts_file_offset=0;
   js->ts_crd_sz=0;
@@ -323,6 +341,65 @@ static void *open_js_read(const char *path, const char *filetype, int *natoms) {
   /* copy path if we succeeded in opening the file */
   js->path = (char *) calloc(strlen(path)+1, 1);
   strcpy(js->path, path);
+
+#if 1
+  /* read flags data from the file */
+  fio_read_int32(js->fd, &js->optflags); 
+  if (js->reverseendian)
+    swap4_aligned(&js->optflags, 1);
+
+#if defined(INFOMSGS)
+  if (js->verbose)
+    printf("jsplugin) read option flags: %0x08x\n", js->optflags);
+#endif
+
+  /* Check to see if block-based trajectory I/O is used  */
+  /* and read in the block size for this file.           */
+  if (js->optflags & JSOPT_TS_BLOCKIO) {
+    fio_fread(&js->directio_block_size, sizeof(int), 1, js->fd);
+    if (js->reverseendian)
+      swap4_aligned(&js->directio_block_size, 1);
+
+#if defined(INFOMSGS)
+    if (js->verbose) {
+      printf("jsplugin) File uses direct I/O block size: %d bytes\n", 
+             js->directio_block_size);
+    }
+#endif
+
+    /* Check to ensure that we can handle the block size used by the */
+    /* file we are reading.  We may use variable block sizes in      */
+    /* the future as more high-end filesystems begin to support      */
+    /* 8KB, 16KB, or larger block sizes for enhanced sequential I/O  */
+    /* performance on very large files.                              */
+    if (js->directio_block_size > MOLFILE_DIRECTIO_MAX_BLOCK_SIZE) {
+      printf("jsplugin) File block size exceeds jsplugin block size limit.\n");
+      printf("jsplugin) Direct I/O unavailable for file '%s'\n", js->path);
+    } else {
+      if (fio_open(js->path, FIO_READ | FIO_DIRECT, &js->directio_fd) < 0) {
+        printf("jsplugin) Direct I/O unavailable for file '%s'\n", js->path);
+      } else {
+        js->directio_enabled = 1;
+      } 
+    }
+  }
+
+#if defined(ENABLEJSSHORTREADS)
+  /* test code for an implementation that does short reads that */
+  /* skip bulk solvent, useful for faster loading of very large */
+  /* structures                                                 */
+  if (getenv("VMDJSMAXATOMIDX") != NULL) {
+    long maxatomidx = atoi(getenv("VMDJSMAXATOMIDX"));
+    if (maxatomidx < 0)
+      maxatomidx = 0;
+    if (maxatomidx >= js->natoms)
+      maxatomidx = js->natoms - 1;
+
+    printf("jsplugin) Short-reads of timesteps enabled: %ld / %ld atoms (%.2f%%)\n",
+           maxatomidx, js->natoms, 100.0*(maxatomidx+1) / ((double) js->natoms));
+  }
+#endif
+#endif
 
   return js;
 }
@@ -411,6 +488,7 @@ static int read_js_structure(void *mydata, int *optflags,
   if (optflags != NULL)
     *optflags = MOLFILE_NOOPTIONS; /* set to no options until we read them */
 
+#if 0
   /* read flags data from the file */
   fio_read_int32(js->fd, &js->optflags); 
   if (js->reverseendian)
@@ -430,7 +508,7 @@ static int read_js_structure(void *mydata, int *optflags,
 
 #if defined(INFOMSGS)
     if (js->verbose) {
-      printf("jsplugin) Block-based I/O enabled: block size %d bytes\n", 
+      printf("jsplugin) File uses direct I/O block size: %d bytes\n", 
              js->directio_block_size);
     }
 #endif
@@ -448,15 +526,31 @@ static int read_js_structure(void *mydata, int *optflags,
         printf("jsplugin) Direct I/O unavailable for file '%s'\n", js->path);
       } else {
         js->directio_enabled = 1;
-#if defined(INFOMSGS)
-        if (js->verbose) {
-          printf("jsplugin) Direct I/O enabled for file '%s'\n", js->path);
-        }
-#endif
       } 
     }
   }
+#endif
 
+
+  /* emit warning message if the caller didn't check the required */
+  /* alignment size, but the file supports block based direct I/O */
+  if (js->directio_enabled && !js->directio_pgsize_queried) {
+    printf("jsplugin) Warning: File supports block-based direct I/O, but\n");
+    printf("jsplugin)          caller failed to query required alignment.\n");
+    printf("jsplugin)          Block-based direct I/O is now disabled.\n");
+     
+    js->directio_enabled=0; // ensure we disable direct I/O early on
+  }
+
+#if defined(INFOMSGS)
+  if (js->verbose) {
+    printf("jsplugin) Direct I/O %sabled for file '%s'\n", 
+           (js->directio_enabled) ? "en" : "dis", js->path);
+  }
+#endif
+
+
+#if 0
 #if defined(ENABLEJSSHORTREADS)
   /* test code for an implementation that does short reads that */
   /* skip bulk solvent, useful for faster loading of very large */
@@ -471,6 +565,7 @@ static int read_js_structure(void *mydata, int *optflags,
     printf("jsplugin) Short-reads of timesteps enabled: %ld / %ld atoms (%.2f%%)\n",
            maxatomidx, js->natoms, 100.0*(maxatomidx+1) / ((double) js->natoms));
   }
+#endif
 #endif
 
   /* Mark the handle to indicate we've parsed the structure.             */
@@ -958,6 +1053,7 @@ static int read_js_structure(void *mydata, int *optflags,
       if (js->reverseendian)
         swap4_aligned(js->impropers, 4L*js->numimpropers);
     }
+
     if (js->optflags & JSOPT_CTERMS) {
       fio_fread(&js->numcterms, sizeof(int), 1, js->fd);
       if (js->reverseendian)
@@ -1126,7 +1222,7 @@ static int read_js_timestep(void *v, int natoms, molfile_timestep_t *ts) {
 
   /* if we have a valid ts pointer, read the timestep, otherwise skip it */ 
   if (ts != NULL) {
-    fio_size_t readlen; 
+    fio_size_t readlen=0;
     fio_iovec iov[2];
 
     /* set unit cell pointer to the TS block-aligned buffer area */
@@ -1181,10 +1277,16 @@ static int read_js_timestep(void *v, int natoms, molfile_timestep_t *ts) {
  
     /* setup the I/O vector */
     iov[0].iov_base = (fio_caddr_t) ts->coords;   /* read coordinates    */
-    iov[0].iov_len  = js->ts_crd_padsz;
     iov[1].iov_base = (fio_caddr_t) unitcell;     /* read PBC unit cell  */
-    iov[1].iov_len  = js->ts_ucell_padsz;
 
+    if (js->directio_enabled) {
+      iov[0].iov_len  = js->ts_crd_padsz;
+      iov[1].iov_len  = js->ts_ucell_padsz;
+    } else {
+      iov[0].iov_len  = js->ts_crd_sz;
+      iov[1].iov_len  = js->ts_ucell_sz;
+    }
+   
 #if 1
     /* Use fall-back code instead of readv():                            */
     /*  Some platforms implement readv() as user level code in libc,     */
@@ -1200,8 +1302,16 @@ static int read_js_timestep(void *v, int natoms, molfile_timestep_t *ts) {
         readcnt =  fio_fread(iov[0].iov_base, iov[0].iov_len, 1, js->directio_fd);
         readcnt += fio_fread(iov[1].iov_base, iov[1].iov_len, 1, js->directio_fd);
       } else {
+        fio_size_t seeklen=0;
+      
         readcnt =  fio_fread(iov[0].iov_base, iov[0].iov_len, 1, js->fd);
+        seeklen = js->ts_crd_padsz - js->ts_crd_sz;
+        if (seeklen > 0)
+          fio_fseek(js->fd, seeklen, FIO_SEEK_CUR);
         readcnt += fio_fread(iov[1].iov_base, iov[1].iov_len, 1, js->fd);
+        seeklen = js->ts_ucell_padsz - js->ts_ucell_sz;
+        if (seeklen > 0)
+          fio_fseek(js->fd, seeklen, FIO_SEEK_CUR);
       }
 
       /* if both records read correctly, then the reads are okay */
@@ -1212,10 +1322,24 @@ static int read_js_timestep(void *v, int natoms, molfile_timestep_t *ts) {
     /* Do all of the reads with a single syscall, for peak efficiency.   */
     /* On smart kernels, readv() causes only one context switch, and     */
     /* can effeciently scatter the reads to the various buffers.         */
-    if (js->directio_enabled)
+    if (js->directio_enabled) {
       readlen = fio_readv(js->directio_fd, &iov[0], 2); 
-    else
-      readlen = fio_readv(js->fd, &iov[0], 2); 
+    } else {
+      // XXX we can't use readv() when not using direct I/O since we 
+      // can't make intervening seek calls required if the caller
+      // doesn't provide appropriate buffers.
+      // readlen = fio_readv(js->fd, &iov[0], 2); 
+
+      fio_size_t seeklen=0;
+      readcnt =  fio_fread(iov[0].iov_base, iov[0].iov_len, 1, js->fd);
+      seeklen = js->ts_crd_padsz - js->ts_crd_sz;
+      if (seeklen > 0)
+        fio_fseek(js->fd, seeklen, FIO_SEEK_CUR);
+      readcnt += fio_fread(iov[1].iov_base, iov[1].iov_len, 1, js->fd);
+      seeklen = js->ts_ucell_padsz - js->ts_ucell_sz;
+      if (seeklen > 0)
+        fio_fseek(js->fd, seeklen, FIO_SEEK_CUR);
+    }
 #endif
 
 #if defined(ENABLEJSSHORTREADS)
@@ -1971,6 +2095,9 @@ VMDPLUGIN_API int VMDPLUGIN_init() {
 #endif
   plugin.write_timestep = write_js_timestep;
   plugin.close_file_write = close_js_write;
+#if vmdplugin_ABIVERSION > 17
+  plugin.read_timestep_pagealign_size = read_js_timestep_pagealign_size;
+#endif
   return VMDPLUGIN_SUCCESS;
 }
 

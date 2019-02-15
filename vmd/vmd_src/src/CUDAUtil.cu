@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: CUDAUtil.cu,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.41 $        $Date: 2016/11/28 03:04:58 $
+ *      $Revision: 1.43 $        $Date: 2019/01/17 21:20:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include "CUDAKernels.h"
 #include "WKFThreads.h"
+#include "ProfileHooks.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -189,6 +190,11 @@ void * vmd_cuda_devpool_setdevice(void * voidparms) {
   wkf_threadpool_worker_getid(voidparms, &id, &count);
   wkf_threadpool_worker_getdata(voidparms, (void **) &mesg);
   wkf_threadpool_worker_getdevid(voidparms, &dev);
+
+  // mark CPU-GPU management threads for display in profiling tools
+  char threadname[1024];
+  sprintf(threadname, "VMD GPU threadpool[%d]", id);
+  PROFILE_NAME_THREAD(threadname);
 
   /* set active device */
   cudaSetDevice(dev);

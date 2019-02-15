@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -30,7 +30,7 @@ void IsoSurface::clear(void) {
 }
 
 
-int IsoSurface::compute(const VolumetricData *data, float isovalue, long step) {
+int IsoSurface::compute(VolumetricData *data, float isovalue, long step) {
   long x, y, z; 
   long tricount=0;
 
@@ -100,6 +100,13 @@ long IsoSurface::DoGridPosNorms(float isovalue, long step) {
   long rowstep = row*step;
   long planestep = plane*step;
 
+  // get direct access to gradient data for speed, and force 
+  // generation of the gradients if they don't already exist
+  const float *volgradient = vol->access_volume_gradient();
+
+  // precompute plane and row sizes to eliminate indirection
+  long psz = long(vol->xsize)*long(vol->ysize);
+  long rsz = long(vol->xsize);
   long x, y, z;
   for (z=0; z<(vol->zsize - step); z+=step) {
     for (y=0; y<(vol->ysize - step); y+=step) {
@@ -135,42 +142,42 @@ long IsoSurface::DoGridPosNorms(float isovalue, long step) {
         gc.p[0].x = (float) x;
         gc.p[0].y = (float) y;
         gc.p[0].z = (float) z;
-        VOXEL_GRADIENT_FAST(vol, x, y, z, &gc.g[0].x)
+        VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x, y, z, &gc.g[0].x)
 
         gc.p[1].x = (float) x + step;
         gc.p[1].y = (float) y;
         gc.p[1].z = (float) z;
-        VOXEL_GRADIENT_FAST(vol, x + step, y, z, &gc.g[1].x)
+        VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x + step, y, z, &gc.g[1].x)
 
         gc.p[3].x = (float) x;
         gc.p[3].y = (float) y + step;
         gc.p[3].z = (float) z;
-        VOXEL_GRADIENT_FAST(vol, x, y + step, z, &gc.g[3].x)
+        VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x, y + step, z, &gc.g[3].x)
 
         gc.p[2].x = (float) x + step;
         gc.p[2].y = (float) y + step;
         gc.p[2].z = (float) z;
-        VOXEL_GRADIENT_FAST(vol, x + step, y + step, z, &gc.g[2].x)
+        VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x + step, y + step, z, &gc.g[2].x)
 
         gc.p[4].x = (float) x;
         gc.p[4].y = (float) y;
         gc.p[4].z = (float) z + step;
-        VOXEL_GRADIENT_FAST(vol, x, y, z + step, &gc.g[4].x)
+        VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x, y, z + step, &gc.g[4].x)
 
         gc.p[5].x = (float) x + step;
         gc.p[5].y = (float) y;
         gc.p[5].z = (float) z + step;
-        VOXEL_GRADIENT_FAST(vol, x + step, y, z + step, &gc.g[5].x)
+        VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x + step, y, z + step, &gc.g[5].x)
 
         gc.p[7].x = (float) x;
         gc.p[7].y = (float) y + step;
         gc.p[7].z = (float) z + step;
-        VOXEL_GRADIENT_FAST(vol, x, y + step, z + step, &gc.g[7].x)
+        VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x, y + step, z + step, &gc.g[7].x)
 
         gc.p[6].x = (float) x + step;
         gc.p[6].y = (float) y + step;
         gc.p[6].z = (float) z + step;
-        VOXEL_GRADIENT_FAST(vol, x + step, y + step, z + step, &gc.g[6].x)
+        VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x + step, y + step, z + step, &gc.g[6].x)
 
         // calculate vertices and facets for this cube,
         // calculate normals by interpolating between the negated 
@@ -213,6 +220,10 @@ long IsoSurface::DoCellGeneral(long x, long y, long z, float isovalue, long step
   long addr, row, plane, rowstep, planestep, tricount;
   TRIANGLE tris[5];
 
+  // get direct access to gradient data for speed, and force 
+  // generation of the gradients if they don't already exist
+  const float *volgradient = vol->access_volume_gradient();
+
   row = vol->xsize; 
   plane = vol->xsize * vol->ysize;
   addr = z*plane + y*row + x;
@@ -244,47 +255,51 @@ long IsoSurface::DoCellGeneral(long x, long y, long z, float isovalue, long step
   if (edgeTable[cubeindex] == 0)
     return 0;
 
+  // precompute plane and row sizes to eliminate indirection
+  long psz = long(vol->xsize)*long(vol->ysize);
+  long rsz = long(vol->xsize);
+
   gc.cubeindex = cubeindex;
 
   gc.p[0].x = (float) x;
   gc.p[0].y = (float) y;
   gc.p[0].z = (float) z;
-  VOXEL_GRADIENT_FAST(vol, x, y, z, &gc.g[0].x)
+  VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x, y, z, &gc.g[0].x)
 
   gc.p[1].x = (float) x + step;
   gc.p[1].y = (float) y;
   gc.p[1].z = (float) z;
-  VOXEL_GRADIENT_FAST(vol, x + step, y, z, &gc.g[1].x)
+  VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x + step, y, z, &gc.g[1].x)
 
   gc.p[3].x = (float) x;
   gc.p[3].y = (float) y + step;
   gc.p[3].z = (float) z;
-  VOXEL_GRADIENT_FAST(vol, x, y + step, z, &gc.g[3].x)
+  VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x, y + step, z, &gc.g[3].x)
 
   gc.p[2].x = (float) x + step;
   gc.p[2].y = (float) y + step;
   gc.p[2].z = (float) z;
-  VOXEL_GRADIENT_FAST(vol, x + step, y + step, z, &gc.g[2].x)
+  VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x + step, y + step, z, &gc.g[2].x)
 
   gc.p[4].x = (float) x;
   gc.p[4].y = (float) y;
   gc.p[4].z = (float) z + step;
-  VOXEL_GRADIENT_FAST(vol, x, y, z + step, &gc.g[4].x)
+  VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x, y, z + step, &gc.g[4].x)
 
   gc.p[5].x = (float) x + step;
   gc.p[5].y = (float) y;
   gc.p[5].z = (float) z + step;
-  VOXEL_GRADIENT_FAST(vol, x + step, y, z + step, &gc.g[5].x)
+  VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x + step, y, z + step, &gc.g[5].x)
 
   gc.p[7].x = (float) x;
   gc.p[7].y = (float) y + step;
   gc.p[7].z = (float) z + step;
-  VOXEL_GRADIENT_FAST(vol, x, y + step, z + step, &gc.g[7].x)
+  VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x, y + step, z + step, &gc.g[7].x)
 
   gc.p[6].x = (float) x + step;
   gc.p[6].y = (float) y + step;
   gc.p[6].z = (float) z + step;
-  VOXEL_GRADIENT_FAST(vol, x + step, y + step, z + step, &gc.g[6].x)
+  VOXEL_GRADIENT_FAST(volgradient, psz, rsz, x + step, y + step, z + step, &gc.g[6].x)
 
   // calculate vertices and facets for this cube,
   // calculate normals by interpolating between the negated 
@@ -360,7 +375,7 @@ void IsoSurface::normalize() {
 }
 
 // merge duplicated vertices detected by a simple windowed search
-int IsoSurface::vertexfusion(const VolumetricData *data, int offset, int len) {
+int IsoSurface::vertexfusion(int offset, int len) {
   int i, j, newverts, oldverts, faceverts, matchcount;
 
   faceverts = f.num();

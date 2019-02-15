@@ -1,5 +1,5 @@
 #
-# $Id: fftk_distort.tcl,v 1.3 2014/02/11 17:15:05 mayne Exp $
+# $Id: fftk_distort.tcl,v 1.4 2018/08/16 00:20:00 gumbart Exp $
 #
 
 namespace eval ::ForceFieldToolKit::Distortion:: {
@@ -60,6 +60,8 @@ proc ::ForceFieldToolKit::Distortion::distort_bond {ind0 ind1 dx frame} {
    set atom1 [atomselect $molid "index $ind1" frame $frame]
    set pos0 [lindex [$atom0 get {x y z}] 0]
    set pos1 [lindex [$atom1 get {x y z}] 0]
+   $atom0 delete
+   $atom1 delete
    set bondvec [vecsub $pos0 $pos1]
    if {![veclength $bondvec]} {
       puts "distort_bond: The two atom positions are identical!"
@@ -118,6 +120,8 @@ proc ::ForceFieldToolKit::Distortion::distort_bond {ind0 ind1 dx frame} {
 ##      puts "Bond is part of ring $inring"
    }
    create_distorted_frames_bond $molid $frame $selL $selR $displace
+   $selL delete
+   $selR delete
 }
 
 
@@ -175,7 +179,7 @@ proc ::ForceFieldToolKit::Distortion::distort_angle {ind0 ind1 ind2 dx frame} {
          # We just move the middle atom in the angle plane to change the
          # angle. Of course the bond lengths will also change but we will live
          # with that.
-##         puts "angle part of 2 rings"
+#         puts "angle part of 2 rings"
    
          set selL [atomselect $molid "index $ind1"]
          set selR [atomselect $molid "none"]
@@ -187,7 +191,7 @@ proc ::ForceFieldToolKit::Distortion::distort_angle {ind0 ind1 ind2 dx frame} {
          # everything that's connected to it in the angle plane to change the
          # angle. Of course the bond lengths will also change but we will live
          # with that.
-###         puts "Angle in ring"
+#         puts "Angle in ring"
 
          if {[llength $inring]>1} {
             # Angle is shared by multiple rings.
@@ -287,8 +291,8 @@ proc ::ForceFieldToolKit::Distortion::distort_angle {ind0 ind1 ind2 dx frame} {
       # the bond distortion code here:
       create_distorted_frames_bond $molid $frame $selL $selR $displace1 $displace2
 
-
-
+      $selL delete
+      $selR delete
    } 
 
   # FIXME: We are missing the case where the angle is part of multiple rings!
@@ -451,6 +455,7 @@ proc follow_selected_bonds {molid ind excludedbondatoms args} {
 
    set sel [atomselect $molid "index $ind"]
    set selectedbonds [::util::ldiff [join [$sel getbonds]] $excludedbondatoms]
+   $sel delete
 
    set indexes {}
    foreach bondatom $selectedbonds {

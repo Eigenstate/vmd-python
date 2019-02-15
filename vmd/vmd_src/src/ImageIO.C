@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: ImageIO.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.17 $	$Date: 2016/11/28 03:05:00 $
+ *	$Revision: 1.25 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -90,18 +90,47 @@ unsigned char * cvt_rgb4f_rgb3u(const float * rgb4f, int xs, int ys) {
     for (x3u=0,x4f=0; x3u<rowlen3u; x3u+=3,x4f+=4) {
       int tmp;
 
-      tmp = rgb4f[addr4f + x4f    ] * 255.0f;
+      tmp = int(rgb4f[addr4f + x4f    ] * 255.0f);
       rgb3u[addr3u + x3u    ] = (tmp < 0) ? 0 : ((tmp > 255) ? 255 : tmp);
 
-      tmp = rgb4f[addr4f + x4f + 1] * 255.0f;
+      tmp = int(rgb4f[addr4f + x4f + 1] * 255.0f);
       rgb3u[addr3u + x3u + 1] = (tmp < 0) ? 0 : ((tmp > 255) ? 255 : tmp);
 
-      tmp = rgb4f[addr4f + x4f + 2] * 255.0f;
+      tmp = int(rgb4f[addr4f + x4f + 2] * 255.0f);
       rgb3u[addr3u + x3u + 2] = (tmp < 0) ? 0 : ((tmp > 255) ? 255 : tmp);
     }
   }
 
   return rgb3u;
+}
+
+
+unsigned char * cvt_rgba4f_rgba4u(const float * rgba4f, int xs, int ys) {
+  int rowlen4u = xs*4;
+  int sz = xs * ys * 4;
+  unsigned char * rgba4u = (unsigned char *) calloc(1, sz);
+
+  int x4u, x4f, y;
+  for (y=0; y<ys; y++) {
+    int addr4 = y * xs * 4;
+    for (x4u=0,x4f=0; x4u<rowlen4u; x4u+=4,x4f+=4) {
+      int tmp;
+
+      tmp = int(rgba4f[addr4 + x4f    ] * 255.0f);
+      rgba4u[addr4 + x4u    ] = (tmp < 0) ? 0 : ((tmp > 255) ? 255 : tmp);
+
+      tmp = int(rgba4f[addr4 + x4f + 1] * 255.0f);
+      rgba4u[addr4 + x4u + 1] = (tmp < 0) ? 0 : ((tmp > 255) ? 255 : tmp);
+
+      tmp = int(rgba4f[addr4 + x4f + 2] * 255.0f);
+      rgba4u[addr4 + x4u + 2] = (tmp < 0) ? 0 : ((tmp > 255) ? 255 : tmp);
+
+      tmp = int(rgba4f[addr4 + x4f + 3] * 255.0f);
+      rgba4u[addr4 + x4u + 3] = (tmp < 0) ? 0 : ((tmp > 255) ? 255 : tmp);
+    }
+  }
+
+  return rgba4u;
 }
 
 
@@ -189,6 +218,50 @@ int write_image_file_rgb4f(const char *filename,
 }
 
 
+int write_image_file_rgba4u(const char *filename,
+                            const unsigned char *rgba4u, int xs, int ys) {
+  FILE *outfile=NULL;
+  if ((outfile = fopen(filename, "wb")) == NULL) {
+    msgErr << "Could not open file " << filename
+           << " in current directory for writing!" << sendmsg;
+    return -1;
+  }
+
+  if (checkfileextension(filename, ".png")) {
+#if defined(VMDLIBPNG)
+    vmd_writepng_alpha(outfile, rgba4u, xs, ys);
+#else
+    msgErr << "Unrecognized or unsupported alpha-channel image format."
+           << sendmsg;
+    return -1;
+#endif
+  } else {
+    msgErr << "Unrecognized or unsupported alpha-channel image format."
+           << sendmsg;
+    return -1;
+  }
+
+  fclose(outfile);
+  return 0;
+}
+
+
+int write_image_file_rgba4f(const char *filename,
+                            const float *rgba4f, int xs, int ys) {
+  unsigned char *rgba4u = cvt_rgba4f_rgba4u(rgba4f, xs, ys);
+  if (rgba4u == NULL)
+    return -1;
+
+  if (write_image_file_rgba4u(filename, rgba4u, xs, ys)) {
+    free(rgba4u);
+    return -1;
+  }
+
+  free(rgba4u);
+  return 0;
+}
+
+
 void vmd_writergb(FILE *dfile, const unsigned char * img, int xs, int ys) {
   char iname[80];               /* Image name */
   int x, y, i;
@@ -196,30 +269,29 @@ void vmd_writergb(FILE *dfile, const unsigned char * img, int xs, int ys) {
   if (img == NULL) 
     return;
 
-    putshort(dfile, 474);         /* Magic                       */
-    putbyte(dfile, 0);            /* STORAGE is VERBATIM         */
-    putbyte(dfile, 1);            /* BPC is 1                    */
-    putshort(dfile, 3);           /* DIMENSION is 3              */
-    putshort(dfile, xs);          /* XSIZE                       */
-    putshort(dfile, ys);          /* YSIZE                       */
-    putshort(dfile, 3);           /* ZSIZE                       */
-    putint(dfile, 0);             /* PIXMIN is 0                 */
-    putint(dfile, 255);           /* PIXMAX is 255               */
+  putshort(dfile, 474);         /* Magic                       */
+  putbyte(dfile, 0);            /* STORAGE is VERBATIM         */
+  putbyte(dfile, 1);            /* BPC is 1                    */
+  putshort(dfile, 3);           /* DIMENSION is 3              */
+  putshort(dfile, xs);          /* XSIZE                       */
+  putshort(dfile, ys);          /* YSIZE                       */
+  putshort(dfile, 3);           /* ZSIZE                       */
+  putint(dfile, 0);             /* PIXMIN is 0                 */
+  putint(dfile, 255);           /* PIXMAX is 255               */
 
-    for(i=0; i<4; i++)            /* DUMMY 4 bytes               */
-      putbyte(dfile, 0);
+  for(i=0; i<4; i++)            /* DUMMY 4 bytes               */
+    putbyte(dfile, 0);
 
-    strcpy(iname, "VMD Snapshot");
-    fwrite(iname, 80, 1, dfile);  /* IMAGENAME                   */
-    putint(dfile, 0);             /* COLORMAP is 0               */
-    for(i=0; i<404; i++)          /* DUMMY 404 bytes             */
-      putbyte(dfile,0);
+  strcpy(iname, "VMD Snapshot");
+  fwrite(iname, 80, 1, dfile);  /* IMAGENAME                   */
+  putint(dfile, 0);             /* COLORMAP is 0               */
+  for(i=0; i<404; i++)          /* DUMMY 404 bytes             */
+    putbyte(dfile,0);
 
-    for(i=0; i<3; i++)
-      for(y=0; y<ys; y++)
-        for(x=0; x<xs; x++)
-          fwrite(&img[(y*xs + x)*3 + i], 1, 1, dfile);
-
+  for(i=0; i<3; i++)
+    for(y=0; y<ys; y++)
+      for(x=0; x<xs; x++)
+        fwrite(&img[(y*xs + x)*3 + i], 1, 1, dfile);
 }
 
 static void write_le_int32(FILE * dfile, int num) {
@@ -417,15 +489,15 @@ void vmd_writepng(FILE *dfile, const unsigned char * img, int xs, int ys) {
 
   text_ptr = (png_textp) png_malloc(png_ptr, (png_uint_32)sizeof(png_text) * 2);
 
-  text_ptr[0].key = "Description";
-  text_ptr[0].text = "A molecular scene rendered by VMD";
+  text_ptr[0].key = (char *) "Description";
+  text_ptr[0].text = (char *) "A molecular scene rendered by VMD";
   text_ptr[0].compression = PNG_TEXT_COMPRESSION_NONE;
 #ifdef PNG_iTXt_SUPPORTED
   text_ptr[0].lang = NULL;
 #endif
 
-  text_ptr[1].key = "Software";
-  text_ptr[1].text = "VMD -- Visual Molecular Dynamics";
+  text_ptr[1].key = (char *) "Software";
+  text_ptr[1].text = (char *) "VMD -- Visual Molecular Dynamics";
   text_ptr[1].compression = PNG_TEXT_COMPRESSION_NONE;
 #ifdef PNG_iTXt_SUPPORTED
   text_ptr[1].lang = NULL;
@@ -450,4 +522,99 @@ void vmd_writepng(FILE *dfile, const unsigned char * img, int xs, int ys) {
 
   return; /* No fatal errors */
 }
+
+
+void vmd_writepng_alpha(FILE *dfile, const unsigned char * img, int xs, int ys) {
+  png_structp png_ptr;
+  png_infop info_ptr;
+  png_bytep *row_pointers;
+  png_textp text_ptr;
+  int y;
+
+  /* Create and initialize the png_struct with the default error handlers */
+  png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  if (png_ptr == NULL) {
+    msgErr << "Failed to write PNG file" << sendmsg;
+    return; /* Could not initialize PNG library, return error */
+  }
+
+  /* Allocate/initialize the memory for image information.  REQUIRED. */
+  info_ptr = png_create_info_struct(png_ptr);
+  if (info_ptr == NULL) {
+    png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+    msgErr << "Failed to write PNG file" << sendmsg;
+    return; /* Could not initialize PNG library, return error */
+  }
+
+  /* Set error handling for setjmp/longjmp method of libpng error handling */
+  if (setjmp(png_jmpbuf(png_ptr))) {
+    /* Free all of the memory associated with the png_ptr and info_ptr */
+    png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+    /* If we get here, we had a problem writing the file */
+    msgErr << "Failed to write PNG file" << sendmsg;
+    return; /* Could not open image, return error */
+  }
+
+  /* Set up the input control if you are using standard C streams */
+  png_init_io(png_ptr, dfile);
+
+  png_set_IHDR(png_ptr, info_ptr, xs, ys,
+               8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE,
+               PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+//  png_set_alpha_mode(png_ptr, PNG_ALPHA_STANDARD, PNG_GAMMA_LINEAR);
+
+#if 0
+  /* optional significant bit chunk */
+  png_color_8 sig_bit;
+  memset(&sig_bit, 0, sizeof(sig_bit));
+
+  sig_bit.red = 8;
+  sig_bit.green = 8;
+  sig_bit.blue = 8;
+  sig_bit.alpha = 8;
+
+  png_set_sBIT(png_ptr, info_ptr, &sig_bit);
+#endif
+
+  png_set_gAMA(png_ptr, info_ptr, 1.0);
+
+  text_ptr = (png_textp) png_malloc(png_ptr, (png_uint_32)sizeof(png_text) * 2);
+
+  text_ptr[0].key = (char *) "Description";
+  text_ptr[0].text = (char *) "A molecular scene rendered by VMD";
+  text_ptr[0].compression = PNG_TEXT_COMPRESSION_NONE;
+#ifdef PNG_iTXt_SUPPORTED
+  text_ptr[0].lang = NULL;
+#endif
+
+  text_ptr[1].key = (char *) "Software";
+  text_ptr[1].text = (char *) "VMD -- Visual Molecular Dynamics";
+  text_ptr[1].compression = PNG_TEXT_COMPRESSION_NONE;
+#ifdef PNG_iTXt_SUPPORTED
+  text_ptr[1].lang = NULL;
+#endif
+  png_set_text(png_ptr, info_ptr, text_ptr, 1);
+
+//  png_write_info(png_ptr, info_ptr);
+
+  row_pointers = (png_bytep *) png_malloc(png_ptr, ys*sizeof(png_bytep));
+  for (y=0; y<ys; y++) {
+    row_pointers[ys - y - 1] = (png_bytep) &img[y * xs * 4];
+  }
+
+  png_set_rows(png_ptr, info_ptr, row_pointers);
+
+  /* one-shot call to write the whole PNG file into memory */
+  png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
+
+  png_free(png_ptr, row_pointers);
+  png_free(png_ptr, text_ptr);
+
+  /* clean up after the write and free any memory allocated - REQUIRED */
+  png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+
+  return; /* No fatal errors */
+}
+
 #endif

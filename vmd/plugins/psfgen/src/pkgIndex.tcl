@@ -9,5 +9,5 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded psfgen 1.6.4 [list load [file join $dir libpsfgen.so]]
+package ifneeded psfgen 1.7 [list load [file join $dir libpsfgen.so]]
 

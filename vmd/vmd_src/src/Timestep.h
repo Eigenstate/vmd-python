@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Timestep.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.51 $	$Date: 2016/11/28 03:05:05 $
+ *	$Revision: 1.53 $	$Date: 2019/01/17 21:21:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -43,6 +43,7 @@ enum { TSE_BOND, TSE_ANGLE, TSE_DIHE, TSE_IMPR, TSE_VDW, TSE_COUL,
 class Timestep {
 public:
   int num;                  ///< number of atoms this timestep is for
+  int page_align_sz;        ///< page alignment size for unbuffered kernel I/O
   float *pos;               ///< atom coords.     unit:Angstroms
   float *pos_ptr;           ///< non-block-aligned pointer to pos buffer
   float *vel;               ///< atom velocites.  unit: 
@@ -51,7 +52,7 @@ public:
   float *user2;             ///< Demand-allocated 1-float-per-atom 'User' data
   float *user3;             ///< Demand-allocated 1-float-per-atom 'User' data
   float *user4;             ///< Demand-allocated 1-float-per-atom 'User' data
-  QMTimestep *qm_timestep;
+  QMTimestep *qm_timestep;  ///< QM timestep data (orbitals, wavefctns, etc)
   float energy[TSENERGIES]; ///< energies for this step. unit:kcal/mol
   int timesteps;            ///< timesteps elapsed so far (if known)
   double physical_time;     ///< physical time for this step. unit:femtoseconds
@@ -69,11 +70,11 @@ public:
   /// unit cell.
   void get_transform_from_cell(const int *cell, Matrix4 &trans) const;
 
-  Timestep(int n);              ///< constructor: # atoms
-  Timestep(const Timestep& ts); ///< copy constructor
-  ~Timestep(void);              ///< destructor
+  Timestep(int n, int pagealignsz=1); ///< constructor: # atoms, alignment req
+  Timestep(const Timestep& ts);       ///< copy constructor
+  ~Timestep(void);                    ///< destructor
   
-  void zero_values();           ///< set the coords to 0
+  void zero_values();                 ///< set the coords to 0
 };
 
 #endif

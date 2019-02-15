@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: AtomSel.C,v $
  *      $Author: johns $        $Locker:  $                $State: Exp $
- *      $Revision: 1.171 $      $Date: 2016/11/28 03:04:58 $
+ *      $Revision: 1.175 $      $Date: 2019/01/17 21:20:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -480,6 +480,97 @@ static int atomsel_set_occupancy(void *v, int num, double *data, int *flgs) {
 }
 
 
+// 'flags'
+static int atomsel_flags(void *v, int num, int *data, int *flgs, int idx) {
+  DrawMolecule *atom_sel_mol = ((atomsel_ctxt *)v)->atom_sel_mol;
+  unsigned char *flags = atom_sel_mol->flags();
+
+  printf("atomflags: %d\n", idx);
+  for (int i=0; i<num; i++) {
+    if (flgs[i]) {
+      data[i] = (flags[i] >> idx) & 0x1U;
+//      printf(" atom[%d] flags: %d  masked: %d\n", i, flags[i], data[i]);
+    }
+  }
+  return 1;
+}
+static int atomsel_set_flags(void *v, int num, int *data, int *flgs, int idx) {
+  DrawMolecule *atom_sel_mol = ((atomsel_ctxt *)v)->atom_sel_mol;
+  unsigned char *flags = atom_sel_mol->flags();
+  for (int i=0; i<num; i++) {
+    if (flgs[i]) {
+      unsigned int val = (data[i] != 0);
+      flags[i] = (flags[i] & (0xff ^ (0x1U << idx))) | (val << idx);
+    }
+  }
+
+  // when user sets data fields they are marked as valid fields in BaseMolecule
+  atom_sel_mol->set_dataset_flag(BaseMolecule::ATOMFLAGS);
+  return 1;
+}
+
+//
+// provide separate callbacks for the different fields due to limitations of
+// the existing internal APIs
+//
+static int atomsel_flag0(void *v, int num, int *data, int *flgs) {
+  return atomsel_flags(v, num, data, flgs, 0);
+}
+static int atomsel_set_flag0(void *v, int num, int *data, int *flgs) {
+  return atomsel_set_flags(v, num, data, flgs, 0);
+}
+
+static int atomsel_flag1(void *v, int num, int *data, int *flgs) {
+  return atomsel_flags(v, num, data, flgs, 1);
+}
+static int atomsel_set_flag1(void *v, int num, int *data, int *flgs) {
+  return atomsel_set_flags(v, num, data, flgs, 1);
+}
+
+static int atomsel_flag2(void *v, int num, int *data, int *flgs) {
+  return atomsel_flags(v, num, data, flgs, 2);
+}
+static int atomsel_set_flag2(void *v, int num, int *data, int *flgs) {
+  return atomsel_set_flags(v, num, data, flgs, 2);
+}
+
+static int atomsel_flag3(void *v, int num, int *data, int *flgs) {
+  return atomsel_flags(v, num, data, flgs, 3);
+}
+static int atomsel_set_flag3(void *v, int num, int *data, int *flgs) {
+  return atomsel_set_flags(v, num, data, flgs, 3);
+}
+
+static int atomsel_flag4(void *v, int num, int *data, int *flgs) {
+  return atomsel_flags(v, num, data, flgs, 4);
+}
+static int atomsel_set_flag4(void *v, int num, int *data, int *flgs) {
+  return atomsel_set_flags(v, num, data, flgs, 4);
+}
+
+static int atomsel_flag5(void *v, int num, int *data, int *flgs) {
+  return atomsel_flags(v, num, data, flgs, 5);
+}
+static int atomsel_set_flag5(void *v, int num, int *data, int *flgs) {
+  return atomsel_set_flags(v, num, data, flgs, 5);
+}
+
+static int atomsel_flag6(void *v, int num, int *data, int *flgs) {
+  return atomsel_flags(v, num, data, flgs, 6);
+}
+static int atomsel_set_flag6(void *v, int num, int *data, int *flgs) {
+  return atomsel_set_flags(v, num, data, flgs, 6);
+}
+
+static int atomsel_flag7(void *v, int num, int *data, int *flgs) {
+  return atomsel_flags(v, num, data, flgs, 7);
+}
+static int atomsel_set_flag7(void *v, int num, int *data, int *flgs) {
+  return atomsel_set_flags(v, num, data, flgs, 7);
+}
+
+
+
 // 'resid'
 static int atomsel_resid(void *v, int num, int *data, int *flgs) {
   DrawMolecule *atom_sel_mol = ((atomsel_ctxt *)v)->atom_sel_mol;
@@ -614,13 +705,11 @@ static void find_sidechain_atoms(BaseMolecule *mol, int *sidechain) {
 static int atomsel_sidechain(void *v, int num, int *flgs) {
   DrawMolecule *atom_sel_mol = ((atomsel_ctxt *)v)->atom_sel_mol;               
   const float *mass = atom_sel_mol->mass();
-  int *seed = new int[num];
   int i;
 
   // generate a list of the "CB" atoms (or whatever they are)
-  for (i=0; i<num; i++) {
-    seed[i] = 0;
-  }
+  int *seed = new int[num];
+  memset(seed, 0, num * sizeof(int));
 
   // get the CA and HA2 name index
   int CA = atom_sel_mol->atomNames.typecode((char *) "CA");
@@ -666,7 +755,13 @@ static int atomsel_sidechain(void *v, int num, int *flgs) {
         if (c1 == 1 && c2 > 1) {
           b1 = b2;
         } else if (c2 == 1 && c1 > 1) {
+#if 1
+          // XXX get rid of bogus self-assignment
+          seed[b1] = 1; // found the right one; it is b1.
+          continue; // b1 remains b1
+#else
           b1 = b1;
+#endif
         } else if (c1 ==1 && c2 == 1) {
           // check the masses
           float m1 = mass[b1];
@@ -674,7 +769,13 @@ static int atomsel_sidechain(void *v, int num, int *flgs) {
           if (m1 > 2.3 && m2 <= 2.3) {
             b1 = b2;
           } else if (m2 > 2.3 && m1 <= 2.3) {
+#if 1
+            // XXX get rid of bogus self-assignment
+            seed[b1] = 1; // found the right one; it is b1.
+            continue; // b1 remains b1
+#else
             b1 = b1;
+#endif
           } else if (m1 <= 2.0 && m2 <= 2.3) {
             // should have two H's, find the "first" of these
             if (strcmp(
@@ -2161,6 +2262,15 @@ void atomSelParser_init(SymbolTable *atomSelParser) {
   atomSelParser->add_keyword("beta", atomsel_beta, atomsel_set_beta);
   atomSelParser->add_keyword("occupancy", 
 			     atomsel_occupancy, atomsel_set_occupancy);
+
+  atomSelParser->add_keyword("flag0", atomsel_flag0, atomsel_set_flag0);
+  atomSelParser->add_keyword("flag1", atomsel_flag1, atomsel_set_flag1);
+  atomSelParser->add_keyword("flag2", atomsel_flag2, atomsel_set_flag2);
+  atomSelParser->add_keyword("flag3", atomsel_flag3, atomsel_set_flag3);
+  atomSelParser->add_keyword("flag4", atomsel_flag4, atomsel_set_flag4);
+  atomSelParser->add_keyword("flag5", atomsel_flag5, atomsel_set_flag5);
+  atomSelParser->add_keyword("flag6", atomsel_flag6, atomsel_set_flag6);
+  atomSelParser->add_keyword("flag7", atomsel_flag7, atomsel_set_flag7);
 
   atomSelParser->add_stringfctn("sequence", atomsel_sequence);
   atomSelParser->add_stringfctn("rasmol", 

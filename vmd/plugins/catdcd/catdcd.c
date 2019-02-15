@@ -4,7 +4,7 @@
 /* (C) Copyright 2001-2005 Justin Gullingsrud and the University of Illinois.*/
 /*                                                                           */
 /*****************************************************************************/
-/* $Id: catdcd.c,v 1.5 2013/07/20 14:28:57 akohlmey Exp $                                                                      */
+/* $Id: catdcd.c,v 1.7 2017/08/30 16:18:57 johns Exp $                                                                      */
 /*****************************************************************************/
 
 #include <stdlib.h>
@@ -19,7 +19,7 @@
 #include "hash.h"
 
 #define CATDCD_MAJOR_VERSION 5
-#define CATDCD_MINOR_VERSION 1
+#define CATDCD_MINOR_VERSION 2
 
 
 /* Set the maximum direct I/O aligned block size we are willing to support */
@@ -506,9 +506,9 @@ int main(int argc, char *argv[]) {
   }
   if (opts.outfile && opts.num_ind) 
 #if defined(TS_MAX_BLOCKIO)
-    free(in_ptr);
-#else
     free(out_ptr);
+#else
+    free(ts_out.coords);
 #endif
   if (opts.num_ind)
     free(opts.ind);

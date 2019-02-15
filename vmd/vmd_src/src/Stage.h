@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Stage.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.39 $	$Date: 2016/11/28 03:05:04 $
+ *	$Revision: 1.41 $	$Date: 2019/01/17 21:21:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -33,8 +33,6 @@ public:
   	STAGE_LEFT, STAGE_RIGHT, STAGE_BEHIND, STAGEPOS_TOTAL };
 
 private:
-  // corners defining the stage
-  float corner1[3], corner2[3], corner3[3], corner4[3];
   int usecolors[2];           ///< color indices for even/odd panels
   int Panels;                 ///< number of panels each side is divided into
   float Size;                 ///< size of stage walls

@@ -8,4 +8,4 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded pdbtool 1.0 [list source [file join $dir pdbtool.tcl]]
+package ifneeded pdbtool 1.1 [list source [file join $dir pdbtool.tcl]]

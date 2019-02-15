@@ -3,7 +3,7 @@
 # other topology related properties in VMD.
 #
 # Copyright (c) 2009,2010,2011 by Axel Kohlmeyer <akohlmey@gmail.com>
-# $Id: topohelpers.tcl,v 1.9 2014/08/19 16:45:04 johns Exp $
+# $Id: topohelpers.tcl,v 1.10 2017/04/13 09:31:08 johns Exp $
 
 # some (small) helper functions
 
@@ -178,6 +178,7 @@ proc ::TopoTools::adddefaultrep {mol {selmod none}} {
 # guess the atomic number in the peridic table from the mass
 proc ::TopoTools::ptefrommass {{amass 0.0}} {
     variable masses
+    variable masswarn
 
     set idx 0
     foreach m $masses {
@@ -186,20 +187,24 @@ proc ::TopoTools::ptefrommass {{amass 0.0}} {
         if {[expr abs($amass-$m)] < 0.65} {
             set idx [lsearch $masses $m]
         }
-        # this is a hydrogen or deuterium and we flag it as hydrogen.
-        if {($amass > 0.0 && $amass < 2.2)} {
-            set idx 1
+    }
+    # this is a hydrogen or deuterium and we flag it as hydrogen.
+    if {($amass > 0.0) && ($amass < 2.2)} {
+        set idx 1
+    }
+    # Differentiate between Bismutium and Polonium.
+    # The normal search will detect Polonium.
+    if {($amass > 208.09) && ($amass < 208.99)} {
+        if {$masswarn > 0} {
+            vmdcon -warn "topotools: Bismutium detected. Cannot assign element correctly due to atomselect limitation"
+            set masswarn 0
         }
-        # Differentiate between Bismutium and Polonium.
-        # The normal search will detect Polonium.
-        if {($amass > 207.85 && $amass < 208.99)} {
-            set idx 83
-        }
-        # Differentiate between Cobalt and Nickel
-        # The normal search will detect Nickel.
-        if {($amass > 56.50 && $amass < 58.8133)} {
-            set idx 27
-        }
+        set idx 83
+    }
+    # Differentiate between Cobalt and Nickel
+    # The normal search will detect Nickel.
+    if {($amass < 61.24) && ($amass > 58.8133)} {
+        set idx 27
     }
     return $idx
 }

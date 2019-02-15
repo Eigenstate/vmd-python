@@ -10,7 +10,7 @@
  *
  *      $RCSfile: pdbxplugin.C,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.17 $       $Date: 2016/11/28 05:01:22 $
+ *      $Revision: 1.22 $       $Date: 2018/04/28 06:40:07 $
  *
  ***************************************************************************/
 
@@ -39,6 +39,8 @@
 #define CHAIN_SIZE 4
 #define TYPE_SIZE 8
 #define BUFFER_SIZE 1024
+#define COLUMN_BUFFER_SIZE 64
+#define MAX_COLUMNS 32
 
 struct list_node { 
   unsigned int next;
@@ -48,26 +50,29 @@ struct list_node {
 // class definition
 typedef struct pdbxParser {
   FILE *file;
-  int natoms;
-  int nbonds;
   int* resid_auth;
   char * chain_auth;
   char * type_auth;
   float* xyz;
   int* bondsTo;
   int* bondsFrom;
-  bool error;
+  molfile_graphics_t* g_data;
+  list_node * hashMem;
+  inthash_t bondHash;
   int table[64];
   unsigned int tableSize;
-  inthash_t bondHash;
-  list_node * hashMem;
+  int natoms;
+  int nbonds;
+  int n_graphics_elems;
+  bool error;
+  bool pdb_dev;
 } pdbxParser;
 
 // XXX yuck, this needs to go!
 static unsigned char charToNum[128];
 
 enum TableColums {
-  COLUMN_NUMBER,
+  COLUMN_NUMBER = 0,
   COLUMN_NAME,
   COLUMN_TYPE,
   COLUMN_TYPE_AUTH,
@@ -83,6 +88,7 @@ enum TableColums {
   COLUMN_CHARGE,
   COLUMN_CHAIN,
   COLUMN_CHAIN_AUTH,
+  COLUMN_MODEL_NUM,
   COLUMN_JUNK
 };
 
@@ -91,9 +97,7 @@ enum TableColums {
 static pdbxParser* create_pdbxParser(const char* filepath);
 
 /*Reads through the file and stores data */
-static int parseStructureFaster(molfile_atom_t * atoms, int * optflags, pdbxParser* parser);
-
-static int setCoordinatesFast(float* coords, pdbxParser* parser);
+static int parseStructure(molfile_atom_t * atoms, int * optflags, pdbxParser* parser);
 
 static bool readRMSDBonds(molfile_atom_t * atoms, pdbxParser* parser);
 static bool readAngleBonds(molfile_atom_t * atoms, pdbxParser* parser);
@@ -119,13 +123,13 @@ static float stringToFloat(char * str);
 /* word must be allocated and suffiently large, does NO ERROR CHECKING */
 /* After returning, word will contain the next word and pos will be updated */
 /* to point to the current position in str */
-static void getNextWord(char * str, void * word, int& pos);
+static void getNextWord(char * str, void * word, int& pos, int maxstrlen, int maxwordlen);
 
 /* Takes a string str and finds the next word starting from pos*/
 /* word must be allocated and suffiently large, does NO ERROR CHECKING */
 /* After returning, word will contain the next word and pos will be updated */
 /* to point to the current position in str */
-static void skipNextWord(char * str, void * word, int& pos);
+static void skipNextWord(char * str, void * word, int& pos, int maxlen);
 
 /* Returns a unique int id for an atom based on the chain and resid */
 static inline int getUniqueResID(char * chainstr, int resid);
@@ -213,52 +217,54 @@ static pdbxParser* create_pdbxParser(const char* filepath) {
   char buffer[BUFFER_SIZE];
   int numberAtoms;
   parser->xyz = NULL;
+  parser->nbonds = 0;
   parser->hashMem = NULL;
   parser->chain_auth = NULL;
   parser->resid_auth = NULL;
   parser->type_auth = NULL;
   parser->error = false;
+  parser->g_data = NULL;
   parser->bondsTo = NULL;
   parser->bondsFrom = NULL;
   parser->file = fopen(filepath, "r");
+  parser->pdb_dev = false;
+  parser->n_graphics_elems = 0;
+  memset(buffer, 0, sizeof(buffer));
   if (!parser->file) {
     printf("pdbxplugin) cannot open file %s\n", filepath);
-    return NULL;
+    parser->error = true;
+    return parser;
   }
   if (NULL == fgets(buffer, BUFFER_SIZE, parser->file)) {
     printf("pdbxplugin) cannot read file %s\n", filepath);
-    return NULL;
+    parser->error = true;
+    return parser;
   }
 
   /* Find the number of atoms */
   parser->natoms = parseNumberAtoms(parser);
   numberAtoms = parser->natoms;
-  if (parser->natoms <= 0) {
+  if (!parser->pdb_dev && parser->natoms <= 0) {
     printf("pdbxplugin) Could not get atom number\n");
-    return NULL;
+    parser->error = true;
+    return parser;
   }
-  initCharToNum();
-  parser->xyz = new float[numberAtoms*3];
-  parser->hashMem = new list_node[numberAtoms+1];
-  parser->chain_auth = new char[numberAtoms*CHAIN_SIZE];
-  parser->resid_auth = new int [numberAtoms];
-  parser->type_auth = new char[numberAtoms * TYPE_SIZE];
+  if (parser->natoms != 0) {
+    initCharToNum();
+    parser->xyz = new float[numberAtoms*3];
+    parser->hashMem = new list_node[numberAtoms+1];
+    parser->chain_auth = new char[numberAtoms*CHAIN_SIZE];
+    parser->resid_auth = new int [numberAtoms];
+    parser->type_auth = new char[numberAtoms * TYPE_SIZE];
+  }
   return parser;
 }
 
-void delete_pdbxParser(pdbxParser* parser) {
+static void delete_pdbxParser(pdbxParser* parser) {
   fclose(parser->file);
   if (parser->xyz != NULL) {
     delete [] parser->xyz;
     parser->xyz = NULL;
-  }
-  if (parser->type_auth != NULL) {
-    delete [] parser->type_auth;
-    parser->type_auth = NULL;
-  }
-  if (parser->resid_auth != NULL) {
-    delete [] parser->resid_auth;
-    parser->resid_auth = NULL;
   }
   if (parser->hashMem != NULL) {
     delete [] parser->hashMem;
@@ -268,38 +274,104 @@ void delete_pdbxParser(pdbxParser* parser) {
     delete [] parser->chain_auth;
     parser->chain_auth = NULL;
   }
+  if (parser->resid_auth != NULL) {
+    delete [] parser->resid_auth;
+    parser->resid_auth = NULL;
+  }
   if (parser->type_auth != NULL) {
+    delete [] parser->type_auth;
+    parser->type_auth = NULL;
+  }
+  if (parser->g_data != NULL) {
+    delete [] parser->g_data;
+    parser->g_data = NULL;
+  }
+  if (parser->bondsTo != NULL) {
+    free(parser->bondsTo);
+    parser->bondsTo = NULL;
+  }
+  if (parser->bondsFrom != NULL) {
+    free(parser->bondsFrom);
+    parser->bondsFrom = NULL;
+  }
+  if (parser->natoms != 0) {
     inthash_destroy(&parser->bondHash);
   }
+  delete parser;
 }
 
-static void skipNextWord(char * str, void * word, int& pos) {
+static void skipNextWord(char * str, void * word, int& pos, int maxlen) {
   /* Handle case if we start at end of line */
+  if (pos > maxlen) {
+    return;
+  }
   if (str[pos] == '\0' || str[pos] == '\n') {
     return;
   }
   /* move forward until we hit non-whitespace */
-  while(str[pos] == ' ') {
+  while(str[pos] == ' ' || str[pos] == '\t') {
     ++pos;
+    if (pos > maxlen) {
+      return;
+    }
   }
   /* increment pos until we hit a whitespace */
-  while (str[pos++] != ' ') {}
+  while (str[pos] != ' ' && str[pos] != '\t') {
+    pos++;
+    if (pos > maxlen) {
+      return;
+    }
+  }
 }
 
-static void getNextWord(char * str, void * word, int& pos) {
+static bool isPDB_DevFile(pdbxParser* parser) {
+  char buffer[BUFFER_SIZE];
+  int count = 0;
+  rewind(parser->file);
+  while (NULL != fgets(buffer, BUFFER_SIZE, parser->file)) {
+    if (NULL != strstr(buffer,"_ihm_")) {
+      ++count;
+    }
+    if (count > 5) {
+      // arbitrarly chosen number of occurences
+      // chosen so one or two random _ihm_ strings in a regular pdb
+      // doesn't cause us to interpret the file as a PDB-Dev.
+      // Although even if we do, parsing should continue without issues.
+      return true;
+    }
+  }
+  rewind(parser->file);
+  return false;
+}
+
+
+static void getNextWord(char * str, void * word, int& pos, int maxstrlen, int maxwordlen) {
   char * w = (char*) word;
   int wordpos = 0;
+  w[0] = '\0';
+  if (pos >= maxstrlen) {
+    return;
+  }
   /* Handle case if we start at end of line */
   if (str[pos] == '\0' || str[pos] == '\n') {
     return;
   }
   /* move forward until we hit non-whitespace */
-  while(str[pos] == ' ') {
-    ++pos;
+  while(str[pos] == ' ' || str[pos] == '\t') {
+    if (++pos >= maxstrlen) {
+      return;
+    }
   }
   /* increment pos until we hit a whitespace */
-  while (str[pos] != ' ') {
+  while (str[pos] != ' ' && str[pos] != '\t') {
     w[wordpos++] = str[pos++];
+    if (wordpos >= maxwordlen) {
+      w[maxwordlen-1] = '\0';
+      return;
+    }
+    if (pos >= maxstrlen) {
+      w[wordpos] = '\0';
+    }
   }
   w[wordpos] = '\0';
   /* Increment pos to point to first char that has not been read */
@@ -331,62 +403,131 @@ static float stringToFloat(char * str) {
   return retval;
 }
 
+static bool isStructureDataHeader(const char* strbuf) {
+  if (strstr(strbuf, "_atom_site.") != NULL) {
+    return true;
+  }
+  if (strstr(strbuf, "_ihm_starting_model_coord.") != NULL) {
+    return true;
+  }
+  return false;
+}
+
 static int parseNumberAtoms(pdbxParser* parser) {
   char buffer[BUFFER_SIZE];
-  char wordbuffer[64];
+  char wordbuffer[BUFFER_SIZE];
   int numatoms = 0;
   int i;
   int tableSize = 0;
+  bool valid_mmcif = true;
+  bool column_exists[MAX_COLUMNS];
+  for (i=0; i<MAX_COLUMNS; i++) 
+    column_exists[i] = false;
 
-  // skip past junk at start of file, stop when we get to atomSite data
-  while (NULL == strstr(buffer, "_atom_site.")) {
-    // if this is true then we couldnt find the numatoms
-    if (NULL == fgets(buffer, BUFFER_SIZE, parser->file))
-      return -1;
+  int base_word_size = 0; // position of first char of column name
+                          // ex: base_name.column_name
+                          //               ^
+
+  if (isPDB_DevFile(parser)) {
+    printf("pdbxplugin) WARNING: this appears to be a PDB-Dev file. PDB-Dev file reading is experimental.\n");
+    parser->pdb_dev = true;
   }
 
-  while (!(NULL == strstr(buffer, "_atom_site."))) {
-    sscanf(buffer+11, "%s", wordbuffer); // table is used in parseStructure too
+  if (NULL == fgets(buffer, BUFFER_SIZE, parser->file))
+    return 0;
+
+  // skip past junk at start of file, stop when we get to atomSite data
+  while (!isStructureDataHeader(buffer)) {
+    // if this is true then we couldnt find the header. Maybe it has a different name in newer PDBx definitions?
+    // When this was first written _atom_site was the only allowed name, which apparently is no longer true
+    if (NULL == fgets(buffer, BUFFER_SIZE, parser->file))
+      return 0;
+  }
+
+  base_word_size = (char*)memchr(buffer, '.', sizeof(buffer)) - buffer + 1;
+
+  while (isStructureDataHeader(buffer)) {
+    sscanf(buffer+base_word_size, "%s", wordbuffer); // table is used in parseStructure too
     /* assign integer values to each column */
     if (0 == strcmp(wordbuffer, "id")) {
       parser->table[tableSize] = COLUMN_NUMBER;
+      column_exists[COLUMN_NUMBER] = true;
+
     } else if (0 == strcmp(wordbuffer, "type_symbol")) {
       parser->table[tableSize] = COLUMN_NAME;
-    } else if (0 == strcmp(wordbuffer, "label_comp_id")) {
+      column_exists[COLUMN_NAME] = true;
+
+    } else if (0 == strcmp(wordbuffer, "label_comp_id")
+               || (parser->pdb_dev && 0 == strcmp(wordbuffer, "comp_id"))) {
       parser->table[tableSize] = COLUMN_RESNAME;
-    } else if (0 == strcmp(wordbuffer, "label_asym_id")) {
+      column_exists[COLUMN_RESNAME] = true;
+
+    } else if (0 == strcmp(wordbuffer, "label_asym_id")
+               || (parser->pdb_dev && 0 == strcmp(wordbuffer, "asym_id"))) {
       parser->table[tableSize] = COLUMN_CHAIN;
+      column_exists[COLUMN_CHAIN] = true;
+
     } else if (0 == strcmp(wordbuffer, "auth_asym_id")) {
       parser->table[tableSize] = COLUMN_CHAIN_AUTH;
+      column_exists[COLUMN_CHAIN_AUTH] = true;
+
     } else if (0 == strcmp(wordbuffer, "Cartn_x")) {
       parser->table[tableSize] = COLUMN_X;
+      column_exists[COLUMN_X] = true;
+
     } else if (0 == strcmp(wordbuffer, "Cartn_y")) {
       parser->table[tableSize] = COLUMN_Y;
+      column_exists[COLUMN_Y] = true;
+
     } else if (0 == strcmp(wordbuffer, "Cartn_z")) {
       parser->table[tableSize] = COLUMN_Z;
-    } else if (0 == strcmp(wordbuffer, "label_seq_id")) {
+      column_exists[COLUMN_Z] = true;
+
+    } else if (0 == strcmp(wordbuffer, "label_seq_id")
+               || (parser->pdb_dev && 0 == strcmp(wordbuffer, "seq_id"))) {
       parser->table[tableSize] = COLUMN_RESID;
+      column_exists[COLUMN_RESID] = true;
+
     } else if (0 == strcmp(wordbuffer, "auth_seq_id")) {
       parser->table[tableSize] = COLUMN_RESID_AUTH;
+      column_exists[COLUMN_RESID_AUTH] = true;
+
     } else if (0 == strcmp(wordbuffer, "pdbx_PDB_ins_code")) {
       parser->table[tableSize] = COLUMN_INSERTION;
+      column_exists[COLUMN_INSERTION] = true;
+
     } else if (0 == strcmp(wordbuffer, "B_iso_or_equiv")) {
       parser->table[tableSize] = COLUMN_BFACTOR;
+      column_exists[COLUMN_BFACTOR] = true;
+
     } else if (0 == strcmp(wordbuffer, "occupancy")) {
       parser->table[tableSize] = COLUMN_OCCUPANCY;
-    } else if (0 == strcmp(wordbuffer, "label_atom_id")) {
+      column_exists[COLUMN_OCCUPANCY] = true;
+
+    } else if (0 == strcmp(wordbuffer, "label_atom_id")
+               || (parser->pdb_dev && 0 == strcmp(wordbuffer, "atom_id"))) {
       parser->table[tableSize] = COLUMN_TYPE;
+      column_exists[COLUMN_TYPE] = true;
+
     } else if (0 == strcmp(wordbuffer, "auth_atom_id")) {
       parser->table[tableSize] = COLUMN_TYPE_AUTH;
+      column_exists[COLUMN_TYPE_AUTH] = true;
+
     } else if (0 == strcmp(wordbuffer, "pdbx_formal_charge")) {
       parser->table[tableSize] = COLUMN_CHARGE;
+      column_exists[COLUMN_CHARGE] = true;
+
+    } else if (0 == strcmp(wordbuffer, "pdbx_PDB_model_num")) {
+      parser->table[tableSize] = COLUMN_MODEL_NUM;
+      column_exists[COLUMN_MODEL_NUM] = true;
+
     } else {
       parser->table[tableSize] = COLUMN_JUNK;
     }
 
     // if this is true then we couldnt find the numatoms
     if (NULL == fgets(buffer, BUFFER_SIZE, parser->file))
-      return -1;
+      return 0;
 
     tableSize++;
   }
@@ -395,7 +536,7 @@ static int parseNumberAtoms(pdbxParser* parser) {
   while (buffer[0] != '#') {
     // if this is true then we couldnt find the numatoms
     if (NULL == fgets(buffer, BUFFER_SIZE, parser->file))
-      return -1;
+      return 0;
     ++numatoms;
   }
 
@@ -409,7 +550,52 @@ static int parseNumberAtoms(pdbxParser* parser) {
 
   if (numatoms == 0) {
     printf("pdbxplugin) Could not parse atom number from file\n");
-    return -1;
+    return 0;
+  }
+
+  if (!column_exists[COLUMN_NUMBER]) {
+    printf("pdbxplugin) WARNING: missing 'id' field.\n");
+    valid_mmcif = false;
+  }
+  if (!column_exists[COLUMN_CHAIN_AUTH] && !parser->pdb_dev) {
+    // PDB-Dev doesn't include any *auth* fields, so its not missing.
+    printf("pdbxplugin) WARNING: missing 'auth_asym_id' field.\n");
+    valid_mmcif = false;
+  }
+  if (!column_exists[COLUMN_CHAIN]) {
+    printf("pdbxplugin) WARNING: missing 'label_asym_id' field.\n");
+    valid_mmcif = false;
+  }
+  if (!column_exists[COLUMN_TYPE]) {
+    printf("pdbxplugin) WARNING: missing 'label_atom_id' field.\n");
+    valid_mmcif = false;
+  }
+  if (!column_exists[COLUMN_RESNAME]) {
+    printf("pdbxplugin) WARNING: missing 'label_comp_id' field.\n");
+    valid_mmcif = false;
+  }
+  if (!column_exists[COLUMN_RESID]) {
+    printf("pdbxplugin) WARNING: missing 'label_seq_id' field.\n");
+    valid_mmcif = false;
+  }
+  if (!column_exists[COLUMN_NAME]) {
+    printf("pdbxplugin) WARNING: missing 'type_symbol' field.\n");
+    valid_mmcif = false;
+  }
+
+  if (!column_exists[COLUMN_X] || !column_exists[COLUMN_Y] || !column_exists[COLUMN_Z]) {
+    // This is still technically a valid mmCIF file, although at the time of this comment
+    // the PDB reports 100% of PDBx files contain these fields.
+    // Not sure what to do if they don't exist.
+    printf("pdbxplugin) WARNING: coordinate fields not found.\n");
+  }
+
+  if (!valid_mmcif && !parser->pdb_dev) {
+    // The documentation on pdb_dev requirements is not clear, but for mmCIF/PDBx files
+    // there are clearly defined "required fields" for atom_site tables.
+    // The checks we perform for those are not exhaustive, but the fields we don't check
+    // are not currently read by this parser.
+    printf("pdbxplugin) WARNING: this is not a valid PDBx/mmCIF file.\n");
   }
 
   return numatoms;
@@ -435,8 +621,9 @@ static void initCharToNum() {
 }
 
 
+// This attempts to generate a unique id based off the chain name and resid...
 static inline int getUniqueResID(char * chainstr, int resid) {
-  int i, uid;
+  int uid;
   int length = strlen(chainstr);
   // Assuming max length of chainstr is 3 chars
   //Each char can be respresented by <= 6 bits since only a-z, A-Z, and 0-9 are valid values (62 possible values)
@@ -462,12 +649,10 @@ static inline int getUniqueResID(char * chainstr, int resid) {
 }
 
 
-
 #define ATOM_TYPE      0
 #define ATOM_RESNAME   1
 #define ATOM_INSERTION 2
 #define ATOM_CHAIN     3
-#define MAX_COLUMNS    64
 #define MAX_OPTIONAL_AUTH_FIELDS  2
 
 #define FLAG_CHAIN_LENGTH 0x01
@@ -475,34 +660,52 @@ static inline int getUniqueResID(char * chainstr, int resid) {
 #define FLAG_INSERTION    0x04
 #define FLAG_BFACTOR      0x08
 #define FLAG_OCCUPANCY    0x10
+#define FLAG_MODEL_NUM    0x20
 
-static int parseStructureFaster(molfile_atom_t * atoms, int * optflags, pdbxParser* parser) {
-  int i, count, atomdata, pos, idx, xyzcount, j;
+static int parseStructure(molfile_atom_t * atoms, int * optflags, pdbxParser* parser) {
+  int i, count, atomdata, pos, idx, xyzcount;
   char buffer[BUFFER_SIZE];
-  char namebuffer[8];
-  char occupancybuffer[16];
-  char bfactorbuffer[16];
-  char chargebuffer[16];
-  char residbuffer[8];
-  char residAuthbuffer[8];
-  char chainbuffer[16];
-  char trash[16];
-  char xbuffer[16];
-  char ybuffer[16];
-  char zbuffer[16];
-  void * pillars[MAX_COLUMNS];
-  molfile_atom_t * atom;
+
+  char namebuffer[COLUMN_BUFFER_SIZE];
+  char occupancybuffer[COLUMN_BUFFER_SIZE];
+  char bfactorbuffer[COLUMN_BUFFER_SIZE];
+  char chargebuffer[COLUMN_BUFFER_SIZE];
+  char residbuffer[COLUMN_BUFFER_SIZE];
+  char residAuthbuffer[COLUMN_BUFFER_SIZE];
+  char chainbuffer[COLUMN_BUFFER_SIZE];
+  char trash[COLUMN_BUFFER_SIZE];
+  char xbuffer[COLUMN_BUFFER_SIZE];
+  char ybuffer[COLUMN_BUFFER_SIZE];
+  char zbuffer[COLUMN_BUFFER_SIZE];
+  char model_num_buf[COLUMN_BUFFER_SIZE];
+  void * columns[MAX_COLUMNS];
+
+  memset(buffer, 0, sizeof(buffer));
+  memset(namebuffer, 0, sizeof(namebuffer));
+  memset(occupancybuffer, 0, sizeof(occupancybuffer));
+  memset(bfactorbuffer, 0, sizeof(bfactorbuffer));
+  memset(chargebuffer, 0, sizeof(chargebuffer));
+  memset(residbuffer, 0, sizeof(residbuffer));
+  memset(residAuthbuffer, 0, sizeof(residAuthbuffer));
+  memset(chainbuffer, 0, sizeof(chainbuffer));
+  memset(trash, 0, sizeof(trash));
+  memset(xbuffer, 0, sizeof(xbuffer));
+  memset(ybuffer, 0, sizeof(ybuffer));
+  memset(zbuffer, 0, sizeof(zbuffer));
+  memset(model_num_buf, 0, sizeof(model_num_buf));
+  memset(columns, 0, sizeof(columns));
+
+  molfile_atom_t * atom = NULL;
   int badptecount = 0;
   int chargecount = 0;
   int occupancycount = 0;
   int bfactorcount = 0;
-  char oldChain[8];
   unsigned char parseFlags = 0;
   chainbuffer[1] = '\0';
   chainbuffer[2] = '\0';
-  int hashTemp;
+  int hashTemp = 0;
   int hashCount = 1;
-  int head;
+  int head = 0;
   int chainAuthIdx = MAX_COLUMNS-1, typeIdx = MAX_COLUMNS-1, resnameIdx = MAX_COLUMNS-1;
   int insertionIdx = MAX_COLUMNS-1, typeAuthIdx = MAX_COLUMNS-1;
 #if (vmdplugin_ABIVERSION >= 20)
@@ -514,73 +717,82 @@ static int parseStructureFaster(molfile_atom_t * atoms, int * optflags, pdbxPars
   int* table = parser->table;
   unsigned char doBonds = 0;
 
-  /* Initialize hash table used later when reading the special bonds */
+  // Initialize hash table used later when reading the special bonds
+  // This is necessary because PDBx files don't provide atom numbers
+  // for the special bonds and instead just give atom type/chain/resid
+  // It provides a mapping from the resid+chain -> linked list of all atoms
+  // that have that resid and chain
   inthash_init(&parser->bondHash, parser->natoms);
 
   for (i=0; i<tableSize; i++) {
     switch (table[i]) {
       case COLUMN_NUMBER:
-        pillars[i] = trash;
+        columns[i] = trash;
       break;
       case COLUMN_NAME:
-        pillars[i] = namebuffer;
+        columns[i] = namebuffer;
       break;
       case COLUMN_TYPE:
-        pillars[i] = atoms->type;
+        columns[i] = atoms->type;
         typeIdx = i;
       break;
       case COLUMN_TYPE_AUTH:
-        pillars[i] = typeAuth;
+        columns[i] = typeAuth;
         typeAuthIdx = i;
       break;
       case COLUMN_RESNAME:
-        pillars[i] = atoms->resname;
+        columns[i] = atoms->resname;
         resnameIdx = i;
       break;
       case COLUMN_RESID:
-        pillars[i] = residbuffer;
+        columns[i] = residbuffer;
       break;
       case COLUMN_RESID_AUTH:
-        pillars[i] = residAuthbuffer;
+        columns[i] = residAuthbuffer;
         doBonds++;
       break;
       case COLUMN_INSERTION:
-        pillars[i] = atoms->insertion;
+        columns[i] = atoms->insertion;
         insertionIdx = i;
+        parseFlags |= FLAG_INSERTION;
       break;
       case COLUMN_X:
-        pillars[i] = xbuffer;
+        columns[i] = xbuffer;
       break;
       case COLUMN_Y:
-        pillars[i] = ybuffer;
+        columns[i] = ybuffer;
       break;
       case COLUMN_Z:
-        pillars[i] = zbuffer;
+        columns[i] = zbuffer;
       break;
       case COLUMN_OCCUPANCY:
-        pillars[i] = occupancybuffer;
+        columns[i] = occupancybuffer;
       break;
       case COLUMN_BFACTOR:
-        pillars[i] = bfactorbuffer;
+        columns[i] = bfactorbuffer;
       break;
       case COLUMN_CHARGE:
-        pillars[i] = chargebuffer;
+        columns[i] = chargebuffer;
       break;
       case COLUMN_CHAIN:
 #if (vmdplugin_ABIVERSION < 20)
-        pillars[i] = chainbuffer;
+        columns[i] = chainbuffer;
 #else
-        pillars[i] = atoms->chain;
+        columns[i] = atoms->chain;
         chainIdx = i;
 #endif
       break;
       case COLUMN_CHAIN_AUTH:
-        pillars[i] = chainAuth;
+        columns[i] = chainAuth;
         chainAuthIdx = i;
         doBonds++;
       break;
+      case COLUMN_MODEL_NUM:
+        columns[i] = model_num_buf;
+        parseFlags |= FLAG_MODEL_NUM;
+      break;
       default:
-        pillars[i] = trash;
+        columns[i] = trash;
       break;
     }
   }
@@ -595,12 +807,13 @@ static int parseStructureFaster(molfile_atom_t * atoms, int * optflags, pdbxPars
   /* Skip through junk */
   while (!atomdata) {
     if (NULL == fgets(buffer, BUFFER_SIZE, parser->file)) {
-      printf("pdbxplugin) failure while reading file\n");
+      printf("pdbxplugin) failure while reading file.\n");
       parser->error = true;
       return -1;
     }
-    if (!(NULL == strstr(buffer, "_atom_site.")))
+    if (isStructureDataHeader(buffer)) {
       atomdata = 1;
+    }
   }
 
   /* Skip through the atomdata table declaration*/
@@ -610,23 +823,28 @@ static int parseStructureFaster(molfile_atom_t * atoms, int * optflags, pdbxPars
       parser->error = true;
       return -1;
     }
-    if (NULL == strstr(buffer, "_atom_site."))
+    if (!isStructureDataHeader(buffer)) {
       atomdata = 0;
+    }
   }
 
   count = 0;
   atom = atoms;
   do {
+    if (count >= parser->natoms) {
+      printf("pdbxplugin) ERROR: number of atoms is larger than predicted. Exiting...\n");
+      return -1;
+    }
     pos = 0;
     for (i=0; i<tableSize; ++i) {
       if (table[i] == COLUMN_JUNK) {
         /* if we don't want this column, update pos to point to the next column */
-        skipNextWord(buffer, buffer, pos);
+        skipNextWord(buffer, buffer, pos, sizeof(buffer));
       }
       else {
         /* will copy each column string into the atom struct */
         /* or save the string if we need to convert it */
-        getNextWord(buffer, pillars[i], pos);
+        getNextWord(buffer, columns[i], pos, sizeof(buffer), COLUMN_BUFFER_SIZE);
       }
     }
     /* Coordinates must be saved until timestep is called */
@@ -640,12 +858,13 @@ static int parseStructureFaster(molfile_atom_t * atoms, int * optflags, pdbxPars
     if (doBonds && residAuthbuffer[0] != '.' && residAuthbuffer[0] != '?') {
       parser->resid_auth[count] = atoi(residAuthbuffer);
 
-      /* add atom to hash table */
+      // add atom to hash table
+      // This attempts to generate a "unique id" based off the chain and resid
       hashTemp = getUniqueResID(chainAuth, parser->resid_auth[count]);
 
       if (-1 != (head = inthash_insert(&parser->bondHash, hashTemp, hashCount))) {
-        /* key already exists, so we have to "add" a node to the linked list for this residue */
-        /* Since we can't change the pointer in the hash table, we insert the node at the second
+        /* key already exists, so we have to "add" a node to the linked list for this residue
+         * Since we can't change the pointer in the hash table, we insert the node at the second
          * position in the list
          */
         parser->hashMem[hashCount].next = parser->hashMem[head].next;
@@ -657,8 +876,12 @@ static int parseStructureFaster(molfile_atom_t * atoms, int * optflags, pdbxPars
 
     // XXX replace '?' or '.' insertion codes with a NUL char 
     // indicating an empty insertion code.
-    if (atom->insertion[0] == '?' || atom->insertion[0] == '.') {
+    if (insertionIdx == MAX_COLUMNS-1 || atom->insertion[0] == '?'
+                                      || atom->insertion[0] == '.') {
       atom->insertion[0] = '\0';
+      if (parseFlags & FLAG_INSERTION) {
+        parseFlags ^= FLAG_INSERTION;
+      }
     }
 
 //TODO: figure out what this conditional should be
@@ -677,25 +900,25 @@ static int parseStructureFaster(molfile_atom_t * atoms, int * optflags, pdbxPars
       atom->bfactor = atof(bfactorbuffer);
       ++bfactorcount;
       parseFlags |= FLAG_BFACTOR;
-    }
-    else
+    } else {
       atom->bfactor = 0.0;
+    }
 
     if (occupancybuffer[0] != '.' && occupancybuffer[0] != '?') {
       atom->occupancy = atof(occupancybuffer);
       ++occupancycount;
       parseFlags |= FLAG_OCCUPANCY;
-    }
-    else 
+    } else {
       atom->occupancy = 0.0;
+    }
 
     if (chargebuffer[0] != '.' && chargebuffer[0] != '?') {
       atom->charge = atof(chargebuffer);
       ++chargecount;
       parseFlags |= FLAG_CHARGE;
-    }
-    else
+    } else {
       atom->charge = 0.0;
+    }
 
     idx = get_pte_idx_from_string(namebuffer);
 
@@ -709,18 +932,32 @@ static int parseStructureFaster(molfile_atom_t * atoms, int * optflags, pdbxPars
       }
       atom->type[i-1] = '\0';
     }
-    /* atom->name and atom-> are the same */
-    strcpy(atom->name, atom->type);
+
+    if (strlen(namebuffer) == 0 || strlen(namebuffer) > 3) {
+      // atom->name and atom-> are the same
+      strcpy(atom->name, atom->type);
+    } else {
+      strcpy(atom->name, namebuffer);
+    }
 
     /* Set periodic table values */
-    if (idx) {
+    if (idx != 0) {
       atom->atomicnumber = idx;
       atom->mass = get_pte_mass(idx);
       atom->radius = get_pte_vdw_radius(idx);
-    }
-    else {
+    } else {
       ++badptecount;
     }
+
+    if (parseFlags & FLAG_MODEL_NUM) {
+      if (model_num_buf[0] != '\0') {
+        atom->altloc[0] = model_num_buf[0];
+      }
+      if (model_num_buf[1] != '\0') {
+        atom->altloc[1] = model_num_buf[1];
+      }
+    }
+
     if (NULL == fgets(buffer, BUFFER_SIZE, parser->file)) {
       printf("pdbxplugin) failure while reading file\n");
       parser->error = true;
@@ -732,14 +969,14 @@ static int parseStructureFaster(molfile_atom_t * atoms, int * optflags, pdbxPars
     typeAuth += TYPE_SIZE;
     if (doBonds) {
       chainAuth += CHAIN_SIZE;
-      pillars[chainAuthIdx] = chainAuth;
+      columns[chainAuthIdx] = chainAuth;
     }
-    pillars[typeAuthIdx] = typeAuth;
-    pillars[typeIdx] = atom->type;
-    pillars[resnameIdx] = atom->resname;
-    pillars[insertionIdx] = atom->insertion;
+    columns[typeAuthIdx] = typeAuth;
+    columns[typeIdx] = atom->type;
+    columns[resnameIdx] = atom->resname;
+    columns[insertionIdx] = atom->insertion;
 #if (vmdplugin_ABIVERSION >= 20)
-    pillars[chainIdx] = atom->chain;
+    columns[chainIdx] = atom->chain;
 #endif
   } while (buffer[0] != '#'); //do until all the atoms have been read
 
@@ -750,37 +987,35 @@ static int parseStructureFaster(molfile_atom_t * atoms, int * optflags, pdbxPars
   }
 #endif
 
-  if (badptecount == 0)
+  if (badptecount == 0) {
     *optflags |= MOLFILE_MASS | MOLFILE_RADIUS | MOLFILE_ATOMICNUMBER;
+  }
 
-  if (parseFlags & FLAG_CHARGE)
+  if (parseFlags & FLAG_INSERTION) {
+    *optflags |= MOLFILE_INSERTION;
+  }
+
+  if (parseFlags & FLAG_CHARGE) {
     *optflags |= MOLFILE_CHARGE;
+  }
 
-  if (parseFlags & FLAG_BFACTOR)
+  if (parseFlags & FLAG_BFACTOR) {
     *optflags |= MOLFILE_BFACTOR;
+  }
 
-  if (parseFlags & FLAG_OCCUPANCY)
+  if (parseFlags & FLAG_OCCUPANCY) {
     *optflags |= MOLFILE_OCCUPANCY;
+  }
 
+  if (parseFlags & FLAG_MODEL_NUM) {
+    *optflags |= MOLFILE_ALTLOC;
+  }
 
   if (badptecount > 0) {
     printf("pdbxplugin) encountered %d bad element indices!\n", badptecount);
     return -1;
   }
 
-  return 0;
-}
-
-static int setCoordinatesFast(float* coords, pdbxParser* parser) {
-  int i, j;
-  j = 0;
-  for(i=0; i<parser->natoms; i++) {
-    coords[0] = parser->xyz[j];
-    coords[1] = parser->xyz[j+1];
-    coords[2] = parser->xyz[j+2];
-    coords += 3;
-    j += 3;
-  }
   return 0;
 }
 
@@ -796,26 +1031,25 @@ static int setCoordinatesFast(float* coords, pdbxParser* parser) {
 
 static bool readAngleBonds(molfile_atom_t * atoms, pdbxParser* parser) {
   char buffer[BUFFER_SIZE];
-  int bondTable[32];
-  char* columns[32];
+  char* columns[MAX_COLUMNS];
   int bondTableSize = 0;
   int bnum = 0;
-  int i, pos, j, k;
+  int i, pos, k;
   int* newBondsTo, *newBondsFrom;
   fpos_t filePos;
-  char junk[16];
-  char modelNum[8];
-  char name1[8];
-  char wordbuffer[16];
-  char name2[8];
-  char chain1[8];
-  char chain2[8];
-  char resid1buffer[8];
-  char resid2buffer[8];
+  char junk[COLUMN_BUFFER_SIZE];
+  char name1[COLUMN_BUFFER_SIZE];
+  char name2[COLUMN_BUFFER_SIZE];
+  char chain1[COLUMN_BUFFER_SIZE];
+  char chain2[COLUMN_BUFFER_SIZE];
+  char resid1buffer[COLUMN_BUFFER_SIZE];
+  char resid2buffer[COLUMN_BUFFER_SIZE];
   int resid1, resid2;
   int uid1, uid2;
   int aIdx1, aIdx2;
-  molfile_atom_t * atom;
+  int n_angle_bonds = 0;
+
+  rewind(parser->file);
 
   /* skip through the file until we find the bond information */
   do {
@@ -826,34 +1060,25 @@ static bool readAngleBonds(molfile_atom_t * atoms, pdbxParser* parser) {
 
   fgetpos(parser->file, &filePos);
 
-  //if (sscanf(  return if two words in one table definition line
-
   /* Parse table header data */
   while (NULL != strstr(buffer,"_pdbx_validate_rmsd_angle.")) {
-    sscanf(buffer+26, "%s", wordbuffer); // table is used in parseStructure too
     /* assign integer values to each column */
-    if (0 == strcmp(wordbuffer, "auth_atom_id_1")) {
+    if (NULL != strstr(buffer+26, "auth_atom_id_1")) {
       columns[bondTableSize] = (char*)name1;
     }
-    else if (0 == strcmp(wordbuffer, "auth_asym_id_1")) {
+    else if (NULL != strstr(buffer+26, "auth_asym_id_1")) {
       columns[bondTableSize] = (char*)chain1;
     }
-    else if (0 == strcmp(wordbuffer, "auth_comp_id_1")) {
-      columns[bondTableSize] = (char*)junk;
-    }
-    else if (0 == strcmp(wordbuffer, "auth_seq_id_1")) {
+    else if (NULL != strstr(buffer+26, "auth_seq_id_1")) {
       columns[bondTableSize] = (char*)resid1buffer;
     }
-    else if (0 == strcmp(wordbuffer, "auth_atom_id_2")) {
+    else if (NULL != strstr(buffer+26, "auth_atom_id_2")) {
       columns[bondTableSize] = (char*)name2;
     }
-    else if (0 == strcmp(wordbuffer, "auth_asym_id_2")) {
+    else if (NULL != strstr(buffer+26, "auth_asym_id_2")) {
       columns[bondTableSize] = (char*)chain2;
     }
-    else if (0 == strcmp(wordbuffer, "auth_comp_id_2")) {
-      columns[bondTableSize] = (char*)junk;
-    }
-    else if (0 == strcmp(wordbuffer, "auth_seq_id_2")) {
+    else if (NULL != strstr(buffer+26, "auth_seq_id_2")) {
       columns[bondTableSize] = (char*)resid2buffer;
     }
     else {
@@ -877,11 +1102,18 @@ static bool readAngleBonds(molfile_atom_t * atoms, pdbxParser* parser) {
     ++bnum;
   }
 
-  int test = parser->nbonds + bnum;
-  if ((newBondsTo = (int*)realloc((void*)parser->bondsTo, (parser->nbonds + bnum) * sizeof(int))) == NULL)
+
+  n_angle_bonds = bnum; 
+  if ((newBondsTo = (int*)realloc((void*)parser->bondsTo,
+                                  (parser->nbonds + bnum) * sizeof(int))) == NULL) {
+    printf("pdbxplugin) ERROR: could not reallocate bonds array.\n");
     return false;
-  if ((newBondsFrom = (int*)realloc((void*)parser->bondsFrom, (parser->nbonds + bnum) * sizeof(int))) == NULL)
+  }
+  if ((newBondsFrom = (int*)realloc((void*)parser->bondsFrom,
+                                    (parser->nbonds + bnum) * sizeof(int))) == NULL) {
+    printf("pdbxplugin) ERROR: could not reallocate bonds array.\n");
     return false;
+  }
   parser->bondsTo = newBondsTo;
   parser->bondsFrom = newBondsFrom;
 
@@ -904,7 +1136,7 @@ static bool readAngleBonds(molfile_atom_t * atoms, pdbxParser* parser) {
     pos = 0;
     /* copy each column of the table into the appropriate columns index */
     for (i=0; i<bondTableSize; ++i) {
-        getNextWord(buffer, columns[i], pos);
+        getNextWord(buffer, columns[i], pos, sizeof(buffer), COLUMN_BUFFER_SIZE);
     }
     resid1 = atoi(resid1buffer);
     resid2 = atoi(resid2buffer);
@@ -914,7 +1146,8 @@ static bool readAngleBonds(molfile_atom_t * atoms, pdbxParser* parser) {
     k = 0;
 
     /* find the atoms in the hash table */
-    if ( ((uid1 = inthash_lookup(&parser->bondHash, uid1)) != -1) && ((uid2 = inthash_lookup(&parser->bondHash, uid2)) != -1) ) {
+    if (((uid1 = inthash_lookup(&parser->bondHash, uid1)) != -1)
+        && ((uid2 = inthash_lookup(&parser->bondHash, uid2)) != -1) ) {
       // because the hashtable is residue specifc, loop through 
       // all atoms in the residue to find the correct one
       // Find atom 1 
@@ -944,15 +1177,18 @@ static bool readAngleBonds(molfile_atom_t * atoms, pdbxParser* parser) {
       } while (uid2 != 0); // 0 indicates end of "list"
 
       if (k == 2) {
-        parser->bondsFrom[parser->nbonds + bnum] = aIdx1+1;  // vmd doesn't use 0 based index for bond info?
+        // vmd doesn't use 0 based index for bond info?
+        parser->bondsFrom[parser->nbonds + bnum] = aIdx1+1; 
         parser->bondsTo[parser->nbonds + bnum] = aIdx2+1;
         ++bnum;
       }
     }
 #ifdef PDBX_DEBUG
     else {
-      printf("^^^^Could locate bond^^^^^, %s %d\n", chain1, resid1);
-      printf("Error finding atom ");
+      printf("pdbxplugin) WARNING: Could not locate bond in hash table. %s %d\n", chain1, resid1);
+      // This could occur if the number of chains/resids is large,
+      // which could cause collisions in the bonds hash table.
+      // Due to structore of pdbx special bonds, I'm not sure how we can get around this.
       if (uid1 == 0)
         printf("1 ");
       if (uid2 == 0)
@@ -967,35 +1203,34 @@ static bool readAngleBonds(molfile_atom_t * atoms, pdbxParser* parser) {
     }
   }
 
+  if (bnum != n_angle_bonds) {
+    printf("pdbxplugin) ERROR: number of angle bonds does not match number of predicted bonds.\n");
+  }
   parser->nbonds += bnum;
+
 #ifdef PDBX_DEBUG
-  printf("pdbxplugin) nbonds defined: %d\n", nbonds);
+  printf("pdbxplugin) nbonds defined: %d\n", parser->nbonds);
 #endif
-  return (bnum == 0) ? false : true;
+  return bnum > 0;
 }
  
-
 static bool readRMSDBonds(molfile_atom_t * atoms, pdbxParser* parser) {
   char buffer[BUFFER_SIZE];
-  int bondTable[32];
-  char* columns[32];
+  char* columns[64];
   int bondTableSize = 0;
   int bnum = 0;
-  int i, pos, j, k;
+  int i, k;
   fpos_t filePos;
-  char junk[16];
-  char modelNum[8];
-  char name1[8];
-  char wordbuffer[16];
-  char name2[8];
-  char chain1[8];
-  char chain2[8];
-  char resid1buffer[8];
-  char resid2buffer[8];
+  char junk[COLUMN_BUFFER_SIZE];
+  char name1[COLUMN_BUFFER_SIZE];
+  char name2[COLUMN_BUFFER_SIZE];
+  char chain1[COLUMN_BUFFER_SIZE];
+  char chain2[COLUMN_BUFFER_SIZE];
+  char resid1buffer[COLUMN_BUFFER_SIZE];
+  char resid2buffer[COLUMN_BUFFER_SIZE];
   int resid1, resid2;
   int uid1, uid2;
   int aIdx1, aIdx2;
-  molfile_atom_t * atom;
 
   /* skip through the file until we find the bond information */
   do {
@@ -1011,30 +1246,24 @@ static bool readRMSDBonds(molfile_atom_t * atoms, pdbxParser* parser) {
 
   /* Parse table header data */
   while (isValidateRMSDBond(buffer)) {
-    sscanf(buffer+25, "%s", wordbuffer); // table is used in parseStructure too
     /* assign integer values to each column */
-    if (0 == strcmp(wordbuffer, "auth_atom_id_1")) {
+    // 25 is length validateRMSDbond header name
+    if (NULL != strstr(buffer+25, "auth_atom_id_1")) {
       columns[bondTableSize] = (char*)name1;
     }
-    else if (0 == strcmp(wordbuffer, "auth_asym_id_1")) {
+    else if (NULL != strstr(buffer+25, "auth_asym_id_1")) {
       columns[bondTableSize] = (char*)chain1;
     }
-    else if (0 == strcmp(wordbuffer, "auth_comp_id_1")) {
-      columns[bondTableSize] = (char*)junk;
-    }
-    else if (0 == strcmp(wordbuffer, "auth_seq_id_1")) {
+    else if (NULL != strstr(buffer+25, "auth_seq_id_1")) {
       columns[bondTableSize] = (char*)resid1buffer;
     }
-    else if (0 == strcmp(wordbuffer, "auth_atom_id_2")) {
+    else if (NULL != strstr(buffer+25, "auth_atom_id_2")) {
       columns[bondTableSize] = (char*)name2;
     }
-    else if (0 == strcmp(wordbuffer, "auth_asym_id_2")) {
+    else if (NULL != strstr(buffer+25, "auth_asym_id_2")) {
       columns[bondTableSize] = (char*)chain2;
     }
-    else if (0 == strcmp(wordbuffer, "auth_comp_id_2")) {
-      columns[bondTableSize] = (char*)junk;
-    }
-    else if (0 == strcmp(wordbuffer, "auth_seq_id_2")) {
+    else if (NULL != strstr(buffer+25, "auth_seq_id_2")) {
       columns[bondTableSize] = (char*)resid2buffer;
     }
     else {
@@ -1076,12 +1305,13 @@ static bool readRMSDBonds(molfile_atom_t * atoms, pdbxParser* parser) {
     }
   }
 
+
   bnum = 0;
   while (buffer[0] != '#') {
-    pos = 0;
+    int pos = 0;
     /* copy each column of the table into the appropriate columns index */
     for (i=0; i<bondTableSize; ++i) {
-        getNextWord(buffer, columns[i], pos);
+        getNextWord(buffer, columns[i], pos, sizeof(buffer), COLUMN_BUFFER_SIZE);
     }
     resid1 = atoi(resid1buffer);
     resid2 = atoi(resid2buffer);
@@ -1090,33 +1320,42 @@ static bool readRMSDBonds(molfile_atom_t * atoms, pdbxParser* parser) {
     uid2 = getUniqueResID(chain2, resid2);
     k = 0;
 
-    /* find the atoms in the hash table */
-    if ( ((uid1 = inthash_lookup(&parser->bondHash, uid1)) != -1) && ((uid2 = inthash_lookup(&parser->bondHash, uid2)) != -1) ) {
-      /* because the hashtable is residue specifc, loop through all atoms in the residue to find the correct one */
-      /* Find atom 1 */
+    /* Find the atoms in the hash table.
+     * Because the hashtable is residue specifc, loop through all
+     * atoms in the residue to find the correct one
+     */
+    if ( ((uid1 = inthash_lookup(&parser->bondHash, uid1)) != -1)
+        && ((uid2 = inthash_lookup(&parser->bondHash, uid2)) != -1) ) {
+
+       //Find atom 1
       do {
         aIdx1 = parser->hashMem[uid1].index;
-        if (strcmp(name1, parser->type_auth + aIdx1 * TYPE_SIZE) == 0 && parser->resid_auth[aIdx1] == resid1 &&
-            strcmp(chain1, parser->chain_auth + aIdx1 * CHAIN_SIZE) == 0){
+        if (strcmp(name1, parser->type_auth + aIdx1 * TYPE_SIZE) == 0
+            && parser->resid_auth[aIdx1] == resid1
+            && strcmp(chain1, parser->chain_auth + aIdx1 * CHAIN_SIZE) == 0){
           k++;
           break;
         }
-        else
+        else {
           uid1 = parser->hashMem[uid1].next;
+        }
       } while (uid1 != 0); //0 indicates end of "list"
 
       /* find atom 2 */
       do {
         aIdx2 = parser->hashMem[uid2].index;
-        if (strcmp(name2, parser->type_auth + aIdx2 * TYPE_SIZE) == 0 && parser->resid_auth[aIdx2] == resid2 &&
-            strcmp(chain2, parser->chain_auth + aIdx2 * CHAIN_SIZE) == 0){
+        if (strcmp(name2, parser->type_auth + aIdx2 * TYPE_SIZE) == 0
+            && parser->resid_auth[aIdx2] == resid2
+            && strcmp(chain2, parser->chain_auth + aIdx2 * CHAIN_SIZE) == 0) {
           k++;
           break;
         }
-        else
+        else {
           uid2 = parser->hashMem[uid2].next;
+        }
       } while (uid2 != 0); // 0 indicates end of "list"
 
+      // If we found both atoms add them to the bonds list
       if (k == 2) {
         parser->bondsFrom[bnum] = aIdx1+1;  // vmd doesn't use 0 based index for bond info?
         parser->bondsTo[bnum] = aIdx2+1;
@@ -1140,18 +1379,121 @@ static bool readRMSDBonds(molfile_atom_t * atoms, pdbxParser* parser) {
       return false;
     }
   }
-  parser->nbonds = bnum;
+  if (parser->nbonds != bnum) {
+    printf("pdbxplugin: ERROR: mismatch in number of bonds.\n");
+  }
 #ifdef PDBX_DEBUG
-  printf("pdbxplugin) nbonds defined: %d\n", nbonds);
+  printf("pdbxplugin) nbonds defined: %d\n", parser->nbonds);
 #endif
   return (bnum > 0);
 }
 
+static bool parse_pdbx_graphics_data(pdbxParser* parser) {
+  char buffer[BUFFER_SIZE];
+  char* columns[32];
+  char xbuffer[COLUMN_BUFFER_SIZE];
+  char ybuffer[COLUMN_BUFFER_SIZE];
+  char zbuffer[COLUMN_BUFFER_SIZE];
+  char radbuffer[COLUMN_BUFFER_SIZE];
+  int tableSize = 0;
+  int nelems = 0;
+  int i;
+  fpos_t filePos;
+  char junk[32];
+
+  rewind(parser->file);
+
+  /* skip through the file until we find the bond information */
+  do {
+    if (NULL == fgets(buffer, BUFFER_SIZE, parser->file)) {
+      parser->nbonds = 0;
+      return false;
+    }
+  } while (NULL == strstr(buffer, "_ihm_sphere_obj_site."));
+
+  fgetpos(parser->file, &filePos);
+
+  /* Parse table header data */
+  while (NULL != strstr(buffer, "_ihm_sphere_obj_site.")) {
+    /* assign integer values to each column */
+    // 25 is length validateRMSDbond header name
+    if (NULL != strstr(buffer+21, "object_radius")) {
+      columns[tableSize] = (char*)radbuffer;
+    }
+    else if (NULL != strstr(buffer+21, "Cartn_x")) {
+      columns[tableSize] = (char*)xbuffer;
+    }
+    else if (NULL != strstr(buffer+21, "Cartn_y")) {
+      columns[tableSize] = (char*)ybuffer;
+    }
+    else if (NULL != strstr(buffer+21, "Cartn_z")) {
+      columns[tableSize] = (char*)zbuffer;
+    }
+    else {
+      columns[tableSize] = (char*)junk;
+    }
+    ++tableSize;
+
+    if (NULL == fgets(buffer, BUFFER_SIZE, parser->file)) {
+      printf("pdbxplugin) could not read graphics information.\n");
+      return false;
+    }
+    
+  }
+
+  /* figure out how many elems are being defined */
+  while (buffer[0] != '#') {
+    ++nelems;
+    if (NULL == fgets(buffer, BUFFER_SIZE, parser->file)) {
+      break;
+    }
+  }
+
+  parser->n_graphics_elems = nelems;
+  parser->g_data = new molfile_graphics_t[nelems];
+
+  /* Skip back to the start of the bond info */
+  fsetpos(parser->file, &filePos);
+  if (NULL == fgets(buffer, BUFFER_SIZE, parser->file)) {
+    printf("pdbxplugin) could not read graphics information.\n");
+    return false;
+  }
+
+  /* Skip through the header */
+  while (NULL != strstr(buffer, "_ihm_sphere_obj_site.")) {
+    if (NULL == fgets(buffer, BUFFER_SIZE, parser->file)) {
+      printf("pdbxplugin) could not read graphics information.\n");
+      return false;
+    }
+  }
+
+
+  nelems = 0;
+  while (buffer[0] != '#') {
+    int pos = 0;
+    /* copy each column of the table into the appropriate columns index */
+    for (i=0; i<tableSize; ++i) {
+        getNextWord(buffer, columns[i], pos, sizeof(buffer), COLUMN_BUFFER_SIZE);
+    }
+    parser->g_data[nelems].type = MOLFILE_SPHERE;
+    parser->g_data[nelems].style = 12;
+    parser->g_data[nelems].size = atof(radbuffer);
+    parser->g_data[nelems].data[0] = atof(xbuffer);
+    parser->g_data[nelems].data[1] = atof(ybuffer);
+    parser->g_data[nelems].data[2] = atof(zbuffer);
+
+    nelems++;
+    if (NULL == fgets(buffer, BUFFER_SIZE, parser->file)) {
+      break;
+    }
+  }
+
+  return nelems > 0;
+}
 
 static bool readBonds(molfile_atom_t * atoms, pdbxParser* parser) {
-  bool retval = false;
-  retval |= readRMSDBonds(atoms, parser);
-  retval |= readAngleBonds(atoms, parser);
+  bool retval = readRMSDBonds(atoms, parser);
+  retval = readAngleBonds(atoms, parser) || retval;
   return retval;
 }
 
@@ -1177,6 +1519,7 @@ static inline bool isAtomSite(char * str) {
 
 static pdbxWriter* create_pdbxWriter(const char* filename, int numAtoms) {
   pdbxWriter* writer = new pdbxWriter;
+  memset(writer, 0, sizeof(pdbxWriter));
   int length = strlen(filename);
   int start = 0;
   int end = length;
@@ -1242,6 +1585,7 @@ static void writeAtomSite(pdbxWriter* writer) {
   int i;
   const float* x, *y, *z;
   molfile_atom_t* atoms = writer->atoms;
+  memset(lineBuffer, 0, sizeof(lineBuffer));
   x = writer->coordinates;
   y = x+1;
   z = x+2;
@@ -1332,35 +1676,34 @@ static void * open_pdbx_read(const char *filepath, const char *filetype,
   data->parser = create_pdbxParser(filepath);
   data->natoms = data->parser->natoms;
   *natoms = data->natoms;
-  if (*natoms == 0) //If no atoms were found this is not a pdb file
+  if (data->parser->error) {
+    printf("pdbxplugin) error opening file.\n");
     return NULL;
-  if (data->parser->error)
-    return NULL;
+  }
   return data;
+
 }
 
 static int read_pdbx_structure(void * mydata, int *optflags, molfile_atom_t *atoms) {
   pdbx_data * data = (pdbx_data *)mydata;
   *optflags = MOLFILE_NOOPTIONS;
-#if 0
-  // XXX the current pdbx code doesn't actually throw any exceptions so the try
-  //     block causes linkage problems on Android if it is used as-is.
-  try {
-    parseStructureFaster(atoms, optflags, data->parser);
-  } catch (...) {
-    printf("pdbxplugin) Error while trying to read file\n");
+
+  if (data->parser->natoms == 0) {
+    printf("pdbxplugin) No atoms found.\n");
+    if (data->parser->pdb_dev) {
+      return MOLFILE_NOSTRUCTUREDATA;
+    }
     return MOLFILE_ERROR;
   }
-#else
-  if (parseStructureFaster(atoms, optflags, data->parser)) {
+
+  if (parseStructure(atoms, optflags, data->parser)) {
     printf("pdbxplugin) Error while trying to parse pdbx structure\n");
     return MOLFILE_ERROR;
   }
-#endif
 
-  printf("pdbxplugin) Starting to read bonds...\n");
-  readBonds(atoms, data->parser);
-  *optflags |= MOLFILE_BONDSSPECIAL;
+  if (readBonds(atoms, data->parser)) {
+    *optflags |= MOLFILE_BONDSSPECIAL;
+  }
   return MOLFILE_SUCCESS;
 }
 
@@ -1374,6 +1717,7 @@ static int read_bonds(void *v, int *nbonds, int **fromptr, int **toptr,
     *toptr = NULL;
   } else {
     *nbonds = data->parser->nbonds;
+    printf("pdbxplugin) Found %d 'special bonds' in the PDBx file.\n", *nbonds);
     *fromptr = data->parser->bondsFrom;
     *toptr = data->parser->bondsTo;
   }
@@ -1387,10 +1731,25 @@ static int read_bonds(void *v, int *nbonds, int **fromptr, int **toptr,
 
 static int read_pdbx_timestep(void * mydata, int natoms, molfile_timestep_t *ts) {
   pdbx_data * data = (pdbx_data *)mydata;
-  if (data->readTS)
+  if (data->readTS) {
     return MOLFILE_ERROR;
+  }
   data->readTS = 1;
-  setCoordinatesFast(ts->coords, data->parser);
+  memcpy(ts->coords, data->parser->xyz, natoms * 3 * sizeof(float));
+
+  return MOLFILE_SUCCESS;
+}
+
+static int read_rawgraphics(void* v, int *nelem, const molfile_graphics_t **g_data) {
+  pdbx_data* data = (pdbx_data *)v;
+
+  if (data->parser->pdb_dev && parse_pdbx_graphics_data(data->parser)) {
+    *nelem = data->parser->n_graphics_elems;
+    *g_data = data->parser->g_data;
+  } else {
+    *nelem = 0;
+    *g_data = NULL;
+  }
 
   return MOLFILE_SUCCESS;
 }
@@ -1402,7 +1761,6 @@ static void close_pdbx_read(void *v) {
 }
 
 static void* open_file_write(const char *path, const char *filetypye, int natoms) {
-  FILE* fd;
   pdbx_data * data = new pdbx_data;
   data->writer = create_pdbxWriter(path, natoms);
   return data;
@@ -1423,6 +1781,7 @@ static int write_timestep(void *v, const molfile_timestep_t* ts) {
 
 static void close_file_write(void* v) {
   pdbx_data* data = (pdbx_data*)v;
+  delete [] data->writer->atoms;
   delete data->writer;
   delete data;
 }
@@ -1441,12 +1800,13 @@ VMDPLUGIN_API int VMDPLUGIN_init() {
   plugin.prettyname = "mmCIF/PDBX";
   plugin.author = "Brendan McMorrow";
   plugin.majorv = 0;
-  plugin.minorv = 9;
+  plugin.minorv = 13;
   plugin.is_reentrant = VMDPLUGIN_THREADSAFE;
   plugin.filename_extension = "cif";
   plugin.open_file_read = open_pdbx_read;
   plugin.read_structure = read_pdbx_structure;
   plugin.read_next_timestep = read_pdbx_timestep;
+  plugin.read_rawgraphics = read_rawgraphics;
   plugin.read_bonds = read_bonds;
   plugin.open_file_write = open_file_write;
   plugin.write_structure = write_structure;
@@ -1472,84 +1832,102 @@ VMDPLUGIN_API int VMDPLUGIN_fini() {
 int main(int argc, char *argv[]) {
   molfile_timestep_t timestep;
   pdbx_data *v;
-  int natoms, bnum, nbtypes;
-  float *border[1];
-  float *x, *y, *z;
-  int *btype[1];
-  char **btypenames[1];
-  int i, set;
+  int natoms;
+  int set;
 
 //  while (--argc) {
-    ++argv;
 
   struct timeval  tot1, tot2;
   gettimeofday(&tot1, NULL);
-    if (*argv != NULL)
-      v = (pdbx_data*)open_pdbx_read(*argv, "pdbx", &natoms);
-    else
-   //   v = (pdbx_data*)open_pdbx_read("/Users/Brendan/pdbx/3j3q.cif", "pdbx", &natoms);
-      v = (pdbx_data*)open_pdbx_read("/home/brendanbc1/Downloads/3j3q.cif", "pdbx", &natoms);
-    if (!v) {
-      fprintf(stderr, "main) open_pdbx_read failed for file %s\n", *argv);
-      return 1;
-    }
-    fprintf(stderr, "main) open_pdbx_read succeeded for file %s\n", *argv);
-    fprintf(stderr, "main) number of atoms: %d\n", natoms);
+  if (*argv != NULL) {
+    v = (pdbx_data*)open_pdbx_read(argv[1], "pdbx", &natoms);
+  } else {
+ //   v = (pdbx_data*)open_pdbx_read("/Users/Brendan/pdbx/3j3q.cif", "pdbx", &natoms);
+    v = (pdbx_data*)open_pdbx_read("/home/brendanbc1/Downloads/3j3q.cif", "pdbx", &natoms);
+  }
+  if (!v) {
+    fprintf(stderr, "main) open_pdbx_read failed for file %s\n", argv[1]);
+    return 1;
+  }
+#ifdef PDBX_DEBUG
+  fprintf(stderr, "main) open_pdbx_read succeeded for file %s\n", argv[1]);
+  fprintf(stderr, "main) number of atoms: %d\n", natoms);
+#endif
 
-    set = 0;
-    molfile_atom_t * atoms = new molfile_atom_t[natoms];
-    if (MOLFILE_SUCCESS == read_pdbx_structure(v, &set, atoms)){
-      printf("xyz structure successfully read.\n");
-    } else {
-      fprintf(stderr, "main) error reading pdbx file\n");
-    }
+  set = 0;
+  molfile_atom_t * atoms = new molfile_atom_t[natoms];
+  int rc = read_pdbx_structure(v, &set, atoms);
+  if (rc != MOLFILE_ERROR) {
+#ifdef PDBX_DEBUG
+    printf("xyz structure successfully read.\n");
+#endif
+  } else {
+    fprintf(stderr, "main) error reading pdbx file\n");
+    return -1;
+  }
 
-    i = 0;
-    timestep.coords = (float *)malloc(3*sizeof(float)*natoms);
-    if (!read_pdbx_timestep(v, natoms, &timestep)) {
-      fprintf(stderr, "main) open_pdbx_read succeeded for file %s\n", *argv);
-    } else {
-      fprintf(stderr, "main) Failed to read timestep\n");
-    }
+  timestep.coords = new float[3 * natoms];
+  if (!read_pdbx_timestep(v, natoms, &timestep)) {
+    fprintf(stderr, "main) open_pdbx_read succeeded for file %s\n", argv[1]);
+  } else {
+    fprintf(stderr, "main) Failed to read timestep\n");
+  }
+  int nbonds, nbondtypes;
+  int* fromptr, *toptr, *bondtype;
+  float* bondorder;
+  char** bondtypename;
+  read_bonds(v, &nbonds, &fromptr, &toptr,
+             &bondorder, &bondtype,
+             &nbondtypes, &bondtypename);
 
-    gettimeofday(&tot2, NULL);
-    printf ("Total time to read file: %f seconds\n",
-           (double) (tot2.tv_usec - tot1.tv_usec) / 1000000 +
-           (double) (tot2.tv_sec - tot1.tv_sec));
-    close_pdbx_read(v);
+  const molfile_graphics_t* g_data;
+  int n_graphics_elems;
+  read_rawgraphics(v, &n_graphics_elems, &g_data);
 
+  gettimeofday(&tot2, NULL);
+  printf ("Total time to read file: %f seconds\n",
+         (double) (tot2.tv_usec - tot1.tv_usec) / 1000000 +
+         (double) (tot2.tv_sec - tot1.tv_sec));
+  close_pdbx_read(v);
 
-    printf("Writing file...\n");
-    v = (pdbx_data*)open_file_write("/home/brendanbc1/test.cif", 0, natoms);
+  printf("\nWriting file...\n\n");
+  v = (pdbx_data*)open_file_write("/tmp/test.cif", 0, natoms);
 
-    //v = (pdbx_data*)open_file_write("/Users/Brendan/test.cif", 0, natoms);
-    printf("File opened for writing...\n");
-    //printf("%d\n", v->writer->numatoms);
-    write_structure(v, set, (const molfile_atom_t*)atoms);
-    printf("Structure information gathered...\n");
-    write_timestep(v, &timestep);
-    printf("File written...\n");
-    close_file_write(v);
-    printf("File closed.\n");
-    delete [] atoms;
-         /*
-    printf("Writing pdbx.txt\n");
-    x = timestep.coords; y = x+1;
-    z = x+2;
-    FILE *f;
-    f = fopen("pdbx.txt", "w");
-    for(i=0; i<natoms; i++) {
-      fprintf(f, "%i %d %s %s %s %f %f %f\n", atoms[i].atomicnumber, atoms[i].resid, atoms[i].chain, atoms[i].resname, atoms[i].type, *x,*y,*z);
-      //fprintf(stderr, "%i\t%s  %s\t%s  %s  %i  %f\t%f\t%f\t%f\t%f\t%f\n", i+1, atoms[i].name, atoms[i].type,
-        //      atoms[i].chain, atoms[i].resname, atoms[i].resid, *x, *y, *z, atoms[i].occupancy, atoms[i].bfactor, atoms[i].charge);
-      x+=3;
-      y+=3;
-      z+=3;
-    }
-    fclose(f);
-    printf("main) pdbx.txt written\n");
- // }
- */
+#ifdef PDBX_DEBUG
+  printf("File opened for writing...\n");
+#endif
+  write_structure(v, set, (const molfile_atom_t*)atoms);
+#ifdef PDBX_DEBUG
+  printf("Structure information gathered...\n");
+#endif
+  write_timestep(v, &timestep);
+#ifdef PDBX_DEBUG
+  printf("File written...\n");
+#endif
+  close_file_write(v);
+#ifdef PDBX_DEBUG
+  printf("File closed.\n");
+#endif
+  delete [] atoms;
+  delete [] timestep.coords;
+       /*
+  printf("Writing pdbx.txt\n");
+  x = timestep.coords; y = x+1;
+  z = x+2;
+  FILE *f;
+  f = fopen("pdbx.txt", "w");
+  for(i=0; i<natoms; i++) {
+    fprintf(f, "%i %d %s %s %s %f %f %f\n", atoms[i].atomicnumber, atoms[i].resid, atoms[i].chain, atoms[i].resname, atoms[i].type, *x,*y,*z);
+    //fprintf(stderr, "%i\t%s  %s\t%s  %s  %i  %f\t%f\t%f\t%f\t%f\t%f\n", i+1, atoms[i].name, atoms[i].type,
+      //      atoms[i].chain, atoms[i].resname, atoms[i].resid, *x, *y, *z, atoms[i].occupancy, atoms[i].bfactor, atoms[i].charge);
+    x+=3;
+    y+=3;
+    z+=3;
+  }
+  fclose(f);
+  printf("main) pdbx.txt written\n");
+// }
+*/
   return 0;
 }
 #endif

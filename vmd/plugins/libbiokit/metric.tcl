@@ -2,11 +2,11 @@
 # Copyright 2004-2007 Luthey-Schulten Group, 
 # All rights reserved.
 #
-# $Id: metric.tcl,v 1.4 2013/04/15 16:29:19 johns Exp $
+# $Id: metric.tcl,v 1.5 2018/11/06 23:04:22 johns Exp $
 # 
 # Developed by: Luthey-Schulten Group
 # 			     University of Illinois at Urbana-Champaign
-# 			     http://www.scs.illinois.edu/~schulten
+# 			     http://faculty.scs.illinois.edu/schulten/
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of
 # this software and associated documentation files (the Software), to deal with 

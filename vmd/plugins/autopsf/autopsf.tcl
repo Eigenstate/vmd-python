@@ -5,7 +5,7 @@
 ##          vmd@ks.uiuc.edu
 ##
 ##           
-## $Id: autopsf.tcl,v 1.142 2016/09/21 18:19:02 jribeiro Exp $
+## $Id: autopsf.tcl,v 1.146 2017/10/23 20:00:55 jribeiro Exp $
 ##
 ## Home Page:
 ##   http://www.ks.uiuc.edu/Research/vmd/plugins/autopsf
@@ -24,7 +24,7 @@ package require autoionize
 package require paratool
 package require psfcheck
 package require topotools
-package provide autopsf 1.6
+package provide autopsf 1.7
 
 
 namespace eval ::autopsf:: {
@@ -1145,6 +1145,7 @@ proc ::autopsf::psfmain {} {
   variable patchtexts
   variable logfilename
   variable logfileout
+  variable qwikmd
   puts "WORKING ON: $currentMol"
   preformat_pdb $currentMol
   
@@ -1172,7 +1173,10 @@ proc ::autopsf::psfmain {} {
   #}
 
   # Apply default resname and name aliases
-  psfaliases
+  if {!$qwikmd} {
+    psfaliases
+  } 
+  
 
   # mutated HIS
   set tmpmutate {}
@@ -2504,6 +2508,8 @@ proc ::autopsf::split_protein_and_water_pdb { fname } {
       if { !$newseg && !$first && $curprot && $resdif != 1 } {
 	# find the C atom of the previous residue. Note that in the event of AltLoc entries,
 	# this will simply pick the first one.
+  set Ccoords [list]
+  set Ncoords [list]
 	foreach entry $lastresdat {
 	  if { [string trim [string range $entry 13 16]] == "C" } {
 	    set Cx [string trim [string range $entry 30 37]]
@@ -2602,7 +2608,7 @@ proc ::autopsf::split_protein_and_water_pdb { fname } {
 	}
       } elseif {($resdif != 0)} {
 	# Add this residue to the chain:res->segid and seg:res->segid lookup tables
-	lappend chaintoseg [list [list [string index $thisline 21] $curres] $segid]
+	lappend chaintoseg [list [list $curchain $curres] $segid]
 	incr residues
 	lappend segtoseg   [list [list $curseg $curres] $segid]
 	set oldres $curres
@@ -2647,6 +2653,7 @@ proc ::autopsf::split_protein_and_water_pdb { fname } {
 	  set segid "$prefix${segsthischain}" 
 	}
 	# Add this residue to the chain:res->segid lookup table
+
 	lappend chaintoseg [list [list $curchain $curres] $segid]
 	lappend segtoseg   [list [list $curseg $curres] $segid]
 	if {[regexp -all "$segid" $seglist] == 0} {
@@ -2875,6 +2882,9 @@ proc ::autopsf::psfsegments {logfileout} {
 	#if {$firstres == "GLY "} {first GLYP}
 	#if {$firstres == "PRO "} {first PROP}
 	#close $lookfile
+      } elseif {$autoterm == false} {
+        set nter none
+        set cter none
       }
 
 #      if { $iswater || $isother || !$autoterm } {
@@ -2887,20 +2897,25 @@ proc ::autopsf::psfsegments {logfileout} {
 #        last 3TER
 #      }
 
-      first $nter
-      last $cter
-
-
-      variable mutatehis
-      foreach mut [lsearch -inline -all $mutatehis "$segid *"] {
-	puts "mutating [lindex $mut 1] [lindex $mut 2]"
-	puts $logfileout "\#mutating [lindex $mut 1] [lindex $mut 2]"
-	mutate [lindex $mut 1] [lindex $mut 2] 
-      }
-
       variable mutatelist
       foreach mut [lsearch -inline -all $mutatelist "$segid *"] {
         puts "mutating [lindex $mut 1] [lindex $mut 2]"
+        puts $logfileout "\#mutating [lindex $mut 1] [lindex $mut 2]"
+        mutate [lindex $mut 1] [lindex $mut 2]
+        ## Evaluate if the mutation is performed on the N-terminal of a protein
+        ## if so, re-evaluate the N-terminal patch
+        if {[lindex $mut 1] == $start && $type == 0} {
+          set nter [get_nter $segid [lindex $mut 2] $type]
+          puts $logfileout "\#Applying new Patch: Nter $nter due to the mutation of N-terminal to [lindex $mut 2]"  ;#"
+        } 
+      }
+
+      first $nter
+      last $cter
+
+      variable mutatehis
+      foreach mut [lsearch -inline -all $mutatehis "$segid *"] {
+      	puts "mutating [lindex $mut 1] [lindex $mut 2]"
         puts $logfileout "\#mutating [lindex $mut 1] [lindex $mut 2]"
         mutate [lindex $mut 1] [lindex $mut 2] 
       }
@@ -2912,6 +2927,14 @@ proc ::autopsf::psfsegments {logfileout} {
     }
 
     file delete $segfile $segid
+  }
+  ## Generate a new pdb in case of a mutation was applied,
+  ## especially important in the case of mutations involving
+  ## cysteine residues
+  if {[llength $mutatelist] > 0} {
+    writepdb ${basename}_formatted_mutated.pdb
+    set tempMol [mol new ${basename}_formatted_mutated.pdb]
+    set currentMol $tempMol
   }
 }
 
@@ -3598,8 +3621,12 @@ proc ::autopsf::read_pdb_conect { file molid } {
       set pdbcode [molinfo $molid get accession]
       set pdbfile "$pdbcode-tmp-autopsf-conrecords.pdb"
 
-      # Adapted to new PDB website layout, which changed on 1/1/2006
-      set url [format "http://www.rcsb.org/pdb/downloadFile.do?fileFormat=pdb&compression=NO&structureId=%s" $pdbcode]
+      # Adapted to new PDB website layout, which changed on 6/23/2017
+      # http://www.rcsb.org/pdb/static.do?p=download/http/index.html
+      set url [format "http://files.rcsb.org/download/%s.pdb" $pdbcode]
+
+##      # Adapted to new PDB website layout, which changed on 1/1/2006
+##      set url [format "http://www.rcsb.org/pdb/downloadFile.do?fileFormat=pdb&compression=NO&structureId=%s" $pdbcode]
 
       puts "Downloading PDB file from URL:\n  $url"
   

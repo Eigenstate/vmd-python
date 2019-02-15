@@ -382,6 +382,38 @@ static int plugin_read_angles(molfile_plugin_t *plg, void *rv,
 
 
 /*
+ * Routines and macros used for page-aligned page-multiple memory buffer
+ * allocations supporting out-of-core trajectory I/O, e.g. by the JS plugin
+ */
+
+/* Set the maximum direct I/O aligned block size we are willing to support */
+#define TS_MAX_BLOCKIO 4096
+
+/* allocate memory and return a pointer that is aligned on a given   */
+/* byte boundary, to be used for page- or sector-aligned I/O buffers */
+/* We use this since posix_memalign() is not widely available...     */
+#if 1
+/* sizeof(unsigned long) == sizeof(void*) */
+#define myintptrtype unsigned long
+#elif 1
+/* sizeof(size_t) == sizeof(void*) */
+#define myintptrtype size_t
+#else
+/* C99 */
+#define myintptrtype uintptr_t
+#endif
+
+static void *alloc_aligned_ptr(size_t sz, size_t blocksz, void **unalignedptr) {
+  // pad the allocation to an even multiple of the block size
+  size_t padsz = (sz + (blocksz - 1)) & (~(blocksz - 1));
+  void * ptr = malloc(padsz + blocksz + blocksz);
+  *unalignedptr = ptr;
+  return (void *) ((((myintptrtype) ptr) + (blocksz-1)) & (~(blocksz-1)));
+}
+
+
+
+/*
  * Externally callable routines for reading/writing via plugin APIs
  */
 
@@ -401,7 +433,10 @@ int topo_mol_read_plugin(topo_mol *mol, const char *pluginname,
   int optflags = MOLFILE_BADOPTIONS; /* plugin must reset this correctly */
   molfile_atom_t *atomarray=NULL;
   molfile_timestep_t ts;
+
+  float *atomcoords_ptr=NULL; // pointer used for page-aligned allocation mgmt
   float *atomcoords=NULL;
+
   int i, rc;
 
   if (!mol)
@@ -501,13 +536,20 @@ int topo_mol_read_plugin(topo_mol *mol, const char *pluginname,
       return -1; 
     }
 
+#if defined(TS_MAX_BLOCKIO)
+    // If we supprot block-based direct I/O, we must use memory buffers
+    // that are padded to a full block size, and
+    atomcoords = (float *) alloc_aligned_ptr(natoms*(3*sizeof(float)), TS_MAX_BLOCKIO, (void**) &atomcoords_ptr);
+#else
     atomcoords = (float *) malloc(natoms*(3*sizeof(float)));
+    atomcoords_ptr = atomcoords; // for non-page-aligned I/O they're the same
+#endif
     memset(atomcoords, 0, natoms*(3*sizeof(float)));
     ts.coords = atomcoords;
   
     if (coorplg->read_next_timestep(coorrv, natoms, &ts)) {
       print_msg(v, "ERROR: failed reading atom coordinates");
-      free(atomcoords);
+      free(atomcoords_ptr);
       free(atomarray);
       coorplg->close_file_read(coorrv);
       return -1;
@@ -516,13 +558,20 @@ int topo_mol_read_plugin(topo_mol *mol, const char *pluginname,
     coorplg->close_file_read(coorrv);
 
   } else if ( plg->read_next_timestep ) {
+#if defined(TS_MAX_BLOCKIO)
+    // If we supprot block-based direct I/O, we must use memory buffers
+    // that are padded to a full block size, and
+    atomcoords = (float *) alloc_aligned_ptr(natoms*(3*sizeof(float)), TS_MAX_BLOCKIO, (void**) &atomcoords_ptr);
+#else
     atomcoords = (float *) malloc(natoms*(3*sizeof(float)));
+    atomcoords_ptr = atomcoords; // for non-page-aligned I/O they're the same
+#endif
     memset(atomcoords, 0, natoms*(3*sizeof(float)));
     ts.coords = atomcoords;
   
     if (plg->read_next_timestep(rv, natoms, &ts)) {
       print_msg(v, "ERROR: failed reading atom coordinates");
-      free(atomcoords);
+      free(atomcoords_ptr);
       free(atomarray);
       plg->close_file_read(rv);
       return -1;
@@ -644,7 +693,10 @@ int topo_mol_read_plugin(topo_mol *mol, const char *pluginname,
       }
     } 
 
-    if (atomcoords) free(atomcoords);
+    if (atomcoords_ptr) 
+      free(atomcoords_ptr);
+
+    atomcoords_ptr = NULL;
     atomcoords = NULL;
 
     /* Check to see if we broke out of the loop prematurely */
@@ -787,29 +839,31 @@ int topo_mol_write_plugin(topo_mol *mol, const char *pluginname,
                           const char *filename, struct image_spec *images,
                           void *v, void (*print_msg)(void *, const char *)) {
   char buf[256];
-  int iseg,nseg,ires,nres,atomid,resid;
-  int ia,ib,ic,ii;
+  int iseg,nseg,ires,nres,resid;
+  int ia,ib,ic;
+  long ii,atomid;
   int has_guessed_atoms = 0;
   double x,y,z,o,b;
   topo_mol_segment_t *seg=NULL;
   topo_mol_residue_t *res=NULL;
   topo_mol_atom_t *atom=NULL;
   topo_mol_bond_t *bond=NULL;
-  int nbonds;
+  long nbonds;
   topo_mol_angle_t *angl=NULL;
-  int nangls;
+  long nangls;
   topo_mol_dihedral_t *dihe=NULL;
-  int ndihes;
+  long ndihes;
   topo_mol_improper_t *impr=NULL;
-  int nimprs;
+  long nimprs;
   topo_mol_cmap_t *cmap=NULL;
-  int ncmaps;
+  long ncmaps;
   topo_mol_exclusion_t *excl=NULL;
-  int nexcls;
+  long nexcls;
 
   molfile_plugin_t *plg; /* plugin handle */
   void *wv;              /* opaque plugin write handle */
-  int nmolatoms, nimages, natoms, optflags;
+  long nmolatoms, nimages, natoms;
+  int optflags;
   molfile_atom_t *atomarray=NULL;
   molfile_timestep_t ts;
   float *atomcoords=NULL;
@@ -1163,10 +1217,10 @@ int topo_mol_write_plugin(topo_mol *mol, const char *pluginname,
   /* build angle/dihedral/improper/cterm lists here */
   if ((nangls > 0 || ndihes > 0 || nimprs > 0 || ncmaps > 0) &&
       plg->write_angles != NULL) {
-    int anglcnt=0;
-    int dihecnt=0;
-    int imprcnt=0;
-    int cmapcnt=0;
+    long anglcnt=0;
+    long dihecnt=0;
+    long imprcnt=0;
+    long cmapcnt=0;
 
     int *angles = (int *) malloc(nangls * (3*sizeof(int)));
     int *dihedrals = (int *) malloc(ndihes * (4*sizeof(int)));

@@ -221,12 +221,11 @@ class VMDBuild(DistutilsBuild):
         Tries to get relevant paths from sysconfig, and falls back
         to the usual python directory structure.
         """
-        # First, clear environment variables. Do this explicitly here instead
-        # of just assigning so that it is very obvious.
-        os.environ["LDFLAGS"] = ""
-        os.environ["CFLAGS"] = ""
-        os.environ["CXXFLAGS"] = ""
-        os.environ["INCLUDE"] = ""
+        # If compilers aren't set already, default to GCC
+        if not os.environ.get("CC"):
+            os.environ["CC"] = "gcc"
+        if not os.environ.get("CXX"):
+            os.environ["CXX"] = "g++"
 
         print("Finding libraries...")
         addir = sysconfig.get_config_var("LIBDIR")
@@ -356,14 +355,14 @@ class VMDTest(Command):
 ###############################################################################
 
 setup(name='vmd-python',
-      version='2.0.10',
+      version='3.0.0',
       description='Visual Molecular Dynamics Python module',
       author='Robin Betz',
       author_email='robin@robinbetz.com',
       url='http://github.com/Eigenstate/vmd-python',
       license='VMD License',
       packages=['vmd'],
-      package_data={'vmd' : ['libvmd.so']},
+      package_data={'vmd' : ['vmd.so']},
       cmdclass={
           'build': VMDBuild,
           'test': VMDTest,

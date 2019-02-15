@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: FltkOpenGLDisplayDevice.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.67 $	$Date: 2016/11/28 03:05:00 $
+ *	$Revision: 1.69 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -470,7 +470,7 @@ void FltkOpenGLDisplayDevice::reshape(void) {
   }
 }
 
-unsigned char * FltkOpenGLDisplayDevice::readpixels(int &x, int &y) {
+unsigned char * FltkOpenGLDisplayDevice::readpixels_rgb3u(int &x, int &y) {
   unsigned char * img;
 
   x = xSize;
@@ -480,6 +480,25 @@ unsigned char * FltkOpenGLDisplayDevice::readpixels(int &x, int &y) {
 #if !defined(WIREGL) 
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(0, 0, x, y, GL_RGB, GL_UNSIGNED_BYTE, img);
+#endif
+  } else {
+    x = 0;
+    y = 0;
+  } 
+
+  return img; 
+}
+
+unsigned char * FltkOpenGLDisplayDevice::readpixels_rgba4u(int &x, int &y) {
+  unsigned char * img;
+
+  x = xSize;
+  y = ySize;
+
+  if ((img = (unsigned char *) malloc(x * y * 4)) != NULL) {
+#if !defined(WIREGL) 
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, x, y, GL_RGBA, GL_UNSIGNED_BYTE, img);
 #endif
   } else {
     x = 0;

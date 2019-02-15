@@ -11,7 +11,7 @@
  *
  *      $RCSfile: rst7plugin.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.20 $       $Date: 2016/11/28 05:01:54 $
+ *      $Revision: 1.21 $       $Date: 2017/08/30 17:27:29 $
  *
  ***************************************************************************/
 
@@ -238,10 +238,10 @@ static int write_rst_timestep(void *v, const molfile_timestep_t *ts) {
 
 #if vmdplugin_ABIVERSION > 10
   if (ts->velocities != NULL) {
-    fprintf(rst->file, "%10d %13.7g\n", rst->numatoms, ts->physical_time);
+    fprintf(rst->file, "%6d %13.7g\n", rst->numatoms, ts->physical_time);
   } else
 #endif
-    fprintf(rst->file, "%10d\n", rst->numatoms);
+    fprintf(rst->file, "%6d\n", rst->numatoms);
 
   for (i=0; i<ndata; i++) {
     fprintf(rst->file, "%12.7f", ts->coords[i]);
@@ -282,7 +282,7 @@ VMDPLUGIN_API int VMDPLUGIN_init(){
   plugin.prettyname = "AMBER7 Restart";
   plugin.author = "Brian Bennion, Axel Kohlmeyer";
   plugin.majorv = 0;
-  plugin.minorv = 4;
+  plugin.minorv = 5;
   plugin.is_reentrant = VMDPLUGIN_THREADUNSAFE;
   plugin.filename_extension = "rst7";
   plugin.open_file_read = open_rst_read;

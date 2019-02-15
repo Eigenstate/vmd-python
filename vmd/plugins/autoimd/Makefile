@@ -16,10 +16,3 @@ distrib:
 	mkdir -p $(DIR) 
 	cp -f $(AUTOIMDFILES) $(DIR) 
 
-pdf: doc/ug.pdf
-
-doc/ug.pdf: doc/ug.tex doc/ug_title.tex doc/ug_text.tex doc/ug_macros.tex 
-	cd doc; make pdf
-
-html:
-	cd doc; make html

@@ -1,7 +1,7 @@
 # Makefile for molecule file readers
-# $Id: Makefile,v 1.126 2015/12/15 21:12:07 johns Exp $
+# $Id: Makefile,v 1.132 2019/02/07 21:22:05 johns Exp $
 
-.SILENT:
+#.SILENT:
 
 .SUFFIXES:
 
@@ -21,9 +21,9 @@ SCXXFLAGS = $(CCFLAGS) $(DEF)"STATIC_PLUGIN"
 # Rules
 #
 
-STATICPLUGINS = abinitplugin avsplugin babelplugin basissetplugin bgfplugin binposplugin biomoccaplugin brixplugin carplugin ccp4plugin corplugin cpmdplugin crdplugin cubeplugin dcdplugin dlpolyplugin dsn6plugin dxplugin edmplugin fs4plugin gamessplugin graspplugin grdplugin gridplugin gromacsplugin jsplugin lammpsplugin mapplugin mdfplugin mol2plugin moldenplugin molemeshplugin msmsplugin namdbinplugin offplugin parm7plugin parmplugin pbeqplugin pdbplugin pdbxplugin phiplugin pltplugin plyplugin pqrplugin psfplugin raster3dplugin rst7plugin situsplugin spiderplugin stlplugin tinkerplugin uhbdplugin vaspchgcarplugin vaspoutcarplugin vaspparchgplugin vaspposcarplugin vasp5xdatcarplugin vaspxdatcarplugin vaspxmlplugin vtkplugin xbgfplugin xsfplugin xyzplugin
+STATICPLUGINS = abinitplugin amiraplugin avsplugin babelplugin basissetplugin bgfplugin binposplugin biomoccaplugin brixplugin carplugin ccp4plugin corplugin cpmdplugin crdplugin cubeplugin dcdplugin dlpolyplugin dsn6plugin dxplugin edmplugin fs4plugin gamessplugin graspplugin grdplugin gridplugin gromacsplugin jsplugin lammpsplugin mapplugin mdfplugin mol2plugin moldenplugin molemeshplugin msmsplugin namdbinplugin offplugin parm7plugin parmplugin pbeqplugin pdbplugin pdbxplugin phiplugin pltplugin plyplugin pqrplugin psfplugin raster3dplugin rst7plugin situsplugin spiderplugin stlplugin tinkerplugin uhbdplugin vaspchgcarplugin vaspoutcarplugin vaspparchgplugin vaspposcarplugin vasp5xdatcarplugin vaspxdatcarplugin vaspxmlplugin vtkplugin xbgfplugin xsfplugin xyzplugin
 
-PLUGINS = abinitplugin.so avsplugin.so babelplugin.so basissetplugin.so bgfplugin.so binposplugin.so biomoccaplugin.so brixplugin.so carplugin.so ccp4plugin.so corplugin.so cpmdplugin.so crdplugin.so cubeplugin.so dcdplugin.so dlpolyplugin.so dsn6plugin.so dxplugin.so edmplugin.so fs4plugin.so gamessplugin.so graspplugin.so grdplugin.so gridplugin.so gromacsplugin.so jsplugin.so lammpsplugin.so mapplugin.so mdfplugin.so mol2plugin.so moldenplugin.so molemeshplugin.so msmsplugin.so namdbinplugin.so offplugin.so parm7plugin.so parmplugin.so pbeqplugin.so pdbplugin.so pdbxplugin.so phiplugin.so pltplugin.so plyplugin.so pqrplugin.so psfplugin.so raster3dplugin.so rst7plugin.so situsplugin.so spiderplugin.so stlplugin.so tinkerplugin.so uhbdplugin.so vaspchgcarplugin.so vaspoutcarplugin.so vaspparchgplugin.so vaspposcarplugin.so vasp5xdatcarplugin.so vaspxdatcarplugin.so vaspxmlplugin.so vtkplugin.so xbgfplugin.so xsfplugin.so xyzplugin.so
+PLUGINS = abinitplugin.so amiraplugin.so avsplugin.so babelplugin.so basissetplugin.so bgfplugin.so binposplugin.so biomoccaplugin.so brixplugin.so carplugin.so ccp4plugin.so corplugin.so cpmdplugin.so crdplugin.so cubeplugin.so dcdplugin.so dlpolyplugin.so dsn6plugin.so dxplugin.so edmplugin.so fs4plugin.so gamessplugin.so graspplugin.so grdplugin.so gridplugin.so gromacsplugin.so jsplugin.so lammpsplugin.so mapplugin.so mdfplugin.so mol2plugin.so moldenplugin.so molemeshplugin.so msmsplugin.so namdbinplugin.so offplugin.so parm7plugin.so parmplugin.so pbeqplugin.so pdbplugin.so pdbxplugin.so phiplugin.so pltplugin.so plyplugin.so pqrplugin.so psfplugin.so raster3dplugin.so rst7plugin.so situsplugin.so spiderplugin.so stlplugin.so tinkerplugin.so uhbdplugin.so vaspchgcarplugin.so vaspoutcarplugin.so vaspparchgplugin.so vaspposcarplugin.so vasp5xdatcarplugin.so vaspxdatcarplugin.so vaspxmlplugin.so vtkplugin.so xbgfplugin.so xsfplugin.so xyzplugin.so
 
 
 #
@@ -38,19 +38,41 @@ PLUGINS       += dtrplugin.so maeffplugin.so
 endif
 
 #
-# Check to see if we should build the Tcl-based plugins
-# XXX non-portable GNU make syntax used here...
-# XXX We can safetly assume that VMD is compiled against Tcl, so there is
-#     no need to check if the Tcl libs are static or dynamic here.
+# Check to see if we're building on platforms where the current
+# ORCA plugin works.  The code is still not yet C++03 friendly yet,
+# so it can't be compiled on some targets presently.
 #
-ifdef TCLLIB
-ifdef TCLINC
-ifdef TCLLDFLAGS
-STATICPLUGINS += vtfplugin webpdbplugin
-PLUGINS       += vtfplugin.so webpdbplugin.so
+ifeq ($(ARCH),LINUXAMD64)
+STATICPLUGINS += orcaplugin
+PLUGINS       += orcaplugin.so
+endif
+ifeq ($(ARCH),MACOSXX86)
+STATICPLUGINS += orcaplugin
+PLUGINS       += orcaplugin.so
+endif
+
+
+#
+# Check to see if we should build the optional expat-based plugins
+# XXX non-portable GNU make syntax used here...
+#
+ifdef EXPATLIB
+ifdef EXPATINC
+ifdef EXPATLDFLAGS
+ifndef EXPATDYNAMIC
+# Only add the HOOMD plugin as a static plugin if we compiled against
+# a static libexpat.a, as VMD itself will also have to be linked against
+# the same static library for this to work.  In the case of a dynamic 
+# library, we can get by linking only the plugin itself, and either
+# assuming it is installed already on the target OS, or included in the 
+# VMD redistributables.
+STATICPLUGINS += hoomdplugin
+endif
+PLUGINS       += hoomdplugin.so
 endif
 endif
 endif
+
 
 #
 # Check to see if we should build the optional NetCDF-based plugins
@@ -75,22 +97,22 @@ endif
 
 
 #
-# Check to see if we should build the optional expat-based plugins
+# Check to see if we should build the optional NetCDF-based plugins
 # XXX non-portable GNU make syntax used here...
 #
-ifdef EXPATLIB
-ifdef EXPATINC
-ifdef EXPATLDFLAGS
-ifndef EXPATDYNAMIC
-# Only add the HOOMD plugin as a static plugin if we compiled against
-# a static libexpat.a, as VMD itself will also have to be linked against
+ifdef HDFLIB
+ifdef HDFINC
+ifdef HDFLDFLAGS
+ifndef HDFDYNAMIC
+# Only add plugin that use HDF as static plugins if we compiled against
+# a static libnetcdf.a, as VMD itself will also have to be linked against
 # the same static library for this to work.  In the case of a dynamic 
 # library, we can get by linking only the plugin itself, and either
 # assuming it is installed already on the target OS, or included in the 
 # VMD redistributables.
-STATICPLUGINS += hoomdplugin
+STATICPLUGINS += lmplugin
 endif
-PLUGINS       += hoomdplugin.so
+PLUGINS       += lmplugin.so
 endif
 endif
 endif
@@ -119,6 +141,22 @@ endif
 
 
 #
+# Check to see if we should build the Tcl-based plugins
+# XXX non-portable GNU make syntax used here...
+# XXX We can safetly assume that VMD is compiled against Tcl, so there is
+#     no need to check if the Tcl libs are static or dynamic here.
+#
+ifdef TCLLIB
+ifdef TCLINC
+ifdef TCLLDFLAGS
+STATICPLUGINS += vtfplugin webpdbplugin
+PLUGINS       += vtfplugin.so webpdbplugin.so
+endif
+endif
+endif
+
+
+#
 # Check to see if we should build plugins that use the Gromacs TNG library
 # XXX non-portable GNU make syntax used here...
 #
@@ -135,7 +173,7 @@ endif
 
 
 # list of all optional plugins for use by distrib target
-OPTPLUGINS = dmsplugin.so hoomdplugin.so netcdfplugin.so tngplugin.so vtfplugin.so webpdbplugin.so 
+OPTPLUGINS = dmsplugin.so hoomdplugin.so lmplugin.so netcdfplugin.so orcaplugin.so tngplugin.so vtfplugin.so webpdbplugin.so 
 
 STATICS = libmolfile_plugin.a libmolfile_plugin.h
 WIN32STATICS = libmolfile_plugin.lib libmolfile_plugin.h
@@ -168,6 +206,9 @@ mesg:
 #
 
 abinitplugin.so: ${ARCHDIR}/abinitplugin.o 
+	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
+
+amiraplugin.so: ${ARCHDIR}/amiraplugin.o 
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
 avsplugin.so: ${ARCHDIR}/avsplugin.o 
@@ -272,6 +313,9 @@ namdbinplugin.so: ${ARCHDIR}/namdbinplugin.o
 offplugin.so: ${ARCHDIR}/offplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
+orcaplugin.so: ${ARCHDIR}/orcaplugin.o
+	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
+
 parm7plugin.so: ${ARCHDIR}/parm7plugin.o 
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
 
@@ -371,11 +415,26 @@ gaussianplugin.so: ${ARCHDIR}/gaussianplugin.o
 ## Optionally compiled plugins that have library or platform-specific
 ## dependencies of some kind
 ##
+dmsplugin.so: ${ARCHDIR}/dmsplugin.o
+	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(SQLITELIB) $(SQLITELDFLAGS) $(LDFLAGS)
+
+dtrplugin.so: ${ARCHDIR}/dtrplugin.o
+	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
+
 hoomdplugin.so: ${ARCHDIR}/hoomdplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(EXPATLIB) $(EXPATLDFLAGS) $(LDFLAGS)
 
+lmplugin.so: ${ARCHDIR}/lmplugin.o
+	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(HDFLIB) $(HDFLDFLAGS) $(LDFLAGS)
+
+maeffplugin.so: ${ARCHDIR}/maeffplugin.o
+	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
+
 netcdfplugin.so: ${ARCHDIR}/netcdfplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(NETCDFLIB) $(NETCDFLDFLAGS) $(LDFLAGS)
+
+tngplugin.so: ${ARCHDIR}/tngplugin.o
+	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(TNGLIB) $(TNGLDFLAGS) $(LDFLAGS)
 
 vtfplugin.so: ${ARCHDIR}/vtfplugin.o
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(TCLLIB) $(TCLLDFLAGS) $(LDFLAGS)
@@ -383,24 +442,15 @@ vtfplugin.so: ${ARCHDIR}/vtfplugin.o
 webpdbplugin.so: ${ARCHDIR}/webpdbplugin.o 
 	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(TCLLIB) $(TCLLDFLAGS) $(LDFLAGS)
 
-dmsplugin.so: ${ARCHDIR}/dmsplugin.o
-	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(SQLITELIB) $(SQLITELDFLAGS) $(LDFLAGS)
-
-dtrplugin.so: ${ARCHDIR}/dtrplugin.o
-	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
-
-maeffplugin.so: ${ARCHDIR}/maeffplugin.o
-	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(LDFLAGS)
-
-tngplugin.so: ${ARCHDIR}/tngplugin.o
-	$(SHLD) $(LOPTO)${ARCHDIR}/$@ $? $(TNGLIB) $(TNGLDFLAGS) $(LDFLAGS)
-
 
 #
 # object files
 #
 ${ARCHDIR}/abinitplugin.o: abinitplugin.c ${PLUGINAPI} periodic_table.h
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
+
+${ARCHDIR}/amiraplugin.o: amiraplugin.C ${PLUGINAPI} 
+	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
 ${ARCHDIR}/avsplugin.o: avsplugin.C ${PLUGINAPI} 
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
@@ -504,6 +554,9 @@ ${ARCHDIR}/namdbinplugin.o: namdbinplugin.c ${PLUGINAPI}
 ${ARCHDIR}/offplugin.o: offplugin.C ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
+${ARCHDIR}/orcaplugin.o: orcaplugin.C ${PLUGINAPI}
+	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
+
 ${ARCHDIR}/parm7plugin.o: parm7plugin.C ${PLUGINAPI} 
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
@@ -576,18 +629,6 @@ ${ARCHDIR}/vaspxdatcarplugin.o: vaspxdatcarplugin.c vaspplugin.h ${PLUGINAPI} pe
 ${ARCHDIR}/vaspxmlplugin.o: vaspxmlplugin.c vaspplugin.h ${PLUGINAPI} periodic_table.h 
 	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
-${ARCHDIR}/hoomdplugin.o: hoomdplugin.c ${PLUGINAPI} periodic_table.h
-	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(EXPATINC) $(INCDIR) -c $< $(COPTO)$@
-
-${ARCHDIR}/netcdfplugin.o: netcdfplugin.c ${PLUGINAPI}
-	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(NETCDFINC) $(INCDIR) -c $< $(COPTO)$@
-
-${ARCHDIR}/vtfplugin.o: vtfplugin.c ${PLUGINAPI}
-	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(TCLINC) $(INCDIR) -c $< $(COPTO)$@
-
-${ARCHDIR}/webpdbplugin.o: webpdbplugin.c readpdb.h ${PLUGINAPI} periodic_table.h
-	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(TCLINC) $(INCDIR) -c $< $(COPTO)$@
-
 ${ARCHDIR}/vtkplugin.o: vtkplugin.C ${PLUGINAPI} 
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
@@ -621,18 +662,33 @@ ${ARCHDIR}/dmsplugin.o: dmsplugin.cxx ${PLUGINAPI}
 ${ARCHDIR}/dtrplugin.o: dtrplugin.cxx ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
+${ARCHDIR}/hoomdplugin.o: hoomdplugin.c ${PLUGINAPI} periodic_table.h
+	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(EXPATINC) $(INCDIR) -c $< $(COPTO)$@
+
+${ARCHDIR}/lmplugin.o: lmplugin.C ${PLUGINAPI}
+	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(HDFINC) $(INCDIR) -c $< $(COPTO)$@
+
 ${ARCHDIR}/maeffplugin.o: maeffplugin.cxx ${PLUGINAPI}
 	$(CXX) $(CXXFLAGS) $(SHLDFLAGS) $(INCDIR) -c $< $(COPTO)$@
 
+${ARCHDIR}/netcdfplugin.o: netcdfplugin.c ${PLUGINAPI}
+	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(NETCDFINC) $(INCDIR) -c $< $(COPTO)$@
+
 ${ARCHDIR}/tngplugin.o: tngplugin.C ${PLUGINAPI}
 	${CXX} ${CXXFLAGS} $(SHLDFLAGS) $(TNGINC) $(INCDIR) -c $< $(COPTO)$@
+
+${ARCHDIR}/vtfplugin.o: vtfplugin.c ${PLUGINAPI}
+	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(TCLINC) $(INCDIR) -c $< $(COPTO)$@
+
+${ARCHDIR}/webpdbplugin.o: webpdbplugin.c readpdb.h ${PLUGINAPI} periodic_table.h
+	$(CC) $(CCFLAGS) $(SHLDFLAGS) $(TCLINC) $(INCDIR) -c $< $(COPTO)$@
 
 
 
 #
 # archive rules
 #
-ARCHIVEOBJS = ${ARCHDIR}/abinitplugin-s.o ${ARCHDIR}/avsplugin-s.o ${ARCHDIR}/babelplugin-s.o ${ARCHDIR}/basissetplugin-s.o ${ARCHDIR}/bgfplugin-s.o ${ARCHDIR}/binposplugin-s.o ${ARCHDIR}/biomoccaplugin-s.o ${ARCHDIR}/brixplugin-s.o ${ARCHDIR}/carplugin-s.o ${ARCHDIR}/ccp4plugin-s.o ${ARCHDIR}/corplugin-s.o ${ARCHDIR}/cpmdplugin-s.o ${ARCHDIR}/crdplugin-s.o ${ARCHDIR}/cubeplugin-s.o ${ARCHDIR}/dcdplugin-s.o ${ARCHDIR}/dlpolyplugin-s.o ${ARCHDIR}/dsn6plugin-s.o ${ARCHDIR}/dxplugin-s.o ${ARCHDIR}/edmplugin-s.o ${ARCHDIR}/fs4plugin-s.o ${ARCHDIR}/gamessplugin-s.o ${ARCHDIR}/graspplugin-s.o ${ARCHDIR}/grdplugin-s.o ${ARCHDIR}/gridplugin-s.o ${ARCHDIR}/gromacsplugin-s.o ${ARCHDIR}/jsplugin-s.o ${ARCHDIR}/lammpsplugin-s.o ${ARCHDIR}/mapplugin-s.o ${ARCHDIR}/mdfplugin-s.o ${ARCHDIR}/mol2plugin-s.o ${ARCHDIR}/moldenplugin-s.o ${ARCHDIR}/molemeshplugin-s.o ${ARCHDIR}/msmsplugin-s.o ${ARCHDIR}/namdbinplugin-s.o ${ARCHDIR}/offplugin-s.o ${ARCHDIR}/parm7plugin-s.o ${ARCHDIR}/parmplugin-s.o ${ARCHDIR}/pbeqplugin-s.o ${ARCHDIR}/pdbplugin-s.o ${ARCHDIR}/pdbxplugin-s.o ${ARCHDIR}/phiplugin-s.o ${ARCHDIR}/pltplugin-s.o ${ARCHDIR}/plyplugin-s.o ${ARCHDIR}/pqrplugin-s.o ${ARCHDIR}/psfplugin-s.o ${ARCHDIR}/raster3dplugin-s.o ${ARCHDIR}/rst7plugin-s.o ${ARCHDIR}/situsplugin-s.o ${ARCHDIR}/spiderplugin-s.o ${ARCHDIR}/stlplugin-s.o ${ARCHDIR}/tinkerplugin-s.o ${ARCHDIR}/uhbdplugin-s.o ${ARCHDIR}/vaspchgcarplugin-s.o ${ARCHDIR}/vaspoutcarplugin-s.o ${ARCHDIR}/vaspparchgplugin-s.o ${ARCHDIR}/vaspposcarplugin-s.o ${ARCHDIR}/vasp5xdatcarplugin-s.o ${ARCHDIR}/vaspxdatcarplugin-s.o ${ARCHDIR}/vaspxmlplugin-s.o ${ARCHDIR}/vtkplugin-s.o ${ARCHDIR}/xbgfplugin-s.o ${ARCHDIR}/xsfplugin-s.o ${ARCHDIR}/xyzplugin-s.o
+ARCHIVEOBJS = ${ARCHDIR}/abinitplugin-s.o ${ARCHDIR}/amiraplugin-s.o ${ARCHDIR}/avsplugin-s.o ${ARCHDIR}/babelplugin-s.o ${ARCHDIR}/basissetplugin-s.o ${ARCHDIR}/bgfplugin-s.o ${ARCHDIR}/binposplugin-s.o ${ARCHDIR}/biomoccaplugin-s.o ${ARCHDIR}/brixplugin-s.o ${ARCHDIR}/carplugin-s.o ${ARCHDIR}/ccp4plugin-s.o ${ARCHDIR}/corplugin-s.o ${ARCHDIR}/cpmdplugin-s.o ${ARCHDIR}/crdplugin-s.o ${ARCHDIR}/cubeplugin-s.o ${ARCHDIR}/dcdplugin-s.o ${ARCHDIR}/dlpolyplugin-s.o ${ARCHDIR}/dsn6plugin-s.o ${ARCHDIR}/dxplugin-s.o ${ARCHDIR}/edmplugin-s.o ${ARCHDIR}/fs4plugin-s.o ${ARCHDIR}/gamessplugin-s.o ${ARCHDIR}/graspplugin-s.o ${ARCHDIR}/grdplugin-s.o ${ARCHDIR}/gridplugin-s.o ${ARCHDIR}/gromacsplugin-s.o ${ARCHDIR}/jsplugin-s.o ${ARCHDIR}/lammpsplugin-s.o ${ARCHDIR}/mapplugin-s.o ${ARCHDIR}/mdfplugin-s.o ${ARCHDIR}/mol2plugin-s.o ${ARCHDIR}/moldenplugin-s.o ${ARCHDIR}/molemeshplugin-s.o ${ARCHDIR}/msmsplugin-s.o ${ARCHDIR}/namdbinplugin-s.o ${ARCHDIR}/offplugin-s.o ${ARCHDIR}/parm7plugin-s.o ${ARCHDIR}/parmplugin-s.o ${ARCHDIR}/pbeqplugin-s.o ${ARCHDIR}/pdbplugin-s.o ${ARCHDIR}/pdbxplugin-s.o ${ARCHDIR}/phiplugin-s.o ${ARCHDIR}/pltplugin-s.o ${ARCHDIR}/plyplugin-s.o ${ARCHDIR}/pqrplugin-s.o ${ARCHDIR}/psfplugin-s.o ${ARCHDIR}/raster3dplugin-s.o ${ARCHDIR}/rst7plugin-s.o ${ARCHDIR}/situsplugin-s.o ${ARCHDIR}/spiderplugin-s.o ${ARCHDIR}/stlplugin-s.o ${ARCHDIR}/tinkerplugin-s.o ${ARCHDIR}/uhbdplugin-s.o ${ARCHDIR}/vaspchgcarplugin-s.o ${ARCHDIR}/vaspoutcarplugin-s.o ${ARCHDIR}/vaspparchgplugin-s.o ${ARCHDIR}/vaspposcarplugin-s.o ${ARCHDIR}/vasp5xdatcarplugin-s.o ${ARCHDIR}/vaspxdatcarplugin-s.o ${ARCHDIR}/vaspxmlplugin-s.o ${ARCHDIR}/vtkplugin-s.o ${ARCHDIR}/xbgfplugin-s.o ${ARCHDIR}/xsfplugin-s.o ${ARCHDIR}/xyzplugin-s.o
 
 
 #
@@ -645,15 +701,43 @@ ifneq ($(ARCH),ANDROIDARMV7A)
 ARCHIVEOBJS += ${ARCHDIR}/dtrplugin-s.o ${ARCHDIR}/maeffplugin-s.o
 endif
 
+#
+# Check to see if we're building on platforms where the current
+# ORCA plugin works.  The code is still not yet C++03 friendly yet,
+# so it can't be compiled on some targets presently.
+#
+ifeq ($(ARCH),LINUXAMD64)
+ARCHIVEOBJS += ${ARCHDIR}/orcaplugin-s.o
+endif
+ifeq ($(ARCH),MACOSXX86)
+ARCHIVEOBJS += ${ARCHDIR}/orcaplugin-s.o
+endif
 
 #
-# Check to see if we should build the Tcl-based plugins
+# Check to see if we should build the optional expat-based plugins
 # XXX non-portable GNU make syntax used here...
 #
-ifdef TCLLIB
-ifdef TCLINC
-ifdef TCLLDFLAGS
-ARCHIVEOBJS += ${ARCHDIR}/vtfplugin-s.o ${ARCHDIR}/webpdbplugin-s.o
+ifdef EXPATLIB
+ifdef EXPATINC
+ifdef EXPATLDFLAGS
+ifndef EXPATDYNAMIC
+ARCHIVEOBJS += ${ARCHDIR}/hoomdplugin-s.o
+endif
+endif
+endif
+endif
+
+
+#
+# Check to see if we should build the optional HDF5-based plugins
+# XXX non-portable GNU make syntax used here...
+#
+ifdef HDFLIB
+ifdef HDFINC
+ifdef HDFLDFLAGS
+ifndef HDFDYNAMIC
+ARCHIVEOBJS += ${ARCHDIR}/lmplugin-s.o
+endif
 endif
 endif
 endif
@@ -675,15 +759,13 @@ endif
 
 
 #
-# Check to see if we should build the optional expat-based plugins
+# Check to see if we should build the Tcl-based plugins
 # XXX non-portable GNU make syntax used here...
 #
-ifdef EXPATLIB
-ifdef EXPATINC
-ifdef EXPATLDFLAGS
-ifndef EXPATDYNAMIC
-ARCHIVEOBJS += ${ARCHDIR}/hoomdplugin-s.o
-endif
+ifdef TCLLIB
+ifdef TCLINC
+ifdef TCLLDFLAGS
+ARCHIVEOBJS += ${ARCHDIR}/vtfplugin-s.o ${ARCHDIR}/webpdbplugin-s.o
 endif
 endif
 endif
@@ -701,6 +783,10 @@ endif
 endif
 endif
 
+#
+# Check to see if we should build plugins that use the Desmond thing
+# XXX non-portable GNU make syntax used here...
+# 
 ifdef SQLITELIB
 ifdef SQLITEINC
 ifdef SQLITELDFLAGS
@@ -728,6 +814,9 @@ libmolfile_plugin.h: ${ARCHIVEOBJS}
 #
 ${ARCHDIR}/abinitplugin-s.o: abinitplugin.c ${PLUGINAPI} periodic_table.h
 	${CC} ${SCCFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_abinitplugin" -c $< $(COPTO)$@
+
+${ARCHDIR}/amiraplugin-s.o: amiraplugin.C ${PLUGINAPI}
+	${CXX} ${SCXXFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_amiraplugin" -c $< $(COPTO)$@
 
 ${ARCHDIR}/avsplugin-s.o: avsplugin.C ${PLUGINAPI}
 	${CXX} ${SCXXFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_avsplugin" -c $< $(COPTO)$@
@@ -831,6 +920,9 @@ ${ARCHDIR}/namdbinplugin-s.o: namdbinplugin.c ${PLUGINAPI}
 ${ARCHDIR}/offplugin-s.o: offplugin.C ${PLUGINAPI}
 	${CXX} ${SCXXFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_offplugin" -c $< $(COPTO)$@
 
+${ARCHDIR}/orcaplugin-s.o: orcaplugin.C ${PLUGINAPI}
+	${CXX} ${SCXXFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_orcaplugin" -c $< $(COPTO)$@
+
 ${ARCHDIR}/parm7plugin-s.o: parm7plugin.C ${PLUGINAPI}
 	${CXX} ${SCXXFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_parm7plugin" -c $< $(COPTO)$@
 
@@ -930,29 +1022,32 @@ ${ARCHDIR}/gaussianplugin-s.o: gaussianplugin.c ${PLUGINAPI}  gaussianplugin.h p
 ## Optionally compiled plugins that have library or platform-specific
 ## dependencies of some kind
 ##
-${ARCHDIR}/hoomdplugin-s.o: hoomdplugin.c ${PLUGINAPI} periodic_table.h
-	${CC} ${SCCFLAGS} $(EXPATINC) $(INCDIR) $(DEF)"VMDPLUGIN=molfile_hoomdplugin" -c $< $(COPTO)$@
-
-${ARCHDIR}/netcdfplugin-s.o: netcdfplugin.c ${PLUGINAPI}
-	${CC} ${SCCFLAGS} $(NETCDFINC) $(INCDIR) $(DEF)"VMDPLUGIN=molfile_netcdfplugin" -c $< $(COPTO)$@
-
-${ARCHDIR}/vtfplugin-s.o: vtfplugin.c ${PLUGINAPI}
-	${CC} ${SCCFLAGS} $(INCDIR) $(TCLINC) $(DEF)"VMDPLUGIN=molfile_vtfplugin" -c $< $(COPTO)$@
-
-${ARCHDIR}/webpdbplugin-s.o: webpdbplugin.c readpdb.h ${PLUGINAPI} periodic_table.h
-	${CC} ${SCCFLAGS} $(INCDIR) $(TCLINC) $(DEF)"VMDPLUGIN=molfile_webpdbplugin" -c $< $(COPTO)$@
-
 ${ARCHDIR}/dmsplugin-s.o: dmsplugin.cxx ${PLUGINAPI}
 	${CXX} ${SCXXFLAGS} $(SQLITEINC) $(INCDIR) $(DEF)"VMDPLUGIN=molfile_dmsplugin" -c $< $(COPTO)$@
 
 ${ARCHDIR}/dtrplugin-s.o: dtrplugin.cxx ${PLUGINAPI}
 	${CXX} ${SCXXFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_dtrplugin" -c $< $(COPTO)$@
 
+${ARCHDIR}/hoomdplugin-s.o: hoomdplugin.c ${PLUGINAPI} periodic_table.h
+	${CC} ${SCCFLAGS} $(EXPATINC) $(INCDIR) $(DEF)"VMDPLUGIN=molfile_hoomdplugin" -c $< $(COPTO)$@
+
+${ARCHDIR}/lmplugin-s.o: lmplugin.C ${PLUGINAPI}
+	${CXX} ${SCXXFLAGS} $(HDFINC) $(INCDIR) $(DEF)"VMDPLUGIN=molfile_lmplugin" -c $< $(COPTO)$@
+
 ${ARCHDIR}/maeffplugin-s.o: maeffplugin.cxx ${PLUGINAPI}
 	${CXX} ${SCXXFLAGS} $(INCDIR) $(DEF)"VMDPLUGIN=molfile_maeffplugin" -c $< $(COPTO)$@
 
+${ARCHDIR}/netcdfplugin-s.o: netcdfplugin.c ${PLUGINAPI}
+	${CC} ${SCCFLAGS} $(NETCDFINC) $(INCDIR) $(DEF)"VMDPLUGIN=molfile_netcdfplugin" -c $< $(COPTO)$@
+
 ${ARCHDIR}/tngplugin-s.o: tngplugin.C ${PLUGINAPI}
 	${CXX} ${SCXXFLAGS} $(TNGINC) $(INCDIR) $(DEF)"VMDPLUGIN=molfile_tngplugin" -c $< $(COPTO)$@
+
+${ARCHDIR}/vtfplugin-s.o: vtfplugin.c ${PLUGINAPI}
+	${CC} ${SCCFLAGS} $(INCDIR) $(TCLINC) $(DEF)"VMDPLUGIN=molfile_vtfplugin" -c $< $(COPTO)$@
+
+${ARCHDIR}/webpdbplugin-s.o: webpdbplugin.c readpdb.h ${PLUGINAPI} periodic_table.h
+	${CC} ${SCCFLAGS} $(INCDIR) $(TCLINC) $(DEF)"VMDPLUGIN=molfile_webpdbplugin" -c $< $(COPTO)$@
 
 
 ${ARCHDIR} :

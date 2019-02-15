@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: QuickSurf.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.115 $	$Date: 2016/11/28 04:10:05 $
+ *	$Revision: 1.122 $	$Date: 2019/01/17 21:21:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -74,6 +74,8 @@
 #include "VMDDisplayList.h"
 #include "Displayable.h"
 #include "DispCmds.h"
+#include "ProfileHooks.h"
+
 
 #define MIN(X,Y) (((X)<(Y))? (X) : (Y))
 #define MAX(X,Y) (((X)>(Y))? (X) : (Y))
@@ -677,7 +679,6 @@ static void vmd_gaussdensity_opt(int verbose,
           // Use AVX when we have a multiple-of-8 to compute
           // finish all remaining density map points with SSE or regular non-SSE loop
           if (useavx2) {
-            __align(16) AVXreg scal;
             __align(16) AVXreg n;
             __align(16) AVXreg y;
             __m256 dy2dz2_8 = _mm256_set1_ps(dy2dz2);
@@ -698,21 +699,10 @@ static void vmd_gaussdensity_opt(int verbose,
 
               // Approximate 2^{-d}, 0 <= d < 1, by interpolation.
               // Perform Horner's method to evaluate interpolating polynomial.
-#if 1
               y.f = _mm256_fmadd_ps(d, _mm256_set1_ps(SCEXP4), _mm256_set1_ps(SCEXP3)); 
               y.f = _mm256_fmadd_ps(y.f, d, _mm256_set1_ps(SCEXP2));
               y.f = _mm256_fmadd_ps(y.f, d, _mm256_set1_ps(SCEXP1));
               y.f = _mm256_fmadd_ps(y.f, d, _mm256_set1_ps(SCEXP0));
-#else
-              y.f = _mm256_mul_ps(d, _mm256_set1_ps(SCEXP4));      /* for x^4 term */
-              y.f = _mm256_add_ps(y.f, _mm256_set1_ps(SCEXP3));    /* for x^3 term */
-              y.f = _mm256_mul_ps(y.f, d);
-              y.f = _mm256_add_ps(y.f, _mm256_set1_ps(SCEXP2));    /* for x^2 term */
-              y.f = _mm256_mul_ps(y.f, d);
-              y.f = _mm256_add_ps(y.f, _mm256_set1_ps(SCEXP1));    /* for x^1 term */
-              y.f = _mm256_mul_ps(y.f, d);
-              y.f = _mm256_add_ps(y.f, _mm256_set1_ps(SCEXP0));    /* for x^0 term */
-#endif
 
               // Calculate 2^N exactly by directly manipulating floating point exponent,
               // then use it to scale y for the final result.
@@ -757,15 +747,9 @@ static void vmd_gaussdensity_opt(int verbose,
               __m256 b  = _mm256_shuffle_ps(gb , m25, _MM_SHUFFLE(3,0,3,1)); 
 
               // accumulate density-scaled colors into texels
-#if 1
               r = _mm256_fmadd_ps(d, _mm256_set1_ps(colors[ind    ]), r);
               g = _mm256_fmadd_ps(d, _mm256_set1_ps(colors[ind + 1]), g);
               b = _mm256_fmadd_ps(d, _mm256_set1_ps(colors[ind + 2]), b);
-#else
-              r = _mm256_add_ps(r, _mm256_mul_ps(d, _mm256_set1_ps(colors[ind    ])));
-              g = _mm256_add_ps(g, _mm256_mul_ps(d, _mm256_set1_ps(colors[ind + 1])));
-              b = _mm256_add_ps(b, _mm256_mul_ps(d, _mm256_set1_ps(colors[ind + 2])));
-#endif
 
               // convert 8-element SOA vectors to rgb3f AOS format using shuffle instructions
               __m256 rrg = _mm256_shuffle_ps(r, g, _MM_SHUFFLE(2,0,2,0)); 
@@ -1552,7 +1536,7 @@ static int vmd_gaussdensity_threaded(int verbose,
   return 0;
 }
 
-QuickSurf::QuickSurf() {
+QuickSurf::QuickSurf(int forcecpuonly) {
   volmap = NULL;
   voltexmap = NULL;
   s.clear();
@@ -1579,8 +1563,9 @@ QuickSurf::QuickSurf() {
   zaxis[2] = 1.0f;
    
   cudaqs = NULL;
+  force_cpuonly = forcecpuonly;
 #if defined(VMDCUDA)
-  if (!getenv("VMDNOCUDA")) {
+  if (!force_cpuonly && !getenv("VMDNOCUDA")) {
     cudaqs = new CUDAQuickSurf();
   }
 #endif
@@ -1604,6 +1589,8 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
                          int quality, float radscale, float gridspacing,
                          float isoval, const int *colidx, const float *cmap,
                          VMDDisplayList *cmdList) {
+  PROFILE_PUSH_RANGE("QuickSurf", 3);
+
   wkf_timer_start(timer);
   int colorperatom = (colidx != NULL && cmap != NULL);
   int usebeads=0;
@@ -1953,7 +1940,7 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
   pretime = wkf_timer_timenow(timer);
 
 #if defined(VMDCUDA)
-  if (!getenv("VMDNOCUDA")) {
+  if (!force_cpuonly && !getenv("VMDNOCUDA")) {
     // allocate a new CUDAQuickSurf object if we destroyed the old one...
     if (cudaqs == NULL)
       cudaqs = new CUDAQuickSurf();
@@ -1980,6 +1967,9 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
         free(colors);
   
       voltime = wkf_timer_timenow(timer);
+
+      PROFILE_POP_RANGE(); // first return point
+
       return 0;
     }
   }
@@ -2023,6 +2013,9 @@ int QuickSurf::calc_surf(AtomSel *atomSel, DrawMolecule *mol,
   if (verbose) {
     printf(" Done.\n");
   }
+
+  PROFILE_POP_RANGE(); // second return point
+
   return 0;
 }
 
@@ -2076,7 +2069,7 @@ int QuickSurf::get_trimesh(int &numverts,
 
   mctime = wkf_timer_timenow(timer);
 
-  s.vertexfusion(surfvol, 9, 9);          // identify and eliminate duplicated vertices
+  s.vertexfusion(9, 9);                   // eliminate duplicated vertices
   s.normalize();                          // normalize interpolated gradient/surface normals
 
   if (s.numtriangles > 0) {

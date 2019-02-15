@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: CUDAAccel.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.48 $	$Date: 2016/11/28 03:04:58 $
+ *	$Revision: 1.52 $	$Date: 2019/01/17 21:20:58 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -26,11 +26,12 @@
 #include "CUDAAccel.h"
 #include "CUDAKernels.h"
 #include "WKFThreads.h"
+#include "ProfileHooks.h"
+
 
 CUDAAccel::CUDAAccel(void) {
   cudaavail = 0;
   numdevices = 0;
-  int usabledevices = 0;
   cudapool=NULL;
 
   if (getenv("VMDNOCUDA") != NULL) {
@@ -38,6 +39,9 @@ CUDAAccel::CUDAAccel(void) {
             << sendmsg;
     return; 
   }
+
+#if defined(VMDCUDA)
+  PROFILE_PUSH_RANGE("CUDAAccel::CUDAAccel()", 0);
 
   unsigned int gpumask = 0xffffffff;
   const char *gpumaskstr = getenv("VMDCUDADEVICEMASK");
@@ -53,7 +57,7 @@ CUDAAccel::CUDAAccel(void) {
     }
   }
 
-#if defined(VMDCUDA)
+  int usabledevices = 0;
   int rc = 0;
   if ((rc=vmd_cuda_num_devices(&numdevices)) != VMDCUDA_ERR_NONE) {
     numdevices = 0;
@@ -83,6 +87,7 @@ CUDAAccel::CUDAAccel(void) {
         break;
     }
    
+    PROFILE_POP_RANGE();
     return;
   }
 
@@ -118,6 +123,8 @@ CUDAAccel::CUDAAccel(void) {
   numdevices=usabledevices;
 
   devpool_init();
+
+  PROFILE_POP_RANGE();
 #endif
 }
 
@@ -131,6 +138,8 @@ void CUDAAccel::devpool_init(void) {
   cudapool=NULL;
 
 #if defined(VMDCUDA)
+  PROFILE_PUSH_RANGE("CUDAAccel::devpool_init()", 0);
+
   if (!cudaavail || numdevices == 0 || getenv("VMDNOCUDA") != NULL)
     return;
 
@@ -159,6 +168,8 @@ void CUDAAccel::devpool_init(void) {
     // clear all available device memory on each of the GPUs
     wkf_threadpool_launch(cudapool, vmd_cuda_devpool_clear_device_mem, NULL, 1);
   }
+
+  PROFILE_POP_RANGE();
 #endif
 }
 
@@ -205,7 +216,7 @@ void CUDAAccel::print_cuda_devices(void) {
     memset(outstr, 0, sizeof(outstr));
 
     // list primary GPU device attributes
-    sprintf(outstr, "[%d] %-18s %2d SM_%d.%d @ %.2f GHz",
+    sprintf(outstr, "[%d] %-20s %2d SM_%d.%d %.2f GHz",
             device_index(i), device_name(i), 
             (device_sm_count(i) > 0) ? device_sm_count(i) : 0,
             device_version_major(i), device_version_minor(i),

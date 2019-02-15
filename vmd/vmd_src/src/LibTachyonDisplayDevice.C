@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
 *
 *      $RCSfile: LibTachyonDisplayDevice.C,v $
 *      $Author: johns $        $Locker:  $               $State: Exp $
-*      $Revision: 1.94 $        $Date: 2016/11/28 03:05:01 $
+*      $Revision: 1.96 $        $Date: 2019/01/17 21:21:00 $
 *
 ***************************************************************************
 * DESCRIPTION:
@@ -675,8 +675,9 @@ void LibTachyonDisplayDevice::define_volume_texture(int ID,
   // copy incoming texture map to a new buffer
   // XXX ideally we'd have Tachyon use the existing image
   //     buffer rather than copy it
-  rgb = (unsigned char *) malloc(xs * ys * zs * 3);
-  memcpy(rgb, texmap, xs * ys * zs * 3);
+  long txsz = long(xs) * long(ys) * long(zs) * 3L;
+  rgb = (unsigned char *) malloc(txsz);
+  memcpy(rgb, texmap, txsz);
 
   // define the texture map image within Tachyon
   rt_define_teximage_rgb24(texname, xs, ys, zs, rgb);

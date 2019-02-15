@@ -5,7 +5,7 @@
 # Copyright (c) 2009,2010,2011,2012,2013 by Axel Kohlmeyer <akohlmey@gmail.com>
 # support for crossterms contributed by Josh Vermass <vermass2@illinois.edu>
 #
-# $Id: topoutils.tcl,v 1.17 2015/12/08 20:13:55 johns Exp $
+# $Id: topoutils.tcl,v 1.18 2017/06/14 14:32:32 johns Exp $
 
 # utility commands
 
@@ -350,7 +350,7 @@ proc ::TopoTools::replicatemol {mol nx ny nz} {
         set bx [expr [lindex $box 1] * cos($gammarad) ]
         set by [expr [lindex $box 1] * sin($gammarad) ]
         set cx [expr [lindex $box 2] * cos($betarad)  ]
-        set cy [expr [lindex $box 2] * [ expr cos($betarad) -cos($betarad) * cos($gammarad)] / sin($gammarad)]
+        set cy [expr [lindex $box 2] * [ expr cos($alpharad) -cos($betarad) * cos($gammarad)] / sin($gammarad)]
         # calc cz
         set V1  [expr [lindex $box 0] *  [lindex $box 1] * [lindex $box 2] ]
         set V21  [expr 1 - cos($alpharad)*cos($alpharad) \

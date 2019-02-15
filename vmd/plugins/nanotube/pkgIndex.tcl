@@ -8,4 +8,4 @@
 # script is sourced, the variable $dir must contain the
 # full path name of this file's directory.
 
-package ifneeded nanotube 1.5 "[list source [file join $dir gui.tcl]]; [list source [file join $dir graphene.tcl]]; [list source [file join $dir nanotube.tcl]] " 
+package ifneeded nanotube 1.6 "[list source [file join $dir gui.tcl]]; [list source [file join $dir graphene.tcl]]; [list source [file join $dir nanotube.tcl]] " 

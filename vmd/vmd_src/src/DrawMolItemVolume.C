@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DrawMolItemVolume.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.161 $	$Date: 2016/11/28 03:04:59 $
+ *	$Revision: 1.166 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -35,8 +35,6 @@
 #include "VMDApp.h"
 #include "WKFUtils.h"
 
-// #define SC15ANIMSPHERESHACK 1
-
 #define MYSGN(a) (((a) > 0) ? 1 : -1)
 
 int DrawMolItem::draw_volume_get_colorid(void) {
@@ -59,7 +57,7 @@ int DrawMolItem::draw_volume_get_colorid(void) {
 }
 
 
-void DrawMolItem::draw_volume_box_solid(const VolumetricData * v) {
+void DrawMolItem::draw_volume_box_solid(VolumetricData * v) {
   float v0[3], v1[3], v2[3];
   float vorigin[3], vxaxis[3], vyaxis[3], vzaxis[3];
   int usecolor;
@@ -151,7 +149,7 @@ void DrawMolItem::draw_volume_box_solid(const VolumetricData * v) {
   draw_volume_box_lines(v);
 }
 
-void DrawMolItem::draw_volume_box_lines(const VolumetricData * v) {
+void DrawMolItem::draw_volume_box_lines(VolumetricData * v) {
   float start[3], end[3];
   int xaxiscolor, yaxiscolor, zaxiscolor, axiscolor;
   int catindex;
@@ -333,7 +331,7 @@ void DrawMolItem::draw_volume_isosurface_points(const VolumetricData * v,
 }
 
 
-void DrawMolItem::draw_volume_isosurface_lit_points(const VolumetricData * v, 
+void DrawMolItem::draw_volume_isosurface_lit_points(VolumetricData * v, 
                                  float isovalue, int stepsize, int thickness) {
   int x,y,z;
   float *addr;
@@ -359,6 +357,10 @@ void DrawMolItem::draw_volume_isosurface_lit_points(const VolumetricData * v,
   // calculate cell axes
   v->cell_axes(xax, yax, zax);
 
+  // get direct access to gradient data for speed, and force
+  // generation of the gradients if they don't already exist
+  const float *volgradient = v->access_volume_gradient();
+
   for (z=0; z<v->zsize; z+=stepsize) {
     for (y=0; y<v->ysize; y+=stepsize) {
       addr = &(v->data[(z * (v->xsize * v->ysize)) + (y * v->xsize)]);  
@@ -376,7 +378,7 @@ void DrawMolItem::draw_volume_isosurface_lit_points(const VolumetricData * v,
           pos[2] = vorigin[2] + x * xax[2] + y * yax[2] + z * zax[2];
 
           float norm[3];
-          vec_copy(norm, &v->gradient[(z*v->xsize*v->ysize + y*v->xsize + x) * 3]);
+          vec_copy(norm, &volgradient[(z*v->xsize*v->ysize + y*v->xsize + x) * 3]);
  
           // draw a point there.
           centers.append3(&pos[0]);
@@ -401,7 +403,7 @@ void DrawMolItem::draw_volume_isosurface_lit_points(const VolumetricData * v,
 }
 
 
-void DrawMolItem::draw_volume_isosurface_lines(const VolumetricData * v, 
+void DrawMolItem::draw_volume_isosurface_lines(VolumetricData * v, 
                                  float isovalue, int stepsize, int thickness) {
   int i, usecolor;
   IsoSurface *s = new IsoSurface;
@@ -431,13 +433,13 @@ void DrawMolItem::draw_volume_isosurface_lines(const VolumetricData * v,
 
 
 
-void DrawMolItem::draw_volume_isosurface_trimesh(const VolumetricData * v, 
+void DrawMolItem::draw_volume_isosurface_trimesh(VolumetricData * v, 
                                      float isovalue, int stepsize,
                                      const float *voltex) {
   IsoSurface s;
   s.clear();                 // initialize isosurface data
   s.compute(v, isovalue, stepsize); // compute the isosurface
-  s.vertexfusion(v, 36, 36); // identify and eliminate duplicated vertices
+  s.vertexfusion(36, 36);    // identify and eliminate duplicated vertices
   s.normalize();             // normalize interpolated gradient/surface normals
 
 #if 1
@@ -669,7 +671,7 @@ void DrawMolItem::updateVolumeTexture() {
     volid = (int)atomRep->get_data(AtomRep::SPHERERES);
   }
 
-  const VolumetricData *v = mol->get_volume_data(volid);
+  VolumetricData *v = mol->modify_volume_data(volid);
   if (v == NULL) {
     msgInfo << "No volume data loaded at index " << volid << sendmsg;
     return;
@@ -681,8 +683,7 @@ void DrawMolItem::updateVolumeTexture() {
   // (2) the choice of volumetric data set has changed.
   atomColor->get_colorscale_minmax(&vmin, &vmax);
   if (!vmin && !vmax) {
-    vmin = v->datamin;
-    vmax = v->datamax;
+    v->datarange(vmin, vmax);
   }
 
   if (volumeTexture.getTextureMap() && !(needRegenerate & COL_REGEN) &&
@@ -737,7 +738,7 @@ void DrawMolItem::updateVolumeTexture() {
 
 
 void DrawMolItem::draw_volslice(int volid, float slice, int axis, int texmode) {
-  const VolumetricData *v = mol->get_volume_data(volid);
+  const VolumetricData *v = mol->modify_volume_data(volid);
   float sliceNormal[3];
   float sliceTextureCoords[12];
   float sliceVertexes[12];
@@ -776,9 +777,9 @@ void DrawMolItem::draw_volslice(int volid, float slice, int axis, int texmode) {
 
 
 void DrawMolItem::draw_isosurface(int volid, float isovalue, int drawbox, int style, int stepsize, int thickness) {
-  const VolumetricData * v = NULL;
+  VolumetricData * v = NULL;
 
-  v = mol->get_volume_data(volid);
+  v = mol->modify_volume_data(volid);
   if (v == NULL) {
     msgInfo << "No volume data loaded at index " << volid << sendmsg;
     return;
@@ -859,7 +860,7 @@ void DrawMolItem::draw_volslice_contour_lines(int volid, float slice, int axis) 
 
 
 // calculate seed voxels for field lines based on gradient magnitude
-int DrawMolItem::calcseeds_grid(const VolumetricData * v, ResizeArray<float> *seeds, int maxseedcount) {
+int DrawMolItem::calcseeds_grid(VolumetricData * v, ResizeArray<float> *seeds, int maxseedcount) {
   int i;
   float vorigin[3];
   for (i=0; i<3; i++) {
@@ -873,6 +874,10 @@ int DrawMolItem::calcseeds_grid(const VolumetricData * v, ResizeArray<float> *se
   int seedcount = maxseedcount+1; // force loop to run once
   int stepsize = 1;
 
+  // get direct access to gradient data for speed, and force
+  // generation of the gradients if they don't already exist
+  const float *volgradient = v->access_volume_gradient();
+
   // iterate if we generate more seeds than we can really use
   while (seedcount > maxseedcount) {
     seedcount=0;
@@ -884,7 +889,7 @@ int DrawMolItem::calcseeds_grid(const VolumetricData * v, ResizeArray<float> *se
       for (y=0; y<v->ysize; y+=stepsize) {
         for (x=0; x<v->xsize; x+=stepsize) {
           float grad[3];
-          vec_copy(grad, &v->gradient[(z*v->xsize*v->ysize + y*v->xsize + x) * 3]);
+          vec_copy(grad, &volgradient[(z*v->xsize*v->ysize + y*v->xsize + x) * 3]);
 
           pos[0] = vorigin[0] + x * xax[0] + y * yax[0] + z * zax[0];
           pos[1] = vorigin[1] + x * xax[1] + y * yax[1] + z * zax[1];
@@ -903,7 +908,7 @@ int DrawMolItem::calcseeds_grid(const VolumetricData * v, ResizeArray<float> *se
 
 
 // calculate seed voxels for field lines based on gradient magnitude
-int DrawMolItem::calcseeds_gradient_magnitude(const VolumetricData * v, ResizeArray<float> *seeds, float seedmin, float seedmax, int maxseedcount) {
+int DrawMolItem::calcseeds_gradient_magnitude(VolumetricData * v, ResizeArray<float> *seeds, float seedmin, float seedmax, int maxseedcount) {
   float seedmin2 = seedmin*seedmin;
   float seedmax2 = seedmax*seedmax;
 
@@ -920,6 +925,10 @@ int DrawMolItem::calcseeds_gradient_magnitude(const VolumetricData * v, ResizeAr
   int seedcount = maxseedcount+1; // force loop to run once
   int stepsize = 1;
 
+  // get direct access to gradient data for speed, and force
+  // generation of the gradients if they don't already exist
+  const float *volgradient = v->access_volume_gradient();
+
   // iterate if we generate more seeds than we can really use
   while (seedcount > maxseedcount) {
     seedcount=0;
@@ -932,7 +941,7 @@ int DrawMolItem::calcseeds_gradient_magnitude(const VolumetricData * v, ResizeAr
         for (x=0; x<v->xsize; x+=stepsize) {
           float grad[3];
           float gradmag2;
-          vec_copy(grad, &v->gradient[(z*v->xsize*v->ysize + y*v->xsize + x) * 3]);
+          vec_copy(grad, &volgradient[(z*v->xsize*v->ysize + y*v->xsize + x) * 3]);
           gradmag2 = dot_prod(grad, grad);
 
           if ((gradmag2 <= seedmax2) &&
@@ -959,31 +968,14 @@ void DrawMolItem::draw_volume_field_lines(int volid, int seedusegrid, int maxsee
                                           float seedval, float deltacell, 
                                           float minlen, float maxlen, 
                                           int drawstyle, int tuberes, float thickness) {
-  const VolumetricData * v = NULL;
-  v = mol->get_volume_data(volid);
+  VolumetricData * v = NULL;
+  v = mol->modify_volume_data(volid);
   int printdonemesg=0;
 
   if (v == NULL) {
     msgInfo << "No volume data loaded at index " << volid << sendmsg;
     return;
   }
-
-#if defined(SC15ANIMSPHERESHACK)
-  // get color mapping min/max/range
-  float vmin=0.0f, vmax=0.0f; 
-  atomColor->get_colorscale_minmax(&vmin, &vmax);
-  if (!vmin && !vmax) {
-    vmin = v->datamin;
-    vmax = v->datamax;
-  }
-
-  float vscale_1=vmax-vmin;
-  if (vscale_1 == 0.0f)
-    vscale_1=1.0f;
-  else
-    vscale_1 = 1.0f / vscale_1;
-  printf("FieldLines) vmin: %g to %g, scale %g, inv: %g\n", vmin, vmax, vmax-vmin, vscale_1);
-#endif
 
   int seedcount = 0;
   int pointcount = 0;
@@ -1034,11 +1026,10 @@ void DrawMolItem::draw_volume_field_lines(int volid, int seedusegrid, int maxsee
   float maxgmag = 5;
 
   ResizeArray<float> points;
-#if defined(SC15ANIMSPHERESHACK)
-  ResizeArray<float> colors;
-  float lightred[3] = {1.0f, 0.2f, 0.2f};
-  float lightblue[3] = {0.2f, 0.2f, 1.0f};
-#endif
+  
+  // ensure that the volume gradient has been computed prior to
+  // sampling it for field line construction... (discard pointer)
+  v->access_volume_gradient();
 
   // For each seed point, integrate in both positive and
   // negative directions for a field line length up to
@@ -1061,9 +1052,6 @@ void DrawMolItem::draw_volume_field_lines(int volid, int seedusegrid, int maxsee
 
       // init the arrays
       points.clear();
-#if defined(SC15ANIMSPHERESHACK)
-      colors.clear();
-#endif
 
       // main integration loop
       pointcount=0;
@@ -1100,16 +1088,6 @@ void DrawMolItem::draw_volume_field_lines(int volid, int seedusegrid, int maxsee
         if (!(iterations & 1)) {
           // Add a vertex for this field line
           points.append3(&pos[0]);
-
-#if defined(SC15ANIMSPHERESHACK)
-          float val, lerpval; 
-          val = v->voxel_value_interpolate_from_coord(pos[0], pos[1], pos[2]);
-          lerpval = (val - vmin) * vscale_1;
-          lerpval = (lerpval > 1.0f) ? 1.0f : lerpval;
-          float lerpcolor[3];
-          vec_lerp(lerpcolor, lightblue, lightred, lerpval);
-          colors.append3(lerpcolor);
-#endif
 
           vec_incr(comsum, pos);
  
@@ -1167,41 +1145,9 @@ void DrawMolItem::draw_volume_field_lines(int volid, int seedusegrid, int maxsee
             maxcylidx++;
           }
 
-#if defined(SC15ANIMSPHERESHACK)
-          // XXX workaround for slow-path rendering in some of the 
-          // interactive RT renderers.  This uses memory somewhat
-          // unnecessarily, but it won't trigger slow-path rendering.
-          int maxpointidx=pointcount*3;
-          float *sprads = new float[pointcount];
-          for (p=0; p<pointcount; p++) {
-            sprads[p] = thickness;
-          }
-
-#if defined(SC15ANIMSPHERESHACK)
-          printf("FieldLines) %d points\n", points.num() / 3); 
-          if (colors.num() == points.num()) {
-            // use per-sphere red/blue color map 
-            cmdSphereArray.putdata(&points[0], sprads, &colors[0], pointcount, 12, cmdList);
-          } else {
-#endif
-            const float *spcolrgb = scene->color_value(usecolor);
-            float *spcolors = new float[maxpointidx];
-            for (p=0; p<maxpointidx; p+=3) {
-              vec_copy(spcolors+p, spcolrgb); 
-            }
-            cmdSphereArray.putdata(&points[0], sprads, spcolors, pointcount, 12, cmdList);
-            delete [] spcolors;
- #if defined(SC15ANIMSPHERESHACK)
-          }
- #endif
-         delete [] sprads;
-#else
-          DispCmdSphere cmdSphere;
           for (p=0; p<maxcylidx; p+=3) {
             cmdSphere.putdata(&points[p], thickness, cmdList);
           }
-#endif
-
         }
       } else if (drawfieldline) {
         // only draw the field line if it met all selection criteria

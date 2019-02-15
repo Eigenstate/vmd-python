@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: SaveTrajectoryFltkMenu.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.39 $       $Date: 2016/11/28 03:05:04 $
+ *      $Revision: 1.41 $       $Date: 2019/01/17 21:21:01 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -70,7 +70,8 @@ void SaveTrajectoryFltkMenu::do_save() {
   int first = strlen(firststr) ? atoi(firststr) : 0;
   int last = strlen(laststr) ? atoi(laststr) : max;
   int stride = strlen(stridestr) ? atoi(stridestr) : 1;
-  int waitfor = allatoncebutton->value() ? -1 : 0;
+  int waitfor = allatoncebutton->value() ? 
+                FileSpec::WAIT_ALL : FileSpec::WAIT_BACK;
 
   if (first < 0) first=0;
   if (last > max) last=max;

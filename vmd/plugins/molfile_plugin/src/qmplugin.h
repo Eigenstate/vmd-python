@@ -11,7 +11,7 @@
  *
  *      $RCSfile: qmplugin.h,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.23 $       $Date: 2016/11/28 05:01:54 $
+ *      $Revision: 1.25 $       $Date: 2018/12/12 03:41:21 $
  *
  ***************************************************************************/
 /*******************************************************************
@@ -471,13 +471,13 @@ static qmdata_t* init_qmdata() {
 static qm_wavefunction_t* add_wavefunction(qm_timestep_t *ts) {
   if (ts->numwave) {
     /* Add a new wavefunction */
-    ts->wave = (qm_wavefunction_t *)realloc(ts->wave,
+    ts->wave = (qm_wavefunction_t *) realloc(ts->wave,
                         (ts->numwave+1)*sizeof(qm_wavefunction_t));
     memset(&ts->wave[ts->numwave], 0, sizeof(qm_wavefunction_t));
     ts->numwave++;
   } else {
     /* We have no wavefunction for this timestep so create one */
-    ts->wave = (qm_wavefunction_t *)calloc(1, sizeof(qm_wavefunction_t));
+    ts->wave = (qm_wavefunction_t *) calloc(1, sizeof(qm_wavefunction_t));
     ts->numwave = 1;
   }
 
@@ -512,7 +512,7 @@ static void del_wavefunction(qm_timestep_t *ts) {
     free(w->orb_energies);
     free(w->orb_occupancies);
     ts->numwave--;
-    ts->wave = (qm_wavefunction_t *)realloc(ts->wave,
+    ts->wave = (qm_wavefunction_t *) realloc(ts->wave,
                         ts->numwave*sizeof(qm_wavefunction_t));    
   }
 }
@@ -719,9 +719,9 @@ static int symmetry_expand(qm_atom_t **atoms, int numunique, int natoms,
   printf("gamessplugin) Expanding %d coordinates for pointgroup %s, naxis=%d\n",
          numunique, pg, naxis);
 
-  unique = calloc(3*numunique, sizeof(float));
-  image  = calloc(3*numunique, sizeof(float));
-  indexmap = calloc(numunique, sizeof(int));
+  unique = (float *) calloc(3*numunique, sizeof(float));
+  image  = (float *) calloc(3*numunique, sizeof(float));
+  indexmap = (int *) calloc(numunique, sizeof(int));
   for (i=0; i<numunique; i++) {
     unique[3*i  ] = (*atoms)[i].x;
     unique[3*i+1] = (*atoms)[i].y;
@@ -762,7 +762,7 @@ static int symmetry_expand(qm_atom_t **atoms, int numunique, int natoms,
 /*            image[3*i+1], image[3*i+2]); */
   }
 
-  expanded = calloc(3*numunique, sizeof(float));
+  expanded = (float *) calloc(3*numunique, sizeof(float));
   memcpy(expanded, unique, 3*numunique* sizeof(float));
   numexp=numunique;
   for (i=0; i<numunique; i++) {
@@ -778,8 +778,8 @@ static int symmetry_expand(qm_atom_t **atoms, int numunique, int natoms,
     }
 
     if (!found) {
-      expanded = realloc((float*)expanded, 3*(numexp+1)*sizeof(float));
-      indexmap = realloc((int*)indexmap, (numexp+1)*sizeof(int));
+      expanded = (float*) realloc((float*)expanded, 3*(numexp+1)*sizeof(float));
+      indexmap = (int*) realloc((int*)indexmap, (numexp+1)*sizeof(int));
       expanded[3*numexp  ] = image[3*i  ];
       expanded[3*numexp+1] = image[3*i+1];
       expanded[3*numexp+2] = image[3*i+2];
@@ -807,9 +807,9 @@ static int symmetry_expand(qm_atom_t **atoms, int numunique, int natoms,
    *     the new number of atoms, so that the caller knows how
    *     many atoms there are. */
   if (!natoms)
-    *atoms = calloc(numexp, sizeof(qm_atom_t));
+    *atoms = (qm_atom_t *) calloc(numexp, sizeof(qm_atom_t));
   else 
-    *atoms = realloc((qm_atom_t*)(*atoms), numexp*sizeof(qm_atom_t));
+    *atoms = (qm_atom_t *) realloc((qm_atom_t*)(*atoms), numexp*sizeof(qm_atom_t));
 
   for (i=numunique; i<numexp; i++) {
     (*atoms)[i].x = expanded[3*i  ];

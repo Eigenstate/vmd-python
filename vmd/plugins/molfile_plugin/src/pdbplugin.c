@@ -44,7 +44,7 @@ typedef struct {
   int *from, *to, *idxmap;
 } pdbdata;
 
-static void *open_pdb_read(const char *filepath, const char *filetype,
+static void *open_pdb_read(const char *filepath, const char *filetype, 
     int *natoms) {
   FILE *fd;
   pdbdata *pdb;
@@ -52,7 +52,7 @@ static void *open_pdb_read(const char *filepath, const char *filetype,
   int indx, nconect;
 
   fd = fopen(filepath, "r");
-  if (!fd)
+  if (!fd) 
     return NULL;
   pdb = (pdbdata *)malloc(sizeof(pdbdata));
   pdb->fd = fd;
@@ -72,7 +72,7 @@ static void *open_pdb_read(const char *filepath, const char *filetype,
       nconect++;
     } else if (indx == PDB_HEADER) {
       get_pdb_header(pdbstr, pdb->meta->accession, pdb->meta->date, NULL);
-      if (strlen(pdb->meta->accession) > 0)
+      if (strlen(pdb->meta->accession) > 0) 
         strcpy(pdb->meta->database, "PDB");
     } else if (indx == PDB_REMARK || indx == PDB_CONECT || indx == PDB_UNKNOWN) {
       int len=strlen(pdbstr);
@@ -87,7 +87,7 @@ static void *open_pdb_read(const char *filepath, const char *filetype,
         pdb->meta->remarklen = newlen;
       }
     }
-
+ 
   } while (indx != PDB_END && indx != PDB_EOF);
 
   /* If no atoms were found, this is probably not a PDB file! */
@@ -119,12 +119,12 @@ static void *open_pdb_read(const char *filepath, const char *filetype,
     memset(pdb->idxmap, 0, 100000 * sizeof(int));
   }
 #endif
-
-  return pdb;
+ 
+  return pdb; 
 }
 
-static int read_pdb_structure(void *mydata, int *optflags,
-    molfile_atom_t *atoms) {
+static int read_pdb_structure(void *mydata, int *optflags, 
+    molfile_atom_t *atoms) { 
   pdbdata *pdb = (pdbdata *)mydata;
   molfile_atom_t *atom;
   char pdbrec[PDB_BUFFER_LENGTH];
@@ -143,15 +143,15 @@ static int read_pdb_structure(void *mydata, int *optflags,
     switch (rectype) {
     case PDB_ATOM:
       atom = atoms+i;
-      get_pdb_fields(pdbrec, strlen(pdbrec), &atomserial,
-          atom->name, atom->resname, atom->chain, atom->segid,
+      get_pdb_fields(pdbrec, strlen(pdbrec), &atomserial, 
+          atom->name, atom->resname, atom->chain, atom->segid, 
           ridstr, atom->insertion, atom->altloc, elementsymbol,
           NULL, NULL, NULL, &atom->occupancy, &atom->bfactor);
 
       if (pdb->idxmap != NULL && atomserial < 100000) {
-        pdb->idxmap[atomserial] = i; /* record new serial number translation */
+        pdb->idxmap[atomserial] = i; /* record new serial number translation */ 
       }
-
+ 
       atom->resid = atoi(ridstr);
 
       /* determine atomic number from the element symbol */
@@ -163,7 +163,7 @@ static int read_pdb_structure(void *mydata, int *optflags,
       } else {
         badptecount++; /* unrecognized element */
       }
-
+ 
       strcpy(atom->type, atom->name);
       i++;
       break;
@@ -172,7 +172,7 @@ static int read_pdb_structure(void *mydata, int *optflags,
       /* only read CONECT records for structures where we know they can */
       /* be valid for all of the atoms in the structure                 */
       if (pdb->idxmap != NULL) {
-        get_pdb_conect(pdbrec, pdb->natoms, pdb->idxmap,
+        get_pdb_conect(pdbrec, pdb->natoms, pdb->idxmap, 
                        &pdb->maxbnum, &pdb->nbonds, &pdb->from, &pdb->to);
       }
       break;
@@ -195,11 +195,11 @@ static int read_pdb_structure(void *mydata, int *optflags,
   return MOLFILE_SUCCESS;
 }
 
-static int read_bonds(void *v, int *nbonds, int **fromptr, int **toptr,
-                      float ** bondorder,int **bondtype,
+static int read_bonds(void *v, int *nbonds, int **fromptr, int **toptr, 
+                      float ** bondorder,int **bondtype, 
                       int *nbondtypes, char ***bondtypename) {
   pdbdata *pdb = (pdbdata *)v;
-
+  
   *nbonds = 0;
   *fromptr = NULL;
   *toptr = NULL;
@@ -208,7 +208,7 @@ static int read_bonds(void *v, int *nbonds, int **fromptr, int **toptr,
   *nbondtypes = 0;
   *bondtypename = NULL;
 
-/* The newest plugin API allows us to return CONECT records as
+/* The newest plugin API allows us to return CONECT records as 
  * additional bonds above and beyond what the distance search returns.
  * Without that feature, we otherwise have to check completeness and
  * ignore them if they don't look to be fully specified for this molecule */
@@ -233,8 +233,8 @@ static int read_bonds(void *v, int *nbonds, int **fromptr, int **toptr,
 }
 
 
-/*
- *
+/* 
+ * 
  */
 static int read_next_timestep(void *v, int natoms, molfile_timestep_t *ts) {
   pdbdata *pdb = (pdbdata *)v;
@@ -242,7 +242,7 @@ static int read_next_timestep(void *v, int natoms, molfile_timestep_t *ts) {
   int indx, i;
   float *x, *y, *z;
   float occup, bfac;
-  if (pdb->natoms == 0)
+  if (pdb->natoms == 0) 
     return MOLFILE_ERROR; /* EOF */
   if (ts) {
     x = ts->coords;
@@ -250,7 +250,7 @@ static int read_next_timestep(void *v, int natoms, molfile_timestep_t *ts) {
     z = x+2;
   } else {
     x = y = z = 0;
-  }
+  } 
   i = 0;
   do {
     indx = read_pdb_record(pdb->fd, pdbstr);
@@ -258,7 +258,7 @@ static int read_next_timestep(void *v, int natoms, molfile_timestep_t *ts) {
       return MOLFILE_ERROR;
     } else if(indx == PDB_ATOM) {
       if(i++ >= pdb->natoms) {
-        break;
+        break;      
       }
       /* just get the coordinates, and store them */
       if (ts) {
@@ -266,7 +266,7 @@ static int read_next_timestep(void *v, int natoms, molfile_timestep_t *ts) {
         x += 3;
         y += 3;
         z += 3;
-      }
+      } 
     } else if (indx == PDB_CRYST1) {
       if (ts) {
         get_pdb_cryst1(pdbstr, &ts->alpha, &ts->beta, &ts->gamma,
@@ -278,7 +278,7 @@ static int read_next_timestep(void *v, int natoms, molfile_timestep_t *ts) {
   return MOLFILE_SUCCESS;
 }
 
-static void close_pdb_read(void *v) {
+static void close_pdb_read(void *v) { 
   pdbdata *pdb = (pdbdata *)v;
   if (pdb->fd != NULL)
     fclose(pdb->fd);
@@ -286,12 +286,12 @@ static void close_pdb_read(void *v) {
     free(pdb->idxmap);
   if (pdb->meta->remarks != NULL)
     free(pdb->meta->remarks);
-  if (pdb->meta != NULL)
+  if (pdb->meta != NULL) 
     free(pdb->meta);
   free(pdb);
 }
 
-static void *open_file_write(const char *path, const char *filetype,
+static void *open_file_write(const char *path, const char *filetype, 
     int natoms) {
 
   FILE *fd;
@@ -303,13 +303,13 @@ static void *open_file_write(const char *path, const char *filetype,
   }
   pdb = (pdbdata *)malloc(sizeof(pdbdata));
   pdb->fd = fd;
-  pdb->natoms = natoms;
+  pdb->natoms = natoms; 
   pdb->atomlist = NULL;
   pdb->first_frame = 1;
   return pdb;
 }
-
-static int write_structure(void *v, int optflags,
+ 
+static int write_structure(void *v, int optflags, 
     const molfile_atom_t *atoms) {
 
   int i;
@@ -385,23 +385,23 @@ just those in the structure, which means VMD will usually produce incorrect
 output and there's nothing we can do about it.  The RCSB actually specifies
 that all residues in the chain have to present in the SEQRES records, even
 if they're not in the structure.
-
-We can never know which residues to output.  Our current system of outputting
+  
+We can never know which residues to output.  Our current system of outputting   
 everything is just terrible when you have 20,000 waters in your system; we
 have to fix this immediately.  We could almost get away with making a hash
 table of the names of protein and nucleic acid residues and only write chains
 containing those residues.  However, there's this little snippet from the
 specification:
-
+  
 * Heterogens which are integrated into the backbone of the chain are listed
   as being part of the chain and are included in the SEQRES records for
   that chain.
-
+  
 That means that we can never know what might appear in the sequence unless we
-also read HET records and keep track of them in VMD as well.  We shouldn't
+also read HET records and keep track of them in VMD as well.  We shouldn't 
 get people depending on such fallible SEQRES records.
-
-And of course, there's the fact that no other program that we know of besides
+  
+And of course, there's the fact that no other program that we know of besides   
 CE needs these SEQRES records.
 
  * Uncomment the write_seqres line in write_timestep to turn them back on.
@@ -451,10 +451,10 @@ static void write_seqres(FILE * fd, int natoms, const molfile_atom_t *atomlist) 
 
 /*
 CRYST1 records look like this:
-The CRYST1 record presents the unit cell parameters, space group, and Z value. If the structure was not determined by crystallographic means, CRYST1 simply defines a unit cube.
+The CRYST1 record presents the unit cell parameters, space group, and Z value. If the structure was not determined by crystallographic means, CRYST1 simply defines a unit cube. 
 
 
-Record Format
+Record Format 
 
 COLUMNS       DATA TYPE      FIELD         DEFINITION
 -------------------------------------------------------------
@@ -484,15 +484,15 @@ We will use "P 1" and "1" for space group and z value, as recommended, but
 we'll populate the other fields with the unit cell information we do have.
 
 */
-
+  
 static void write_cryst1(FILE *fd, const molfile_timestep_t *ts) {
-  fprintf(fd, "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n",
+  fprintf(fd, "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n", 
     ts->A, ts->B, ts->C, ts->alpha, ts->beta, ts->gamma);
 }
 
 
 static int write_timestep(void *v, const molfile_timestep_t *ts) {
-  pdbdata *pdb = (pdbdata *)v;
+  pdbdata *pdb = (pdbdata *)v; 
   const molfile_atom_t *atom;
   const float *pos;
   int i;
@@ -512,7 +512,7 @@ static int write_timestep(void *v, const molfile_timestep_t *ts) {
   pos = ts->coords;
   for (i=0; i<pdb->natoms; i++) {
     /*
-     * The 8.3 format for position, occupancy, and bfactor permits values
+     * The 8.3 format for position, occupancy, and bfactor permits values 
      * only in the range of -999.9994 to 9999.9994 (so that they round
      * to the range [-999.999, 9999.999]).  If values fall outside of that
      * range, fail and emit an error message rather than generate a
@@ -531,14 +531,14 @@ static int write_timestep(void *v, const molfile_timestep_t *ts) {
     strcpy(elementsymbol, (atom->atomicnumber < 1) ? "  " : get_pte_label(atom->atomicnumber));
     elementsymbol[0] = toupper(elementsymbol[0]);
     elementsymbol[1] = toupper(elementsymbol[1]);
-
-    if (!write_raw_pdb_record(pdb->fd,
-        "ATOM  ", i+1, atom->name, atom->resname, atom->resid,
+ 
+    if (!write_raw_pdb_record(pdb->fd,  
+        "ATOM  ", i+1, atom->name, atom->resname, atom->resid, 
         atom->insertion, atom->altloc, elementsymbol,
-        pos[0], pos[1], pos[2],
+        pos[0], pos[1], pos[2], 
         atom->occupancy, atom->bfactor, atom->chain, atom->segid)) {
-      fprintf(stderr,
-          "PDB: Error encoutered writing atom %d; file may be incomplete.\n",
+      fprintf(stderr, 
+          "PDB: Error encoutered writing atom %d; file may be incomplete.\n", 
           i+1);
       return MOLFILE_ERROR;
     }
@@ -549,16 +549,16 @@ static int write_timestep(void *v, const molfile_timestep_t *ts) {
 
   return MOLFILE_SUCCESS;
 }
-
+ 
 static void close_file_write(void *v) {
-  pdbdata *pdb = (pdbdata *)v;
+  pdbdata *pdb = (pdbdata *)v; 
   fclose(pdb->fd);
   free(pdb->atomlist);
   free(pdb);
 }
 
 static int read_molecule_metadata(void *v, molfile_metadata_t **metadata) {
-  pdbdata *pdb = (pdbdata *)v;
+  pdbdata *pdb = (pdbdata *)v; 
   *metadata = pdb->meta;
   return MOLFILE_SUCCESS;
 }
@@ -568,7 +568,7 @@ static int read_molecule_metadata(void *v, molfile_metadata_t **metadata) {
  */
 
 static molfile_plugin_t plugin;
-
+ 
 VMDPLUGIN_API int VMDPLUGIN_init() {
   memset(&plugin, 0, sizeof(molfile_plugin_t));
   plugin.abiversion = vmdplugin_ABIVERSION;

@@ -8,7 +8,7 @@ AR= ar
 ARFLAGS = cr
 RANLIB = ranlib
 
-VMVERSION=1.6
+VMVERSION=1.7
 COMPILEDIR = ../compile
 ARCHDIR=${COMPILEDIR}/lib_${ARCH}/tcl/psfgen${VMVERSION}
 SRCDIR=src
@@ -45,9 +45,6 @@ distrib:
 		cp $$localname $(PLUGINDIR)/$$pluginname; \
 		cp src/pkgIndex.tcl $$dir ; \
 	done
-
-doc/ug.pdf: doc/ug_macros.tex doc/ug_psfgen.tex doc/ug.tex doc/ug_title.tex
-	cd doc; pdflatex ug; pdflatex ug
 
 ${ARCHDIR}:
 	mkdir -p ${ARCHDIR}

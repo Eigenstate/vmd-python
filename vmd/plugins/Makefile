@@ -3,9 +3,11 @@
 ## Copyright 2002-2011, Board of Trustees of the University of Illinois
 ## Theoretical and Computational Biophysics Group
 ##
-## $Id: Makefile,v 1.141 2016/07/13 19:24:24 johns Exp $
+## $Id: Makefile,v 1.142 2018/02/22 22:21:55 johns Exp $
 ## 
+## Parallel builds break because of molfile_plugin
 .SILENT:
+.NOTPARALLEL:
 
 default: make-arch-help
 
@@ -32,9 +34,13 @@ INTERSURF =
 # List of plugins to build
 #   Note: molfile plugins must be first since some of the 
 #         other plugins directly depend on them
+#
+# Removed these since they don't exist?
+#bfeestimator
+#  modelmaker
+# structurecheck
 BUILDDIRS = \
   apbsrun \
-  alascanfep \
   atomedit \
   autoimd \
   autoionize \
@@ -99,7 +105,6 @@ BUILDDIRS = \
   propka \
   psfgen \
   qmtool \
-  qwikmd \
   ramaplot \
   readcharmmpar \
   readcharmmtop \
@@ -117,9 +122,7 @@ BUILDDIRS = \
   solvate \
   ssrestraints \
   stingtool \
-  structurecheck \
   symmetrytool \
-  tablelist \
   timeline \
   topotools \
   torsionplot \

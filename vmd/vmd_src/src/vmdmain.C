@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: vmdmain.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.13 $       $Date: 2016/11/28 03:05:08 $
+ *      $Revision: 1.18 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -20,6 +20,7 @@
  *
  ***************************************************************************/
 #include "vmd.h"
+#include "ProfileHooks.h"
 
 #if defined(ANDROID)
 int VMDmain(int argc, char **argv) {
@@ -27,6 +28,10 @@ int VMDmain(int argc, char **argv) {
 int main(int argc, char **argv) {
 #endif
   int mpienabled = 0;
+
+  PROFILE_MAIN_THREAD(); // mark main VMD thread within profiler timelines
+
+  PROFILE_PUSH_RANGE("VMD main() initialization", 4);
 
 #if defined(VMDMPI)
   // so long as the caller has not disabled MPI, we initialize MPI when VMD
@@ -51,11 +56,20 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  PROFILE_POP_RANGE();
+  PROFILE_PUSH_RANGE("VMD startup scripts", 1);
+
   // read various application defaults
   VMDreadInit(app);
 
+  PROFILE_POP_RANGE();
+  PROFILE_PUSH_RANGE("VMD process user script(s)", 1);
+
   // read user-defined startup files
   VMDreadStartup(app);
+
+  PROFILE_POP_RANGE();
+  PROFILE_PUSH_RANGE("VMD interactive event loop", 1);
 
   // main event loop
   do {
@@ -77,6 +91,8 @@ int main(int argc, char **argv) {
 #endif
 
   } while(app->VMDupdate(VMD_CHECK_EVENTS));
+
+  PROFILE_POP_RANGE();
 
   // end of program
   delete app;

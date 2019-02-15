@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: utilities.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.107 $	$Date: 2016/11/28 03:05:08 $
+ *	$Revision: 1.111 $	$Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -104,20 +104,24 @@ extern int find_last_selection_aligned(int n, const int *on, int *lastsel);
 extern int analyze_selection_aligned(int n, const int *on,
                                      int *firstsel, int *lastsel, int *selected);
 
+/// find min/max/mean values for an array of floats
+extern void minmaxmean_1fv_aligned(const float *f, long n, 
+                                   float *fmin, float *fmax, float *fmean);
+
 /// find min/max values for an array of floats
-extern void minmax_1fv_aligned(const float *f, int n, float *min, float *max);
+extern void minmax_1fv_aligned(const float *f, long n, float *min, float *max);
 
 // Compute min/max values for a 16-byte-aligned array of floats
 // input value n3 is the number of 3-element vectors to process
-extern void minmax_3fv_aligned(const float *f, const int n3, float *fmin, float *fmax);
+extern void minmax_3fv_aligned(const float *f, const long n3, float *fmin, float *fmax);
 
 // Compute min/max values for a 16-byte-aligned array of floats
 // input value on is the array of atom selection flags, and firstsel
 // and lastsel indicate the first and last 3-element vectors to process
 // return 0 on success, -1 on no selected atoms or other problems
 extern int minmax_selected_3fv_aligned(const float *f, const int *on, 
-                                       const int n3, const int firstsel, 
-                                       const int lastsel, 
+                                       const long n3, const long firstsel, 
+                                       const long lastsel, 
                                        float *fmin, float *fmax);
 
 /// clamp an integer value to the range min->max
@@ -145,6 +149,13 @@ inline void vec_copy(float *v1, const float *v2) {
   v1[2] = v2[2];
 }
 
+/// copy the first 3 elements from v2 to v1
+inline void vec_copy(double *v1, const double *v2) {
+  v1[0] = v2[0];
+  v1[1] = v2[1];
+  v1[2] = v2[2];
+}
+
 /// normalizes the 3-vector to length one and returns the pointer
 /// note that this changes the vector
 extern float * vec_normalize(float *);
@@ -152,6 +163,14 @@ extern float * vec_normalize(float *);
 /// subtract 3rd vector from 2nd and put into 1st
 /// in other words, a = b - c
 inline void vec_sub(float *a, const float *b, const float *c) {
+  a[0]=b[0]-c[0];
+  a[1]=b[1]-c[1];
+  a[2]=b[2]-c[2];
+}
+
+/// subtract 3rd vector from 2nd and put into 1st
+/// in other words, a = b - c
+inline void vec_sub(double *a, const double *b, const double *c) {
   a[0]=b[0]-c[0];
   a[1]=b[1]-c[1];
   a[2]=b[2]-c[2];
@@ -199,6 +218,13 @@ inline void vec_scaled_add(float *a, float b, const float *c) {
   a[2] += b*c[2];
 }
 
+/// a += c*d
+inline void vec_scaled_add(double *a, float b, const double *c) {
+  a[0] += b*c[0];
+  a[1] += b*c[1];
+  a[2] += b*c[2];
+}
+
 /// a = b + c*d (name taken from STREAM benchmark routine)
 inline void vec_triad(float *a, const float *b, float c, const float *d) {
   a[0] = b[0] + c*d[0];
@@ -214,7 +240,20 @@ inline void vec_lerp(float *a, const float *b, const float *c, float frac) {
   vec_add(a, b, tmp);
 }
 
+// multiply the matrix mat with the vector vec (length 3)
+inline void vectrans(float *npoint, float *mat, double *vec){
+  npoint[0]=vec[0]*mat[0]+vec[1]*mat[4]+vec[2]*mat[8];
+  npoint[1]=vec[0]*mat[1]+vec[1]*mat[5]+vec[2]*mat[9];
+  npoint[2]=vec[0]*mat[2]+vec[1]*mat[6]+vec[2]*mat[10];
+}
+
 inline void vec_zero(float *a) {
+  a[0] = 0.0f;
+  a[1] = 0.0f;
+  a[2] = 0.0f;
+}
+
+inline void vec_zero(double *a) {
   a[0] = 0.0f;
   a[1] = 0.0f;
   a[2] = 0.0f;

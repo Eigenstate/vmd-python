@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: GraphicsFltkReps.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.136 $       $Date: 2016/11/28 03:05:00 $
+ *      $Revision: 1.138 $       $Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -350,7 +350,35 @@ private:
 };
 
 
- 
+#if defined(VMDLATTICECUBES)
+/// 'LatticeCubes' representation controls
+class GraphicsFltkRepLatticeCubes : public GraphicsFltkRep {
+public:
+  GraphicsFltkRepLatticeCubes(Fl_Callback *cb, void *v) {
+    radius = new RadiusCounter(x()+170,y()+90,"Sphere Scale");
+    radius->callback(cb, v);
+    Fl_Group::end();
+  }
+
+  const char *repcmd() {
+    sprintf(cmdbuf, "LatticeCubes %f", radius->value());
+    return cmdbuf;
+  }
+  void set_values(AtomRep *rep) {
+    radius->value(rep->get_data(AtomRep::SPHERERAD));
+  }
+
+protected:
+  void do_reset() {
+    radius->value(1.0);
+  }
+
+protected:
+  Fl_Counter *radius;
+};
+#endif
+
+
 /// 'VDW' representation controls
 class GraphicsFltkRepVDW : public GraphicsFltkRep {
 public:
@@ -381,7 +409,7 @@ protected:
   Fl_Counter *radius;
   Fl_Counter *resolution;
 };
-
+ 
 
 /// 'Beads' representation controls
 class GraphicsFltkRepBeads : public GraphicsFltkRepVDW {

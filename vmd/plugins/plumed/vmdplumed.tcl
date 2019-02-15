@@ -1,10 +1,16 @@
 # VMD Plumed tool  - a GUI to compute collective variables
 # over a trajectory
 #
-#     Copyright (C) 2014  National Research Council of Italy and
-#                         Universitat Pompeu Fabra 
+#     Author              Toni Giorgino  (toni.giorgino@cnr.it)
 #
-#     Author              Toni Giorgino  (toni.giorgino@isib.cnr.it)
+#     (c) 2012-           National Research Council of Italy
+#     (c) 2009-2012       Universitat Pompeu Fabra 
+#
+#     See Toni Giorgino, "Plumed-GUI: an environment for the
+#     interactive development of molecular dynamics analysis and
+#     biasing scripts" (2014) Computer Physics Communications, Volume
+#     185, Issue 3, March 2014, Pages 1109-1114,
+#     doi:10.1016/j.cpc.2013.11.019, or arXiv:1312.3190
 #
 #     This program is available under either the 3-clause BSD license,
 #     (e.g. see http://www.ks.uiuc.edu/Research/vmd/plugins/pluginlicense.html)
@@ -14,7 +20,7 @@
 # To reload:
 #  destroy .plumed; source vmdplumed.tcl; plumed_tk
 
-package provide plumed 2.5
+package provide plumed 2.7
 
 package require Tk 8.5
 package require http
@@ -29,7 +35,7 @@ namespace eval ::Plumed:: {
     variable highlight_error_ms 12000;  # error message held this long
     variable plumed_default_version 2;  # default PLUMED to use if none found
     
-    variable plumed2_online_docbase "http://plumed.github.io/doc-v2.2/user-doc/html"
+    variable plumed2_online_docbase "http://plumed.github.io/doc-vVERSION/user-doc/html"
     variable github_repository "https://github.com/tonigi/vmd_plumed/"
 
     variable plot_points 0;	       	# show data markers
@@ -130,6 +136,7 @@ proc ::Plumed::plumed {} {
     # If already initialized, just turn on
     if { [winfo exists .plumed] } {
 	wm deiconify .plumed
+	raise .plumed
 	return
     }
 
@@ -227,6 +234,8 @@ proc ::Plumed::plumed {} {
 	-command Plumed::rama_gui
     $w.menubar.structure add command -label "Insert group for secondary structure RMSD..." \
 	-command Plumed::ncacocb_gui
+    $w.menubar.structure add command -label "Display gradients and forces..." \
+	-command Plumed::show_forces_gui
 
     ## help menu
     $w.menubar add cascade -label Help -underline 0 -menu $w.menubar.help
@@ -247,13 +256,11 @@ proc ::Plumed::plumed {} {
 	-command "vmd_open_url $Plumed::plumed2_online_docbase/index.html"
     $w.menubar.help add command -label "PLUMED 1.3 user's guide and CV syntax" \
 	-command "vmd_open_url http://www.plumed.org/documentation"
-    if [ info exists ::env(PLUMED_GUI_EXPERIMENTAL) ] {
-	$w.menubar.help add separator
-	$w.menubar.help add command -label "VMD Colvars homepage" \
+    $w.menubar.help add separator
+    $w.menubar.help add command -label "VMD Colvars homepage" \
 	    -command "vmd_open_url http://colvars.github.io/" 
-	$w.menubar.help add command -label "VMD Colvars manual" \
+    $w.menubar.help add command -label "VMD Colvars manual" \
 	    -command "vmd_open_url http://colvars.github.io/colvars-refman-vmd/colvars-refman-vmd.html"
-    }
     $w.menubar.help add separator
     $w.menubar.help add command -label "About the $plugin_name" \
 	-command [namespace current]::help_about
@@ -300,11 +307,10 @@ proc ::Plumed::plumed {} {
     pack [  ttk::radiobutton $w.options.line2.v2 -value 2 -text "Plumed 2.x  "         \
 		-variable [namespace current]::plumed_version              \
 		-command [namespace current]::plumed_version_changed       ] -side left
-    if [ info exists ::env(PLUMED_GUI_EXPERIMENTAL) ] {
-	pack [  ttk::radiobutton $w.options.line2.vmdcv -value vmdcv -text "VMD Colvars (alpha)"         \
-		    -variable [namespace current]::plumed_version              \
-		    -command [namespace current]::plumed_version_changed       ] -side left
-    }
+    pack [  ttk::radiobutton $w.options.line2.vmdcv -value vmdcv -text "VMD Colvars "         \
+		-variable [namespace current]::plumed_version              \
+		-command [namespace current]::plumed_version_changed       ] -side left
+
     pack [  ttk::label $w.options.line2.text -text "       Path to executable: " ] -side left -expand 0
     pack [  ttk::entry $w.options.line2.path -width 5 -textvariable \
 	       [namespace current]::driver_path ] -side left -expand 1 -fill x
@@ -472,10 +478,10 @@ proc ::Plumed::help_win32_install {} {
     puts "Installation may fail for permissions, network, antivirus."
     file mkdir $destdir
 
-    set url_driver {http://www.multiscalelab.org/utilities/PlumedGUI?action=AttachFile&do=get&target=driver.exe}
+    set url_driver {http://tonigi.github.io/vmd_plumed/binaries/driver.exe}
     vmd_mol_urlload $url_driver [file join $destdir driver.exe]
 
-    set url_plumed {http://www.multiscalelab.org/utilities/PlumedGUI?action=AttachFile&do=get&target=plumed.exe}
+    set url_plumed {http://tonigi.github.io/vmd_plumed/binaries/plumed.exe}
     vmd_mol_urlload $url_plumed [file join $destdir plumed.exe]
 
     plumed_path_lookup
@@ -493,8 +499,6 @@ $plugin_name
 Version loaded: [package present plumed] (available: [package versions plumed])
 
 Toni Giorgino <toni.giorgino${at}cnr.it>
-
-Institute of Neurosciences (IN-ISIB),
 National Research Council of Italy (CNR)
 
 Before 2012: 
@@ -502,7 +506,7 @@ Computational Biophysics Group (GRIB-IMIM-UPF),
 Universitat Pompeu Fabra
 
 Citation:
-Giorgino T.  PLUMED-GUI: An environment for the interactive development of molecular dynamics analysis and biasing scripts. Comp. Phys. Comm. 2014 Mar;185(3):1109-14. 
+Giorgino T.  PLUMED-GUI: An environment for the interactive development of molecular dynamics analysis and biasing scripts. Comp. Phys. Comm. 2014 Mar;185(3):1109-14. arXiv:1312.3190
 
 
 "
@@ -793,6 +797,7 @@ proc ::Plumed::showBalloonHelp {w msg} {
 proc ::Plumed::rama_gui { } {
     if { [winfo exists .plumedrama] } {
 	wm deiconify .plumedrama
+	raise .plumedrama
 	return
     }
 
@@ -941,6 +946,7 @@ proc ::Plumed::ncacocb_gui {} {
     set n .plumed_ncacocb
     if { [winfo exists $n] } {
 	wm deiconify $n
+	raise $n
 	return
     }
 
@@ -1031,6 +1037,7 @@ proc ::Plumed::ncacocb_insert {} {
 proc ::Plumed::reference_gui { } {
     if { [winfo exists .plumedref] } {
 	wm deiconify .plumedref
+	raise .plumedref
 	return
     }
 
@@ -1302,6 +1309,7 @@ proc ::Plumed::reference_write_subset { fileout subset } {
 proc ::Plumed::nc_gui { } { 
     if { [winfo exists .plumednc] } {
 	wm deiconify .plumednc
+	raise .plumednc
 	return
     }
 
@@ -1564,6 +1572,7 @@ proc ::Plumed::structuremenu_update {} {
 	    .plumed.menubar.structure entryconfigure 1 -state normal
 	    .plumed.menubar.structure entryconfigure 2 -state normal
 	    .plumed.menubar.structure entryconfigure 3 -state normal
+	    .plumed.menubar.structure entryconfigure 4 -state disabled
 	}
 	2 {
 	    .plumed.menubar entryconfigure 4 -state normal
@@ -1571,6 +1580,7 @@ proc ::Plumed::structuremenu_update {} {
 	    .plumed.menubar.structure entryconfigure 1 -state normal
 	    .plumed.menubar.structure entryconfigure 2 -state normal
 	    .plumed.menubar.structure entryconfigure 3 -state disabled
+	    .plumed.menubar.structure entryconfigure 4 -state normal
 	    destroy .plumed_ncacocb
 	}
 	vmdcv {
@@ -1579,6 +1589,7 @@ proc ::Plumed::structuremenu_update {} {
 	    .plumed.menubar.structure entryconfigure 1 -state disabled
 	    .plumed.menubar.structure entryconfigure 2 -state disabled
 	    .plumed.menubar.structure entryconfigure 3 -state disabled
+	    .plumed.menubar.structure entryconfigure 4 -state disabled
 	    destroy .plumedref
 	    destroy .plumednc
 	    destroy .plumedrama
@@ -1839,10 +1850,12 @@ proc ::Plumed::popup_help_url {} {
 	    puts "Info: using local help pages."
 	} else {
 	    # 2. try version-specific remote
-	    set url "$plumed2_online_docbase/index.html"
-	    if {[get_url_ncode $url]==200} {
+	    set url $plumed2_online_docbase
+	    set url [string map [list "VERSION" [exec $driver_path --standalone-executable info --version]] $url]
+	    puts "URL IS $url"
+	    if {[lsearch -exact {200 301} [get_url_ncode "$url/index.html"]] >= 0} {
 		puts "Info: local help pages not available, using remote pages at $url"
-		set popup_help_url_cached $plumed2_online_docbase
+		set popup_help_url_cached $url
 	    } else {
 		puts "Warning: local and remote help pages not available, using fallback"
 		set popup_help_url_cached "http://www.plumed.org"
@@ -1929,9 +1942,9 @@ proc ::Plumed::do_compute {{outfile ""}} {
     if {$plumed_version==1} { cd_push $tmpd }
     if { [ catch { exec {*}$cmd } driver_stdout ] ||
 	 ! [file readable $colvar]  } {
-	set dontplot 1
+	set failure 1
     } else {
-	set dontplot 0
+	set failure 0
     }
     if {$plumed_version==1} { cd_push - }
 
@@ -1941,7 +1954,7 @@ proc ::Plumed::do_compute {{outfile ""}} {
     puts "Temporary files are in directory $tmpd"
 
     # Parse if v2
-    if { $dontplot } {
+    if { $failure } {
 	puts "Something went wrong. Check above messages."
 	tk_messageBox -icon error -title "Error" -parent .plumed -message \
 	    "PLUMED returned an error while executing the script. Please find error messages in the console. "
@@ -1990,7 +2003,7 @@ proc ::Plumed::do_plot { { out COLVAR } { txt ""  } } {
     close $fd
 
     if { [llength $header] == 0 } {
-	puts "No FIELDS header line found. Please use PLUMED version >= 1.3 ."
+	puts "No FIELDS columns found. It usually means that you have no COLVAR defined (or PLUMED < 1.3)."
 	return
     } elseif { $nlines == 0 } {
 	puts "No output in COLVAR. Please check above messages."
@@ -2104,6 +2117,241 @@ proc ::Plumed::get_pbc_v2 { } {
 }
 
 
+
+# ========================================
+# Force-display stuff
+
+# Run driver with --dump-forces. Extensive refactoring needed.
+proc ::Plumed::show_forces_compute { } {
+    variable driver_path
+
+    if {[molinfo top]==-1 || [molinfo top get numframes] < 1} {
+	tk_messageBox -title "Error" -icon error -parent .plumed -message \
+	    "A top molecule and at least one frame is required to plot."
+	return 
+    }
+
+    if {![file executable $driver_path]} { 
+	tk_messageBox -title "Error" -icon error -parent .plumed -message \
+	    "The plumed executable is required. See manual for installation instructions."
+	return }
+
+    # Prepare temp. dir and files
+    set tmpd [file join [tmpdir] vmdplumed.[pid]]
+    file mkdir $tmpd
+
+    set meta [file join $tmpd META_INP]
+    set pdb [file join $tmpd temp.pdb] 
+    set dcd [file join $tmpd temp.dcd]
+    set colvar [file join $tmpd COLVAR]
+    set forces [file join $tmpd FORCES]
+
+    writePlumed [atomselect top all] $pdb
+    animate write dcd $dcd waitfor all
+    file delete $colvar
+
+    write_meta_inp_v2 $meta $colvar
+    set pbc [get_pbc_v2]
+    set cmd [list $driver_path --standalone-executable driver {*}$pbc --mf_dcd $dcd --pdb $pdb --plumed $meta --dump-forces $forces  ]
+
+    puts "Executing: $cmd"
+
+    if { [ catch { exec {*}$cmd } driver_stdout ] ||
+	 ! [file readable $colvar]  } {
+	set failure 1
+    } else {
+	set failure 0
+    }
+
+
+    # Results
+    puts $driver_stdout
+    puts "-----------"
+    puts "Temporary files are in directory $tmpd"
+
+    # Parse if v2
+    if { $failure } {
+	puts "Something went wrong. Check above messages."
+	return {}
+    }
+
+    set force_list [parse_forces $forces]
+    return $force_list
+}
+
+
+# Parse a forces file like
+# NATOMS
+# FBX FBY FBZ
+# X F1X F1Y F1Z
+# X ...
+# repeated for a number of frames. Return a list of lists 
+proc ::Plumed::parse_forces {fname} {
+    set ff [open $fname r]
+    set force_list {}
+    while {[gets $ff nat]>=0} {
+	gets $ff boxforces
+	set this_frame_forces {}
+	for {set a 0} {$a < $nat} {incr a} {
+	    # Delete atom name
+	    gets $ff line
+	    set fxyz [lreplace $line 0 0]
+	    lappend this_frame_forces $fxyz
+	}
+	lappend force_list $this_frame_forces
+    }
+    close $ff
+    return $force_list
+}
+
+
+proc ::Plumed::show_forces_gui {} {
+    set tl .plumed_show_forces
+    if { [winfo exists $tl] } {
+	wm deiconify $tl
+	raise $tl
+	return
+    }
+
+    variable show_forces_scale 1.00
+    variable show_forces_data
+
+    toplevel $tl
+    wm title $tl "Display gradients and forces"
+
+    pack [ ttk::frame $tl.pad -padding 8 ] -side top -fill x
+    
+    set n $tl.pad
+    pack [ ttk::label $n.head1 -text "Display the force vector that would be applied to each atom." \
+	       -justify center -anchor center -pad 3 ] -side top -fill x 
+
+    pack [ ttk::label $n.explain -text "To visualize the effect of a bias on a CV\nyou may want to apply a constant unitary force to it, e.g.:\n\nRESTRAINT ARG=mycv AT=0 SLOPE=-1" \
+	       -justify center -anchor center -pad 3 ] -side top -fill x 
+
+    # http://wiki.tcl.tk/1433
+    pack [ ttk::frame $n.scale ] -side top -fill x -expand 1
+
+    pack [ ttk::label $n.scale.lab -text "Arrow scale: "] -side left
+    pack [ ttk::scale  $n.scale.scale -from -20 -to 20 -value 0 -length 200 \
+	       -orient h -command ::Plumed::show_forces_scale_changed]  -side left -fill x -expand 1
+    pack [ ttk::label $n.scale.value -text 1.0 -width 8 -anchor e] -side left
+    pack [ ttk::label $n.scale.unit -text "Å per kJ/mol/nm" ] -side left
+
+    wm protocol $tl WM_DELETE_WINDOW {
+	::Plumed::show_forces_stop
+	destroy .plumed_show_forces
+    }
+
+    set show_forces_data [show_forces_compute]
+
+    if {$show_forces_data eq ""} {
+	tk_messageBox -icon error \
+	    -title "Error" \
+	    -message "PLUMED returned an error while executing the script. Please find error messages in the console. " \
+	    -parent .plumed_show_forces 
+	show_forces_stop
+	destroy .plumed_show_forces
+    } elseif [show_forces_is_null $show_forces_data] {
+	tk_messageBox -icon info \
+	    -message "All acting forces are null. Consider adding a RESTRAINT or another biasing statement." \
+	    -title "Null forces" \
+	    -parent .plumed_show_forces
+	show_forces_stop
+	destroy .plumed_show_forces
+    } else {
+	show_forces_start
+	show_forces_draw_frame
+    }
+}
+
+proc ::Plumed::show_forces_is_null {data} {
+    foreach fd $data {
+	foreach fa $fd {
+	    if [catch {veclength $fa} fal] {
+		set fal 1
+	    }
+	    if {$fal>0} {
+		return 0
+	    }
+	}
+    }
+    return 1
+}
+
+proc ::Plumed::show_forces_scale_changed {vraw} {
+    variable show_forces_scale
+    set v [expr 10**($vraw/10)]
+    set show_forces_scale $v
+    set vr [format "%.2f" $v]
+    .plumed_show_forces.pad.scale.value configure -text $vr
+    show_forces_draw_frame
+}
+
+proc ::Plumed::show_forces_start {} {
+    # http://www.ks.uiuc.edu/Training/Tutorials/vmd-imgmv/imgmv/tutorial-html/node3.html#SECTION00032000000000000000
+    global vmd_frame
+    trace variable vmd_frame([molinfo top]) w ::Plumed::show_forces_draw_frame
+}
+
+proc ::Plumed::show_forces_stop {} {
+    global vmd_frame
+    graphics top delete all
+    trace vdelete vmd_frame([molinfo top]) w ::Plumed::show_forces_draw_frame
+}
+
+proc ::Plumed::show_forces_draw_frame {args} {
+    variable show_forces_data
+    variable show_forces_scale 
+    
+    # global vmd_frame
+    set fno [molinfo top get frame]
+
+    set fd [lindex $show_forces_data $fno]
+
+    set as [atomselect top all]
+    $as frame $fno
+    set xyz_all [$as get {x y z}]
+    $as delete
+
+    #  Iterate over atoms
+    set err 0
+    set sum 0
+    graphics top delete all
+    foreach d $fd x $xyz_all {
+	if {[catch {vecscale $show_forces_scale $d} ds]} {
+	    set err 1
+	} else {
+	    draw_arrow $x $ds
+	    set sum [expr {$sum+[veclength $d]}]
+	}
+    }
+
+    if {$err==1} {
+	tk_messageBox -icon warning \
+	    -message "Some gradient components are NAN or infinite.\nThey will not be shown." \
+	    -title "Numerical problem" \
+	    -parent .plumed_show_forces
+    }
+    
+}
+
+# Draw an arrow at x in direction d
+proc ::Plumed::draw_arrow {x d {r .1} {tip .2}} {
+    set min_len 0.1
+    set xf [vecadd $x $d]
+    if {[veclength $d] > $min_len} {
+	set xtip [vecadd $xf [vecscale $tip [vecnorm $d]]]
+	graphics top cylinder $x $xf radius $r filled yes
+	graphics top cone $xf $xtip radius [expr 2*$r]
+    }
+}
+
+
+				  
+
+
+
+
 # ==================================================                                                 
 # VMDCV-specific stuff
 
@@ -2111,13 +2359,13 @@ proc ::Plumed::do_compute_vmdcv {} {
 	catch {cv delete} e
 	cv molid top
 	set script [replace_serials [getText] ]
-	set o [ catch {  cv config $script } e ]
-	if {$o} {
-		error "A problem occurred. Error messages\nare found in VMD's text console."
+        if [ catch { cv config $script } e ] {
+	    tk_messageBox -icon error -title "Error" -parent .plumed \
+		-message "Colvar module returned the following problem...\n\n$e." \
+		-detail "Further messages are found in VMD's text console."
+	    cv reset
+	    return
 	} 
-	# puts "o>> $o"
-	# puts "e>> $e"
-	# puts "errorInfo>> $::errorInfo"
 
 	set fname [file join [tmpdir] "vmd_plumed.[pid].dat"]
 	set fd [open $fname w]

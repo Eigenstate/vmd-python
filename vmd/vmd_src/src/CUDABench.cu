@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 2007-2009 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: CUDABench.cu,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.33 $      $Date: 2014/05/27 15:31:50 $
+ *      $Revision: 1.35 $      $Date: 2019/01/17 21:38:54 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -62,7 +62,7 @@
 // CUDA grid, thread block, loop, and MADD operation counts
 #define GRIDSIZEX   6144
 #define BLOCKSIZEX  64
-#define GLOOPS      500
+#define GLOOPS      2000
 #define MADDCOUNT   64
 
 // FLOP counting
@@ -155,8 +155,8 @@ static int cudamaddgflops(int cudadev, double *gflops, int testloops) {
   wkf_timer_start(timer);
   for (i=0; i<testloops; i++) { 
     madd_kernel<<<Gsz, Bsz>>>(doutput);
-    cudaDeviceSynchronize(); // wait for kernel to finish
   }
+  cudaDeviceSynchronize(); // wait for kernel to finish
   CUERR // check and clear any existing errors
   wkf_timer_stop(timer);
 
@@ -683,9 +683,9 @@ static void * vmddevpooltilelatencythread(void *voidparms) {
 
 // no-op kernel for timing kernel launches
 __global__ static void nopkernel(float * ddata) {
-  unsigned int xindex  = __umul24(blockIdx.x, blockDim.x) + threadIdx.x;
-  unsigned int yindex  = __umul24(blockIdx.y, blockDim.y) + threadIdx.y;
-  unsigned int outaddr = __umul24(gridDim.x, blockDim.x) * yindex + xindex;
+  unsigned int xindex  = blockIdx.x * blockDim.x + threadIdx.x;
+  unsigned int yindex  = blockIdx.y * blockDim.y + threadIdx.y;
+  unsigned int outaddr = gridDim.x * blockDim.x * yindex + xindex;
 
   if (ddata != NULL)
     ddata[outaddr] = outaddr;

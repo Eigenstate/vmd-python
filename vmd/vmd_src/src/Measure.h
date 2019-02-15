@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: Measure.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.69 $       $Date: 2016/11/28 03:05:01 $
+ *      $Revision: 1.73 $       $Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -83,6 +83,14 @@ extern int measure_avpos(const AtomSel *sel, MoleculeList *mlist,
 extern int measure_center(const AtomSel *sel, const float *framepos, 
                           const float *weight, float *com);
 
+// find the center of the selected atoms in sel, using the coordinates in
+// framepos and the weights in weight.  weight has sel->selected elements.
+// Place the answer in com.  Return number of residues on success, 
+// or negative on error.
+extern int measure_center_perresidue(MoleculeList *mlist, const AtomSel *sel, 
+                                     const float *framepos,
+                                     const float *weight, float *com);
+
 // find the dipole of the selected atoms in sel, using the coordinates in
 // framepos, and the atom charges.
 // Place the answer in dipole.  Return 0 on success, or negative on error.
@@ -95,6 +103,10 @@ extern int measure_center(const AtomSel *sel, const float *framepos,
 //   0 = origin
 extern int measure_dipole(const AtomSel *sel, MoleculeList *mlist,
                           float *dipole, int unitsdebye, int usecenter);
+
+extern int measure_hbonds(Molecule *mol, AtomSel *sel1, AtomSel *sel2, 
+                          double cut, double maxangle, int *donlist, 
+                          int *hydlist, int *acclist, int maxsize);
 
 // Find the transformation which aligns the atoms of sel1 and sel2 optimally,
 // meaning it minimizes the RMS distance between them, weighted by weight.
@@ -126,18 +138,40 @@ extern int measure_rmsd(const AtomSel *sel1, const AtomSel *sel2,
                         int num, const float *f1, const float *f2,
                         float *weight, float *rmsd);
 
-extern int measure_rmsd_qcp(const AtomSel *sel1, const AtomSel *sel2,
+// Calculate the RMS distance between the atoms in the two selections,
+// weighted by weight.  Same conditions on sel1, sel2, and weight as for
+// measure_fit. Now done per residue (so the pointer is expected to be an array)
+extern int measure_rmsd_perresidue(const AtomSel *sel1, const AtomSel *sel2, 
+                                   MoleculeList *mlist, int num, 
+                                   float *weight, float *rmsd);
+
+// Measure RMS distance between two selections as with measure_rmsd(),
+// except that it is computed with an implicit best-fit alignment 
+// by virtue of the QCP algorithm.
+extern int measure_rmsd_qcp(VMDApp *app,
+                            const AtomSel *sel1, const AtomSel *sel2,
                             int num, const float *f1, const float *f2,
                             float *weight, float *rmsd);
 
-extern int measure_rmsdmat_qcp(const AtomSel *sel, MoleculeList *mlist,
+// Measure matrix of RMS distance between all selected trajectory frames,
+// computed with an implicit best-fit alignment by virtue of the QCP algorithm.
+extern int measure_rmsdmat_qcp(VMDApp *app,
+                               const AtomSel *sel, MoleculeList *mlist,
                                int num, float *weight,
                                int start, int end, int step,
                                float *rmsd);
 
+// Given the component sums of QCP inner products, uses
+// QCP algorithm to solve for best-fit RMSD and rotational alignment
+extern int FastCalcRMSDAndRotation(double *rot, double *A, float *rmsd,
+                                   double E0, int len, double minScore);
 
 // Calculate RMS fluctuation of selected atoms over selected frames
 extern int measure_rmsf(const AtomSel *sel, MoleculeList *mlist, 
+                        int start, int end, int step, float *rmsf);
+
+// Calculate RMSF per residue.
+extern int measure_rmsf_perresidue(const AtomSel *sel, MoleculeList *mlist,
                         int start, int end, int step, float *rmsf);
 
 extern int measure_sumweights(const AtomSel *sel, int numweights, 

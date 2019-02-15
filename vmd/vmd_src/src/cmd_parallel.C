@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: cmd_parallel.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.33 $       $Date: 2016/11/30 17:10:05 $
+ *      $Revision: 1.34 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:

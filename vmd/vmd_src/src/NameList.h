@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *        $RCSfile: NameList.h,v $
  *        $Author: johns $        $Locker:  $                $State: Exp $
- *        $Revision: 1.47 $        $Date: 2016/11/28 03:05:02 $
+ *        $Revision: 1.49 $        $Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -81,7 +81,8 @@ public:
   // Return the index.  If already in the list, return the current index.
   int add_name(const char *nm, const T &val) {
     char tmpnm[128]; // temporary storage, spaces stripped from beginning + end
-    
+    memset(tmpnm, 0, sizeof(tmpnm)); // clear temp storage
+ 
     if (!nm)
       return (-1);      
 
@@ -94,7 +95,7 @@ public:
     while (*nm && len--)                // copy the string
       *(s++) = *(nm++);
 
-    *s = 0;                             // terminate the copied string
+    *s = '\0';                          // terminate the copied string
     while(s != tmpnm && *(--s) == ' ')  // remove spaces at end of string
       *s = '\0';
 

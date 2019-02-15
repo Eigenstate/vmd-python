@@ -42,6 +42,15 @@ int topo_mol_regenerate_resids(topo_mol *mol);
 
 void topo_mol_delete_atom(topo_mol *mol, const topo_mol_ident_t *target);
 
+int topo_mol_set_name(topo_mol *mol, const topo_mol_ident_t *target,
+                           const char *name);
+
+int topo_mol_set_resname(topo_mol *mol, const topo_mol_ident_t *target,
+                              const char *rname);
+
+int topo_mol_set_segid(topo_mol *mol, const topo_mol_ident_t *target,
+                              const char *segid);
+
 int topo_mol_multiply_atoms(topo_mol *mol, const topo_mol_ident_t *targets,
 					int ntargets, int ncopies);
 
@@ -53,6 +62,18 @@ int topo_mol_set_chain(topo_mol *mol, const topo_mol_ident_t *target,
 
 int topo_mol_set_xyz(topo_mol *mol, const topo_mol_ident_t *target,
 					double x, double y, double z);
+
+int topo_mol_set_vel(topo_mol *mol, const topo_mol_ident_t *target,
+                                        double vx, double vy, double vz);
+
+int topo_mol_set_mass(topo_mol *mol, const topo_mol_ident_t *target,
+                      double mass);
+
+int topo_mol_set_charge(topo_mol *mol, const topo_mol_ident_t *target,
+                        double charge);
+
+int topo_mol_set_bfactor(topo_mol *mol, const topo_mol_ident_t *target, 
+                         double bfactor);
 
 int topo_mol_guess_xyz(topo_mol *mol);
 

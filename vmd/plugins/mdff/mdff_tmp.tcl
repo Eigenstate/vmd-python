@@ -11,7 +11,7 @@
 #
 #       $RCSfile: mdff_tmp.tcl,v $
 #       $Author: ryanmcgreevy $        $Locker:  $             $State: Exp $
-#       $Revision: 1.5 $       $Date: 2013/06/11 17:47:40 $
+#       $Revision: 1.6 $       $Date: 2017/01/13 18:26:46 $
 #
 ############################################################################
 
@@ -161,6 +161,8 @@ proc ::MDFF::Tmp::getFrames { args } {
 
   if [info exists frames] {
     set fl [split $frames :]
+    puts $fl
+    puts [llength $fl]
     switch -- [llength $fl] {
       1 {
         switch -- $fl {
@@ -184,6 +186,7 @@ proc ::MDFF::Tmp::getFrames { args } {
         set frames_end [lindex $fl 1]
       }
       3 {
+        puts "okay"
         set frames_begin [lindex $fl 0]
         set frames_step [lindex $fl 1]
         set frames_end [lindex $fl 2]

@@ -1,7 +1,16 @@
-/// -*- c++ -*-
+// -*- c++ -*-
+
+// This file is part of the Collective Variables module (Colvars).
+// The original version of Colvars and its updates are located at:
+// https://github.com/colvars/colvars
+// Please update all Colvars source files before making any changes.
+// If you wish to distribute your changes, please submit them to the
+// Colvars repository at GitHub.
 
 #ifndef COLVARPROXY_VMD_H
 #define COLVARPROXY_VMD_H
+
+#include "colvarproxy_vmd_version.h"
 
 #include <tcl.h>
 
@@ -14,13 +23,9 @@
 #include "colvartypes.h"
 #include "colvaratoms.h"
 
-#ifndef COLVARPROXY_VERSION
-#define COLVARPROXY_VERSION "2015-11-02"
-#endif
 
-
-int tcl_colvars(ClientData clientdata, Tcl_Interp *interp, int argc, const char *argv[]);
-
+int tcl_colvars(ClientData clientData, Tcl_Interp *interp,
+                int objc, Tcl_Obj *const objv[]);
 
 /// \brief Communication between colvars and VMD (implementation of
 /// \link colvarproxy \endlink)
@@ -48,6 +53,7 @@ public:
 
   colvarproxy_vmd(Tcl_Interp *interp, VMDApp *vmd, int molid);
   ~colvarproxy_vmd();
+  int request_deletion();
 
   int setup();
 
@@ -108,6 +114,14 @@ public:
     return output_prefix_str;
   }
 
+
+#if defined(VMDTCL)
+  void init_tcl_pointers();
+#endif
+
+  char const *script_obj_to_str(unsigned char *obj);
+  std::vector<std::string> script_obj_to_str_vector(unsigned char *obj);
+
   void add_energy(cvm::real energy);
 
 private:
@@ -115,19 +129,10 @@ private:
 public:
   void request_total_force(bool yesno);
 
-  cvm::rvector position_distance(cvm::atom_pos const &pos1,
-                                  cvm::atom_pos const &pos2);
-  cvm::real position_dist2(cvm::atom_pos const &pos1,
-                            cvm::atom_pos const &pos2);
-
-  void select_closest_image(cvm::atom_pos &pos,
-                             cvm::atom_pos const &ref_pos);
-
   std::string error_output;
   void log(std::string const &message);
   void error(std::string const &message);
   void fatal_error(std::string const &message);
-  void exit(std::string const &message);
 
   // Callback functions
   int run_force_callback();
@@ -135,8 +140,8 @@ public:
                           std::vector<const colvarvalue *> const &cvcs,
                           colvarvalue &value);
   int run_colvar_gradient_callback(std::string const &name,
-                                   std::vector<const colvarvalue *> const &cvcs,
-                                   std::vector<colvarvalue> &gradient);
+                                   std::vector<const colvarvalue *> const &cvc_values,
+                                   std::vector<cvm::matrix2d<cvm::real> > &gradient);
 
   int load_atoms(char const *filename,
                  cvm::atom_group &atoms,
@@ -159,49 +164,6 @@ public:
                     std::string const     &segment_id);
 
 };
-
-
-
-inline cvm::rvector colvarproxy_vmd::position_distance(cvm::atom_pos const &pos1,
-                                                       cvm::atom_pos const &pos2)
-{
-  // TODO: add in the proxy constructor a check for orthonormal PBCs
-  Timestep *ts = vmdmol->get_frame(vmdmol_frame);
-  cvm::real const a = ts->a_length;
-  cvm::real const b = ts->b_length;
-  cvm::real const c = ts->c_length;
-  cvm::rvector diff = (pos2 - pos1);
-  if (a*a > 1.0e-12) {
-    while (diff.x <= -0.5*a) diff.x += a;
-    while (diff.x  >  0.5*a) diff.x -= a;
-  }
-  if (b*b > 1.0e-12) {
-    while (diff.y <= -0.5*b) diff.y += b;
-    while (diff.y  >  0.5*b) diff.y -= b;
-  }
-  if (c*c > 1.0e-12) {
-    while (diff.z <= -0.5*c) diff.z += c;
-    while (diff.z  >  0.5*c) diff.z -= c;
-  }
-  return diff;
-}
-
-
-inline void colvarproxy_vmd::select_closest_image(cvm::atom_pos &pos,
-                                                  cvm::atom_pos const &ref_pos)
-{
-  cvm::rvector const diff = position_distance(ref_pos, pos);
-  pos = ref_pos + diff;
-}
-
-
-inline cvm::real colvarproxy_vmd::position_dist2(cvm::atom_pos const &pos1,
-                                                 cvm::atom_pos const &pos2)
-{
-  cvm::rvector const d = position_distance(pos1, pos2);
-  return cvm::real(d.x*d.x + d.y*d.y + d.z*d.z);
-}
-
 
 
 #endif

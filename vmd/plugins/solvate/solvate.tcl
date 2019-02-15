@@ -1,7 +1,7 @@
 #
 # Solvate plugin - generate a water box and add solute
 #
-# $Id: solvate.tcl,v 1.62 2015/04/12 07:06:47 johns Exp $
+# $Id: solvate.tcl,v 1.63 2018/07/31 16:55:37 johns Exp $
 #
 # generate water block coordinates (VMD)
 # replicate water block (psfgen)
@@ -587,7 +587,7 @@ proc solvate_core {args} {
     # Another problem with decreasing rwat by a fixed value is that
     # it will not behave correctly if the user uses a different 
     # solvent that requires a different probe/padding radius.
-    set rwat [expr $rwat * 0.999]
+    set rwat [expr $rwat * 0.998268]
     # set rwat [expr $rwat - 0.001732]
     set sel [atomselect top "segid $seglist and within $rwat of (not segid $seglist)"]
     set num [$sel num]

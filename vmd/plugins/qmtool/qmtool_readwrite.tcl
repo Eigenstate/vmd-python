@@ -6,7 +6,7 @@
 # Nevertheless this is a good template for the different sections that must
 # be parsed.
 #
-# $Id: qmtool_readwrite.tcl,v 1.58 2015/10/01 21:28:40 gumbart Exp $
+# $Id: qmtool_readwrite.tcl,v 1.60 2017/11/03 16:21:54 gumbart Exp $
 #
 
 ################################################
@@ -1537,8 +1537,9 @@ proc ::QMtool::read_gaussian_log { file {intomolid -1}} {
         if {[string match "Z-Matrix taken from the checkpoint file:" $line] ||
             [string match "Symbolic Z-matrix:" $line] ||
             [string match "Symbolic Z-Matrix:" $line] ||
+            [string match "Z-Matrix found in file." $line] ||
             [string match "Redundant internal coordinates taken from checkpoint file:" $line] ||
-            [string match "Redundant internal coordinates found in file." $line]} {
+            [string first "Redundant internal coordinates found in file." $line] >= 0} {
             set zmatgiven 1 
         }
 

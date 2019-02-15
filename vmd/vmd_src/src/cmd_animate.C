@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: cmd_animate.C,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.48 $       $Date: 2016/11/28 03:05:06 $
+ *      $Revision: 1.52 $       $Date: 2019/01/17 21:21:03 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -103,7 +103,7 @@ int text_cmd_animate(ClientData cd, Tcl_Interp *interp, int argc,
       if (strcmp(argv[2], "frame")) {
         // error
         Tcl_AppendResult(interp,
-          "format is: animate dup [frame <number>] <molecule id>",NULL);
+          "format is: animate dup [frame <number>] <molecule id>", NULL);
         return TCL_ERROR;
       }
       if (!strcmp(argv[3], "now")) { // check special cases
@@ -181,7 +181,7 @@ int text_cmd_animate(ClientData cd, Tcl_Interp *interp, int argc,
         enumVal = Animation::ANIM_LOOP;
       else {
         Tcl_AppendResult(interp, 
-        "Unknown animate style '" ,argv[2] ,"'\n",NULL);
+        "Unknown animate style '" ,argv[2] ,"'\n", NULL);
         Tcl_AppendResult(interp, "Valid styles are: ", NULL);
         newStyle = Animation::ANIM_ONCE;
         while(newStyle < Animation::ANIM_TOTAL_STYLES) {
@@ -200,10 +200,9 @@ int text_cmd_animate(ClientData cd, Tcl_Interp *interp, int argc,
       else if(isdigit(argv[2][0]))
         newframe = atoi(argv[2]);
       else {
-        Tcl_AppendResult(interp,
-        "Bad goto parameter '" ,argv[2] ,"'\n",NULL);
+        Tcl_AppendResult(interp, "Bad goto parameter '" ,argv[2] ,"'\n", NULL);
         Tcl_AppendResult(interp, 
-          "Valid values are a non-negative number, 'start', or 'end'.",NULL);
+          "Valid values are a non-negative number, 'start', or 'end'.", NULL);
         return TCL_ERROR;                // error, bad frame goto command
       }
       app->animation_set_frame(newframe);
@@ -217,14 +216,14 @@ int text_cmd_animate(ClientData cd, Tcl_Interp *interp, int argc,
     const char *fileName = NULL;
     int do_action = (-1);
     int currarg = 1;
-    int waitfor = 1;
+    int waitfor = FileSpec::WAIT_BACK;
 
     // find out what to do first
     if(!strupncmp(argv[currarg], "read", CMDLEN)) {
       do_action = 0;
     } else if(!strupncmp(argv[currarg], "write", CMDLEN)) {
       do_action = 1;
-      waitfor = -1; // waitfor 'all' by default
+      waitfor = FileSpec::WAIT_ALL; // waitfor 'all' by default
     } else if(!strupncmp(argv[currarg], "delete", CMDLEN)) {
       do_action = 2;
       fs = -1; // for "delete", fs=1 means do not delete any frames.
@@ -266,7 +265,7 @@ int text_cmd_animate(ClientData cd, Tcl_Interp *interp, int argc,
                    !strupncmp(argv[currarg], "waitfor", CMDLEN)) {
           const char *arg = argv[currarg+1];
           if (!strupncmp(arg, "all", CMDLEN))
-            waitfor = -1;
+            waitfor = FileSpec::WAIT_ALL;
           else
             waitfor = atoi(arg);
           currarg += 2;
@@ -275,7 +274,7 @@ int text_cmd_animate(ClientData cd, Tcl_Interp *interp, int argc,
           // interpret the next argument as an atom selection
           const char *selstr = argv[currarg+1];
           if (!(selection = tcl_commands_get_sel(interp, selstr))) {
-            Tcl_AppendResult(interp, "Invalid atom selection ", selstr);
+            Tcl_AppendResult(interp, "Invalid atom selection ", selstr, NULL);
             return TCL_ERROR;
           }
           currarg += 2;
@@ -286,7 +285,7 @@ int text_cmd_animate(ClientData cd, Tcl_Interp *interp, int argc,
           int nsets;
           const char **setstrs;
           if (Tcl_SplitList(interp, volstr, &nsets, &setstrs) != TCL_OK) {
-              Tcl_AppendResult(interp, "Invalid volset argument: ", volstr);
+              Tcl_AppendResult(interp, "Invalid volset argument: ", volstr, NULL);
               return TCL_ERROR;
           }
           for (int i=0; i<nsets; i++) {
@@ -317,7 +316,7 @@ int text_cmd_animate(ClientData cd, Tcl_Interp *interp, int argc,
     // in the selection matches those in the molecule.
     if (selection) {
       if (mid != selection->molid()) {
-        Tcl_SetResult(interp, "ERROR: animate: Molecule in selection must match animation molecule.", TCL_STATIC);
+        Tcl_SetResult(interp, (char *) "ERROR: animate: Molecule in selection must match animation molecule.", TCL_STATIC);
         return TCL_ERROR;
       }
     }
@@ -388,13 +387,13 @@ int cmd_rawtimestep(ClientData cd, Tcl_Interp *interp, int argc,
   else if (Tcl_GetIntFromObj(interp, objv[1], &molid) != TCL_OK)
     return TCL_ERROR;
   if (!(mol = app->moleculeList->mol_from_id(molid))) {
-    Tcl_SetResult(interp, "rawtimestep: invalid molid", TCL_STATIC);
+    Tcl_SetResult(interp, (char *) "rawtimestep: invalid molid", TCL_STATIC);
     return TCL_ERROR;
   }
 
   // Read raw bytes and get length
   if (!(bytes = Tcl_GetByteArrayFromObj(objv[2], &length))) {
-    Tcl_SetResult(interp, "rawtimestep: could not read bytearray", TCL_STATIC);
+    Tcl_SetResult(interp, (char *) "rawtimestep: could not read bytearray", TCL_STATIC);
     return TCL_ERROR;
   }
 
@@ -421,14 +420,14 @@ int cmd_rawtimestep(ClientData cd, Tcl_Interp *interp, int argc,
         if (Tcl_GetIntFromObj(interp, objv[iarg+1], &tmpframe) != TCL_OK) 
           return TCL_ERROR;
         if (tmpframe < 0 || tmpframe >= mol->numframes()) {
-          Tcl_SetResult(interp, "rawtimestep: invalid frame specified.",
+          Tcl_SetResult(interp, (char *) "rawtimestep: invalid frame specified.",
               TCL_STATIC);
           return TCL_ERROR;
         }
         frame = tmpframe;
       }
     } else {
-      Tcl_SetResult(interp, "rawtimestep: valid options are -frame and -start",
+      Tcl_SetResult(interp, (char *) "rawtimestep: valid options are -frame and -start",
           TCL_STATIC);
       return TCL_ERROR;
     }
@@ -437,7 +436,7 @@ int cmd_rawtimestep(ClientData cd, Tcl_Interp *interp, int argc,
   // Check that the size of the byte array and the start option are valid
   neededLength = 12L*mol->nAtoms;
   if (length-start < neededLength) {
-    Tcl_SetResult(interp, "rawtimestep: not enough bytes!", TCL_STATIC);
+    Tcl_SetResult(interp, (char *) "rawtimestep: not enough bytes!", TCL_STATIC);
     return TCL_ERROR;
   }
 
@@ -445,7 +444,7 @@ int cmd_rawtimestep(ClientData cd, Tcl_Interp *interp, int argc,
   ts = (frame < 0) ? new Timestep(mol->nAtoms) 
                    : mol->get_frame(frame);
   if (!ts) {
-    Tcl_SetResult(interp, "rawtimestep: Unable to find timestep!", TCL_STATIC);
+    Tcl_SetResult(interp, (char *) "rawtimestep: Unable to find timestep!", TCL_STATIC);
     return TCL_ERROR;
   }
   memcpy(ts->pos, bytes+start, neededLength);

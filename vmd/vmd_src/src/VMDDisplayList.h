@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the
  *cr                        University of Illinois
  *cr                         All Rights Reserved
  *cr
@@ -11,7 +11,7 @@
  *
  *      $RCSfile: VMDDisplayList.h,v $
  *      $Author: johns $        $Locker:  $             $State: Exp $
- *      $Revision: 1.42 $      $Date: 2016/11/28 03:05:05 $
+ *      $Revision: 1.44 $      $Date: 2019/01/17 21:21:02 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -23,6 +23,7 @@
 #define VMDLINKEDLIST_H__
 
 #include <string.h>
+#include "ResizeArray.h"
 #include "Matrix4.h"
 
 /// data structure describing user specified clipping planes
@@ -44,7 +45,7 @@ struct VMDClipPlane {
 #define VMD_MAX_CLIP_PLANE 6
 
 /// Controls for display of periodic boundary conditions
-/// Or these flags together to create a value for set_pbc.
+/// These flags are ORed together to create a value for set_pbc.
 #define PBC_NONE   0x00  // don't draw any PBC images
 #define PBC_X      0x01  // +X images
 #define PBC_Y      0x02  // +Y images
@@ -54,6 +55,11 @@ struct VMDClipPlane {
 #define PBC_OPZ    0x20  // -Z images
 #define PBC_NOSELF 0x40  // set this flag to NOT draw the original image
 
+/// Controls for display of molecule instances
+/// These flags are ORed together to create a value for set_instance.
+#define INSTANCE_NONE   0x0      // don't draw any instance images
+#define INSTANCE_ALL    0x00ffff // draw all of the instance images
+#define INSTANCE_NOSELF 0x01ffff // don't draw the original instance
 
 /// Display list data structure used to hold all of the rendering commands
 /// VMD generates and interprets in order to do its 3-D rendering.
@@ -71,13 +77,15 @@ public:
   void *operator new(size_t);           ///< potentially shared mem allocation
   void operator delete(void *, size_t); ///< potentially shared mem allocation
 
-  Matrix4 mat;          ///< The transformation matrix for this display list
-  unsigned long serial; ///< globally unique serial number for current contents
-  int cacheskip;        ///< display list cache skip flag
-  int pbc;              ///< periodic boundary condition flags
-  int npbc;             ///< number of times to replicate the image 
-  Matrix4 transX, transY, transZ; ///< how to create periodic images
+  Matrix4 mat;                     ///< transform matrix for this display list
+  unsigned long serial;            ///< globally unique serial# for cur contents
+  int cacheskip;                   ///< display list cache skip flag
+  int pbc;                         ///< periodic boundary condition flags
+  int npbc;                        ///< number of times to replicate the image 
+  Matrix4 transX, transY, transZ;  ///< how to create periodic images
   Matrix4 transXinv, transYinv, transZinv; ///< the inverse transforms
+  int instanceset;                 ///< molecule instance flags
+  ResizeArray<Matrix4> instances;  ///< molecule instance list
 
   //@{
   /// Material properties for this display list

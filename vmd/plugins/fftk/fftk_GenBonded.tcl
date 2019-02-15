@@ -1,5 +1,5 @@
 #
-# $Id: fftk_GenBonded.tcl,v 1.17 2014/06/10 21:34:17 mayne Exp $
+# $Id: fftk_GenBonded.tcl,v 1.19 2018/11/01 00:00:31 gumbart Exp $
 #
 
 #======================================================
@@ -13,15 +13,14 @@ namespace eval ::ForceFieldToolKit::GenBonded:: {
     variable qmRoute
     
     # declare variables for extracting PARs from Gaussian log
-    variable psf
-    variable pdb
+    #variable psf ; # removed to use the multi-use variable chargeOptPSF
+    #variable pdb ; # removed to use the multi-use variable geomOptPDB
     variable templateParFile
     variable glog
     variable blog
 
     # declare variables for differentiating angles from linear bends
-    variable lbThresh
-    
+    variable lbThresh   
 }
 #======================================================
 proc ::ForceFieldToolKit::GenBonded::init {} {
@@ -34,15 +33,14 @@ proc ::ForceFieldToolKit::GenBonded::init {} {
     ::ForceFieldToolKit::GenBonded::resetGaussianDefaults
 
     # localize + initialize variables for extracting PARs from Gaussian log        
-    variable psf {}
-    variable pdb {}
+    #variable psf {}
+    #variable pdb {}
     variable templateParFile {}
     variable glog {}
     variable blog "ExtractBondedPars.log"
 
     # localize + initialize variables for differentiating A from L
-    variable lbThresh 175.0
-    
+    variable lbThresh 175.0    
 }
 #======================================================
 proc ::ForceFieldToolKit::GenBonded::sanityCheck { procType } {
@@ -58,8 +56,10 @@ proc ::ForceFieldToolKit::GenBonded::sanityCheck { procType } {
     variable qmMem
     variable qmRoute
     
-    variable psf
-    variable pdb
+    #variable psf
+    set psf $::ForceFieldToolKit::Configuration::chargeOptPSF
+    #variable pdb
+    set pdb $::ForceFieldToolKit::Configuration::geomOptPDB
     variable templateParFile
     variable glog
     variable blog
@@ -182,8 +182,10 @@ proc ::ForceFieldToolKit::GenBonded::writeComFile {} {
     variable qmProc
     variable qmMem
     variable qmRoute
-    variable psf
-    variable pdb
+    #variable psf
+    set psf $::ForceFieldToolKit::Configuration::chargeOptPSF
+    #variable pdb
+    set pdb $::ForceFieldToolKit::Configuration::geomOptPDB
     variable lbThresh
 
     # sanity check should go here
@@ -269,7 +271,7 @@ proc ::ForceFieldToolKit::GenBonded::resetGaussianDefaults {} {
     
     set ::ForceFieldToolKit::GenBonded::qmProc 1
     set ::ForceFieldToolKit::GenBonded::qmMem 1
-    set ::ForceFieldToolKit::GenBonded::qmRoute "\# MP2/6-31G* Geom=(AllCheck,ModRedundant) Freq NoSymm IOp(7/33=1) SCF=Tight Guess=Read"
+    set ::ForceFieldToolKit::GenBonded::qmRoute "\# MP2/6-31G* Geom=(AllCheck,NewDefinition,ModRedundant) Freq NoSymm IOp(7/33=1) SCF=Tight Guess=Read"
     #set ::ForceFieldToolKit::GenBonded::qmRoute "\# MP2/6-31G* Geom=(AllCheck,NewRedundant) Freq NoSymm Pop=(ESP,NPA) IOp(6/33=2,7/33=1) SCF=Tight"
 }
 #======================================================
@@ -279,8 +281,10 @@ proc ::ForceFieldToolKit::GenBonded::extractBonded {} {
     # for entries found in the template parameter file
     
     # localize relevant variables
-    variable psf
-    variable pdb
+    #variable psf
+    set psf $::ForceFieldToolKit::Configuration::chargeOptPSF
+    #variable pdb
+    set pdb $::ForceFieldToolKit::Configuration::geomOptPDB
     variable templateParFile
     variable glog
     variable blog
@@ -547,6 +551,5 @@ proc ::ForceFieldToolKit::GenBonded::extractBonded {} {
     close $outfile
     
     ::ForceFieldToolKit::gui::consoleMessage "Bonded parameter extraction finished"
-
 }
 #======================================================

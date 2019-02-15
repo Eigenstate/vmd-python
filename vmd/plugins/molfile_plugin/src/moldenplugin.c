@@ -11,7 +11,7 @@
  *
  *      $RCSfile: moldenplugin.c,v $
  *      $Author: johns $       $Locker:  $             $State: Exp $
- *      $Revision: 1.40 $       $Date: 2016/11/28 05:01:54 $
+ *      $Revision: 1.41 $       $Date: 2016/12/15 15:32:25 $
  *
  ***************************************************************************/
 
@@ -1275,7 +1275,7 @@ static int read_wave_coeffs(FILE *file, qm_wavefunction_t *wave) {
       
       // DEBUG
       //printf("moldenplugin) %d,%d: %d %f\n", i, AOid-1, AOid, wave_coeffs[i*wave->num_coeffs+AOid-1]);
-      nr2 = sscanf(buffer, "%s", &keystring);
+      nr2 = sscanf(buffer, "%s", keystring);
       if(!strcmp(keystring,"Ene=")||nr2==-1) 
         break;
 

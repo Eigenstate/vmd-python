@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: Orbital.h,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.39 $	$Date: 2016/11/28 03:05:02 $
+ *	$Revision: 1.43 $	$Date: 2019/01/17 21:21:00 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -26,14 +26,12 @@
 #include <string.h>
 #include "QMData.h"
 #include "Molecule.h"
+#include "ProfileHooks.h"
 
 /// The Orbital class, which stores orbitals, SCF energies, etc. for a
 /// single timestep.
 class Orbital {
 private:
-  int atomid;
-  int shellid;
-
   int numatoms;         ///< # of atom centers needed for this Orbital.
   const float *atompos; ///< pointer to the atom coordinates in the
                         ///< Timestep corresponding to this Orbital.
@@ -109,27 +107,28 @@ public:
     return shellcnt;
   }
 
-  // Return the max number of primitives that occur in a basis function
+  int num_types(void) { return numtypes; }
+
+  /// Return the max number of primitives that occur in a basis function
   int max_primitives(void);
 
-  // Return maximum shell type contained in the orbital
+  /// Return maximum shell type contained in the orbital
   int max_shell_type(void);
 
-  // Count the max number of wave_f accesses for the shell types
-  // contained in this orbital 
+  /// Count the max number of wave_f accesses for the shell types
+  /// contained in this orbital 
   int max_wave_f_count(void);
 
-  // Get the grid origin
+  /// Get the grid origin
   const float* get_origin() { return origin; }
 
-  // Get the side lengths of the grid in Angstrom
+  /// Get the side lengths of the grid in Angstrom
   const float* get_gridsize() { return gridsize; }
 
-  // Get the number of voxels in each dimension
+  /// Get the number of voxels in each dimension
   const int* get_numvoxels() { return numvoxels; }
 
-  // Get the axes of the volumetric grid as defined in 
-  // volumetric_t.
+  /// Get the axes of the volumetric grid as defined in volumetric_t.
   void get_grid_axes(float xaxis[3], float yaxis[3], float zaxis[3]) {
     xaxis[0] = gridsize[0];
     yaxis[1] = gridsize[1];
@@ -137,50 +136,50 @@ public:
     xaxis[1] = xaxis[2] = yaxis[0] = yaxis[2] = zaxis[0] = zaxis[1] = 0.0;
   }
 
-  // Get the grid resolution, i.e. the side length of a voxel
+  /// Get the grid resolution, i.e. the side length of a voxel
   float get_resolution() { return voxelsize; }
 
-  // Set the grid size and resolution
-  // The given grid dimensions will be rounded to a multiple
-  // of the voxel size.
+  /// Set the grid size and resolution
+  /// The given grid dimensions will be rounded to a multiple
+  /// of the voxel size.
   void set_grid(float newori[3], float newdim[3], float voxelsize);
 
-  // Change the resolution of the grid
+  /// Change the resolution of the grid
   void set_resolution(float voxelsize);
 
-  // Get a pointer to the raw volumetric data
+  /// Get a pointer to the raw volumetric data
   float* get_grid_data() { return grid_data; }
 
-  // Sets the grid dimensions to the bounding box of the given
-  // set of atoms *pos including a padding in all dimensions.
-  // The resulting grid dimensions will be rounded to a multiple
-  // of the voxel size.
+  /// Sets the grid dimensions to the bounding box of the given
+  /// set of atoms *pos including a padding in all dimensions.
+  /// The resulting grid dimensions will be rounded to a multiple
+  /// of the voxel size.
   int set_grid_to_bbox(const float *pos, float padding,
                        float resolution);
 
-  // Optimize position and dimension of current grid so that
-  // all orbital values higher than threshold are contained
-  // in the grid.
+  /// Optimize position and dimension of current grid so that
+  /// all orbital values higher than threshold are contained
+  /// in the grid.
   void find_optimal_grid(float threshold,
                          int minstepsize, int maxstepsize);
 
-  // Check if all values in the boundary plane given by dir 
-  // are below threshold.
-  // If not, jump back, decrease the stepsize and test again.
-  // Helper function for find_optimal_grid().
+  /// Check if all values in the boundary plane given by dir 
+  /// are below threshold.
+  /// If not, jump back, decrease the stepsize and test again.
+  /// Helper function for find_optimal_grid().
   int check_plane(int w, float threshold, int minstepsize, int &stepsize);
 
-  // Multiply wavefunction coefficients with the
-  // basis set normalization factors.
+  /// Multiply wavefunction coefficients with the
+  /// basis set normalization factors.
   void normalize_wavefunction(const float *wfn);
 
-  // Compute the volumetric data for the orbital
+  /// Compute the volumetric data for the orbital
   int calculate_mo(DrawMolecule *mol, int density);
 
-  // Compute the volumetric data for given point in space
+  /// Compute the volumetric data for given point in space
   float evaluate_grid_point(float grid_x, float grid_y, float grid_z);
 
-  // Compute total FLOPS executed for a single gridpoint
+  /// Compute total FLOPS executed for a single gridpoint
   double flops_per_gridpoint();
 
   void print_wavefunction();

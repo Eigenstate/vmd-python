@@ -7,6 +7,14 @@ dir = os.path.dirname(__file__)
 
 #==============================================================================
 
+# Clean up molecules when done
+def teardown_module(module):
+    from vmd import molecule
+    for _ in molecule.listall():
+        molecule.delete(_)
+
+#==============================================================================
+
 def test_import():
     import vmd
     assert os.environ.get("VMDDIR")

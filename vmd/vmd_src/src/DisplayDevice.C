@@ -1,6 +1,6 @@
 /***************************************************************************
  *cr                                                                       
- *cr            (C) Copyright 1995-2016 The Board of Trustees of the           
+ *cr            (C) Copyright 1995-2019 The Board of Trustees of the           
  *cr                        University of Illinois                       
  *cr                         All Rights Reserved                        
  *cr                                                                   
@@ -11,7 +11,7 @@
  *
  *	$RCSfile: DisplayDevice.C,v $
  *	$Author: johns $	$Locker:  $		$State: Exp $
- *	$Revision: 1.143 $	$Date: 2016/11/28 03:04:59 $
+ *	$Revision: 1.147 $	$Date: 2019/01/17 21:20:59 $
  *
  ***************************************************************************
  * DESCRIPTION:
@@ -384,13 +384,20 @@ void DisplayDevice::normal(void) {  		// ready to draw non-stereo
 void DisplayDevice::update(int) { }		// finish up after drawing
 void DisplayDevice::reshape(void) { }		// refresh device after change
 
-// Grab the screen
-unsigned char * DisplayDevice::readpixels(int &x, int &y) { 
+// Grab the screen to a packed RGB unsigned char buffer
+unsigned char * DisplayDevice::readpixels_rgb3u(int &x, int &y) { 
   x = 0;
   y = 0;
-
   return NULL;
 }
+
+// Grab the screen to a packed RGBA unsigned char buffer
+unsigned char * DisplayDevice::readpixels_rgba4u(int &x, int &y) { 
+  x = 0;
+  y = 0;
+  return NULL;
+}
+
 
 void DisplayDevice::find_pbc_images(const VMDDisplayList *cmdList, 
                                     ResizeArray<Matrix4> &pbcImages) {
@@ -432,12 +439,53 @@ void DisplayDevice::find_pbc_cells(const VMDDisplayList *cmdList,
     for (i=nox; i<=nx; i++) {
       for (j=noy; j<=ny; j++) {
         for (k=noz; k<=nz; k++) {
-          if (! (pbc & PBC_NOSELF && !i && !j && !k)) {
+          if (!(pbc & PBC_NOSELF && !i && !j && !k)) {
             pbcCells.append3(i, j, k);
           }
         }
       }
     }
+  }
+}
+
+
+void DisplayDevice::find_instance_images(const VMDDisplayList *cmdList, 
+                                         ResizeArray<Matrix4> &instImages) {
+  int ninstances = cmdList->instances.num();
+
+#if 0
+  printf("DisplayDevice::find_instance_images(): cnt: %d flags: %0x\n", 
+         ninstances, cmdList->instanceset);
+#endif
+
+  // if no instances are selected for a rep, or we're drawing something
+  // that isn't a graphical representation from a molecule, then we 
+  // set the instance list to the identity matrix so the geometry is drawn
+  if (cmdList->instanceset == INSTANCE_NONE || ninstances == 0) {
+    instImages.append(Matrix4());
+    return;
+  }
+
+  // If we have a non-zero number of rep instances or the instanceset flags
+  // are set to INSTANCE_ALL or INSTANCE_NOSELF, we build a list of instances
+  // to be drawn and add them to the display commandlist.
+  if ((cmdList->instanceset & INSTANCE_NOSELF) != INSTANCE_NOSELF) {
+#if 0
+    printf("appending self instance\n");
+#endif
+    instImages.append(Matrix4());
+  }
+  for (int i=0; i<ninstances; i++) {
+    instImages.append(cmdList->instances[i]);
+  }
+
+  // ensure we _never_ have an empty transformation list,
+  // since it shouldn't be possible except on the last displaylist link
+  if (instImages.num() == 0) {
+#if 1
+    printf("DisplayDevice warning, no instance mats! adding one...\n");
+#endif
+    instImages.append(Matrix4());
   }
 }
 
@@ -534,122 +582,57 @@ int DisplayDevice::pick(int dim, const float *pos, const VMDDisplayList *cmdList
 
   // Transform the current pick point for each periodic image 
   ResizeArray<Matrix4> pbcImages;
-  ResizeArray<int> pbcCells;
   find_pbc_images(cmdList, pbcImages);
+  //int npbcimages = pbcImages.num();
+
+  ResizeArray<int> pbcCells;
   find_pbc_cells(cmdList, pbcCells);
-  int pbcimg;
-  for (pbcimg=0; pbcimg<pbcImages.num(); pbcimg++) {
+
+  // Retreive instance image transformation matrices
+  ResizeArray<Matrix4> instanceImages;
+  find_instance_images(cmdList, instanceImages);
+  int ninstances = instanceImages.num();
+
+  for (int pbcimage=0; pbcimage<pbcImages.num(); pbcimage++) {
     transMat.dup();
-    (transMat.top()).multmatrix(pbcImages[pbcimg]);
+    (transMat.top()).multmatrix(pbcImages[pbcimage]);
 
-    // scan through the list, getting each command and executing it, until
-    // the end of commands token is found
-    VMDDisplayList::VMDLinkIter cmditer;
-    cmdList->first(&cmditer);
-    while((tok = cmdList->next(&cmditer, cmdptr)) != DLASTCOMMAND) {
-      switch (tok) {
-        case DPICKPOINT:
-          // calculate the transformed position of the point
-          {
-            DispCmdPickPoint *cmd = (DispCmdPickPoint *)cmdptr;
-            vec_copy(wpntpos, cmd->postag);
-            currTag = cmd->tag;
-          }
-          (transMat.top()).multpoint3d(wpntpos, pntpos);
+    for (int instanceimage = 0; instanceimage < ninstances; instanceimage++) {
+      transMat.dup();
+      (transMat.top()).multmatrix(instanceImages[instanceimage]);
 
-          // check if in picking region ... different for 2D and 3D
-          if (dim == 2) {
-            // convert the 3D world coordinate to 2D (XY) absolute screen 
-            // coordinate, and a normalized Z coordinate.
-            abs_screen_loc_3D(pntpos, cpos);
-      
-            // check to see if the projected picking position falls within the 
-            // view frustum, with the XY coords falling within the displayed 
-            // window, and the Z coordinate falling within the view volume
-            // between the front and rear clipping planes.
-            inRegion = (cpos[0] >= minX && cpos[0] <= maxX &&
-                        cpos[1] >= minY && cpos[1] <= maxY &&
-                        cpos[2] >= 0.0  && cpos[2] <= 1.0);
-          } else {
-            // just check to see if the position is in a box centered on our
-            // pointer.  The pointer position should already be transformed.
-            inRegion = (pntpos[0] >= fminX && pntpos[0] <= fmaxX &&	
-                        pntpos[1] >= fminY && pntpos[1] <= fmaxY &&
-                        pntpos[2] >= fminZ && pntpos[2] <= fmaxZ);
-          }
-
-          // Clip still-viable pick points against all active clipping planes
-          if (inRegion) {
-            // We must perform a check against all of the active
-            // user-defined clipping planes to ensure that only pick points
-            // associated with visible geometry can be selected.
-            int cp;
-            for (cp=0; cp < VMD_MAX_CLIP_PLANE; cp++) {
-              // The final result is the intersection of all of the
-              // individual clipping plane tests...
-              if (cmdList->clipplanes[cp].mode) {
-                float cpdist[3];
-                vec_sub(cpdist, wpntpos, cmdList->clipplanes[cp].center);
-                inRegion &= (dot_prod(cpdist, 
-                                      cmdList->clipplanes[cp].normal) > 0.0f);
-              }
+      // scan through the list, getting each command and executing it, until
+      // the end of commands token is found
+      VMDDisplayList::VMDLinkIter cmditer;
+      cmdList->first(&cmditer);
+      while((tok = cmdList->next(&cmditer, cmdptr)) != DLASTCOMMAND) {
+        switch (tok) {
+          case DPICKPOINT:
+            // calculate the transformed position of the point
+            {
+              DispCmdPickPoint *cmd = (DispCmdPickPoint *)cmdptr;
+              vec_copy(wpntpos, cmd->postag);
+              currTag = cmd->tag;
             }
-          }
-      
-          // has a hit occurred?
-          if (inRegion) {
-            // yes, see if it is closer to the eye position than earlier objects
-            if(dim==2) 
-              newEyeDist = DTOEYE(pntpos[0], pntpos[1], pntpos[2]);
-            else 
-              newEyeDist = DTOPOINT(pntpos[0],pntpos[1],pntpos[2]);
-
-            if(currEyeDist < 0.0 || newEyeDist < currEyeDist) {
-              currEyeDist = newEyeDist;
-              tag = currTag;
-              if (unitcell) {
-                unitcell[0] = pbcCells[3*pbcimg  ];
-                unitcell[1] = pbcCells[3*pbcimg+1];
-                unitcell[2] = pbcCells[3*pbcimg+2];
-              }
-            }
-          }
-          break;
-
-        case DPICKPOINT_ARRAY:
-          // loop over all of the pick points in the pick point index array
-          DispCmdPickPointArray *cmd = (DispCmdPickPointArray *)cmdptr;
-          float *pickpos=NULL;
-          float *crds=NULL;
-          int *indices=NULL;
-          cmd->getpointers(crds, indices); 
-
-          int i;
-          for (i=0; i<cmd->numpicks; i++) {
-            pickpos = crds + i*3L;
-            if (cmd->allselected) {
-              currTag = i + cmd->firstindex;
-            } else {
-              currTag = indices[i];
-            }
-            vec_copy(wpntpos, pickpos);
-
-            (transMat.top()).multpoint3d(pickpos, pntpos);
+            (transMat.top()).multpoint3d(wpntpos, pntpos);
 
             // check if in picking region ... different for 2D and 3D
             if (dim == 2) {
-              // convert the 3D world coordinate to 2D absolute screen coord
+              // convert the 3D world coordinate to 2D (XY) absolute screen 
+              // coordinate, and a normalized Z coordinate.
               abs_screen_loc_3D(pntpos, cpos);
-
-              // check to see if the position falls in our picking region
-              // including the clipping region (cpos[2])
+        
+              // check whether the projected picking position falls within the 
+              // view frustum, with the XY coords falling within the displayed 
+              // window, and the Z coordinate falling within the view volume
+              // between the front and rear clipping planes.
               inRegion = (cpos[0] >= minX && cpos[0] <= maxX &&
                           cpos[1] >= minY && cpos[1] <= maxY &&
                           cpos[2] >= 0.0  && cpos[2] <= 1.0);
             } else {
               // just check to see if the position is in a box centered on our
               // pointer.  The pointer position should already be transformed.
-              inRegion = (pntpos[0] >= fminX && pntpos[0] <= fmaxX &&
+              inRegion = (pntpos[0] >= fminX && pntpos[0] <= fmaxX &&	
                           pntpos[1] >= fminY && pntpos[1] <= fmaxY &&
                           pntpos[2] >= fminZ && pntpos[2] <= fmaxZ);
             }
@@ -666,34 +649,113 @@ int DisplayDevice::pick(int dim, const float *pos, const VMDDisplayList *cmdList
                 if (cmdList->clipplanes[cp].mode) {
                   float cpdist[3];
                   vec_sub(cpdist, wpntpos, cmdList->clipplanes[cp].center);
-                  inRegion &= (dot_prod(cpdist, 
-                                        cmdList->clipplanes[cp].normal) > 0.0f);
+                  inRegion &= 
+                    (dot_prod(cpdist, cmdList->clipplanes[cp].normal) > 0.0f);
                 }
               }
             }
-
+      
             // has a hit occurred?
             if (inRegion) {
-              // yes, see if it is closer to the eye than earlier hits
-              if (dim==2)
+              // yes, see if it is closer to the eye than earlier objects
+              if(dim==2) 
                 newEyeDist = DTOEYE(pntpos[0], pntpos[1], pntpos[2]);
-              else
+              else 
                 newEyeDist = DTOPOINT(pntpos[0],pntpos[1],pntpos[2]);
 
               if (currEyeDist < 0.0 || newEyeDist < currEyeDist) {
                 currEyeDist = newEyeDist;
                 tag = currTag;
                 if (unitcell) {
-                  unitcell[0] = pbcCells[3*pbcimg  ];
-                  unitcell[1] = pbcCells[3*pbcimg+1];
-                  unitcell[2] = pbcCells[3*pbcimg+2];
+                  unitcell[0] = pbcCells[3*pbcimage  ];
+                  unitcell[1] = pbcCells[3*pbcimage+1];
+                  unitcell[2] = pbcCells[3*pbcimage+2];
                 }
               }
             }
-          }
-          break;
+            break;
+
+          case DPICKPOINT_ARRAY:
+            // loop over all of the pick points in the pick point index array
+            DispCmdPickPointArray *cmd = (DispCmdPickPointArray *)cmdptr;
+            float *pickpos=NULL;
+            float *crds=NULL;
+            int *indices=NULL;
+            cmd->getpointers(crds, indices); 
+
+            int i;
+            for (i=0; i<cmd->numpicks; i++) {
+              pickpos = crds + i*3L;
+              if (cmd->allselected) {
+                currTag = i + cmd->firstindex;
+              } else {
+                currTag = indices[i];
+              }
+              vec_copy(wpntpos, pickpos);
+              (transMat.top()).multpoint3d(pickpos, pntpos);
+
+              // check if in picking region ... different for 2D and 3D
+              if (dim == 2) {
+                // convert the 3D world coordinate to 2D absolute screen coord
+                abs_screen_loc_3D(pntpos, cpos);
+  
+                // check to see if the position falls in our picking region
+                // including the clipping region (cpos[2])
+                inRegion = (cpos[0] >= minX && cpos[0] <= maxX &&
+                            cpos[1] >= minY && cpos[1] <= maxY &&
+                            cpos[2] >= 0.0  && cpos[2] <= 1.0);
+              } else {
+                // just check to see if the position is in a box centered on our
+                // pointer.  The pointer position should already be transformed.
+                inRegion = (pntpos[0] >= fminX && pntpos[0] <= fmaxX &&
+                            pntpos[1] >= fminY && pntpos[1] <= fmaxY &&
+                            pntpos[2] >= fminZ && pntpos[2] <= fmaxZ);
+              }
+
+              // Clip still-viable pick points against active clipping planes
+              if (inRegion) {
+                // We must perform a check against all of the active
+                // user-defined clipping planes to ensure that only pick points
+                // associated with visible geometry can be selected.
+                int cp;
+                for (cp=0; cp < VMD_MAX_CLIP_PLANE; cp++) {
+                  // The final result is the intersection of all of the
+                  // individual clipping plane tests...
+                  if (cmdList->clipplanes[cp].mode) {
+                    float cpdist[3];
+                    vec_sub(cpdist, wpntpos, cmdList->clipplanes[cp].center);
+                    inRegion &= (dot_prod(cpdist, 
+                                       cmdList->clipplanes[cp].normal) > 0.0f);
+                  }
+                }
+              }
+
+              // has a hit occurred?
+              if (inRegion) {
+                // yes, see if it is closer to the eye than earlier hits
+                if (dim==2)
+                  newEyeDist = DTOEYE(pntpos[0], pntpos[1], pntpos[2]);
+                else
+                  newEyeDist = DTOPOINT(pntpos[0],pntpos[1],pntpos[2]);
+  
+                if (currEyeDist < 0.0 || newEyeDist < currEyeDist) {
+                  currEyeDist = newEyeDist;
+                  tag = currTag;
+                  if (unitcell) {
+                    unitcell[0] = pbcCells[3*pbcimage  ];
+                    unitcell[1] = pbcCells[3*pbcimage+1];
+                    unitcell[2] = pbcCells[3*pbcimage+2];
+                  }
+                }
+              }
+            }
+            break;
+        }
       }
-    }
+
+      // Pop the instance image transform
+      transMat.pop();
+    } // end of loop over instance images
 
     // Pop the PBC image transform
     transMat.pop();
