@@ -11,15 +11,11 @@ except:
     pytestmark = pytest.mark.skipif(True,
                                     reason="VMD not compiled with numpy support")
 
-def teardown_module(module):
-    for _ in molecule.listall():
-        molecule.delete(_)
-
 def arr_equals(a1, a2):
     return numpy.all(numpy.equal(a1, a2))
 
-def test_vmdnumpy():
-    m = molecule.load("pdb", "ala_nma_3frames.pdb")
+def test_vmdnumpy(file_3frames):
+    m = molecule.load("pdb", file_3frames)
 
     # Timestep and positions are equivalent
     assert arr_equals(vmdnumpy.timestep(m, 0), vmdnumpy.positions(m, 0))

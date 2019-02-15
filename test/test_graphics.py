@@ -6,10 +6,6 @@ Also tests the fake way of getting molecules to draw graphics on
 import pytest
 from vmd import graphics, molecule
 
-def teardown_module(module):
-    for _ in molecule.listall():
-        molecule.delete(_)
-
 def test_shapes():
 
     mid2 = molecule.load("graphics", "test")

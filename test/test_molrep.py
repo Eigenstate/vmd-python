@@ -5,12 +5,8 @@ Tests the molrep module
 import pytest
 from vmd import molrep, molecule
 
-def teardown_module(module):
-    for _ in molecule.listall():
-        molecule.delete(_)
-
-def test_add_representation():
-    m = molecule.load("mae", "3nob.mae")
+def test_add_representation(file_3nob):
+    m = molecule.load("mae", file_3nob)
 
     assert molrep.num(m) == 1
     with pytest.raises(ValueError):
@@ -44,8 +40,8 @@ def test_add_representation():
     molecule.delete(m)
 
 
-def test_rep_attributes():
-    m = molecule.load("mae", "3nob.mae")
+def test_rep_attributes(file_3nob):
+    m = molecule.load("mae", file_3nob)
 
     r = molrep.addrep(style="NewCartoon", color="ResID", selection="protein",
                       material="AOShiny", molid=m)
@@ -94,8 +90,8 @@ def test_rep_attributes():
     molecule.delete(m)
 
 
-def test_modrep():
-    m = molecule.load("mae", "3nob.mae")
+def test_modrep(file_3nob):
+    m = molecule.load("mae", file_3nob)
     r = molrep.addrep(style="Licorice", color="ResID", selection="noh",
                       material="AOEdgy", molid=m)
 
@@ -120,8 +116,8 @@ def test_modrep():
     molecule.delete(m)
 
 
-def test_autoupdates():
-    m = molecule.load("mae", "3nob.mae")
+def test_autoupdates(file_3nob):
+    m = molecule.load("mae", file_3nob)
     r = molrep.addrep(color="User", selection="all", molid=m)
 
     # Color update
@@ -155,8 +151,8 @@ def test_autoupdates():
     molecule.delete(m)
 
 
-def test_colorscale():
-    m = molecule.load("mae", "3nob.mae")
+def test_colorscale(file_3nob):
+    m = molecule.load("mae", file_3nob)
     r = molrep.addrep(color="User2", selection="lipid", molid=m)
 
     assert molrep.get_scaleminmax(m, r) == pytest.approx((0., 0.))
@@ -191,8 +187,8 @@ def test_colorscale():
     molecule.delete(m)
 
 
-def test_visible_and_smoothing():
-    m = molecule.load("mae", "3nob.mae")
+def test_visible_and_smoothing(file_3nob):
+    m = molecule.load("mae", file_3nob)
     r = molrep.addrep(material="AOChalky", selection="name C", molid=m)
 
     # Get visible
