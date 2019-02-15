@@ -35,6 +35,7 @@ if [[ "$TARGET" == *"64"* ]]; then
     echo "$TARGET PTHREADS COLVARS NETCDF TCL IMD PYTHON NUMPY SHARED OPENGLPBUFFER NOSILENT LP64" > "$vmd_src/vmd_src/configure.options"
 else
     echo "$TARGET PTHREADS COLVARS NETCDF TCL IMD PYTHON NUMPY SHARED OPENGLPBUFFER NOSILENT" > "$vmd_src/vmd_src/configure.options"
+fi
 
 # Build with gcc on osx
 if [[ $TARGET == *"MACOSX"* ]]; then
