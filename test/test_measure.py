@@ -5,13 +5,9 @@ Tests the measure module
 import pytest
 from vmd import measure, molecule
 
-def teardown_module(module):
-    for _ in molecule.listall():
-        molecule.delete(_)
-
-def test_measure():
-    m1 = molecule.load("mae", "3nob.mae")
-    m2 = molecule.load("mae", "3nob.mae")
+def test_measure(file_3nob):
+    m1 = molecule.load("mae", file_3nob)
+    m2 = molecule.load("mae", file_3nob)
 
     with pytest.warns(SyntaxWarning):
         assert measure.bond(0, 0, m1, m2, frame=0, first=0) == [pytest.approx(0.)]
@@ -37,8 +33,8 @@ def test_measure():
     molecule.delete(m2)
 
 
-def test_multiple_frames():
-    m = molecule.load("pdb", "ala_nma_3frames.pdb")
+def test_multiple_frames(file_3frames):
+    m = molecule.load("pdb", file_3frames)
 
     assert measure.bond(0, 1) == [pytest.approx(1.0093883275)]
 

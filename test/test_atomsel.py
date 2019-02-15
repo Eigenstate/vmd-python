@@ -9,13 +9,9 @@ import numpy as np
 from pytest import approx
 from vmd import atomsel, molecule, selection
 
-def teardown_module(module):
-    for _ in molecule.listall():
-        molecule.delete(_)
+def test_basic_getset(file_3frames):
 
-def test_basic_getset():
-
-    m = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m = molecule.load("pdb", file_3frames)
     sel = atomsel(selection="protein", molid=m, frame=1)
 
     assert sel.frame == 1
@@ -49,9 +45,9 @@ def test_basic_getset():
         assert sel.bonds == []
 
 
-def test_atomsel_tpattro():
+def test_atomsel_tpattro(file_3nob):
 
-    m = molecule.load("mae", "3nob.mae")
+    m = molecule.load("mae", file_3nob)
     sel = atomsel("resname ACE")
 
     # Invalid attribute
@@ -91,9 +87,9 @@ def test_atomsel_tpattro():
         sel.element
 
 
-def test_atomsel_update():
+def test_atomsel_update(file_3frames):
 
-    m = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m = molecule.load("pdb", file_3frames)
     atomsel("resid 1", m, frame=2).user = 1.0
     sel = atomsel("user 1.0", molid=m, frame=-1)
 
@@ -121,9 +117,9 @@ def test_atomsel_update():
     molecule.delete(m)
 
 
-def test_atomsel_write(tmpdir):
+def test_atomsel_write(tmpdir, file_3frames):
 
-    m = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m = molecule.load("pdb", file_3frames)
     tmpdir = str(tmpdir)
 
     # Frame out of bounds error
@@ -145,9 +141,9 @@ def test_atomsel_write(tmpdir):
         sel.write("mae", "deleted.mae")
 
 
-def test_atomsel_bonds():
+def test_atomsel_bonds(file_3frames):
 
-    m = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m = molecule.load("pdb", file_3frames)
     sel = atomsel(selection="protein", molid=m, frame=1)
 
     bonds = sel.bonds
@@ -185,9 +181,9 @@ def test_atomsel_bonds():
         sel.bonds =  [0,0] * 10
 
 
-def test_atomsel_minmax_center():
+def test_atomsel_minmax_center(file_3frames):
 
-    m = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m = molecule.load("pdb", file_3frames)
     sel = atomsel(selection="protein", molid=m, frame=1)
     alasel = atomsel("resname ALA", molid=m)
 
@@ -240,9 +236,9 @@ def test_atomsel_minmax_center():
         sel.center()
 
 
-def test_atomsel_rmsf():
+def test_atomsel_rmsf(file_3frames):
 
-    m = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m = molecule.load("pdb", file_3frames)
     sel = atomsel("resname NMA", m)
     asel = atomsel("all", m)
 
@@ -284,10 +280,10 @@ def test_atomsel_rmsf():
         sel.rmsfperresidue()
 
 
-def test_atomsel_rmsd():
+def test_atomsel_rmsd(file_3frames):
 
-    m1 = molecule.load("pdb", "ala_nma_3frames.pdb")
-    m2 = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m1 = molecule.load("pdb", file_3frames)
+    m2 = molecule.load("pdb", file_3frames)
     atomsel("resname ALA", m1).moveby((4.0, 0.0, 0.0))
     atomsel("resname NMA", m1).moveby((0.0, 0.0, -4.0))
 
@@ -343,9 +339,9 @@ def test_atomsel_rmsd():
         sel1.rmsd(sel2)
 
 
-def test_atomsel_rgyr():
+def test_atomsel_rgyr(file_3frames):
 
-    m = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m = molecule.load("pdb", file_3frames)
     atomsel(molid=m, frame=0).moveby((4.0, 0.0, 0.0))
     atomsel("all", m, 1).moveby((0.0, -4.0, 0.0))
 
@@ -361,10 +357,10 @@ def test_atomsel_rgyr():
         sel.rgyr()
 
 
-def test_atomsel_fit_move():
+def test_atomsel_fit_move(file_3nob):
 
-    m1 = molecule.load("mae", "3nob.mae")
-    m2 = molecule.load("mae", "3nob.mae")
+    m1 = molecule.load("mae", file_3nob)
+    m2 = molecule.load("mae", file_3nob)
 
     sel1 = atomsel("protein", m1)
     sel2 = atomsel("protein", m2)
@@ -422,10 +418,10 @@ def test_atomsel_fit_move():
         sel2.move(fit1)
 
 
-def test_atomsel_contacts():
+def test_atomsel_contacts(file_3nob):
 
-    m1 = molecule.load("mae", "3nob.mae")
-    m2 = molecule.load("mae", "3nob.mae")
+    m1 = molecule.load("mae", file_3nob)
+    m2 = molecule.load("mae", file_3nob)
 
     s1 = atomsel("resname PRO", m1)
     s2 = atomsel("resname PRO", m2)
@@ -467,10 +463,10 @@ def test_atomsel_contacts():
         s2.contacts(s2, 1.0)
 
 
-def test_atomsel_hbonds():
+def test_atomsel_hbonds(file_3frames, file_3nob):
 
-    m1 = molecule.load("pdb", "ala_nma_3frames.pdb")
-    m2 = molecule.load("mae", "3nob.mae")
+    m1 = molecule.load("pdb", file_3frames)
+    m2 = molecule.load("mae", file_3nob)
 
     s1 = atomsel("resid 1", molid=m1, frame=0)
     s2 = atomsel("protein", molid=m2, frame=0)
@@ -513,10 +509,10 @@ def test_atomsel_hbonds():
     with pytest.raises(ValueError):
         s2.hbonds(cutoff=5.0, maxangle=180.)
 
-def test_atomsel_sasa():
+def test_atomsel_sasa(file_3frames):
 
-    m1 = molecule.load("pdb", "ala_nma_3frames.pdb")
-    m2 = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m1 = molecule.load("pdb", file_3frames)
+    m2 = molecule.load("pdb", file_3frames)
     s1 = atomsel("resname ALA", m1)
     s2 = atomsel("all", m2)
 
@@ -561,9 +557,9 @@ def test_atomsel_sasa():
 
 @pytest.mark.skipif(not getattr(atomsel, "mdff", False),
                     reason="VMD not compiled with CUDA support")
-def test_atomsel_mdff():
+def test_atomsel_mdff(file_3frames):
 
-    m1 = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m1 = molecule.load("pdb", file_3frames)
     s1 = atomsel("resname ALA", m1)
 
     # Invalid resolution and spacing
@@ -583,9 +579,9 @@ def test_atomsel_mdff():
         s1.mdffsim()
 
 # Test defining a macro with selection
-def test_atomsel_selection():
+def test_atomsel_selection(file_3nob):
 
-    m = molecule.load("mae", "3nob.mae")
+    m = molecule.load("mae", file_3nob)
 
     with pytest.raises(ValueError):
         atomsel("resname NMA or isala")

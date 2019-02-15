@@ -4,18 +4,11 @@ Test cases for topo module
 import pytest
 from vmd import molecule, topology
 
-def teardown_module(module):
-    for _ in molecule.listall():
-        molecule.delete(_)
-
-def load_molecule():
-    return molecule.load("mae", "3nob.mae") # todo paths
-
-def test_bonds():
+def test_bonds(file_3nob):
     with pytest.raises(ValueError):
         topology.bonds(molid=0)
 
-    m = load_molecule()
+    m = molecule.load("mae", file_3nob)
     molecule.set_top(m)
 
     with pytest.raises(ValueError):
@@ -87,11 +80,11 @@ def test_bonds():
 
     molecule.delete(m)
 
-def test_angles():
+def test_angles(file_3nob):
     with pytest.raises(ValueError):
         topology.angles(molid=0)
 
-    m = load_molecule()
+    m = molecule.load("mae", file_3nob)
     molecule.set_top(m)
 
     # No angles defined in a mae file
@@ -120,11 +113,11 @@ def test_angles():
 
     molecule.delete(m)
 
-def test_dihedrals():
+def test_dihedrals(file_3nob):
     with pytest.raises(ValueError):
         topology.dihedrals(molid=0)
 
-    m = load_molecule()
+    m = molecule.load("mae", file_3nob)
     molecule.set_top(m)
 
     # No dihedrals defined in a mae file
@@ -155,11 +148,11 @@ def test_dihedrals():
     molecule.delete(m)
 
 
-def test_impropers():
+def test_impropers(file_3nob):
     with pytest.raises(ValueError):
         topology.impropers(molid=0)
 
-    m = load_molecule()
+    m = molecule.load("mae", file_3nob)
     molecule.set_top(m)
 
     # No impropers defined in a mae file
