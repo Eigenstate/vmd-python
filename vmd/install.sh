@@ -35,6 +35,11 @@ if [[ "$TARGET" == *"64"* ]]; then
     echo "$TARGET PTHREADS COLVARS NETCDF TCL IMD PYTHON NUMPY SHARED OPENGLPBUFFER NOSILENT LP64" > "$vmd_src/vmd_src/configure.options"
 else
     echo "$TARGET PTHREADS COLVARS NETCDF TCL IMD PYTHON NUMPY SHARED OPENGLPBUFFER NOSILENT" > "$vmd_src/vmd_src/configure.options"
+
+# Build with gcc on osx
+if [[ $TARGET == *"MACOSX"* ]]; then
+    echo "Building with GCC on OSX"
+    echo " GCC" >> "$vmd_src/vmd_src/configure.options"
 fi
 
 # Compile the main library
@@ -55,5 +60,8 @@ make clean
 rm $vmd_src/vmd_src/plugins
 
 # Copy init.py file into build directory
-cp "$vmd_src/__init__.py" "$VMDDIR"
+cp "$vmd_src/vmd_src/__init__.py" "$VMDDIR"
+
+# Copy tests into build directory so they're accessible
+cp -r "$vmd_src/../test" "$VMDDIR"
 

@@ -775,7 +775,7 @@ namespace {
 
     static void get_str(const std::string &value, char *arr, int N) {
       if (value == "<>") return;
-      if (value.size() && value[0] == '"' && value[value.size()-1]) {
+      if (value.size() && value[0] == '"') {
         strncpy(arr, value.substr(1,value.size()-2).c_str(), N);
       } else {
         strncpy(arr, value.c_str(), N);
@@ -869,7 +869,12 @@ namespace {
                  find_element_by_atomic_number(a.atomicnumber).second,
                  sizeof(a.name) );
       }
-      
+
+      // fill in insertion codes as spaces if present but empty
+      if ((h->optflags & MOLFILE_INSERTION) && !strlen(a.insertion)) {
+        snprintf(a.insertion, 2, " ");
+      }
+
       // if we didn't get a segid, encode the ct index.
       if (!strlen(a.segid)) {
         snprintf(a.segid, 4, "C%d", m_ct);

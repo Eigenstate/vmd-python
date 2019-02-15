@@ -37,4 +37,7 @@ def test_load_mae():
     chrg = set(atomsel().get('charge'))
     assert chrg == set([0.0, 1.0, -1.0])
 
+    ins = set(atomsel().get('insertion'))
+    assert ins == set([' ', 'A'])
+
 #==============================================================================

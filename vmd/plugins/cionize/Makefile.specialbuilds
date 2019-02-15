@@ -1,6 +1,6 @@
 # Makefile for cionize
 
-#.SILENT:
+.SILENT:
 
 .SUFFIXES: 
 
