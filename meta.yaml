@@ -13,21 +13,25 @@ build:
 
 requirements:
     build:
+        - perl
+        - {{ compiler('c') }}
+        - {{ compiler('cxx') }}
+        - make
+    host:
         - python
         - pip
-        - perl
-        - make
-        - nomkl
-        - libnetcdf 4.4.*
+        - libnetcdf
         - expat
-        - numpy >=1.13
-        - tk 8.5.*
+        - numpy
+        - tk
+        - sqlite
     run:
         - python
-        - libnetcdf 4.4.*
+        - libnetcdf
         - expat
-        - numpy >=1.13
-        - tk 8.5.*
+        - {{ pin_compatible('numpy') }}
+        - tk
+        - sqlite
 
 test:
     imports:
