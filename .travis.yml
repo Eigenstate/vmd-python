@@ -10,8 +10,13 @@ os:
 osx_image: xcode-6.4
 
 install:
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh; fi
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh; fi
+    - sudo apt-get install -y gdb # Want GDB for debugging
+    - |
+      if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+        wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+      elif [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+        wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+      fi
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
     - hash -r
@@ -23,6 +28,8 @@ install:
     - source activate test-environment
     - python setup.py build $DEBUGVER
     - python setup.py install
+before_script:
+    - ulimit -c unlimited -S # enable core dumps
 script:
     - source activate test-environment
     - if [[ ! -z $DEBUGVER ]]; then export PRELOAD="$HOME/miniconda/envs/test-environment/lib/libasan.so"; fi
@@ -30,5 +37,9 @@ script:
     - LD_PRELOAD=$PRELOAD python setup.py test
 after_failure:
     - COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
-    - if [[ -f $COREFILE ]]; then gdb -c "$COREFILE" python -ex "thread apply all bt" -ex "set pagination 0" -batch; fi # Attempt to invoke GDB
+    - |
+      if [[ $TRAVIS_OS_NAME == "linux" && -f $COREFILE ]];then
+        gdb -c "$COREFILE" python -ex "thread apply all bt" \
+                                  -ex "set pagination 0" -batch
+      fi
 
