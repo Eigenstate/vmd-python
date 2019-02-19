@@ -163,12 +163,12 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp) : app(vmdapp) {
 
   // Import VMD builtin module automatically
   // Do this before Py_initialize called
+  PyImport_AppendInittab("vmd", initvmd);
+
   // Do emit DeprecationWarnings
 #if PY_MAJOR_VERSION >= 3
-  PyImport_AppendInittab("vmd", PyInit_vmd);
   PySys_AddWarnOption(L"default");
 #else
-  PyImport_AppendInittab("vmd", initvmd);
   PySys_AddWarnOption((char*) "default");
 #endif
 
