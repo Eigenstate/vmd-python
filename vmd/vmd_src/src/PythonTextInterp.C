@@ -160,14 +160,15 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp) : app(vmdapp) {
 
   msgInfo << "Starting Python..." << sendmsg;
 
+
   // Import VMD builtin module automatically
   // Do this before Py_initialize called
-  PyImport_AppendInittab("vmd", PyInit_vmd);
-
   // Do emit DeprecationWarnings
 #if PY_MAJOR_VERSION >= 3
+  PyImport_AppendInittab("vmd", PyInit_vmd);
   PySys_AddWarnOption(L"default");
 #else
+  PyImport_AppendInittab("vmd", initvmd);
   PySys_AddWarnOption((char*) "default");
 #endif
 
