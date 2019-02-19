@@ -1433,6 +1433,7 @@ const char *VMDApp::color_category(int n) {
 }
 
 int VMDApp::color_add_item(const char *cat, const char *name, const char *defcolor) {
+  printf("Adding color %s name %s defcolor %s\n", cat, name, defcolor);
   int init_color = scene->color_index(defcolor);
   if (init_color < 0) {
     msgErr << "Cannot add color item: invalid color name '" << defcolor << "'" << sendmsg;
