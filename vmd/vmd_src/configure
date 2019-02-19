@@ -109,6 +109,7 @@ if ($ENV{VMDINSTALLLIBRARYDIR}) {
 # SILENT       - suppress the make command echo
 # SHARED       - compile a shared library instead of a standalone executable
 # CCACHE       - compile with ccache (requires local configuration)
+# DEBUG        - build with debug options
 #
 # Purify and valgrind notes:
 # ---------------------------------------------------------------
@@ -304,6 +305,7 @@ foreach $term (@ARGV) {
     if ($term eq "PURIFY")          { $config_purify          = 1; next; }
     if ($term eq "SHARED")          { $config_shared          = 1; next; }
     if ($term eq "CCACHE")          { $config_ccache          = 1; next; }
+    if ($term eq "DEBUG")           { $config_debug           = 1; next; }
 
 
     # error conditions
@@ -370,6 +372,7 @@ if ($config_msvc)            { $config_string .= " MSVC"            }
 if ($config_purify)          { $config_string .= " PURIFY"          }
 if ($config_shared)          { $config_string .= " SHARED"          }
 if ($config_ccache)          { $config_string .= " CCACHE"          }
+if ($config_debug)           { $config_string .= " DEBUG"           }
 
 if (!open(OUTFILE, ">configure.options")) {
     print STDERR "** Cannot save parameters to configure.options: $!\n";
@@ -1959,9 +1962,18 @@ if ($config_arch eq "LINUXAMD64") {
       print "LP64 ABI is already the default on this platform.\n";
     }
 
-    $arch_opt_flag	.= " -m64 -fno-for-scope -Wno-deprecated -Wall -Wno-unknown-pragmas -O6 -ffast-math";
+    $arch_opt_flag	.= " -m64 -fno-for-scope -Wno-deprecated -Wall -Wno-unknown-pragmas -ffast-math";
     $arch_depend_flag   .= " -MM";
-    $arch_copts       .= " -m64 -Wall -Wno-unknown-pragmas -O6 -ffast-math";
+    $arch_copts       .= " -m64 -Wall -Wno-unknown-pragmas -ffast-math";
+
+    if ($config_debug) {
+      $arch_opt_flag .= " -g -Og";
+      $arch_copts    .= " -fsanitize=address -g -Og";
+      $arch_lopts    .= " -lasan";
+    } else {
+      $arch_opt_flag  .= " -O3";
+      $arch_copts    .= " -O3";
+    }
 
     # so far only STATIC version tested
     if ($config_static) {
