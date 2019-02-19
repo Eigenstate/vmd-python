@@ -25,5 +25,10 @@ install:
     - python setup.py install
 script:
     - source activate test-environment
-    - python setup.py test
+    - if [[ ! -z $DEBUGVER ]]; then export PRELOAD="$HOME/miniconda/envs/test-environment/lib/libasan.so"; fi
+    - LD_PRELOAD=$PRELOAD python -c "import vmd"
+    - LD_PRELOAD=$PRELOAD python setup.py test
+after_failure:
+    - COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
+    - if [[ -f $COREFILE ]]; then gdb -c "$COREFILE" python -ex "thread apply all bt" -ex "set pagination 0" -batch; fi # Attempt to invoke GDB
 
