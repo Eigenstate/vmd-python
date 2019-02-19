@@ -32,7 +32,11 @@
 #include "errcode.h"
 #endif
 
-extern "C" PyMODINIT_FUNC PyInit_vmd(void);
+#if PY_MAJOR_VERSION >= 3
+extern "C" PyObject* PyInit_vmd(void);
+#else
+extern "C" void initvmd(void);
+#endif
 
 static PyObject *cbdict = NULL;
 
