@@ -1,13 +1,9 @@
 language: generic
 env:
-    - PYVER=2.7 DEBUGVER=""
     - PYVER=2.7 DEBUGVER="--debug"
-    - PYVER=3.6 DEBUGVER=""
     - PYVER=3.6 DEBUGVER="--debug"
 os:
     - linux
-    - osx
-osx_image: xcode-6.4
 
 install:
     - sudo apt-get install -y gdb # Want GDB for debugging

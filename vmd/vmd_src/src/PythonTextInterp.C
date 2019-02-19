@@ -32,12 +32,6 @@
 #include "errcode.h"
 #endif
 
-#if PY_MAJOR_VERSION >= 3
-extern "C" PyObject* PyInit_vmd(void);
-#else
-extern "C" void initvmd(void);
-#endif
-
 static PyObject *cbdict = NULL;
 
 static PyObject *add_callback(PyObject *, PyObject *args) {

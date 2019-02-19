@@ -75,6 +75,12 @@ AtomSel * atomsel_AsAtomSel( PyObject *obj );
 // Atomsel type
 extern PyTypeObject Atomsel_Type;
 
+// VMD main initialization function
+#if PY_MAJOR_VERSION >= 3
+extern PyObject* PyInit_vmd();
+#else
+extern void initvmd();
+#endif
 
 extern PyObject* initanimate();
 extern PyObject* initatomsel();
