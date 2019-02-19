@@ -126,11 +126,12 @@ static struct PyModuleDef vmddef = {
 };
 
 #define INITERROR return NULL
+PyMODINIT_FUNC PyInit_vmd(void) {
+
 #else
 #define INITERROR return
+PyMODINIT_FUNC initvmd(void) {
 #endif
-
-PyMODINIT_FUNC PyInit_vmd(void) {
   // Assume that VMD should not initialize or use MPI
   // It is conceivable we would want to be able to load the VMD
   // Python module into a MPI-based Python run, and enable the
