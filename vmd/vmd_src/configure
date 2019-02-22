@@ -1968,7 +1968,7 @@ if ($config_arch eq "LINUXAMD64") {
 
     if ($config_debug) {
       $arch_opt_flag .= " -g -Og";
-      $arch_copts    .= " -fsanitize=address -g -Og";
+      $arch_copts    .= " -fsanitize=address -g -Og -DPYDEBUG";
       $arch_lopts    .= " -lasan";
     } else {
       $arch_opt_flag  .= " -O3";
