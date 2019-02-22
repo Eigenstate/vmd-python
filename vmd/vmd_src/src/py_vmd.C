@@ -126,11 +126,10 @@ static struct PyModuleDef vmddef = {
 };
 
 #define INITERROR return NULL
-PyMODINIT_FUNC PyInit_vmd(void) {
-
+extern "C" PyObject* PyInit_vmd() {
 #else
 #define INITERROR return
-PyMODINIT_FUNC initvmd(void) {
+void initvmd() {
 #endif
   // Assume that VMD should not initialize or use MPI
   // It is conceivable we would want to be able to load the VMD

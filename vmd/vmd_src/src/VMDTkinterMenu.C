@@ -71,7 +71,7 @@ void VMDTkinterMenu::where(int &x, int &y) {
     PyObject *result = PyObject_CallMethod(root, (char *)"wm_geometry", NULL);
     if (result) {
 #if PY_MAJOR_VERSION >= 3
-      char *str = PyUnicode_AsUTF8(result);
+      const char *str = PyUnicode_AsUTF8(result);
 #else
       char *str = PyString_AsString(result);
 #endif
