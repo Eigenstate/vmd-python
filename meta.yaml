@@ -16,6 +16,8 @@ requirements:
         - perl
         - {{ compiler('c') }}
         - {{ compiler('cxx') }}
+        - {{ cdt('mesa-libegl-devel') }}  # [linux]
+        - {{ cdt('mesa-libgl-devel') }}   # [linux]
         - make
     host:
         - python
