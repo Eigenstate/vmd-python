@@ -2049,8 +2049,7 @@ if ($config_arch eq "MACOSX") {
       $fltk_libs        = "-lfltk-x11 -lX11";
       $opengl_include   = $opengl_include . " -I/usr/X11R6/include";
       $opengl_dep_libs  = "-L/usr/X11R6/lib -lGL -framework Carbon -lXext -lX11";
-      $tcl_libs         = "-ltcl8.5-x11";
-      if ($config_tk) { $tcl_libs = "-ltk8.5-x11 -lX11 " . $tcl_libs; }
+      if ($config_tk) { $tcl_libs = "-ltk8.5 " . $tcl_libs; }
       $vmd_libs         = "$tcl_libs";
     } else {
       ##
