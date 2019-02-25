@@ -179,7 +179,7 @@ class VMDBuild(DistutilsBuild):
                               "include the directory containing this file, or "
                               "make sure it is present on your system" %
                               libfile);
-                return None
+            return None
         print("   LIB: %s -> %s" % (libfile, libdir))
         return libdir
 
@@ -231,6 +231,12 @@ class VMDBuild(DistutilsBuild):
             os.environ["CC"] = "gcc"
         if not os.environ.get("CXX"):
             os.environ["CXX"] = "g++"
+        if not os.environ.get("AR"):
+            os.environ["LD"] = "ar"
+        if not os.environ.get("NM"):
+            os.environ["LD"] = "nm"
+        if not os.environ.get("LD"):
+            os.environ["LD"] = "ld"
         if not os.environ.get("CFLAGS"):
             os.environ["CFLAGS"] = ""
         if not os.environ.get("CXXFLAGS"):
@@ -328,6 +334,7 @@ class VMDBuild(DistutilsBuild):
         print("Building with:")
         print("  CC: %s" % os.environ["CC"])
         print("  CXX: %s" % os.environ["CXX"])
+        print("  LD: %s" % os.environ["LD"])
         print("  CFLAGS: %s" % os.environ["CFLAGS"])
         print("  CXXFLAGS: %s" % os.environ["CXXFLAGS"])
         print("  LDFLAGS: %s" % os.environ["LDFLAGS"])
