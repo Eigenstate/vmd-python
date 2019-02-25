@@ -6,16 +6,12 @@ import pytest
 import numpy as np
 from vmd import atomsel, molecule
 
-def teardown_module(module):
-    for _ in molecule.listall():
-        molecule.delete(_)
-
-def test_basic_load():
+def test_basic_load(file_3nob):
 
     assert molecule.num() == 0
     assert molecule.listall() == []
 
-    m = molecule.load("mae", "3nob.mae")
+    m = molecule.load("mae", file_3nob)
 
     assert molecule.num() == 1
     assert molecule.listall() == [m]
@@ -41,7 +37,7 @@ def test_basic_load():
         molecule.delete(m)
 
 
-def test_special_load():
+def test_special_load(file_3nob, file_3frames, file_psf):
 
     # Graphics type is special
     m = molecule.load("graphics", "")
@@ -50,26 +46,26 @@ def test_special_load():
 
     # Coordinates and data
     m = molecule.load(struct_type="psf", coord_type="pdb",
-                      struct_file="ala_nma.psf",
-                      coord_file="ala_nma_3frames.pdb")
+                      struct_file=file_psf,
+                      coord_file=file_3frames)
     assert molecule.numframes(m) == 3
 
     # Incorrect numbers of arguments
     with pytest.raises(ValueError):
-        molecule.load("psf", "ala_nma.psf", coord_type="pdb")
+        molecule.load("psf", file_psf, coord_type="pdb")
     with pytest.raises(ValueError):
-        molecule.load("psf", "ala_nma.psf", coord_file="ala_nma_3frames.pdb")
+        molecule.load("psf", file_psf, coord_file=file_3frames)
 
     # Nonexistent files
     with pytest.raises(RuntimeError):
         molecule.load("psf", "nonexistent_file")
 
     with pytest.raises(RuntimeError):
-        molecule.load("psf", "ala_nma.psf", "pdb", "nonexistent_file")
+        molecule.load("psf", file_psf, "pdb", "nonexistent_file")
 
     # Wrong number of atoms in coordinate data
     with pytest.raises(RuntimeError):
-        x = molecule.load("mae", "3nob.mae", "pdb", "ala_nma_3frames.pdb")
+        x = molecule.load("mae", file_3nob, "pdb", file_3frames)
         print(molecule.get_filenames(x))
 
     molecule.delete(m)
@@ -87,9 +83,9 @@ def test_create():
     molecule.delete(m)
 
 
-def test_frames():
+def test_frames(file_3frames):
 
-    m = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m = molecule.load("pdb", file_3frames)
 
     assert molecule.numframes(m) == 3
     with pytest.raises(ValueError):
@@ -126,17 +122,17 @@ def test_frames():
     molecule.delete(m)
 
 
-def test_read():
+def test_read(file_3frames):
 
-    m = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m = molecule.load("pdb", file_3frames)
     assert molecule.numframes(molid=m) == 3
 
     with pytest.warns(DeprecationWarning):
-        molecule.read(m, "pdb", filename="ala_nma_3frames.pdb",
+        molecule.read(m, "pdb", filename=file_3frames,
                       beg=1, end=1, skip=1, waitfor=-1)
     assert molecule.numframes(m) == 4
 
-    molecule.read(molid=m, filetype="pdb", filename="ala_nma_3frames.pdb",
+    molecule.read(molid=m, filetype="pdb", filename=file_3frames,
                   waitfor=1)
     molecule.cancel(m)
     assert molecule.numframes(m) < 6
@@ -146,9 +142,9 @@ def test_read():
     molecule.delete(m)
 
 
-def test_write(tmpdir):
+def test_write(tmpdir, file_3frames):
 
-    m = molecule.load("pdb", struct_file="ala_nma_3frames.pdb")
+    m = molecule.load("pdb", struct_file=file_3frames)
     tmpdir = str(tmpdir)
 
     # Deprecated arguments
@@ -195,12 +191,12 @@ def test_write(tmpdir):
     molecule.delete(m3)
 
 @pytest.mark.skip(reason="Cant figure out environment vars")
-def test_ssrecalc():
+def test_ssrecalc(file_3nob):
 
     # No guarantee stride is on this system so set it to true here
     os.environ["STRIDE_BIN"] = "/usr/bin/true"
 
-    m = molecule.load("mae", "3nob.mae")
+    m = molecule.load("mae", file_3nob)
     molecule.ssrecalc(m)
 
     # Fails on zero frames
@@ -220,10 +216,10 @@ def test_ssrecalc():
     molecule.delete(m)
 
 
-def test_mol_attrs():
+def test_mol_attrs(file_3nob):
 
-    m1 = molecule.load("mae", "3nob.mae")
-    m2 = molecule.load("mae", "3nob.mae")
+    m1 = molecule.load("mae", file_3nob)
+    m2 = molecule.load("mae", file_3nob)
 
     # Get/set top
     assert molecule.get_top() == m2
@@ -272,9 +268,9 @@ def test_mol_attrs():
     molecule.delete(m2)
 
 
-def test_mol_time():
+def test_mol_time(file_3frames):
 
-    m = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m = molecule.load("pdb", file_3frames)
     assert molecule.numframes(m) == 3
 
     assert molecule.get_physical_time(molid=m, frame=0) == pytest.approx(0.0)
@@ -300,13 +296,13 @@ def test_mol_time():
     molecule.delete(m)
 
 
-def test_mol_descstrs():
+def test_mol_descstrs(file_3frames):
 
-    m1 = molecule.load("pdb", "ala_nma_3frames.pdb")
+    m1 = molecule.load("pdb", file_3frames)
     m2 = molecule.new(name="empty")
 
     # Filenames
-    assert molecule.get_filenames(molid=m1) == ["ala_nma_3frames.pdb"]
+    assert "ala_nma_3frames.pdb" in molecule.get_filenames(molid=m1)[0]
     assert molecule.get_filenames(m2) == []
     with pytest.raises(ValueError):
         molecule.get_filenames(m2+1)
@@ -339,11 +335,11 @@ def test_mol_descstrs():
     molecule.delete(m1)
     molecule.delete(m2)
 
-def test_volumetric():
+def test_volumetric(file_psf, file_dx):
 
     # Test read with a volumetric dataset
-    m = molecule.load("psf", "ala_nma.psf")
-    molecule.read(m, "dx", "0.dx", volsets=[0])
+    m = molecule.load("psf", file_psf)
+    molecule.read(m, "dx", file_dx, volsets=[0])
 
     # Num volumetric
     assert molecule.num_volumetric(m) == 1
@@ -351,7 +347,7 @@ def test_volumetric():
         molecule.num_volumetric(m+1)
 
     # Test with an invalid dataset index, nothing should be read
-    molecule.read(m, "dx", "0.dx", volsets=[1])
+    molecule.read(m, "dx", file_dx, volsets=[1])
     assert molecule.num_volumetric(m) == 1
 
     # Get volumetric

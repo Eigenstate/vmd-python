@@ -7,14 +7,6 @@ dir = os.path.dirname(__file__)
 
 #==============================================================================
 
-# Clean up molecules when done
-def teardown_module(module):
-    from vmd import molecule
-    for _ in molecule.listall():
-        molecule.delete(_)
-
-#==============================================================================
-
 def test_import():
     import vmd
     assert os.environ.get("VMDDIR")
@@ -29,15 +21,15 @@ def test_caps_import():
 
 #==============================================================================
 
-def test_load_mae():
+def test_load_mae(file_rho):
     from vmd import molecule, atomsel
     assert callable(atomsel)
 
-    molecule.load('mae', os.path.join(dir, "rho_test.mae"))
+    molecule.load('mae', file_rho)
     chrg = set(atomsel().get('charge'))
     assert chrg == set([0.0, 1.0, -1.0])
 
     ins = set(atomsel().get('insertion'))
-    assert ins == set([' ', 'A'])
+    assert set(_.strip() for _ in ins) == set(['', 'A'])
 
 #==============================================================================

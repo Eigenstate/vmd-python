@@ -3,11 +3,7 @@ Tests the render module
 """
 import os
 import pytest
-from vmd import render, molecule
-
-def teardown_module(module):
-    for _ in molecule.listall():
-        molecule.delete(_)
+from vmd import render
 
 def test_render(tmpdir):
 
@@ -22,10 +18,11 @@ def test_render(tmpdir):
 
     assert os.path.isfile(os.path.join(tmpdir, "test.out"))
 
-def test_snapshot(tmpdir):
+@pytest.mark.skip(reason="PBuffer support not implemented")
+def test_snapshot(tmpdir, file_3nob):
 
     from vmd import molecule, molrep, display
-    m =  molecule.load("mae", "3nob.mae")
+    m =  molecule.load("mae", file_3nob)
     molrep.addrep(m, "NewCartoon")
     display.set(size=(512, 512))
 

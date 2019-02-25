@@ -5,12 +5,8 @@ Tests the animate module
 import pytest
 from vmd import molecule, animate, display
 
-def teardown_module(module):
-    for _ in molecule.listall():
-        molecule.delete(_)
-
-def test_animate():
-    m = molecule.load("pdb", "ala_nma_3frames.pdb") # TODO path
+def test_animate(file_3frames):
+    m = molecule.load("pdb", file_3frames)
     assert molecule.numframes(m) == 3
     molecule.set_frame(m, 0)
 

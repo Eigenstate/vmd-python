@@ -5,12 +5,8 @@ Tests the label module
 import pytest
 from vmd import label, molecule
 
-def teardown_module(module):
-    for _ in molecule.listall():
-        molecule.delete(_)
-
-def test_label_atom():
-    m1 = molecule.load("mae", "3nob.mae")
+def test_label_atom(file_3nob):
+    m1 = molecule.load("mae", file_3nob)
 
     with pytest.raises(ValueError):
         label.add("invalid", (m1,), (0,))
@@ -52,9 +48,9 @@ def test_label_atom():
     molecule.delete(m1)
 
 
-def test_label_bond():
-    m1 = molecule.load("mae", "3nob.mae")
-    m2 = molecule.load("mae", "3nob.mae")
+def test_label_bond(file_3nob):
+    m1 = molecule.load("mae", file_3nob)
+    m2 = molecule.load("mae", file_3nob)
 
     with pytest.raises(ValueError):
         label.add("Bonds", molids=(m1, m2), atomids=(0,))

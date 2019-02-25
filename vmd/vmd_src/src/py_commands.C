@@ -108,12 +108,12 @@ char* as_charptr(PyObject *target)
 {
     char *result;
 #if PY_MAJOR_VERSION >= 3
-    result = PyUnicode_AsUTF8(target);
+    result = (char*) PyUnicode_AsUTF8(target);
 #else
     result = PyString_AsString(target);
 #endif
 
-    if (!result || PyErr_Occurred()) {
+    if (! result || PyErr_Occurred()) {
         PyErr_SetString(PyExc_ValueError, "cannot convert PyObject to char*");
         return NULL;
     }

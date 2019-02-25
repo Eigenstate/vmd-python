@@ -5,12 +5,8 @@ Tests the trans module
 import pytest
 from vmd import molecule, trans
 
-def teardown_module(module):
-    for _ in molecule.listall():
-        molecule.delete(_)
-
-def test_show_fix():
-    m = molecule.load("mae", "3nob.mae")
+def test_show_fix(file_3nob):
+    m = molecule.load("mae", file_3nob)
 
     trans.show(molid=m, shown=True)
     assert trans.is_shown(m)
@@ -61,9 +57,9 @@ def test_scene_trans():
     trans.scale_scene(2.0)
 
 
-def test_mol_center():
+def test_mol_center(file_3nob):
 
-    m = molecule.load("mae", "3nob.mae")
+    m = molecule.load("mae", file_3nob)
 
     init_center = trans.get_center(m)
     trans.set_center(m, center=(1., 1., 1.))
@@ -89,9 +85,9 @@ def test_mol_center():
     molecule.delete(m)
 
 
-def test_mol_scale():
+def test_mol_scale(file_3nob):
 
-    m = molecule.load("mae", "3nob.mae")
+    m = molecule.load("mae", file_3nob)
 
     def_scale = trans.get_scale(m)
     trans.set_scale(molid=m, scale=1.0)
@@ -110,9 +106,9 @@ def test_mol_scale():
     molecule.delete(m)
 
 
-def test_mol_trans():
+def test_mol_trans(file_3nob):
 
-    m = molecule.load("mae", "3nob.mae")
+    m = molecule.load("mae", file_3nob)
 
     t = trans.get_translation(m)
     assert t == pytest.approx((0., 0., 0.))
@@ -134,9 +130,9 @@ def test_mol_trans():
     molecule.delete(m)
 
 
-def test_mol_rotate():
+def test_mol_rotate(file_3nob):
 
-    m = molecule.load("mae", "3nob.mae")
+    m = molecule.load("mae", file_3nob)
 
     r = trans.get_rotation(molid=m)
     assert r == pytest.approx((1.0, 0.0, 0.0, 0.0,
