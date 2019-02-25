@@ -34,7 +34,27 @@ class VMDBuild(DistutilsBuild):
         if self.egl:
             print("Building with EGL support")
             self.egl = True
+
+        # If compilers aren't set already, default to GCC
+        if not os.environ.get("CC"):
+            os.environ["CC"] = "gcc"
+        if not os.environ.get("CXX"):
+            os.environ["CXX"] = "g++"
+        if not os.environ.get("AR"):
+            os.environ["LD"] = "ar"
+        if not os.environ.get("NM"):
+            os.environ["LD"] = "nm"
+        if not os.environ.get("LD"):
+            os.environ["LD"] = "ld"
+        if not os.environ.get("CFLAGS"):
+            os.environ["CFLAGS"] = ""
+        if not os.environ.get("CXXFLAGS"):
+            os.environ["CXXFLAGS"] = ""
+        if not os.environ.get("LDFLAGS"):
+            os.environ["LDFLAGS"] = ""
+
         self.libdirs = self._get_libdirs()
+
         DistutilsBuild.finalize_options(self)
 
     #==========================================================================
@@ -226,24 +246,6 @@ class VMDBuild(DistutilsBuild):
         Tries to get relevant paths from sysconfig, and falls back
         to the usual python directory structure.
         """
-        # If compilers aren't set already, default to GCC
-        if not os.environ.get("CC"):
-            os.environ["CC"] = "gcc"
-        if not os.environ.get("CXX"):
-            os.environ["CXX"] = "g++"
-        if not os.environ.get("AR"):
-            os.environ["LD"] = "ar"
-        if not os.environ.get("NM"):
-            os.environ["LD"] = "nm"
-        if not os.environ.get("LD"):
-            os.environ["LD"] = "ld"
-        if not os.environ.get("CFLAGS"):
-            os.environ["CFLAGS"] = ""
-        if not os.environ.get("CXXFLAGS"):
-            os.environ["CXXFLAGS"] = ""
-        if not os.environ.get("LDFLAGS"):
-            os.environ["LDFLAGS"] = ""
-
         print("Finding libraries...")
         addir = sysconfig.get_config_var("LIBDIR")
         if addir is None: addir = os.path.join(pydir, "lib")
