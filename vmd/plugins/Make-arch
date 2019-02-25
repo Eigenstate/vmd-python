@@ -42,6 +42,23 @@ LINUXAMD64:
 	"RANLIB = touch" \
 	"SHLD = $(CC) -shared"
 
+LINUXPPC64:
+	$(MAKE) dynlibs staticlibs bins \
+	"ARCH = LINUXPPC64" \
+	"CC = $(CC)" \
+	"CXX = $(CXX)" \
+	"COPTO = -fPIC -m64 -o " \
+	"LOPTO = -fPIC -m64 $(LDFLAGS) -o " \
+	"DEF = -D" \
+	"CCFLAGS = $(CFLAGS) -m64 -O2 -fPIC -Wall" \
+	"CXXFLAGS = $(CXXFLAGS) -m64 -O2 -fPIC -Wall" \
+	"TCLLDFLAGS = $(TCLLDFLAGS) -ldl" \
+	"NETCDFLDFLAGS = $(NETCDFLDFLAGS)" \
+	"AR = $(AR)" \
+	"NM = $(NM) -p" \
+	"RANLIB = touch" \
+	"SHLD = $(CC) -shared"
+
 MACOSX:
 	$(MAKE) dynlibs staticlibs bins \
 	"ARCH = MACOSX" \
