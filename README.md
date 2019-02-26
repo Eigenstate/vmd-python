@@ -150,6 +150,15 @@ vmd-python has the following dependencies:
     * sqlite
     * Tcl/Tk = 8.5 (8.6 will crash on OSX)
 
+To build on Debian, that's the following packages:
+
+    * libsqlite3-dev
+    * libexpat1-dev
+    * libnetcdf-dev
+    * tcl8.5-dev
+    * libegl1-dev
+    * libopengl0
+
 ## Licensing
 
 This software is classified as a "derivative work" of the original
