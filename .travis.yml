@@ -12,8 +12,6 @@ osx_image: xcode-6.4
 addons:
     apt:
         packages: gdb
-    homebrew:
-        packages: gdb
 
 install:
     - |
@@ -44,12 +42,12 @@ after_failure:
           - |
             if [[ $TRAVIS_OS_NAME == "osx" ]]; then
                 COREFILE=$(ls -At /cores/core* | head -n 1)
+                lldb -c $COREFILE --batch --one-line "bt"
             else
                 COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
-            fi
-            echo "Core: $COREFILE"
-            if [[ -f $COREFILE ]]; then
-              gdb -c "$COREFILE" python -ex "thread apply all bt" \
-                                        -ex "set pagination 0" -batch
+                echo "Core: $COREFILE"
+                if [[ -f $COREFILE ]]; then
+                  gdb -c "$COREFILE" python -ex "thread apply all bt" \
+                                            -ex "set pagination 0" -batch
             fi
 
