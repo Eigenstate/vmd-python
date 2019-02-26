@@ -31,8 +31,7 @@ rm -f $vmd_src/vmd_src/plugins
 ln -s $PLUGINDIR $vmd_src/vmd_src/plugins
 
 # Set the configure options
-# TODO: OPENGLPBUFFER and EGLPBUFFER when I can reliably get libOpenGL.so
-echo "$TARGET PTHREADS COLVARS NETCDF TCL IMD PYTHON NUMPY SHARED NOSILENT $VMDEXTRAFLAGS" > "$vmd_src/vmd_src/configure.options"
+echo "$TARGET PTHREADS COLVARS NETCDF TCL IMD PYTHON NUMPY SHARED SILENT $VMDEXTRAFLAGS" > "$vmd_src/vmd_src/configure.options"
 if [[ "$TARGET" == *"64"* ]]; then
     echo " LP64" >> "$vmd_src/vmd_src/configure.options"
 fi

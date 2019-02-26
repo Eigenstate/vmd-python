@@ -48,8 +48,7 @@ after_failure:
       else
           COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
           echo "Core: $COREFILE"
-          if [[ -f $COREFILE ]]; then
-            gdb -c "$COREFILE" python -ex "thread apply all bt" \
-                                      -ex "set pagination 0" -batch
+          gdb -c "$COREFILE" python -ex "thread apply all bt" \
+                                    -ex "set pagination 0" -batch
       fi
 
