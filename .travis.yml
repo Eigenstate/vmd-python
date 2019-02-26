@@ -8,6 +8,7 @@ os:
     - linux
     - osx
 osx_image: xcode-6.4
+
 addons:
     apt:
         packages: gdb
@@ -39,7 +40,7 @@ script:
     - if [[ ! -z $DEBUGVER ]]; then export PRELOAD="$HOME/miniconda/envs/test-environment/lib/libasan.so"; fi
     - LD_PRELOAD=$PRELOAD python -c "import vmd"
     - LD_PRELOAD=$PRELOAD python setup.py test
-      after_failure:
+after_failure:
           - |
             COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
             if [[ -f $COREFILE ]]; then
