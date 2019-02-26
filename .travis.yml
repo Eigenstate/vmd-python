@@ -10,7 +10,7 @@ os:
 osx_image: xcode-6.4
 addons:
     apt:
-        pacakges: gdb
+        packages: gdb
     homebrew:
         packages: gdb
 
