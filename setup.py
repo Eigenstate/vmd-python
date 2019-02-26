@@ -155,7 +155,7 @@ class VMDBuild(DistutilsBuild):
 
         if not glob(os.path.join(incdir, incfile)): # Glob allows wildcards
             incdir = os.path.join(pydir, "include", incfile)
-            raise OSError("Could not find include file '%s' in standard "
+            raise RuntimeError("Could not find include file '%s' in standard "
                   "include directories. Update $INCLUDE to include the "
                   "directory  containing this file, or make sure it is present "
                   "on your system"
@@ -194,7 +194,7 @@ class VMDBuild(DistutilsBuild):
         else:
             libdir = os.path.join(pydir, "lib")
             if mandatory:
-                raise OSError("Could not find library '%s' in standard "
+                raise RuntimeError("Could not find library '%s' in standard "
                               "library directories. Update $LD_LIBRARY_PATH to "
                               "include the directory containing this file, or "
                               "make sure it is present on your system" %
@@ -329,8 +329,6 @@ class VMDBuild(DistutilsBuild):
             os.environ["LDFLAGS"] += " -L%s" % ogllib
 
             os.environ["VMDEXTRAFLAGS"] += " EGLPBUFFER"
-
-        tcllibdir = self._find_library_dir("libtcl8.5", mandatory=False)
 
         # Print a summary
         print("Building with:")

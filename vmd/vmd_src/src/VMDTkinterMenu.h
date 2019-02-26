@@ -9,13 +9,7 @@
 #ifndef VMDTKINTERMENU_H
 #define VMDTKINTERMENU_H
 
-#if defined(__APPLE__)
-// use the Apple-provided Python framework
-#include "Python/Python.h"
-#else
 #include "Python.h"
-#endif
-
 #include "VMDMenu.h"
 
 /// VMDMenu subclass to manage Tkinter extension menus added by the user

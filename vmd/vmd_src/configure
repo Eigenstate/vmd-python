@@ -2074,8 +2074,7 @@ if ($config_arch eq "MACOSX") {
       $fltk_libs        = "-lfltk-x11 -lX11";
       $opengl_include   = $opengl_include . " -I/usr/X11R6/include";
       $opengl_dep_libs  = "-L/usr/X11R6/lib -lGL -framework Carbon -lXext -lX11";
-      $tcl_libs         = "-ltcl8.5-x11";
-      if ($config_tk) { $tcl_libs = "-ltk8.5-x11 -lX11 " . $tcl_libs; }
+      if ($config_tk) { $tcl_libs = "-ltk8.5 " . $tcl_libs; }
       $vmd_libs         = "$tcl_libs";
     } else {
       ##
@@ -2176,7 +2175,6 @@ if ($config_arch eq "MACOSXX86" || $config_arch eq "MACOSXX86_64") {
       ##   http://developer.apple.com/qa/qa2007/qa1567.html
       ##
       $opengl_dep_libs  .= " -dylib_file /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib:/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib";
-      $tcl_libs         = "-ltcl8.5-x11";
       if ($config_tk) { $tcl_libs = "-ltk8.5-x11 -lX11 " . $tcl_libs; }
       $vmd_libs          = "$tcl_libs";
     } else {
