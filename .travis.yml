@@ -42,7 +42,7 @@ script:
       after_failure:
           - |
             COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
-            if [[ $TRAVIS_OS_NAME == "linux" && -f $COREFILE ]]; then
+            if [[ -f $COREFILE ]]; then
               gdb -c "$COREFILE" python -ex "thread apply all bt" \
                                         -ex "set pagination 0" -batch
             fi
