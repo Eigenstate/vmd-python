@@ -42,7 +42,12 @@ script:
     - LD_PRELOAD=$PRELOAD python setup.py test
 after_failure:
           - |
-            COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
+            if [[ $TRAVIS_OS_NAME == "osx" ]]]; then
+                COREFILE=$(ls -At /cores/core* | head -n 1)
+            else
+                COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
+            fi
+            echo "Core: $COREFILE"
             if [[ -f $COREFILE ]]; then
               gdb -c "$COREFILE" python -ex "thread apply all bt" \
                                         -ex "set pagination 0" -batch
