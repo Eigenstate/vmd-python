@@ -39,17 +39,17 @@ script:
     - LD_PRELOAD=$PRELOAD python -c "import vmd"
     - LD_PRELOAD=$PRELOAD python setup.py test
 after_failure:
-          - |
-            if [[ $TRAVIS_OS_NAME == "osx" ]]; then
-                cat "$HOME/Library/Logs/DiagnosticReports/"*
-                COREFILE=$(find /cores -maxdepth 1 -name "core*" | head -n 1)
-                echo "Core: $COREFILE"
-                lldb -c $COREFILE --batch --one-line "bt"
-            else
-                COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
-                echo "Core: $COREFILE"
-                if [[ -f $COREFILE ]]; then
-                  gdb -c "$COREFILE" python -ex "thread apply all bt" \
-                                            -ex "set pagination 0" -batch
-            fi
+    - |
+      if [[ $TRAVIS_OS_NAME == "osx" ]]; then
+          cat "$HOME/Library/Logs/DiagnosticReports/"*
+          COREFILE=$(find /cores -maxdepth 1 -name "core*" | head -n 1)
+          echo "Core: $COREFILE"
+          lldb -c $COREFILE --batch --one-line "bt"
+      else
+          COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
+          echo "Core: $COREFILE"
+          if [[ -f $COREFILE ]]; then
+            gdb -c "$COREFILE" python -ex "thread apply all bt" \
+                                      -ex "set pagination 0" -batch
+      fi
 
