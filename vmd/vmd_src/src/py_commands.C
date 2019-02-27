@@ -215,15 +215,8 @@ int is_pyint(PyObject *target)
 // VMDApp dictionary entry.  Got it?  
 
 VMDApp *get_vmdapp() {
-#if PY_MAJOR_VERSION >= 3
-    PyObject *module = PyImport_ImportModule((char *)"builtins");
-#else
-    PyObject *module = PyImport_ImportModule((char *)"__builtin__");
-#endif
-    if (!module)
-        return NULL;
 
-  PyObject *module_dict = PyModule_GetDict(module);
+  PyObject *module_dict = PyEval_GetBuiltins();
   if (!module_dict)
       return NULL;
 
@@ -249,16 +242,16 @@ VMDApp *get_vmdapp() {
 }
 
 void set_vmdapp(VMDApp *app) {
+
+  PyObject *module_dict = PyEval_GetBuiltins();
+  PyObject *cap;
+
 #if PY_MAJOR_VERSION >= 3
-  PyObject *mod = PyImport_ImportModule((char *)"builtins");
-  PyObject *cap = PyCapsule_New(app, "-vmdapp-", NULL);
-  PyObject_SetAttrString(mod, (char *)"-vmdapp-", cap);
+  cap = PyCapsule_New(app, "-vmdapp-", NULL);
 #else
-  PyObject *mod = PyImport_ImportModule((char *)"__builtin__");
-  PyObject_SetAttrString(mod, (char *)"-vmdapp-",
-      PyCObject_FromVoidPtr(app, NULL));
+  cap = PyCObject_FromVoidPtr(app, NULL);
 #endif
-  Py_DECREF(mod);
+  PyDict_SetItemString(module_dict, (const char *)"-vmdapp-", cap);
 }
 
 int py_array_from_obj(PyObject *obj, float *arr) {
