@@ -2038,6 +2038,15 @@ if ($config_arch eq "LINUXPPC64") {
     # this is to make tcl happy
     # also needed for plugins
     $system_libs .= " -ldl";
+    
+    if ($config_shared) {
+      $arch_opt_flag   .= " -fPIC";
+      $arch_copts      .= " -fPIC";
+      $arch_nvccflags  .= " -Xcompiler -fPIC";
+      $arch_lopts      .= " -shared";
+      $arch_cppopts    .= " -DVMD_SHARED";
+    }
+
 }
 
 if ($config_arch eq "MACOSX") {
