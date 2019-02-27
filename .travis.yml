@@ -41,8 +41,7 @@ script:
 after_failure:
     - |
       if [[ $TRAVIS_OS_NAME == "osx" ]]; then
-          cat "$HOME/Library/Logs/DiagnosticReports/"*
-          COREFILE=$(find /cores -maxdepth 1 -name "core*" | head -n 1)
+          COREFILE=$(ls -At /cores/core* | head -n 1)
           echo "Core: $COREFILE"
           lldb -c $COREFILE --batch --one-line "bt"
       else
