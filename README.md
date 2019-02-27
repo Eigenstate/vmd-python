@@ -4,6 +4,7 @@ Installable VMD as a python module
 *NEW*: Version 3.0 has the following new features
 
 * Offscreen rendering to an OpenGL buffer so you can render programmatically
+  (Only if built with `python setup.py --egl`, see below)
 * Atomselection attributes can be accessed or set more easily:
   `atomsel.get("x")` can be written as `atomsel.x`!
 * Removed extra info dumped to stdout
@@ -115,6 +116,24 @@ For other architectures, you can build from source by cloning this repo:
 
 Installation can take a while since it compiles VMD from source.
 
+### Installing with EGL support
+
+VMD-Python can render to an offscreen buffer if you build it yourself with
+the --egl flag. You'll need the following files on your system to build and
+link successfully:
+
+    * GL/gl.h
+    * EGL/egl.h, EGL/eglext.h
+    * libOpenGL.so
+
+In Debian, these are provided in `libegl1-mesa-dev`, `mesa-common-dev`,
+and `libopengl0` packages. To build:
+
+    python setup.py --egl build
+    python setup.py install
+
+Please file issues if you have problems with this!!
+
 ### OSX support
 
 Users have reported that on OSX with Tcl/Tk 8.6 the module will
@@ -130,6 +149,15 @@ vmd-python has the following dependencies:
     * expat
     * sqlite
     * Tcl/Tk = 8.5 (8.6 will crash on OSX)
+
+To build on Debian, that's the following packages:
+
+    * libsqlite3-dev
+    * libexpat1-dev
+    * libnetcdf-dev
+    * tcl8.5-dev
+    * libegl1-dev
+    * libopengl0
 
 ## Licensing
 

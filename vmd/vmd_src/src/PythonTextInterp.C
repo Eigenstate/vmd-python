@@ -24,13 +24,7 @@
 #include "config.h"
 #include "VMDApp.h"
 #include "TextEvent.h"
-
-#if defined(__APPLE__)
-// use the Apple-provided Python framework
-#include "Python/errcode.h"
-#else
 #include "errcode.h"
-#endif
 
 static PyObject *cbdict = NULL;
 
@@ -159,6 +153,7 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp) : app(vmdapp) {
   int retval, i;
 
   msgInfo << "Starting Python..." << sendmsg;
+
 
   // Import VMD builtin module automatically
   // Do this before Py_initialize called

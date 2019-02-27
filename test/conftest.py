@@ -7,7 +7,7 @@ def pytest_runtest_teardown():
         molecule.delete(_)
 
 def _get_file(request, filename):
-    thedir = os.path.split(request.fspath)[0]
+    thedir = os.path.split(str(request.fspath))[0]
     return os.path.join(thedir, filename)
 
 @pytest.fixture(scope="module")

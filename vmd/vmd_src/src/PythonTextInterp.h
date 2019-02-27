@@ -20,13 +20,7 @@
 #ifndef PYTHON_TEXT_INTERP_H
 #define PYTHON_TEXT_INTERP_H
 
-#if defined(__APPLE__)
-// use the Apple-provided Python framework
-#include "Python/Python.h"
-#else
 #include "Python.h"
-#endif
-
 #include "TextInterp.h"
 
 class VMDApp;

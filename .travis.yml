@@ -1,15 +1,25 @@
 language: generic
 env:
+    - PYVER=2.7 DEBUGVER=""
     - PYVER=2.7 DEBUGVER="--debug"
+    - PYVER=3.6 DEBUGVER=""
     - PYVER=3.6 DEBUGVER="--debug"
 os:
     - linux
+    - osx
+osx_image: xcode-6.4
+
+addons:
+    apt:
+        packages: gdb
 
 install:
-    - sudo apt-get install -y gdb # Want GDB for debugging
-    - sudo apt-get install -y libopengl0 libegl1-mesa-dev # Build against system EGL
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh; fi
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh; fi
+    - |
+      if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+        wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+      elif [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+        wget -O miniconda.sh https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+      fi
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
     - hash -r
@@ -29,6 +39,15 @@ script:
     - LD_PRELOAD=$PRELOAD python -c "import vmd"
     - LD_PRELOAD=$PRELOAD python setup.py test
 after_failure:
-    - COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
-    - if [[ -f $COREFILE ]]; then gdb -c "$COREFILE" python -ex "thread apply all bt" -ex "set pagination 0" -batch; fi # Attempt to invoke GDB
+    - |
+      if [[ $TRAVIS_OS_NAME == "osx" ]]; then
+          COREFILE=$(ls -At /cores/core* | head -n 1)
+          echo "Core: $COREFILE"
+          lldb -c $COREFILE --batch --one-line "bt"
+      else
+          COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
+          echo "Core: $COREFILE"
+          gdb -c "$COREFILE" python -ex "thread apply all bt" \
+                                    -ex "set pagination 0" -batch
+      fi
 

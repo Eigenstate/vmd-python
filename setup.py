@@ -16,10 +16,13 @@ packages = ['vmd']
 class VMDBuild(DistutilsBuild):
     user_options = [
         ("debug", None, "Build with debug symbols"),
+        ("egl", None, "Build with support for rendering to an offscreen "
+                      "EGL buffer. Requires EGL and libOpenGL"),
     ]
 
     def initialize_options(self):
         self.debug = False
+        self.egl = False
         DistutilsBuild.initialize_options(self)
 
     #==========================================================================
@@ -28,6 +31,30 @@ class VMDBuild(DistutilsBuild):
         if self.debug:
             print("Building with debug symbols")
             self.debug = True
+        if self.egl:
+            print("Building with EGL support")
+            self.egl = True
+
+        # If compilers aren't set already, default to GCC
+        if not os.environ.get("CC"):
+            os.environ["CC"] = "gcc"
+        if not os.environ.get("CXX"):
+            os.environ["CXX"] = "g++"
+        if not os.environ.get("AR"):
+            os.environ["AR"] = "ar"
+        if not os.environ.get("NM"):
+            os.environ["NM"] = "nm"
+        if not os.environ.get("LD"):
+            os.environ["LD"] = "ld"
+        if not os.environ.get("CFLAGS"):
+            os.environ["CFLAGS"] = ""
+        if not os.environ.get("CXXFLAGS"):
+            os.environ["CXXFLAGS"] = ""
+        if not os.environ.get("LDFLAGS"):
+            os.environ["LDFLAGS"] = ""
+
+        self.libdirs = self._get_libdirs()
+
         DistutilsBuild.finalize_options(self)
 
     #==========================================================================
@@ -61,19 +88,52 @@ class VMDBuild(DistutilsBuild):
     #==========================================================================
 
     @staticmethod
+    def _get_libdirs(pydir=sysconfig.EXEC_PREFIX):
+        """
+        Gets the list of directories to search for linking dynamic libraries.
+        First starts with the python library directory, then $LD_LIBRARY_PATH
+        (or OSX equivalent), then the directories that the compiler searches
+        """
+        # Look in python installation directory, then in directories
+        # specified by $LD_LIBRARY_PATH, then in directories the
+        # compiler searches by default
+        if "Darwin" in platform.system():
+            searchdirs = [d for d in os.environ.get("DYLD_LIBRARY_PATH",
+                                                    "").split(":")
+                          if os.path.isdir(d)]
+        else:
+            searchdirs = [d for d in os.environ.get("LD_LIBRARY_PATH",
+                                                    "").split(":")
+                          if os.path.isdir(d)]
+
+        searchdirs.insert(0, os.path.join(pydir, "lib"))
+
+        # Get directories the compiler looks for
+        dirout = check_output("%s --print-search-dirs | grep libraries"
+                               % os.environ["CXX"], shell=True)
+        osdirs = dirout.decode("utf-8").replace("libraries: =", "").split(":")
+        searchdirs.extend([os.path.abspath(_) for _ in osdirs if
+                           os.path.isdir(_)])
+
+        return searchdirs
+
+    #==========================================================================
+
+    @staticmethod
     def _find_include_dir(incfile, pydir=sysconfig.EXEC_PREFIX):
         """
         Finds the path containing an include file. Starts by searching
-        $INCLUDE, then whatever system include paths gcc looks in.
+        $INCLUDE, then whatever system include paths $CC looks in.
         If it can't find the file, defaults to "$pydir/include"
         """
 
         # Look in directories specified by $INCLUDE
         searchdirs = [d for d in os.environ.get("INCLUDE", "").split(":")
                       if os.path.isdir(d)]
-        # Also look in the directories gcc does
+        # Also look in the directories $CC does
         try:
-            out = check_output(r"echo | gcc -E -Wp,-v - 2>&1 | grep '^\s.*'",
+            out = check_output(r"echo | %s -E -Wp,-v - 2>&1 | grep '^\s.*'"
+                               % os.environ["CC"],
                                shell=True)
             out = out.decode("utf-8").strip().split("\n")
             searchdirs.extend([d.strip() for d in out if os.path.isdir(d.strip())])
@@ -81,100 +141,65 @@ class VMDBuild(DistutilsBuild):
         searchdirs.insert(0, os.path.join(pydir, "include"))
 
         # Find the actual file
-        out = b""
+        incdir = ""
         try:
             out = check_output(["find", "-H"]
                                + searchdirs
                                + ["-maxdepth", "2",
-                                  "-name", incfile],
+                                  "-path", r"*/%s" % incfile],
                                close_fds=True,
                                stderr=open(os.devnull, 'wb'))
+            incdir = out.decode("utf-8").splitlines()[0]
+            incdir = incdir[:incdir.index(incfile)]
         except: pass
 
-        incdir = os.path.split(out.decode("utf-8").split("\n")[0])[0]
         if not glob(os.path.join(incdir, incfile)): # Glob allows wildcards
             incdir = os.path.join(pydir, "include", incfile)
-            print("\nWARNING: Could not find include file '%s' in standard "
-                  "include directories.\n Defaulting to: '%s'"
-                  % (incfile, incdir))
+            raise RuntimeError("Could not find include file '%s' in standard "
+                  "include directories. Update $INCLUDE to include the "
+                  "directory  containing this file, or make sure it is present "
+                  "on your system"
+                  % incfile);
         print("   INC: %s -> %s" % (incfile, incdir))
         return incdir
 
     #==========================================================================
 
-    @staticmethod
-    def _find_library_dir(libfile, pydir=sysconfig.EXEC_PREFIX, fallback=True):
+    def _find_library_dir(self, libfile, pydir=sysconfig.EXEC_PREFIX,
+                          mandatory=True):
         """
         Finds the directory containing a library file. Starts by searching
-        $LD_LIBRARY_PATH, then ld.so.conf system paths used by gcc.
+        $LD_LIBRARY_PATH, then system paths used by $CC.
         """
 
-        # Look in python installation directory, then in directories
-        # specified by $LD_LIBRARY_PATH
-        out = b""
-        if "Darwin" in platform.system():
-            libfile = "%s.dylib" % libfile
-            searchdirs = [d for d in os.environ.get("DYLD_LIBRARY_PATH",
-                                                    "").split(":")
-                          if os.path.isdir(d)]
-        else:
-            libfile = "%s.so" % libfile
-            searchdirs = [d for d in os.environ.get("LD_LIBRARY_PATH",
-                                                    "").split(":")
-                          if os.path.isdir(d)]
+        libfile = libfile + (".dylib" if "Darwin" in platform.system() else ".so")
 
-        searchdirs.insert(0, os.path.join(pydir, "lib"))
-
+        # Search for requested library in list of search directories
+        libdir = ""
         try:
             out = check_output(["find", "-H"]
-                               + searchdirs
+                               + self.libdirs
                                + ["-maxdepth", "1",
                                   "-name", libfile],
                                close_fds=True,
                                stderr=open(os.devnull, 'wb'))
+            libdir = out.decode("utf-8").splitlines()[0]
+            libdir = libdir[:libdir.index(libfile)]
         except: pass
 
-        libdir = os.path.split(out.decode("utf-8").split("\n")[0])[0]
         if glob(os.path.join(libdir, libfile)): # Glob allows wildcards
             print("   LIB: %s -> %s" % (libfile, libdir))
             return libdir
 
-        # See if the linker can find it, alternatively
-        # This only works on Linux
-        if "Linux" in platform.system():
-            try:
-                out = check_output("ldconfig -p | grep %s$" % libfile.replace("*",".*"), shell=True)
-            except: pass
-            libdir = os.path.split(out.decode("utf-8").split(" ")[-1])[0]
-
-        # For OSX, use defaults + DYLD_FALLBACK_LIBRARY_PATH
-        elif "Darwin" in platform.system():
-            searchdirs = [os.path.join(os.environ.get("HOME", ""), "lib"),
-                          "/usr/local/lib", "/usr/lib"]
-            searchdirs = [d for d in set(searchdirs) if os.path.isdir(d)]
-            try:
-                print("  Searching %s" % " ".join(searchdirs))
-                out = check_output(["find", "-H"]
-                                   + searchdirs
-                                   + ["-maxdepth", "1",
-                                      "-name", libfile],
-                                   close_fds=True,
-                                   stderr=open(os.devnull, 'wb'))
-            except: pass
-            libdir = os.path.split(out.decode("utf-8").split("\n")[0])[0]
-            if glob(os.path.join(libdir, libfile)):
-                print("   LIB: %s -> %s" % (libfile, libdir))
-                return libdir
         else:
-            libdir = ""
-
-        if not glob(os.path.join(libdir, libfile)):
             libdir = os.path.join(pydir, "lib")
-            if not fallback:
-                return None
-            print("WARNING: Could not find library file '%s' in standard "
-                  "library directories.\n Defaulting to: '%s'"
-                  % (libfile, os.path.join(libdir, libfile)))
+            if mandatory:
+                raise RuntimeError("Could not find library '%s' in standard "
+                              "library directories. Update $LD_LIBRARY_PATH to "
+                              "include the directory containing this file, or "
+                              "make sure it is present on your system" %
+                              libfile);
+            return None
         print("   LIB: %s -> %s" % (libfile, libdir))
         return libdir
 
@@ -221,18 +246,6 @@ class VMDBuild(DistutilsBuild):
         Tries to get relevant paths from sysconfig, and falls back
         to the usual python directory structure.
         """
-        # If compilers aren't set already, default to GCC
-        if not os.environ.get("CC"):
-            os.environ["CC"] = "gcc"
-        if not os.environ.get("CXX"):
-            os.environ["CXX"] = "g++"
-        if not os.environ.get("CFLAGS"):
-            os.environ["CFLAGS"] = ""
-        if not os.environ.get("CXXFLAGS"):
-            os.environ["CXXFLAGS"] = ""
-        if not os.environ.get("LDFLAGS"):
-            os.environ["LDFLAGS"] = ""
-
         print("Finding libraries...")
         addir = sysconfig.get_config_var("LIBDIR")
         if addir is None: addir = os.path.join(pydir, "lib")
@@ -255,7 +268,7 @@ class VMDBuild(DistutilsBuild):
         os.environ["CXXFLAGS"] += " -I%s" % addir
 
         # No reliable way to ask for actual available library, so try 8.5 first
-        tcllibdir = self._find_library_dir("libtcl8.5", fallback=False)
+        tcllibdir = self._find_library_dir("libtcl8.5", mandatory=False)
         os.environ["TCLLDFLAGS"] = "-ltcl8.5"
         if tcllibdir is None:
             print("  Newer libtcl8.6 used")
@@ -300,13 +313,28 @@ class VMDBuild(DistutilsBuild):
                                                os.environ["EXPATLDFLAGS"],
                                                pythonldflag])
 
-        # Set debug variable for now if requested
-        os.environ["DEBUG"] = "DEBUG" if self.debug else ""
+        # Set extra config variables if requested
+        os.environ["VMDEXTRAFLAGS"] = ""
+        if self.debug:
+            os.environ["VMDEXTRAFLAGS"] += " DEBUG"
+        if self.egl:
+            # Find OpenGL headers
+            oglheaders = set([" -I%s" % self._find_include_dir("GL/gl.h"),
+                              " -I%s" % self._find_include_dir("EGL/egl.h"),
+                              " -I%s" % self._find_include_dir("EGL/eglext.h")])
+            os.environ["CFLAGS"] += "".join(oglheaders)
+            os.environ["CXXFLAGS"] += "".join(oglheaders)
+
+            ogllib = self._find_library_dir("libOpenGL")
+            os.environ["LDFLAGS"] += " -L%s" % ogllib
+
+            os.environ["VMDEXTRAFLAGS"] += " EGLPBUFFER"
 
         # Print a summary
         print("Building with:")
         print("  CC: %s" % os.environ["CC"])
         print("  CXX: %s" % os.environ["CXX"])
+        print("  LD: %s" % os.environ["LD"])
         print("  CFLAGS: %s" % os.environ["CFLAGS"])
         print("  CXXFLAGS: %s" % os.environ["CXXFLAGS"])
         print("  LDFLAGS: %s" % os.environ["LDFLAGS"])

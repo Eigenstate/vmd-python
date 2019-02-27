@@ -21,12 +21,7 @@
 #ifndef PY_COMMANDS_H
 #define PY_COMMANDS_H
 
-#if defined(__APPLE__)
-// use the Apple-provided Python framework
-#include "Python/Python.h"
-#else
 #include "Python.h"
-#endif
 
 #if (PY_MAJOR_VERSION == 2) && (PY_MINOR_VERSION < 5)
 #define CAST_HACK (char *)
@@ -75,13 +70,12 @@ AtomSel * atomsel_AsAtomSel( PyObject *obj );
 // Atomsel type
 extern PyTypeObject Atomsel_Type;
 
-// VMD main initialization function
+// VMD main initialization function, with no name mangling
 #if PY_MAJOR_VERSION >= 3
 extern "C" PyObject* PyInit_vmd();
 #else
 extern "C" void initvmd();
 #endif
-
 
 extern PyObject* initanimate();
 extern PyObject* initatomsel();

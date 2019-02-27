@@ -12,7 +12,7 @@ LINUX:
 	$(MAKE) dynlibs staticlibs bins \
 	"ARCH = LINUX" \
 	"COPTO = -fPIC -m32 -o " \
-	"LOPTO = -fPIC -m32 -lstdc++ -o " \
+	"LOPTO = -fPIC -m32 -lstdc++ $(LDFLAGS) -o " \
 	"CC = $(CC)" \
 	"CXX = $(CXX)" \
 	"DEF = -D" \
@@ -20,8 +20,8 @@ LINUX:
 	"CXXFLAGS = -m32 -O2 -fPIC -Wall" \
 	"TCLLDFLAGS = $(TCLLDFLAGS)" \
 	"NETCDFLDFLAGS = $(NETCDFLDFLAGS)" \
-	"AR = ar" \
-	"NM = nm -p" \
+	"AR = $(AR)" \
+	"NM = $(NM) -p" \
 	"RANLIB = touch" \
 	"SHLD = gcc -shared"
 
@@ -31,14 +31,14 @@ LINUXAMD64:
 	"CC = $(CC)" \
 	"CXX = $(CXX)" \
 	"COPTO = -fPIC -m64 -o " \
-	"LOPTO = -fPIC -m64 -lstdc++ -o " \
+	"LOPTO = -fPIC -m64 -lstdc++ $(LDFLAGS) -o " \
 	"DEF = -D" \
 	"CCFLAGS = $(CFLAGS) -m64 -O2 -fPIC -Wall" \
 	"CXXFLAGS = $(CXXFLAGS) -m64 -O2 -fPIC -Wall" \
 	"TCLLDFLAGS = $(TCLLDFLAGS)" \
 	"NETCDFLDFLAGS = $(NETCDFLDFLAGS)" \
-	"AR = ar" \
-	"NM = nm -p" \
+	"AR = $(AR)" \
+	"NM = $(NM) -p" \
 	"RANLIB = touch" \
 	"SHLD = $(CC) -shared"
 
@@ -46,7 +46,7 @@ MACOSX:
 	$(MAKE) dynlibs staticlibs bins \
 	"ARCH = MACOSX" \
 	"COPTO = -fPIC -o " \
-	"LOPTO = -fPIC -o " \
+	"LOPTO = -fPIC $(LDFLAGS) -o " \
 	"CC = $(CC)" \
 	"CXX = $(CXX)" \
 	"DEF = -D" \
@@ -54,8 +54,8 @@ MACOSX:
 	"CXXFLAGS = -Os -Wall -fPIC -dynamic" \
 	"TCLLDFLAGS = $(TCLLDFLAGS)" \
 	"NETCDFLDFLAGS = $(NETCDFLDFLAGS)" \
-	"AR = ar" \
-	"NM = nm -p" \
+	"AR = $(AR)" \
+	"NM = $(NM) -p" \
 	"RANLIB = ranlib" \
 	"SHLD = $(CXX) -bundle" \
 	"TCLSHLD = $(CXX) -dynamiclib"
@@ -64,7 +64,7 @@ MACOSXX86:
 	$(MAKE) dynlibs staticlibs bins \
 	"ARCH = MACOSXX86" \
 	"COPTO = -m32 -fPIC -o " \
-	"LOPTO = -m32 -fPIC -o " \
+	"LOPTO = -m32 -fPIC -o $(LDFLAGS)" \
 	"CC = $(CC)" \
 	"CXX = $(CXX)" \
 	"DEF = -D" \
@@ -72,8 +72,8 @@ MACOSXX86:
 	"CXXFLAGS = $(CXXFLAGS) -m32 -Os -Wall -fPIC -dynamic" \
 	"TCLLDFLAGS = $(TCLLDFLAGS)" \
 	"NETCDFLDFLAGS = $(NETCDFLDFLAGS)" \
-	"AR = ar" \
-	"NM = nm -p" \
+	"AR = $(AR)" \
+	"NM = $(NM) -p" \
 	"RANLIB = ranlib" \
 	"SHLD = $(CXX) -bundle" \
 	"TCLSHLD = $(CXX) -dynamiclib"
@@ -82,7 +82,7 @@ MACOSXX86_64:
 	$(MAKE) dynlibs staticlibs bins \
 	"ARCH = MACOSXX86_64" \
 	"COPTO = -m64 -fPIC -o " \
-	"LOPTO = -m64 -fPIC -o " \
+	"LOPTO = -m64 -fPIC $(LDFLAGS) -o " \
 	"CC = $(CC)" \
 	"CXX = $(CXX)" \
 	"DEF = -D" \
@@ -90,8 +90,8 @@ MACOSXX86_64:
 	"CXXFLAGS = $(CXXFLAGS) -m64 -Os -Wall -fPIC -dynamic" \
 	"TCLLDFLAGS = $(TCLLDFLAGS)" \
 	"NETCDFLDFLAGS = $(NETCDFLDFLAGS)" \
-	"AR = ar" \
-	"NM = nm -p" \
+	"AR = $(AR)" \
+	"NM = $(NM) -p" \
 	"RANLIB = ranlib" \
 	"SHLD = $(CXX) -bundle" \
 	"TCLSHLD = $(CXX) -dynamiclib"
@@ -100,7 +100,7 @@ WIN32:
 	$(MAKE) dynlibs win32staticlibs win32bins \
 	"ARCH = WIN32" \
 	"COPTO = /Fo" \
-	"LOPTO = /OUT:" \
+	"LOPTO = $(LDFLAGS) /OUT:" \
 	"CC = $(CC) /nologo /MT /DWIN32" \
 	"CXX = $(CXX) /nologo /MT /TP /DWIN32" \
 	"DEF = /D" \
@@ -108,8 +108,8 @@ WIN32:
 	"CXXFLAGS = /O2 /G5" \
 	"TCLLDFLAGS = $(TCLLDFLAGS)" \
 	"NETCDFLDFLAGS = $(NETCDFLDFLAGS)" \
-	"AR = ar" \
-	"NM = nm -p" \
+	"AR = $(AR)" \
+	"NM = $(NM) -p" \
 	"RANLIB = touch" \
 	"SHLDFLAGS = /D\"VMDPLUGIN_EXPORTS\"" \
 	"SHLD = link /DLL /nologo /incremental:no \
@@ -121,7 +121,7 @@ WIN64:
 	$(MAKE) dynlibs win32staticlibs win32bins \
 	"ARCH = WIN64" \
 	"COPTO = /Fo" \
-	"LOPTO = /OUT:" \
+	"LOPTO = $(LDFLAGS) /OUT:" \
 	"CC = $(CC) /nologo /MT /DWIN64" \
 	"CXX = $(CXX) /nologo /MT /TP /DWIN64" \
 	"DEF = /D" \
@@ -129,8 +129,8 @@ WIN64:
 	"CXXFLAGS = /EHsc /Wp64 /wd4996 /O2 /D\"_CRT_SECURE_NO_DEPRECATE\"" \
 	"TCLLDFLAGS = $(TCLLDFLAGS)" \
 	"NETCDFLDFLAGS = $(NETCDFLDFLAGS)" \
-	"AR = ar" \
-	"NM = nm -p" \
+	"AR = $(AR)" \
+	"NM = $(NM) -p" \
 	"RANLIB = touch" \
 	"SHLDFLAGS = /D\"VMDPLUGIN_EXPORTS\"" \
 	"SHLD = link /DLL /nologo /incremental:no \

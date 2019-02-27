@@ -60,6 +60,7 @@ def test_dof():
     assert display.get("dof_fnumber") == pytest.approx(3.2)
     assert display.get("dof_focaldist") == 12.0
 
+@pytest.mark.skip(reason="Unimplemented OpenGL PBuffer")
 def test_3dgetset():
     """
     tests: eyesep, focallength, height, distance, nearclip, farclip,

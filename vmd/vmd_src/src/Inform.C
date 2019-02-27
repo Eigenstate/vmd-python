@@ -81,10 +81,10 @@ Inform::~Inform() {
 }
 
 Inform& Inform::send() {
-//#ifdef VMD_SHARED DEBUG ROBIN
-    // Don't emit output to stdout if running as shared library
- // return *this;
-//#endif
+#if defined(VMD_SHARED) && !defined(PYDEBUG)
+    // Don't emit output to stdout if running as shared library w/o debug
+  return *this;
+#endif
   char *nlptr, *bufptr;
  
   if (!muted) {

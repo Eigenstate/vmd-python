@@ -3,7 +3,7 @@ Tests the render module
 """
 import os
 import pytest
-from vmd import render, molecule
+from vmd import render
 
 def test_render(tmpdir):
 
@@ -18,6 +18,7 @@ def test_render(tmpdir):
 
     assert os.path.isfile(os.path.join(tmpdir, "test.out"))
 
+@pytest.mark.skip(reason="PBuffer support not implemented")
 def test_snapshot(tmpdir, file_3nob):
 
     from vmd import molecule, molrep, display
