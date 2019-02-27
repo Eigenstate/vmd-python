@@ -37,8 +37,9 @@ script:
 after_failure:
     - source activate test-environment
     - which python
-    - ldd $(which python)
-    - python -c "import __builtins__"
+    - otool -L $(which python)
+    - otool -L $HOME/miniconda/envs/test-environment/lib/python2.7/site-packages/vmd/libvmd.so
+    - python -c "import __builtin__; "
     - |
       if [[ $TRAVIS_OS_NAME == "osx" ]]; then
           COREFILE=$(ls -At /cores/core* | head -n 1)
