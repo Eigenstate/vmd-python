@@ -39,6 +39,7 @@ after_failure:
     - which python
     - otool -L $(which python)
     - otool -L $HOME/miniconda/envs/test-environment/lib/python2.7/site-packages/vmd/libvmd.so
+    - echo $DYLD_LIBRARY_PATH
     - python -c "import __builtin__; "
     - |
       if [[ $TRAVIS_OS_NAME == "osx" ]]; then

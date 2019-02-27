@@ -837,7 +837,7 @@ static PyObject *py_mol_add_volumetric(PyObject *self, PyObject *args,
   if (PyList_Size(data) != totalsize) {
     PyErr_Format(PyExc_ValueError, "size of data list '%d' does not match "
                  "expected grid size %d x %d x %d",
-                 PySequence_Fast_GET_SIZE(seqdata),
+                 (int) PySequence_Fast_GET_SIZE(seqdata),
                  size[0], size[1], size[2]);
     goto failure;
   }

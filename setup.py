@@ -236,6 +236,7 @@ class VMDBuild(DistutilsBuild):
         # Remove leading "lib" from pythonldflag
         pythonldflag = pythonldflag[3:]
 
+        print("  LIB: %s -> %s" % (pythonldflag, pylibdir))
         return "-L%s -l%s" % (pylibdir, pythonldflag)
 
     #==========================================================================
