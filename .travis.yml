@@ -1,11 +1,7 @@
 language: generic
 env:
-    - PYVER=2.7 DEBUGVER=""
     - PYVER=2.7 DEBUGVER="--debug"
-    - PYVER=3.6 DEBUGVER=""
-    - PYVER=3.6 DEBUGVER="--debug"
 os:
-    - linux
     - osx
 osx_image: xcode-6.4
 
@@ -39,6 +35,10 @@ script:
     - LD_PRELOAD=$PRELOAD python -c "import vmd"
     - LD_PRELOAD=$PRELOAD python setup.py test
 after_failure:
+    - source activate test-environment
+    - which python
+    - ldd $(which python)
+    - python -c "import __builtins__"
     - |
       if [[ $TRAVIS_OS_NAME == "osx" ]]; then
           COREFILE=$(ls -At /cores/core* | head -n 1)
