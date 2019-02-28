@@ -23,7 +23,7 @@ LINUX:
 	"AR = $(AR)" \
 	"NM = $(NM) -p" \
 	"RANLIB = touch" \
-	"SHLD = gcc -shared"
+	"SHLD = $(CXX) -shared"
 
 LINUXAMD64:
 	$(MAKE) dynlibs staticlibs bins \
@@ -40,7 +40,7 @@ LINUXAMD64:
 	"AR = $(AR)" \
 	"NM = $(NM) -p" \
 	"RANLIB = touch" \
-	"SHLD = $(CC) -shared"
+	"SHLD = $(CXX) -shared"
 
 LINUXPPC64:
 	$(MAKE) dynlibs staticlibs bins \
@@ -57,7 +57,7 @@ LINUXPPC64:
 	"AR = $(AR)" \
 	"NM = $(NM) -p" \
 	"RANLIB = touch" \
-	"SHLD = $(CC) -shared"
+	"SHLD = $(CXX) -shared"
 
 MACOSX:
 	$(MAKE) dynlibs staticlibs bins \

@@ -129,7 +129,7 @@ link successfully:
 In Debian, these are provided in `libegl1-mesa-dev`, `mesa-common-dev`,
 and `libopengl0` packages. To build:
 
-    python setup.py --egl build
+    python setup.py build --egl
     python setup.py install
 
 Please file issues if you have problems with this!!
