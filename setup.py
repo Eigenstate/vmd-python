@@ -54,6 +54,7 @@ class VMDBuild(DistutilsBuild):
             os.environ["LDFLAGS"] = ""
 
         self.libdirs = self._get_libdirs()
+        
         DistutilsBuild.finalize_options(self)
 
     #==========================================================================
@@ -113,6 +114,7 @@ class VMDBuild(DistutilsBuild):
         osdirs = dirout.decode("utf-8").replace("libraries: =", "").split(":")
         searchdirs.extend([os.path.abspath(_) for _ in osdirs if
                            os.path.isdir(_)])
+
         return searchdirs
 
     #==========================================================================
@@ -215,6 +217,7 @@ class VMDBuild(DistutilsBuild):
         pythonldflag = os.path.splitext(pylibname)[0] if pylibdir else None
 
         suffix = ".dylib" if "Darwin" in platform.system() else ".so"
+
         # Check a library with appropriate extension actually exists.
         # If not, try to find a libpython and use that
         if pylibname is None or pylibdir is None or \
@@ -224,7 +227,6 @@ class VMDBuild(DistutilsBuild):
             print("Finding python location via fallback method...")
             pylibname = "libpython%s*" % sysconfig.get_python_version()
             candidate_libs = self._find_library_dir(pylibname)
-            print candidate_libs
             libs = sorted(glob(os.path.join(candidate_libs, pylibname)),
                           key=len)
             pylibdir, pythonldflag = os.path.split(libs[-1])
