@@ -1,10 +1,8 @@
 language: generic
 env:
     - PYVER=2.7 DEBUGVER="--debug"
-    - PYVER=3.6 DEBUGVER="--debug"
 os:
     - osx
-      #osx_image: xcode-6.4
 
 addons:
     apt:
@@ -41,7 +39,7 @@ after_failure:
     - otool -L $(which python)
     - otool -L $HOME/miniconda/envs/test-environment/lib/python2.7/site-packages/vmd/libvmd.so
     - echo $DYLD_LIBRARY_PATH
-    - python -c "import __builtin__; "
+    - DYLD_PRINT_LIBRARIES=1 python -c "import __builtin__; "
     - |
       if [[ $TRAVIS_OS_NAME == "osx" ]]; then
           COREFILE=$(ls -At /cores/core* | head -n 1)
