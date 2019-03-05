@@ -1905,7 +1905,7 @@ if ($config_arch eq "LINUX") {
     $arch_shlibname   = "so";
     $arch_shcppopts   = "-fPIC";
     $arch_shldopts    = "";
-    $arch_opt_flag    .= "-m32 -fno-for-scope -Wno-deprecated -Wall -Wno-unknown-pragmas -O3";
+    $arch_opt_flag    .= "-m32 -Wno-deprecated -Wall -Wno-unknown-pragmas -O3";
     $arch_copts       .= "-m32 -Wall -Wno-unknown-pragmas -O3";
 
     if ($config_static) {
@@ -1962,7 +1962,7 @@ if ($config_arch eq "LINUXAMD64") {
       print "LP64 ABI is already the default on this platform.\n";
     }
 
-    $arch_opt_flag	.= " -m64 -fno-for-scope -Wno-deprecated -Wall -Wno-unknown-pragmas -ffast-math";
+    $arch_opt_flag	.= " -m64 -Wno-deprecated -Wall -Wno-unknown-pragmas -ffast-math";
     $arch_depend_flag   .= " -MM";
     $arch_copts       .= " -m64 -Wall -Wno-unknown-pragmas -ffast-math";
 
