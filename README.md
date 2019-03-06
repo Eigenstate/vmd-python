@@ -3,8 +3,6 @@ Installable VMD as a python module
 
 *NEW*: Version 3.0 has the following new features
 
-* Offscreen rendering to an OpenGL buffer so you can render programmatically
-  (Only if built with `python setup.py --egl`, see below)
 * Atomselection attributes can be accessed or set more easily:
   `atomsel.get("x")` can be written as `atomsel.x`!
 * Removed extra info dumped to stdout
@@ -31,6 +29,8 @@ optional plugins not included in binary distributions:
 * It doesn't crash when you import it
 * Doesn't care which numpy you compile against
 * Support for Python 2 or Python 3
+
+### [Read the documentation!])(https://vmd.robinbetz.com)
 
 ### Included modules
 The following sub-modules are part of VMD. The import system
@@ -116,7 +116,9 @@ For other architectures, you can build from source by cloning this repo:
 
 Installation can take a while since it compiles VMD from source.
 
-### Installing with EGL support
+### Installing with EGL support (experimental)
+
+NOTE: The build process for this is currently broken.
 
 VMD-Python can render to an offscreen buffer if you build it yourself with
 the --egl flag. You'll need the following files on your system to build and
