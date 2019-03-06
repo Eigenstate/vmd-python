@@ -223,7 +223,7 @@ static PyObject* py_mol_new(PyObject *self, PyObject *args, PyObject *kwargs)
 
 static const char mol_load_doc[] =
 "Load a molecule from a file. Can optionally read in coordinate files as\n"
-"well. Coordinate data does not have to be present in structure file\n"
+"well. Coordinate data does not have to be present in structure file.\n\n"
 "Args:\n"
 "    struct_type (str): File type for structure data, or 'graphics' for\n"
 "        a blank molecule to add graphics to.\n"

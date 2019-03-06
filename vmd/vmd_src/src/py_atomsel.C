@@ -305,7 +305,7 @@ failure:
 }
 
 static const char listattrs_doc[] =
-"List available atom attributes\n"
+"List available atom attributes\n\n"
 "Args:\n"
 "    changeable (bool): If only user-changeable attributes should be listed\n"
 "        Defaults to False\n"

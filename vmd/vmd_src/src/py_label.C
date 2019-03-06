@@ -148,7 +148,7 @@ static PyObject* py_listall(PyObject *self, PyObject *args, PyObject *kwargs)
 static const char label_add_doc[] =
 "Add a label of the given type. If label already exists, no action is \n"
 "performed. The number of elements in the molids and atomids tuple is \n"
-"determined by\nArgs:\n"
+"determined by the label type.\n\nArgs:\n"
 "    category (str): Label category to add. Must be one of the following:\n"
 "        'Atoms', 'Bonds', 'Angles', 'Dihedrals', 'Springs'\n"
 "    molids (list or tuple): Molids to label. Length as required to describe\n"
