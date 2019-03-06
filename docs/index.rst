@@ -37,13 +37,10 @@ I recommend using the pre-built binary packages with the
 `Anaconda Python Distribution <https://www.anaconda.com/download>`_.
 Currently, there are packages available for Linux and OSX::
 
-    conda install -c rbetz vmd-python
+    conda install -c conda-forge vmd-python
 
-For other architectures, you can use pip::
-
-    pip install -i https://pypi.anaconda.org/rbetz/simple vmd-python
-
-Or, if you download the `source <https://github.com/Eigenstate/vmd-python>`_::
+For other architectures, you can download the
+`source <https://github.com/Eigenstate/vmd-python>`_::
 
     python setup.py build
     python setup.py install
@@ -54,22 +51,29 @@ VMD-Python has the following dependencies:
 - numpy
 - libexpat
 
-Built-In Functions
-------------------
-.. currentmodule:: evaltcl
-.. autosummary::
-    :toctree: api/generated/
-
-    evaltcl
-
 Modules
 -------
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    animate
-   axes
    atomsel
+   axes
    color
    display
+   evaltcl
+   graphics
+   imd
+   label
+   material
+   measure
+   molecule
+   molrep
+   mouse
+   render
+   selection
+   topology
+   trans
+   vmdcallbacks
+   vmdnumpy
 

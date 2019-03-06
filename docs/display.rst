@@ -1,5 +1,5 @@
 .. _display:
-.. currentmodule:: display
+.. currentmodule:: vmd.display
 .. highlight:: python
 
 Display

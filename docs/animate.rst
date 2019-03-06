@@ -1,11 +1,12 @@
 .. _animate:
-.. currentmodule:: animate
+.. currentmodule:: vmd.animate
 
 Animate
 =======
 
 Animate changes how trajectories are displayed in the view window.
-This module is pretty useless in vmd-python.
+This module is pretty useless in vmd-python, but can be used to render
+movies programmatically.
 
 Molecule actions
 ----------------
@@ -23,6 +24,7 @@ Trajectory actions
     :toctree: api/generated/
 
     forward
+    goto
     loop
     next
     once

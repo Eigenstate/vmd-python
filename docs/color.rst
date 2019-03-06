@@ -1,5 +1,5 @@
 .. _color:
-.. currentmodule:: color
+.. currentmodule:: vmd.color
 
 Color
 =====
@@ -21,6 +21,7 @@ of many colors, see below for how to use color scales.
     get_colorlist
     set_colors
     set_colorid
+    categories
 
 Color mappings
 --------------
@@ -40,7 +41,6 @@ coloring scheme for other elements.
 .. autosummary::
     :toctree: api/generated/
 
-    categories
     get_colormap
     set_colormap
 
@@ -59,6 +59,7 @@ and maximum value.
     :toctree: api/generated
 
     scale_method
+    scale_methods
     scale_midpoint
     scale_min
     scale_max

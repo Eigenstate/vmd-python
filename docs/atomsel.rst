@@ -1,5 +1,5 @@
 .. _atomsel:
-.. currentmodule:: atomsel
+.. currentmodule:: vmd.atomsel
 .. highlight:: python
 
 Atomsel
@@ -12,34 +12,96 @@ Basic actions
 -------------
 
 To create a new atomsel:
+.. currentmodule:: vmd.atomsel
+.. automethod:: __init__
 
-.. autosummary::
-    :toctree: api/generated/
+Atomsel objects have attributes. New in vmd-python > 3.0.0, you can access
+these attributes directly from the atomsel object to both get and set!
+For example:
 
-    atomsel
+.. code-block:: python
+
+    protein = atomsel("protein")
+    protein.chain = "A"
 
 Here are basic methods working with an atom selection object:
 
 .. autosummary::
     :toctree: api/generated
 
-    get
-    set
-    getframe
-    setframe
     update
     write
 
+
+Fitting selections to each other
+--------------------------------
+
+These methods can be used to move selections around or calculate the differences
+between them.
+
+.. autosummary::
+    :toctree: api/generated/
+
+    fit
+    moveby
+    move
+
+
+Numerical calculations
+----------------------
+
+Many calculations can be performed on atomsel objects. For speed, the
+following are implemented internally in C:
+
+.. autosummary::
+    :toctree: api/generated/
+
+    center
+    centerperresidue
+    contacts
+    hbonds
+    minmax
+    rgyr
+    rmsd
+    rmsdQCP
+    rmsdperresidue
+    rmsf
+    rmsfperresidue
+    sasa
+
+
 Attributes
 ----------
+
+There are many attributes, some of which are changeable by the user. To
+get them, use:
+
+.. autosummary::
+    :toctree: api/generated
+
+    list_attributes
 
 Here are the atomselection attributes that may be get or set using this
 module. If the attribute refers to some inherent feature of the atom (such
 as "backbone"), using the get function returns a list of booleans.
 
+If changing attributes, make sure to call `update()` on the
+atom selection to ensure that changes are applied to your atom selection.
+
+Molecule attributes
+^^^^^^^^^^^^^^^^^^^
+These attributes describe the atom selection itself, and may be assigned to.
+
+.. autosummary::
+    :toctree: api/generated
+
+    bonds
+    frame
+    molid
+
 Per-atom attributes
 ^^^^^^^^^^^^^^^^^^^
-These attributes are features characteristic of an atom
+These attributes are features characteristic of an atom:
 
 - ``name``: Atom name
 - ``type``: Atom type
@@ -60,7 +122,6 @@ Per-atom spatial attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 These attributes deal mostly with the coordinates of the atoms
 
-- ``user``, ``user2``, ``user3``, ``user4``: Four floating-point fields for your data
 - ``x``, ``y`` and ``z``: X, Y, or Z coordinate of the atom
 - ``vx``, ``vy``, and ``vz``: X, Y, or Z velocity of the atom, if present
 - ``ufx``, ``ufy``, and ``ufz``: X, Y, or Z force on the atom, if present
@@ -117,39 +178,8 @@ molecule. Otherwise, they're all NaN.
 - ``vol0`` through ``vol7``: Volume value at this atom
 - ``interpvol0`` through ``interpvol7``: Interpolated volume value at this atom
 
-
-Fitting selections to each other
---------------------------------
-
-These methods can be used to move selections around or calculate the differences
-between them.
-
-.. autosummary::
-    :toctree: api/generated/
-
-    fit
-    moveby
-    move
-
-Numerical calculations
-----------------------
-
-Many calculations can be performed on atomsel objects. For speed, the
-following are implemented internally in C:
-
-.. autosummary::
-    :toctree: api/generated/
-
-    center
-    centerperresidue
-    minmax
-    rmsd
-    rmsdQCP
-    rmsf
-    rgyr
-    rmsfperresidue
-    rmsdperresidue
-    contacts
-    hbond
-    sasa
-
+Custom attributes
+^^^^^^^^^^^^^^^^^
+These fields can be used to assign per-atom data of your choice:
+- ``user``, ``user2``, ``user3``, ``user4``: Four floating-point fields for your data
+- ``flag1`` through ``flag7``: Seven boolean fields for your data
