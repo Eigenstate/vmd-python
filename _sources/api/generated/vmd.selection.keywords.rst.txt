@@ -1,0 +1,6 @@
+vmd.selection.keywords
+======================
+
+.. currentmodule:: vmd.selection
+
+.. autofunction:: keywords

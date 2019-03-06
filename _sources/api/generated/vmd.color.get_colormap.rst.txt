@@ -1,0 +1,6 @@
+vmd.color.get\_colormap
+=======================
+
+.. currentmodule:: vmd.color
+
+.. autofunction:: get_colormap

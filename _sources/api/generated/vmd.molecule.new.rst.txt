@@ -1,0 +1,6 @@
+vmd.molecule.new
+================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: new

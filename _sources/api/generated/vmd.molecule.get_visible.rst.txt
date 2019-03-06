@@ -1,0 +1,6 @@
+vmd.molecule.get\_visible
+=========================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: get_visible

@@ -1,0 +1,6 @@
+vmd.topology.impropers
+======================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: impropers

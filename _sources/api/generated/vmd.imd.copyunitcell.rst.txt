@@ -1,0 +1,6 @@
+vmd.imd.copyunitcell
+====================
+
+.. currentmodule:: vmd.imd
+
+.. autofunction:: copyunitcell

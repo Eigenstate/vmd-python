@@ -1,0 +1,6 @@
+vmd.color.scale\_max
+====================
+
+.. currentmodule:: vmd.color
+
+.. autofunction:: scale_max

@@ -1,0 +1,6 @@
+vmd.molecule.num\_volumetric
+============================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: num_volumetric

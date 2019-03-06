@@ -1,0 +1,6 @@
+vmd.molecule.get\_periodic
+==========================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: get_periodic

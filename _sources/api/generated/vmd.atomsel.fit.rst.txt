@@ -1,0 +1,6 @@
+vmd.atomsel.fit
+===============
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.fit

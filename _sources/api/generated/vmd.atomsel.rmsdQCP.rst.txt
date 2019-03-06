@@ -1,0 +1,6 @@
+vmd.atomsel.rmsdQCP
+===================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.rmsdQCP

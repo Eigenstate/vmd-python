@@ -1,0 +1,6 @@
+vmd.trans.get\_translation
+==========================
+
+.. currentmodule:: vmd.trans
+
+.. autofunction:: get_translation

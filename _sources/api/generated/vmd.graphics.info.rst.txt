@@ -1,0 +1,6 @@
+vmd.graphics.info
+=================
+
+.. currentmodule:: vmd.graphics
+
+.. autofunction:: info

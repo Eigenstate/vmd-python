@@ -1,0 +1,6 @@
+vmd.atomsel.bonds
+=================
+
+.. currentmodule:: vmd
+
+.. autoattribute:: atomsel.bonds

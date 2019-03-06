@@ -1,0 +1,6 @@
+vmd.label.text\_size
+====================
+
+.. currentmodule:: vmd.label
+
+.. autofunction:: text_size

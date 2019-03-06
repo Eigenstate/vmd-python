@@ -1,0 +1,6 @@
+vmd.molecule.set\_frame
+=======================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: set_frame

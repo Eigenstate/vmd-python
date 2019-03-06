@@ -1,0 +1,6 @@
+vmd.topology.delbond
+====================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: delbond

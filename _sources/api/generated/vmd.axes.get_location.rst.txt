@@ -1,0 +1,6 @@
+vmd.axes.get\_location
+======================
+
+.. currentmodule:: vmd.axes
+
+.. autofunction:: get_location

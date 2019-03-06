@@ -1,0 +1,6 @@
+vmd.atomsel.centerperresidue
+============================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.centerperresidue

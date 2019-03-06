@@ -1,0 +1,6 @@
+vmd.selection.del\_macro
+========================
+
+.. currentmodule:: vmd.selection
+
+.. autofunction:: del_macro

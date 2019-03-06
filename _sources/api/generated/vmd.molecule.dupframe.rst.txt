@@ -1,0 +1,6 @@
+vmd.molecule.dupframe
+=====================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: dupframe

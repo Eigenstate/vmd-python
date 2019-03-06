@@ -1,0 +1,6 @@
+vmd.vmdnumpy.velocities
+=======================
+
+.. currentmodule:: vmd.vmdnumpy
+
+.. autofunction:: velocities

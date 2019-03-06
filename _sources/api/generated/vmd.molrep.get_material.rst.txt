@@ -1,0 +1,6 @@
+vmd.molrep.get\_material
+========================
+
+.. currentmodule:: vmd.molrep
+
+.. autofunction:: get_material

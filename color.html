@@ -1,0 +1,375 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Color &mdash; vmd-python 3.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="vmd-python 3.0.1 documentation" href="index.html"/>
+        <link rel="next" title="vmd.color.get_colors" href="api/generated/vmd.color.get_colors.html"/>
+        <link rel="prev" title="vmd.axes.set_location" href="api/generated/vmd.axes.set_location.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> vmd-python
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="animate.html">Animate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="atomsel.html">Atomsel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="axes.html">Axes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Color</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-colors">Basic colors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.color.get_colors.html">vmd.color.get_colors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.color.get_colorlist.html">vmd.color.get_colorlist</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.color.set_colors.html">vmd.color.set_colors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.color.set_colorid.html">vmd.color.set_colorid</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.color.categories.html">vmd.color.categories</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#color-mappings">Color mappings</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.color.get_colormap.html">vmd.color.get_colormap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.color.set_colormap.html">vmd.color.set_colormap</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#color-scale">Color scale</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.color.scale_method.html">vmd.color.scale_method</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.color.scale_methods.html">vmd.color.scale_methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.color.scale_midpoint.html">vmd.color.scale_midpoint</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.color.scale_min.html">vmd.color.scale_min</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.color.scale_max.html">vmd.color.scale_max</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.color.set_scale.html">vmd.color.set_scale</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="display.html">Display</a></li>
+<li class="toctree-l1"><a class="reference internal" href="evaltcl.html">Evaltcl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graphics.html">Graphics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="imd.html">IMD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="label.html">Label</a></li>
+<li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measure.html">Measure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="molecule.html">Molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="molrep.html">Molrep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mouse.html">Mouse</a></li>
+<li class="toctree-l1"><a class="reference internal" href="render.html">Render</a></li>
+<li class="toctree-l1"><a class="reference internal" href="selection.html">Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trans.html">Trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdcallbacks.html">VMD Callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdcallbacks.html#vmd-menu">VMD Menu</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdnumpy.html">VMD Numpy</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">vmd-python</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Color</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/color.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="color">
+<span id="id1"></span><h1>Color<a class="headerlink" href="#color" title="Permalink to this headline">¶</a></h1>
+<p>Methods for changing how VMD colors things. Can be useful for rendering
+from the Python API.</p>
+<div class="section" id="basic-colors">
+<h2>Basic colors<a class="headerlink" href="#basic-colors" title="Permalink to this headline">¶</a></h2>
+<p>VMD defines many colors by name. You can actually assign any RGB value to
+these names. However, you currently cannot add additional colors. For use
+of many colors, see below for how to use color scales.</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.color.get_colors.html#vmd.color.get_colors" title="vmd.color.get_colors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_colors</span></code></a></td>
+<td>Get all legal color names and corresponding RGB values.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.color.get_colorlist.html#vmd.color.get_colorlist" title="vmd.color.get_colorlist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_colorlist</span></code></a></td>
+<td>Get list of all defined colors by RGB value</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.color.set_colors.html#vmd.color.set_colors" title="vmd.color.set_colors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_colors</span></code></a></td>
+<td>Change the RGB values for named colors.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.color.set_colorid.html#vmd.color.set_colorid" title="vmd.color.set_colorid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_colorid</span></code></a></td>
+<td>Set RGB value of a color at a given index</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.color.categories.html#vmd.color.categories" title="vmd.color.categories"><code class="xref py py-obj docutils literal notranslate"><span class="pre">categories</span></code></a></td>
+<td>Get available color categories</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="color-mappings">
+<h2>Color mappings<a class="headerlink" href="#color-mappings" title="Permalink to this headline">¶</a></h2>
+<p>VMD likes to classify colors into categories. For example, the “Name” category
+is used when coloring atoms by name. The “Type” category is used to color atoms
+by type, etc. Some categories are used for internal display purposes, such as
+the “Display” and “Axes” categories.</p>
+<p>Changing the color mappings can be useful for things like coloring the carbons
+in a ligand differently than those in the protein, while preserving the standard
+coloring scheme for other elements.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vmd</span> <span class="k">import</span> <span class="n">color</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">color</span><span class="o">.</span><span class="n">set_colormap</span><span class="p">(</span><span class="s2">&quot;Type&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="s2">&quot;green3&quot;</span><span class="p">})</span>
+</pre></div>
+</div>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.color.get_colormap.html#vmd.color.get_colormap" title="vmd.color.get_colormap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_colormap</span></code></a></td>
+<td>Get name/color pairs in a given colormap category</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.color.set_colormap.html#vmd.color.set_colormap" title="vmd.color.set_colormap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_colormap</span></code></a></td>
+<td>Update name/color pairs in given color category</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="color-scale">
+<h2>Color scale<a class="headerlink" href="#color-scale" title="Permalink to this headline">¶</a></h2>
+<p>The color scale is used for coloring continuous values, such as the “User” or
+“Charge” coloring schemes. It’s a gradient of color with a minimum, middle,
+and maximum value.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">vmd</span> <span class="k">import</span> <span class="n">color</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">color</span><span class="o">.</span><span class="n">scale_methods</span><span class="p">()</span>
+<span class="go">[&#39;RWB&#39;, &#39;BWR&#39;, &#39;RGryB&#39;, &#39;BGryR&#39;, &#39;RGB&#39;, &#39;BGR&#39;, &#39;RWG&#39;, &#39;GWR&#39;, &#39;GWB&#39;, &#39;BWG&#39;, &#39;BlkW&#39;, &#39;WBlk&#39;]</span>
+</pre></div>
+</div>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.color.scale_method.html#vmd.color.scale_method" title="vmd.color.scale_method"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scale_method</span></code></a></td>
+<td>Get the current colorscale method</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.color.scale_methods.html#vmd.color.scale_methods" title="vmd.color.scale_methods"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scale_methods</span></code></a></td>
+<td>Get list of available colorscale methods</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.color.scale_midpoint.html#vmd.color.scale_midpoint" title="vmd.color.scale_midpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scale_midpoint</span></code></a></td>
+<td>Get current colorscale midpoint value</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.color.scale_min.html#vmd.color.scale_min" title="vmd.color.scale_min"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scale_min</span></code></a></td>
+<td>Get current colorscale minimum value</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.color.scale_max.html#vmd.color.scale_max" title="vmd.color.scale_max"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scale_max</span></code></a></td>
+<td>Get current colorscale max.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.color.set_scale.html#vmd.color.set_scale" title="vmd.color.set_scale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_scale</span></code></a></td>
+<td>Set colorscale parameters.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="api/generated/vmd.color.get_colors.html" class="btn btn-neutral float-right" title="vmd.color.get_colors" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="api/generated/vmd.axes.set_location.html" class="btn btn-neutral" title="vmd.axes.set_location" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Robin Betz.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'3.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/language_data.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

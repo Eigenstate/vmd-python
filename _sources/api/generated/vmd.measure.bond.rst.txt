@@ -1,0 +1,6 @@
+vmd.measure.bond
+================
+
+.. currentmodule:: vmd.measure
+
+.. autofunction:: bond

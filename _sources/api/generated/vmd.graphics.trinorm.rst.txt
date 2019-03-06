@@ -1,0 +1,6 @@
+vmd.graphics.trinorm
+====================
+
+.. currentmodule:: vmd.graphics
+
+.. autofunction:: trinorm

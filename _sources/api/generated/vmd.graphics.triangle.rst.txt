@@ -1,0 +1,6 @@
+vmd.graphics.triangle
+=====================
+
+.. currentmodule:: vmd.graphics
+
+.. autofunction:: triangle

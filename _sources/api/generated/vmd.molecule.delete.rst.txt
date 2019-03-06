@@ -1,0 +1,6 @@
+vmd.molecule.delete
+===================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: delete

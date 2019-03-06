@@ -1,0 +1,6 @@
+vmd.molrep.set\_visible
+=======================
+
+.. currentmodule:: vmd.molrep
+
+.. autofunction:: set_visible

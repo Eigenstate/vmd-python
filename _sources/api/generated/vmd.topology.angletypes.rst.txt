@@ -1,0 +1,6 @@
+vmd.topology.angletypes
+=======================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: angletypes

@@ -1,0 +1,6 @@
+vmd.imd.kill
+============
+
+.. currentmodule:: vmd.imd
+
+.. autofunction:: kill

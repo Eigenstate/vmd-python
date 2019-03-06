@@ -1,0 +1,6 @@
+vmd.molecule.listall
+====================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: listall

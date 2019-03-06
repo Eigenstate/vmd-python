@@ -1,0 +1,6 @@
+vmd.measure.dihedral
+====================
+
+.. currentmodule:: vmd.measure
+
+.. autofunction:: dihedral

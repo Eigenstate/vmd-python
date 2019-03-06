@@ -1,0 +1,6 @@
+vmd.selection.get\_macro
+========================
+
+.. currentmodule:: vmd.selection
+
+.. autofunction:: get_macro

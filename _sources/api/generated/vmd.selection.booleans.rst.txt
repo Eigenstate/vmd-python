@@ -1,0 +1,6 @@
+vmd.selection.booleans
+======================
+
+.. currentmodule:: vmd.selection
+
+.. autofunction:: booleans

@@ -1,0 +1,6 @@
+vmd.topology.bonds
+==================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: bonds

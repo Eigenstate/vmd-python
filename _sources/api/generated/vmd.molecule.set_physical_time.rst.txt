@@ -1,0 +1,6 @@
+vmd.molecule.set\_physical\_time
+================================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: set_physical_time

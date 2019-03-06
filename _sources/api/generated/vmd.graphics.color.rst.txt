@@ -1,0 +1,6 @@
+vmd.graphics.color
+==================
+
+.. currentmodule:: vmd.graphics
+
+.. autofunction:: color

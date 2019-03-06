@@ -1,0 +1,6 @@
+vmd.graphics.cylinder
+=====================
+
+.. currentmodule:: vmd.graphics
+
+.. autofunction:: cylinder

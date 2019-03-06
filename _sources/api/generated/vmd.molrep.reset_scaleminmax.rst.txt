@@ -1,0 +1,6 @@
+vmd.molrep.reset\_scaleminmax
+=============================
+
+.. currentmodule:: vmd.molrep
+
+.. autofunction:: reset_scaleminmax

@@ -1,0 +1,6 @@
+vmd.animate.reverse
+===================
+
+.. currentmodule:: vmd.animate
+
+.. autofunction:: reverse

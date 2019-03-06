@@ -1,0 +1,6 @@
+vmd.trans.translate\_scene
+==========================
+
+.. currentmodule:: vmd.trans
+
+.. autofunction:: translate_scene

@@ -1,0 +1,6 @@
+vmd.molecule.read
+=================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: read

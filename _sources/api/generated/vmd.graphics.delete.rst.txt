@@ -1,0 +1,6 @@
+vmd.graphics.delete
+===================
+
+.. currentmodule:: vmd.graphics
+
+.. autofunction:: delete

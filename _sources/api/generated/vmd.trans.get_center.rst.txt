@@ -1,0 +1,6 @@
+vmd.trans.get\_center
+=====================
+
+.. currentmodule:: vmd.trans
+
+.. autofunction:: get_center

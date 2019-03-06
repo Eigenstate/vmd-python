@@ -1,0 +1,6 @@
+vmd.molecule.exists
+===================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: exists

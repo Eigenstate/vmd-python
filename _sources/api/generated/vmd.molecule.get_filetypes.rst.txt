@@ -1,0 +1,6 @@
+vmd.molecule.get\_filetypes
+===========================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: get_filetypes

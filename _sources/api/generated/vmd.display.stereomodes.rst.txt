@@ -1,0 +1,6 @@
+vmd.display.stereomodes
+=======================
+
+.. currentmodule:: vmd.display
+
+.. autofunction:: stereomodes

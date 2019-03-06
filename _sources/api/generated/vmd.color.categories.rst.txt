@@ -1,0 +1,6 @@
+vmd.color.categories
+====================
+
+.. currentmodule:: vmd.color
+
+.. autofunction:: categories

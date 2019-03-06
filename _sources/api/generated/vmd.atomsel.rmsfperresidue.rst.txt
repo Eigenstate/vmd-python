@@ -1,0 +1,6 @@
+vmd.atomsel.rmsfperresidue
+==========================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.rmsfperresidue

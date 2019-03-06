@@ -1,0 +1,6 @@
+vmd.molecule.numframes
+======================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: numframes

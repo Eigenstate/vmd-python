@@ -1,0 +1,6 @@
+vmd.material.add
+================
+
+.. currentmodule:: vmd.material
+
+.. autofunction:: add

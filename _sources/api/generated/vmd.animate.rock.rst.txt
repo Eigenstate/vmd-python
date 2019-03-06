@@ -1,0 +1,6 @@
+vmd.animate.rock
+================
+
+.. currentmodule:: vmd.animate
+
+.. autofunction:: rock

@@ -1,0 +1,6 @@
+vmd.trans.scale\_scene
+======================
+
+.. currentmodule:: vmd.trans
+
+.. autofunction:: scale_scene

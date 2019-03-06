@@ -1,0 +1,6 @@
+vmd.molecule.delframe
+=====================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: delframe

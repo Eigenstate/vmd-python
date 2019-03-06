@@ -1,0 +1,6 @@
+vmd.trans.get\_scale
+====================
+
+.. currentmodule:: vmd.trans
+
+.. autofunction:: get_scale

@@ -1,0 +1,6 @@
+vmd.label.add
+=============
+
+.. currentmodule:: vmd.label
+
+.. autofunction:: add

@@ -1,0 +1,6 @@
+vmd.animate.once
+================
+
+.. currentmodule:: vmd.animate
+
+.. autofunction:: once

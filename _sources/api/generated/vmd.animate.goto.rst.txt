@@ -1,0 +1,6 @@
+vmd.animate.goto
+================
+
+.. currentmodule:: vmd.animate
+
+.. autofunction:: goto

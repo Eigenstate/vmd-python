@@ -1,0 +1,6 @@
+vmd.selection.add\_macro
+========================
+
+.. currentmodule:: vmd.selection
+
+.. autofunction:: add_macro

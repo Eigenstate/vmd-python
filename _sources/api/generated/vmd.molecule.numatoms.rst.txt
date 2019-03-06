@@ -1,0 +1,6 @@
+vmd.molecule.numatoms
+=====================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: numatoms

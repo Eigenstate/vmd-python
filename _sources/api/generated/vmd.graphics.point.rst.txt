@@ -1,0 +1,6 @@
+vmd.graphics.point
+==================
+
+.. currentmodule:: vmd.graphics
+
+.. autofunction:: point

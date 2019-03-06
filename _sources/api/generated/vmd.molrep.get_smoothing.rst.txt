@@ -1,0 +1,6 @@
+vmd.molrep.get\_smoothing
+=========================
+
+.. currentmodule:: vmd.molrep
+
+.. autofunction:: get_smoothing

@@ -1,0 +1,6 @@
+vmd.molrep.get\_selection
+=========================
+
+.. currentmodule:: vmd.molrep
+
+.. autofunction:: get_selection

@@ -1,0 +1,6 @@
+vmd.atomsel.sasa
+================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.sasa

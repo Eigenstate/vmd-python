@@ -1,0 +1,6 @@
+vmd.topology.delimproper
+========================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: delimproper

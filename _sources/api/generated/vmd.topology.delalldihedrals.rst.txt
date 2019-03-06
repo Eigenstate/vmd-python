@@ -1,0 +1,6 @@
+vmd.topology.delalldihedrals
+============================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: delalldihedrals

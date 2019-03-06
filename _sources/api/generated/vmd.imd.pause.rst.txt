@@ -1,0 +1,6 @@
+vmd.imd.pause
+=============
+
+.. currentmodule:: vmd.imd
+
+.. autofunction:: pause

@@ -1,0 +1,6 @@
+vmd.render.render
+=================
+
+.. currentmodule:: vmd.render
+
+.. autofunction:: render

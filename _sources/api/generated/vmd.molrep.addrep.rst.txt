@@ -1,0 +1,6 @@
+vmd.molrep.addrep
+=================
+
+.. currentmodule:: vmd.molrep
+
+.. autofunction:: addrep

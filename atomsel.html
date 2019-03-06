@@ -1,0 +1,531 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Atomsel &mdash; vmd-python 3.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="vmd-python 3.0.1 documentation" href="index.html"/>
+        <link rel="next" title="vmd.atomsel.update" href="api/generated/vmd.atomsel.update.html"/>
+        <link rel="prev" title="vmd.animate.style" href="api/generated/vmd.animate.style.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> vmd-python
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="animate.html">Animate</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Atomsel</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-actions">Basic actions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.update.html">vmd.atomsel.update</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.write.html">vmd.atomsel.write</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#fitting-selections-to-each-other">Fitting selections to each other</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.fit.html">vmd.atomsel.fit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.moveby.html">vmd.atomsel.moveby</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.move.html">vmd.atomsel.move</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#numerical-calculations">Numerical calculations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.center.html">vmd.atomsel.center</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.centerperresidue.html">vmd.atomsel.centerperresidue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.contacts.html">vmd.atomsel.contacts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.hbonds.html">vmd.atomsel.hbonds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.minmax.html">vmd.atomsel.minmax</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.rgyr.html">vmd.atomsel.rgyr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.rmsd.html">vmd.atomsel.rmsd</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.rmsdQCP.html">vmd.atomsel.rmsdQCP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.rmsdperresidue.html">vmd.atomsel.rmsdperresidue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.rmsf.html">vmd.atomsel.rmsf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.rmsfperresidue.html">vmd.atomsel.rmsfperresidue</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.sasa.html">vmd.atomsel.sasa</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#attributes">Attributes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.atomsel.list_attributes.html">vmd.atomsel.list_attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#molecule-attributes">Molecule attributes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/generated/vmd.atomsel.bonds.html">vmd.atomsel.bonds</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/generated/vmd.atomsel.frame.html">vmd.atomsel.frame</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/generated/vmd.atomsel.molid.html">vmd.atomsel.molid</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#per-atom-attributes">Per-atom attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#per-atom-spatial-attributes">Per-atom spatial attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#context-attributes">Context attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#secondary-structure-attributes">Secondary structure attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#volumetric-attributes">Volumetric attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#custom-attributes">Custom attributes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="axes.html">Axes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="color.html">Color</a></li>
+<li class="toctree-l1"><a class="reference internal" href="display.html">Display</a></li>
+<li class="toctree-l1"><a class="reference internal" href="evaltcl.html">Evaltcl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graphics.html">Graphics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="imd.html">IMD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="label.html">Label</a></li>
+<li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measure.html">Measure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="molecule.html">Molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="molrep.html">Molrep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mouse.html">Mouse</a></li>
+<li class="toctree-l1"><a class="reference internal" href="render.html">Render</a></li>
+<li class="toctree-l1"><a class="reference internal" href="selection.html">Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trans.html">Trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdcallbacks.html">VMD Callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdcallbacks.html#vmd-menu">VMD Menu</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdnumpy.html">VMD Numpy</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">vmd-python</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Atomsel</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/atomsel.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>Atomsel<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>This is the low-level (non object-oriented) interface to atom selection
+objects.</p>
+<div class="section" id="basic-actions">
+<h2>Basic actions<a class="headerlink" href="#basic-actions" title="Permalink to this headline">¶</a></h2>
+<p>To create a new atomsel:
+.. currentmodule:: vmd.atomsel
+.. automethod:: __init__</p>
+<p>Atomsel objects have attributes. New in vmd-python &gt; 3.0.0, you can access
+these attributes directly from the atomsel object to both get and set!
+For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">protein</span> <span class="o">=</span> <span class="n">atomsel</span><span class="p">(</span><span class="s2">&quot;protein&quot;</span><span class="p">)</span>
+<span class="n">protein</span><span class="o">.</span><span class="n">chain</span> <span class="o">=</span> <span class="s2">&quot;A&quot;</span>
+</pre></div>
+</div>
+<p>Here are basic methods working with an atom selection object:</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.atomsel.update.html#vmd.atomsel.update" title="vmd.atomsel.update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code></a></td>
+<td>Recompute which atoms in the molecule belong to this selection.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.atomsel.write.html#vmd.atomsel.write" title="vmd.atomsel.write"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code></a></td>
+<td>Write atoms in this selection to a file of the given type</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="fitting-selections-to-each-other">
+<h2>Fitting selections to each other<a class="headerlink" href="#fitting-selections-to-each-other" title="Permalink to this headline">¶</a></h2>
+<p>These methods can be used to move selections around or calculate the differences
+between them.</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.atomsel.fit.html#vmd.atomsel.fit" title="vmd.atomsel.fit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit</span></code></a></td>
+<td>Compute the transformation matrix for the root-mean-square (RMS) alignment of this selection to the one given.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.atomsel.moveby.html#vmd.atomsel.moveby" title="vmd.atomsel.moveby"><code class="xref py py-obj docutils literal notranslate"><span class="pre">moveby</span></code></a></td>
+<td>Shift the selection by a vector</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.atomsel.move.html#vmd.atomsel.move" title="vmd.atomsel.move"><code class="xref py py-obj docutils literal notranslate"><span class="pre">move</span></code></a></td>
+<td>Apply a coordinate transformation to the selection.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="numerical-calculations">
+<h2>Numerical calculations<a class="headerlink" href="#numerical-calculations" title="Permalink to this headline">¶</a></h2>
+<p>Many calculations can be performed on atomsel objects. For speed, the
+following are implemented internally in C:</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.atomsel.center.html#vmd.atomsel.center" title="vmd.atomsel.center"><code class="xref py py-obj docutils literal notranslate"><span class="pre">center</span></code></a></td>
+<td>Get the coordinates of the center of the selection, optionally with weights on the selection atoms</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.atomsel.centerperresidue.html#vmd.atomsel.centerperresidue" title="vmd.atomsel.centerperresidue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">centerperresidue</span></code></a></td>
+<td>Get the coordinates of the center of each residue in the selection, optionally weighted by weight</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.atomsel.contacts.html#vmd.atomsel.contacts" title="vmd.atomsel.contacts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">contacts</span></code></a></td>
+<td>Finds all atoms in selection within a given distance of any atom in the given selection that are not directly bonded to it.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.atomsel.hbonds.html#vmd.atomsel.hbonds" title="vmd.atomsel.hbonds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hbonds</span></code></a></td>
+<td>Get hydrogen bonds present in current frame of selection using simple geometric criteria.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.atomsel.minmax.html#vmd.atomsel.minmax" title="vmd.atomsel.minmax"><code class="xref py py-obj docutils literal notranslate"><span class="pre">minmax</span></code></a></td>
+<td>Get minimum and maximum coordinates for selected atoms</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.atomsel.rgyr.html#vmd.atomsel.rgyr" title="vmd.atomsel.rgyr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rgyr</span></code></a></td>
+<td>Calculate the radius of gyration of this selection</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.atomsel.rmsd.html#vmd.atomsel.rmsd" title="vmd.atomsel.rmsd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rmsd</span></code></a></td>
+<td>Calculate the root-mean-square distance (RMSD) between selections.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.atomsel.rmsdQCP.html#vmd.atomsel.rmsdQCP" title="vmd.atomsel.rmsdQCP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rmsdQCP</span></code></a></td>
+<td>Calculate the root-mean-square distance (RMSD) between selection after rotating them optimally</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.atomsel.rmsdperresidue.html#vmd.atomsel.rmsdperresidue" title="vmd.atomsel.rmsdperresidue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rmsdperresidue</span></code></a></td>
+<td>Get the per-residue root-mean-square (RMS) distance between selections</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.atomsel.rmsf.html#vmd.atomsel.rmsf" title="vmd.atomsel.rmsf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rmsf</span></code></a></td>
+<td>Measures the root-mean-square fluctuation (RMSF) along a trajectory on a per-atom basis.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.atomsel.rmsfperresidue.html#vmd.atomsel.rmsfperresidue" title="vmd.atomsel.rmsfperresidue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rmsfperresidue</span></code></a></td>
+<td>Measures the root-mean-square fluctuation (RMSF) along a trajectory on a per-residue basis.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.atomsel.sasa.html#vmd.atomsel.sasa" title="vmd.atomsel.sasa"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sasa</span></code></a></td>
+<td>Get solvent accessible surface area of selection</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h2>
+<p>There are many attributes, some of which are changeable by the user. To
+get them, use:</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.atomsel.list_attributes.html#vmd.atomsel.list_attributes" title="vmd.atomsel.list_attributes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_attributes</span></code></a></td>
+<td>List available atom attributes</td>
+</tr>
+</tbody>
+</table>
+<p>Here are the atomselection attributes that may be get or set using this
+module. If the attribute refers to some inherent feature of the atom (such
+as “backbone”), using the get function returns a list of booleans.</p>
+<p>If changing attributes, make sure to call <cite>update()</cite> on the
+atom selection to ensure that changes are applied to your atom selection.</p>
+<div class="section" id="molecule-attributes">
+<h3>Molecule attributes<a class="headerlink" href="#molecule-attributes" title="Permalink to this headline">¶</a></h3>
+<p>These attributes describe the atom selection itself, and may be assigned to.</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.atomsel.bonds.html#vmd.atomsel.bonds" title="vmd.atomsel.bonds"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bonds</span></code></a></td>
+<td>For each atom in selection, a list of the indices of atoms to which it is bonded.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.atomsel.frame.html#vmd.atomsel.frame" title="vmd.atomsel.frame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">frame</span></code></a></td>
+<td>Get the frame an atomsel object references.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.atomsel.molid.html#vmd.atomsel.molid" title="vmd.atomsel.molid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">molid</span></code></a></td>
+<td>The molecule ID the selection is associated with</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="per-atom-attributes">
+<h3>Per-atom attributes<a class="headerlink" href="#per-atom-attributes" title="Permalink to this headline">¶</a></h3>
+<p>These attributes are features characteristic of an atom:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">name</span></code>: Atom name</li>
+<li><code class="docutils literal notranslate"><span class="pre">type</span></code>: Atom type</li>
+<li><code class="docutils literal notranslate"><span class="pre">index</span></code>: Atom index, counting from 1</li>
+<li><code class="docutils literal notranslate"><span class="pre">serial</span></code>: Atom index, counting from 0</li>
+<li><code class="docutils literal notranslate"><span class="pre">mass</span></code>: Atomic mass</li>
+<li><code class="docutils literal notranslate"><span class="pre">atomicnumber</span></code>: Atomic number</li>
+<li><code class="docutils literal notranslate"><span class="pre">element</span></code>: Atomic element</li>
+<li><code class="docutils literal notranslate"><span class="pre">altloc</span></code>: Alternate atom location, if present</li>
+<li><code class="docutils literal notranslate"><span class="pre">insertion</span></code>: Atom insertion code</li>
+<li><code class="docutils literal notranslate"><span class="pre">numbonds</span></code>: Number of bonds atom participates in. Does not take into account bond order</li>
+<li><code class="docutils literal notranslate"><span class="pre">beta</span></code>: Beta factor for the atom, if present</li>
+<li><code class="docutils literal notranslate"><span class="pre">occupancy</span></code>: Occupancy of the atom, if present</li>
+<li><code class="docutils literal notranslate"><span class="pre">charge</span></code>: Charge on the atom, if present</li>
+<li><code class="docutils literal notranslate"><span class="pre">radius</span></code>: The radius of the atom. Used in SASA calculations and visualization</li>
+</ul>
+</div>
+<div class="section" id="per-atom-spatial-attributes">
+<h3>Per-atom spatial attributes<a class="headerlink" href="#per-atom-spatial-attributes" title="Permalink to this headline">¶</a></h3>
+<p>These attributes deal mostly with the coordinates of the atoms</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code> and <code class="docutils literal notranslate"><span class="pre">z</span></code>: X, Y, or Z coordinate of the atom</li>
+<li><code class="docutils literal notranslate"><span class="pre">vx</span></code>, <code class="docutils literal notranslate"><span class="pre">vy</span></code>, and <code class="docutils literal notranslate"><span class="pre">vz</span></code>: X, Y, or Z velocity of the atom, if present</li>
+<li><code class="docutils literal notranslate"><span class="pre">ufx</span></code>, <code class="docutils literal notranslate"><span class="pre">ufy</span></code>, and <code class="docutils literal notranslate"><span class="pre">ufz</span></code>: X, Y, or Z force on the atom, if present</li>
+</ul>
+</div>
+<div class="section" id="context-attributes">
+<h3>Context attributes<a class="headerlink" href="#context-attributes" title="Permalink to this headline">¶</a></h3>
+<p>These attributes give information about the atom in the context of its
+environment.</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">residue</span></code>: Internal residue number to which atom belongs, counting from 0.</li>
+<li><code class="docutils literal notranslate"><span class="pre">resid</span></code>: Residue ID to which atom belongs, using canonical numbering if present in input molecule</li>
+<li><code class="docutils literal notranslate"><span class="pre">resname</span></code>: Residue name to which atom belongs</li>
+<li><code class="docutils literal notranslate"><span class="pre">chain</span></code>: Chain to which atom belongs, usually a single letter</li>
+<li><code class="docutils literal notranslate"><span class="pre">segname</span></code>: Segment name to which atom belongs, if present</li>
+<li><code class="docutils literal notranslate"><span class="pre">segid</span></code>: Segment index to which atom belongs</li>
+<li><code class="docutils literal notranslate"><span class="pre">fragment</span></code>: Molecular fragment to which atom belongs, counting from 0</li>
+<li><code class="docutils literal notranslate"><span class="pre">pfrag</span></code>: Protein fragment to which atom belongs, counting from 0. If atom is not part of a protein fragment, is set to -1</li>
+<li><code class="docutils literal notranslate"><span class="pre">nfrag</span></code>: Nucleic acid fragment to which atom belongs, counting from 0. If atom is not part of a nucleic acid, is set to -1</li>
+<li><code class="docutils literal notranslate"><span class="pre">phi</span></code>: Phi backbone angle for the residue this atom is in</li>
+<li><code class="docutils literal notranslate"><span class="pre">psi</span></code>: Psi backbone angel for the residue this atom is in</li>
+<li><code class="docutils literal notranslate"><span class="pre">backbone</span></code>: If the atom is part of a protein backbone</li>
+<li><code class="docutils literal notranslate"><span class="pre">sidechain</span></code>: If the atom is in a protein sidechain</li>
+<li><code class="docutils literal notranslate"><span class="pre">protein</span></code>: If the atom is part of a protein</li>
+<li><code class="docutils literal notranslate"><span class="pre">nucleic</span></code>: If the atom is part of a nucleic acid</li>
+<li><code class="docutils literal notranslate"><span class="pre">water</span></code> or <code class="docutils literal notranslate"><span class="pre">waters</span></code>: If the atom is water</li>
+<li><code class="docutils literal notranslate"><span class="pre">vmd_fast_hydrogen</span></code>: True if the atom is hydrogen, faster than using element.</li>
+</ul>
+</div>
+<div class="section" id="secondary-structure-attributes">
+<h3>Secondary structure attributes<a class="headerlink" href="#secondary-structure-attributes" title="Permalink to this headline">¶</a></h3>
+<p>If there is no secondary structure information parsed from the input molecule
+file, the accuracy of these attributes depends on the quality of predicted
+secondary structure by VMD or STRIDE.</p>
+<p>The DSSP classification corresponding to each keyword is also listed.</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">helix</span></code>: <em>G,H,I</em> If the atom is part of a helix</li>
+<li><code class="docutils literal notranslate"><span class="pre">alpha_helix</span></code>: <em>H</em> If the atom is part of an alpha helix</li>
+<li><code class="docutils literal notranslate"><span class="pre">helix_3_10</span></code>: <em>G</em> If the atom is part of a 3 <sub>10</sub> <a class="reference external" href="https://en.wikipedia.org/wiki/310_helix">helix</a></li>
+<li><code class="docutils literal notranslate"><span class="pre">pi_helix</span></code>: <em>I</em> If the atom is part of a <a class="reference external" href="https://en.wikipedia.org/wiki/Pi_helix">pi helix</a></li>
+<li><code class="docutils literal notranslate"><span class="pre">sheet</span></code>, <code class="docutils literal notranslate"><span class="pre">betasheet</span></code>, or <code class="docutils literal notranslate"><span class="pre">beta_sheet</span></code>: <em>E,B</em> If the atom is part of a beta sheet</li>
+<li><code class="docutils literal notranslate"><span class="pre">extended_beta</span></code>: <em>E</em> If the atom is part of an extended sheet</li>
+<li><code class="docutils literal notranslate"><span class="pre">bridge_beta</span></code>: <em>B</em> If the atom is part of an isolated beta bridge</li>
+<li><code class="docutils literal notranslate"><span class="pre">turn</span></code>: <em>T</em> If the atom is part of a hydrogen-bonded turn</li>
+<li><code class="docutils literal notranslate"><span class="pre">coil</span></code>: <em>C</em> If the atom is part of any other secondary structure conformation</li>
+<li><code class="docutils literal notranslate"><span class="pre">structure</span></code>: The DSSP classification of the secondary structure</li>
+<li><code class="docutils literal notranslate"><span class="pre">pucker</span></code>: The amount of pucker on a ring, designed for carbohydrates</li>
+</ul>
+</div>
+<div class="section" id="volumetric-attributes">
+<h3>Volumetric attributes<a class="headerlink" href="#volumetric-attributes" title="Permalink to this headline">¶</a></h3>
+<p>These fields are populated when there is a volumetric dataset loaded into the
+molecule. Otherwise, they’re all NaN.</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">volindex0</span></code> through <code class="docutils literal notranslate"><span class="pre">volindex7</span></code>: Indices into volumetric dataset for atom</li>
+<li><code class="docutils literal notranslate"><span class="pre">vol0</span></code> through <code class="docutils literal notranslate"><span class="pre">vol7</span></code>: Volume value at this atom</li>
+<li><code class="docutils literal notranslate"><span class="pre">interpvol0</span></code> through <code class="docutils literal notranslate"><span class="pre">interpvol7</span></code>: Interpolated volume value at this atom</li>
+</ul>
+</div>
+<div class="section" id="custom-attributes">
+<h3>Custom attributes<a class="headerlink" href="#custom-attributes" title="Permalink to this headline">¶</a></h3>
+<p>These fields can be used to assign per-atom data of your choice:
+- <code class="docutils literal notranslate"><span class="pre">user</span></code>, <code class="docutils literal notranslate"><span class="pre">user2</span></code>, <code class="docutils literal notranslate"><span class="pre">user3</span></code>, <code class="docutils literal notranslate"><span class="pre">user4</span></code>: Four floating-point fields for your data
+- <code class="docutils literal notranslate"><span class="pre">flag1</span></code> through <code class="docutils literal notranslate"><span class="pre">flag7</span></code>: Seven boolean fields for your data</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="api/generated/vmd.atomsel.update.html" class="btn btn-neutral float-right" title="vmd.atomsel.update" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="api/generated/vmd.animate.style.html" class="btn btn-neutral" title="vmd.animate.style" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Robin Betz.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'3.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/language_data.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

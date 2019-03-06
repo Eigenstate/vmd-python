@@ -1,0 +1,6 @@
+vmd.color.scale\_methods
+========================
+
+.. currentmodule:: vmd.color
+
+.. autofunction:: scale_methods

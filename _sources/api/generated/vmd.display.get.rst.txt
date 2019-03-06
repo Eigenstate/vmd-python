@@ -1,0 +1,6 @@
+vmd.display.get
+===============
+
+.. currentmodule:: vmd.display
+
+.. autofunction:: get

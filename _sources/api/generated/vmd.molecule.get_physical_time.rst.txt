@@ -1,0 +1,6 @@
+vmd.molecule.get\_physical\_time
+================================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: get_physical_time

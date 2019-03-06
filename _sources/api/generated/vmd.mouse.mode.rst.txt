@@ -1,0 +1,6 @@
+vmd.mouse.mode
+==============
+
+.. currentmodule:: vmd.mouse
+
+.. autofunction:: mode

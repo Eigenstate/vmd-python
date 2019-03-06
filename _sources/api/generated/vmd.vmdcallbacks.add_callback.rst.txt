@@ -1,0 +1,6 @@
+vmd.vmdcallbacks.add\_callback
+==============================
+
+.. currentmodule:: vmd.vmdcallbacks
+
+.. autofunction:: add_callback

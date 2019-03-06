@@ -1,0 +1,6 @@
+vmd.display.update\_ui
+======================
+
+.. currentmodule:: vmd.display
+
+.. autofunction:: update_ui

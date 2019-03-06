@@ -1,0 +1,6 @@
+vmd.trans.get\_rotation
+=======================
+
+.. currentmodule:: vmd.trans
+
+.. autofunction:: get_rotation

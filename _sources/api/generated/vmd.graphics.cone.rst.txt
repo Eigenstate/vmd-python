@@ -1,0 +1,6 @@
+vmd.graphics.cone
+=================
+
+.. currentmodule:: vmd.graphics
+
+.. autofunction:: cone

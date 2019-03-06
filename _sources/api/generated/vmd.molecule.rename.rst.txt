@@ -1,0 +1,6 @@
+vmd.molecule.rename
+===================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: rename

@@ -1,0 +1,6 @@
+vmd.atomsel.rmsd
+================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.rmsd

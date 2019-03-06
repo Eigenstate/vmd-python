@@ -1,0 +1,6 @@
+vmd.atomsel.minmax
+==================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.minmax

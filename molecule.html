@@ -1,0 +1,475 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Molecule &mdash; vmd-python 3.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="vmd-python 3.0.1 documentation" href="index.html"/>
+        <link rel="next" title="vmd.molecule.cancel" href="api/generated/vmd.molecule.cancel.html"/>
+        <link rel="prev" title="vmd.measure.dihedral" href="api/generated/vmd.measure.dihedral.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> vmd-python
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="animate.html">Animate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="atomsel.html">Atomsel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="axes.html">Axes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="color.html">Color</a></li>
+<li class="toctree-l1"><a class="reference internal" href="display.html">Display</a></li>
+<li class="toctree-l1"><a class="reference internal" href="evaltcl.html">Evaltcl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graphics.html">Graphics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="imd.html">IMD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="label.html">Label</a></li>
+<li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measure.html">Measure</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Molecule</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-functionality">Basic functionality</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.cancel.html">vmd.molecule.cancel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.delete.html">vmd.molecule.delete</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.delframe.html">vmd.molecule.delframe</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.dupframe.html">vmd.molecule.dupframe</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.exists.html">vmd.molecule.exists</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.listall.html">vmd.molecule.listall</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.load.html">vmd.molecule.load</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.new.html">vmd.molecule.new</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.num.html">vmd.molecule.num</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.read.html">vmd.molecule.read</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.rename.html">vmd.molecule.rename</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.write.html">vmd.molecule.write</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.ssrecalc.html">vmd.molecule.ssrecalc</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.get_top.html">vmd.molecule.get_top</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.set_top.html">vmd.molecule.set_top</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#querying-loaded-molecules">Querying loaded molecules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.get_accessions.html">vmd.molecule.get_accessions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.get_databases.html">vmd.molecule.get_databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.get_periodic.html">vmd.molecule.get_periodic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.get_physical_time.html">vmd.molecule.get_physical_time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.get_remarks.html">vmd.molecule.get_remarks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.set_periodic.html">vmd.molecule.set_periodic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.set_physical_time.html">vmd.molecule.set_physical_time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.get_filenames.html">vmd.molecule.get_filenames</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.get_filetypes.html">vmd.molecule.get_filetypes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.get_frame.html">vmd.molecule.get_frame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.get_visible.html">vmd.molecule.get_visible</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.name.html">vmd.molecule.name</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.numatoms.html">vmd.molecule.numatoms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.numframes.html">vmd.molecule.numframes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.set_frame.html">vmd.molecule.set_frame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.set_visible.html">vmd.molecule.set_visible</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#working-with-volumetric-data">Working with volumetric data</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.add_volumetric.html">vmd.molecule.add_volumetric</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.delete_volumetric.html">vmd.molecule.delete_volumetric</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.get_volumetric.html">vmd.molecule.get_volumetric</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.molecule.num_volumetric.html">vmd.molecule.num_volumetric</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="molrep.html">Molrep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mouse.html">Mouse</a></li>
+<li class="toctree-l1"><a class="reference internal" href="render.html">Render</a></li>
+<li class="toctree-l1"><a class="reference internal" href="selection.html">Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trans.html">Trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdcallbacks.html">VMD Callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdcallbacks.html#vmd-menu">VMD Menu</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdnumpy.html">VMD Numpy</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">vmd-python</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Molecule</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/molecule.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>Molecule<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>Methods to interact with molecule, including loading data, querying molecule
+attributes, working with volumetric data, or setting its visibility in the
+render window.</p>
+<div class="section" id="basic-functionality">
+<h2>Basic functionality<a class="headerlink" href="#basic-functionality" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.cancel.html#vmd.molecule.cancel" title="vmd.molecule.cancel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cancel</span></code></a></td>
+<td>Cancel background loading of files for given molid</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.delete.html#vmd.molecule.delete" title="vmd.molecule.delete"><code class="xref py py-obj docutils literal notranslate"><span class="pre">delete</span></code></a></td>
+<td>Delete a molecule</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.delframe.html#vmd.molecule.delframe" title="vmd.molecule.delframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">delframe</span></code></a></td>
+<td>Delete a frame or frame(s) from a loaded molecule</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.dupframe.html#vmd.molecule.dupframe" title="vmd.molecule.dupframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dupframe</span></code></a></td>
+<td>Duplicate a frame.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.exists.html#vmd.molecule.exists" title="vmd.molecule.exists"><code class="xref py py-obj docutils literal notranslate"><span class="pre">exists</span></code></a></td>
+<td>Check if a molecule ID is valid</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.listall.html#vmd.molecule.listall" title="vmd.molecule.listall"><code class="xref py py-obj docutils literal notranslate"><span class="pre">listall</span></code></a></td>
+<td>List all valid molecule IDs</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.load.html#vmd.molecule.load" title="vmd.molecule.load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load</span></code></a></td>
+<td>Load a molecule from a file.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.new.html#vmd.molecule.new" title="vmd.molecule.new"><code class="xref py py-obj docutils literal notranslate"><span class="pre">new</span></code></a></td>
+<td>Create a new molecule, with optional number of ‘empty’ atoms</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.num.html#vmd.molecule.num" title="vmd.molecule.num"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num</span></code></a></td>
+<td>Get the number of loaded molecules</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.read.html#vmd.molecule.read" title="vmd.molecule.read"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read</span></code></a></td>
+<td>Read coordinate data into an existing molecule</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.rename.html#vmd.molecule.rename" title="vmd.molecule.rename"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rename</span></code></a></td>
+<td>Change the name of a molecule</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.write.html#vmd.molecule.write" title="vmd.molecule.write"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code></a></td>
+<td>Write coordinate and topology data from a loaded molecule to a file</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.ssrecalc.html#vmd.molecule.ssrecalc" title="vmd.molecule.ssrecalc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ssrecalc</span></code></a></td>
+<td>Recalculate secondary structure for molecule</td>
+</tr>
+</tbody>
+</table>
+<p>Typically for molecular dynamics simulation trajectories, a topology file
+will be loaded, then a trajectory file will be read in to it in a way that
+blocks program execution until all frames are done loading. This code snippit
+does this, then saves the last frame as a PDB file.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">vmd</span> <span class="kn">import</span> <span class="n">molecule</span>
+
+<span class="n">molid</span> <span class="o">=</span> <span class="n">molecule</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;parm7&quot;</span><span class="p">,</span> <span class="s2">&quot;system.prmtop&quot;</span><span class="p">)</span>
+<span class="n">molecule</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">molid</span><span class="p">,</span> <span class="s2">&quot;netcdf&quot;</span><span class="p">,</span> <span class="s2">&quot;simulation.nc&quot;</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">waitfor</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">last_frame</span> <span class="o">=</span> <span class="n">molecule</span><span class="o">.</span><span class="n">numframes</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="n">molecule</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">molid</span><span class="p">,</span> <span class="s2">&quot;pdb&quot;</span><span class="p">,</span> <span class="s2">&quot;last_frame.pdb&quot;</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="n">last_frame</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>VMD has the concept of the “top” molecule, which is the default molecule
+for all operations unless otherwise specified.</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.get_top.html#vmd.molecule.get_top" title="vmd.molecule.get_top"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_top</span></code></a></td>
+<td>Get the ID of the top molecule</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.set_top.html#vmd.molecule.set_top" title="vmd.molecule.set_top"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_top</span></code></a></td>
+<td>Set the top molecule</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="querying-loaded-molecules">
+<h2>Querying loaded molecules<a class="headerlink" href="#querying-loaded-molecules" title="Permalink to this headline">¶</a></h2>
+<p>Depending on the information available in the input molecule files, these
+fields may or may not be populated.</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.get_accessions.html#vmd.molecule.get_accessions" title="vmd.molecule.get_accessions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_accessions</span></code></a></td>
+<td>Get database accession codes associated with files loaded into a molecule</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.get_databases.html#vmd.molecule.get_databases" title="vmd.molecule.get_databases"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_databases</span></code></a></td>
+<td>Get databases associated with files loaded into a molecule</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.get_periodic.html#vmd.molecule.get_periodic" title="vmd.molecule.get_periodic"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_periodic</span></code></a></td>
+<td>Get the periodic cell layout</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.get_physical_time.html#vmd.molecule.get_physical_time" title="vmd.molecule.get_physical_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_physical_time</span></code></a></td>
+<td>Get the physical time value for a frame, if set</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.get_remarks.html#vmd.molecule.get_remarks" title="vmd.molecule.get_remarks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_remarks</span></code></a></td>
+<td>Get remarks associated with files loaded into a molecule</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.set_periodic.html#vmd.molecule.set_periodic" title="vmd.molecule.set_periodic"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_periodic</span></code></a></td>
+<td>Set the periodic cell layout for a particular frame.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.set_physical_time.html#vmd.molecule.set_physical_time" title="vmd.molecule.set_physical_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_physical_time</span></code></a></td>
+<td>Set the physical time value for a frame</td>
+</tr>
+</tbody>
+</table>
+<p>These attributes are always available:</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.get_filenames.html#vmd.molecule.get_filenames" title="vmd.molecule.get_filenames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_filenames</span></code></a></td>
+<td>Get list of all files loaded into a molecule</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.get_filetypes.html#vmd.molecule.get_filetypes" title="vmd.molecule.get_filetypes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_filetypes</span></code></a></td>
+<td>Get file types loaded into a molecule</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.get_frame.html#vmd.molecule.get_frame" title="vmd.molecule.get_frame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_frame</span></code></a></td>
+<td>Get the current frame</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.get_visible.html#vmd.molecule.get_visible" title="vmd.molecule.get_visible"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_visible</span></code></a></td>
+<td>Get if a molecule is visible</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.name.html#vmd.molecule.name" title="vmd.molecule.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></td>
+<td>Get name of a given molecule</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.numatoms.html#vmd.molecule.numatoms" title="vmd.molecule.numatoms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numatoms</span></code></a></td>
+<td>Get number of atoms in a given molecule</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.numframes.html#vmd.molecule.numframes" title="vmd.molecule.numframes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numframes</span></code></a></td>
+<td>Get the number of loaded frames in a molecule</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.set_frame.html#vmd.molecule.set_frame" title="vmd.molecule.set_frame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_frame</span></code></a></td>
+<td>Set the frame of a molecule</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.set_visible.html#vmd.molecule.set_visible" title="vmd.molecule.set_visible"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_visible</span></code></a></td>
+<td>Set the visiblity of a molecule</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="working-with-volumetric-data">
+<h2>Working with volumetric data<a class="headerlink" href="#working-with-volumetric-data" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.add_volumetric.html#vmd.molecule.add_volumetric" title="vmd.molecule.add_volumetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_volumetric</span></code></a></td>
+<td>Add a new volumetric dataset to a molecule</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.delete_volumetric.html#vmd.molecule.delete_volumetric" title="vmd.molecule.delete_volumetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">delete_volumetric</span></code></a></td>
+<td>Delete a volumetric dataset from a molecule</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molecule.get_volumetric.html#vmd.molecule.get_volumetric" title="vmd.molecule.get_volumetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_volumetric</span></code></a></td>
+<td>Obtain a volumetric dataset loaded into a molecule</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molecule.num_volumetric.html#vmd.molecule.num_volumetric" title="vmd.molecule.num_volumetric"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_volumetric</span></code></a></td>
+<td>Get the number of volumetric datasets loaded into a molecule</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="api/generated/vmd.molecule.cancel.html" class="btn btn-neutral float-right" title="vmd.molecule.cancel" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="api/generated/vmd.measure.dihedral.html" class="btn btn-neutral" title="vmd.measure.dihedral" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Robin Betz.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'3.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/language_data.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+vmd.label.listall
+=================
+
+.. currentmodule:: vmd.label
+
+.. autofunction:: listall

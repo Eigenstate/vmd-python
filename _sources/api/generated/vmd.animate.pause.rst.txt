@@ -1,0 +1,6 @@
+vmd.animate.pause
+=================
+
+.. currentmodule:: vmd.animate
+
+.. autofunction:: pause

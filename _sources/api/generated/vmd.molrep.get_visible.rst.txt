@@ -1,0 +1,6 @@
+vmd.molrep.get\_visible
+=======================
+
+.. currentmodule:: vmd.molrep
+
+.. autofunction:: get_visible

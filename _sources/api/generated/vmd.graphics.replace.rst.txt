@@ -1,0 +1,6 @@
+vmd.graphics.replace
+====================
+
+.. currentmodule:: vmd.graphics
+
+.. autofunction:: replace

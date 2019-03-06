@@ -1,0 +1,6 @@
+vmd.trans.fix
+=============
+
+.. currentmodule:: vmd.trans
+
+.. autofunction:: fix

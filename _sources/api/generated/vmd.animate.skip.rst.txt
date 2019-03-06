@@ -1,0 +1,6 @@
+vmd.animate.skip
+================
+
+.. currentmodule:: vmd.animate
+
+.. autofunction:: skip

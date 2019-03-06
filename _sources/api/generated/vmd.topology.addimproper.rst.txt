@@ -1,0 +1,6 @@
+vmd.topology.addimproper
+========================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: addimproper

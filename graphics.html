@@ -1,0 +1,376 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Graphics &mdash; vmd-python 3.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="vmd-python 3.0.1 documentation" href="index.html"/>
+        <link rel="next" title="vmd.graphics.cone" href="api/generated/vmd.graphics.cone.html"/>
+        <link rel="prev" title="vmd.evaltcl" href="api/generated/vmd.evaltcl.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> vmd-python
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="animate.html">Animate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="atomsel.html">Atomsel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="axes.html">Axes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="color.html">Color</a></li>
+<li class="toctree-l1"><a class="reference internal" href="display.html">Display</a></li>
+<li class="toctree-l1"><a class="reference internal" href="evaltcl.html">Evaltcl</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Graphics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#graphics-primitives">Graphics primitives</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.cone.html">vmd.graphics.cone</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.cylinder.html">vmd.graphics.cylinder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.line.html">vmd.graphics.line</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.point.html">vmd.graphics.point</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.sphere.html">vmd.graphics.sphere</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.text.html">vmd.graphics.text</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.triangle.html">vmd.graphics.triangle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.trinorm.html">vmd.graphics.trinorm</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#manipulating-graphics-primitives">Manipulating graphics primitives</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.listall.html">vmd.graphics.listall</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.replace.html">vmd.graphics.replace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.delete.html">vmd.graphics.delete</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.info.html">vmd.graphics.info</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#changing-the-style-of-graphics">Changing the style of graphics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.color.html">vmd.graphics.color</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.material.html">vmd.graphics.material</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.graphics.materials.html">vmd.graphics.materials</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="imd.html">IMD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="label.html">Label</a></li>
+<li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measure.html">Measure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="molecule.html">Molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="molrep.html">Molrep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mouse.html">Mouse</a></li>
+<li class="toctree-l1"><a class="reference internal" href="render.html">Render</a></li>
+<li class="toctree-l1"><a class="reference internal" href="selection.html">Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trans.html">Trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdcallbacks.html">VMD Callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdcallbacks.html#vmd-menu">VMD Menu</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdnumpy.html">VMD Numpy</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">vmd-python</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Graphics</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/graphics.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="graphics">
+<h1>Graphics<a class="headerlink" href="#graphics" title="Permalink to this headline">¶</a></h1>
+<p>Draw graphics primitives to the render window. This module is pretty
+useless in vmd-python without EGL support.</p>
+<div class="section" id="graphics-primitives">
+<h2>Graphics primitives<a class="headerlink" href="#graphics-primitives" title="Permalink to this headline">¶</a></h2>
+<p>Here are all of the simple shapes you can draw:</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.graphics.cone.html#vmd.graphics.cone" title="vmd.graphics.cone"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cone</span></code></a></td>
+<td>Draws a cone.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.graphics.cylinder.html#vmd.graphics.cylinder" title="vmd.graphics.cylinder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cylinder</span></code></a></td>
+<td>Draws a cylinder</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.graphics.line.html#vmd.graphics.line" title="vmd.graphics.line"><code class="xref py py-obj docutils literal notranslate"><span class="pre">line</span></code></a></td>
+<td>Draw a line between the given vertices</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.graphics.point.html#vmd.graphics.point" title="vmd.graphics.point"><code class="xref py py-obj docutils literal notranslate"><span class="pre">point</span></code></a></td>
+<td>Draw a point at the given vertex</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.graphics.sphere.html#vmd.graphics.sphere" title="vmd.graphics.sphere"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sphere</span></code></a></td>
+<td>Draws a sphere</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.graphics.text.html#vmd.graphics.text" title="vmd.graphics.text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">text</span></code></a></td>
+<td>Draw text</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.graphics.triangle.html#vmd.graphics.triangle" title="vmd.graphics.triangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">triangle</span></code></a></td>
+<td>Draws a triangle</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.graphics.trinorm.html#vmd.graphics.trinorm" title="vmd.graphics.trinorm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trinorm</span></code></a></td>
+<td>Draws a triangle with given vertices and vertex normals</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="manipulating-graphics-primitives">
+<h2>Manipulating graphics primitives<a class="headerlink" href="#manipulating-graphics-primitives" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.graphics.listall.html#vmd.graphics.listall" title="vmd.graphics.listall"><code class="xref py py-obj docutils literal notranslate"><span class="pre">listall</span></code></a></td>
+<td>List all drawn graphics objects on a given molecule</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.graphics.replace.html#vmd.graphics.replace" title="vmd.graphics.replace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">replace</span></code></a></td>
+<td>Delete a graphics object and have the next element replace this one.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.graphics.delete.html#vmd.graphics.delete" title="vmd.graphics.delete"><code class="xref py py-obj docutils literal notranslate"><span class="pre">delete</span></code></a></td>
+<td>Deletes a specified graphics object, or all graphics at a given molid</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.graphics.info.html#vmd.graphics.info" title="vmd.graphics.info"><code class="xref py py-obj docutils literal notranslate"><span class="pre">info</span></code></a></td>
+<td>Describe a graphics object with given index</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="changing-the-style-of-graphics">
+<h2>Changing the style of graphics<a class="headerlink" href="#changing-the-style-of-graphics" title="Permalink to this headline">¶</a></h2>
+<p>VMD draws graphics in a “stack” of commands that are applied in order. Instead
+of setting the material or color for individual graphics primitives, the
+color or material is defined as a command put on the stack, then all subsequent
+primitives will be drawn with that style until a new color or material is set.</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.graphics.color.html#vmd.graphics.color" title="vmd.graphics.color"><code class="xref py py-obj docutils literal notranslate"><span class="pre">color</span></code></a></td>
+<td>Set color for subsequent graphics primitives in this molecule.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.graphics.material.html#vmd.graphics.material" title="vmd.graphics.material"><code class="xref py py-obj docutils literal notranslate"><span class="pre">material</span></code></a></td>
+<td>Set material for all graphics in this molecule</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.graphics.materials.html#vmd.graphics.materials" title="vmd.graphics.materials"><code class="xref py py-obj docutils literal notranslate"><span class="pre">materials</span></code></a></td>
+<td>Turns materials on or off for subsequent graphics primitives.</td>
+</tr>
+</tbody>
+</table>
+<p>The following code will draw a red cylinder, then a blue sphere:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">vmd</span> <span class="kn">import</span> <span class="n">molecule</span><span class="p">,</span> <span class="n">graphics</span>
+
+<span class="n">drawmol</span> <span class="o">=</span> <span class="n">molecule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Drawings&quot;</span><span class="p">)</span>
+<span class="n">graphics</span><span class="o">.</span><span class="n">color</span><span class="p">(</span><span class="n">drawmol</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">cylinder_id</span> <span class="o">=</span> <span class="n">graphics</span><span class="o">.</span><span class="n">cylinder</span><span class="p">(</span><span class="n">drawmol</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">filled</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="n">graphics</span><span class="o">.</span><span class="n">color</span><span class="p">(</span><span class="n">drawmol</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">sphere_id</span> <span class="o">=</span> <span class="n">graphics</span><span class="o">.</span><span class="n">sphere</span><span class="p">(</span><span class="n">drawmol</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">radius</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="api/generated/vmd.graphics.cone.html" class="btn btn-neutral float-right" title="vmd.graphics.cone" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="api/generated/vmd.evaltcl.html" class="btn btn-neutral" title="vmd.evaltcl" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Robin Betz.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'3.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/language_data.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

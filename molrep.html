@@ -1,0 +1,350 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Molrep &mdash; vmd-python 3.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="vmd-python 3.0.1 documentation" href="index.html"/>
+        <link rel="next" title="vmd.molrep.addrep" href="api/generated/vmd.molrep.addrep.html"/>
+        <link rel="prev" title="vmd.molecule.num_volumetric" href="api/generated/vmd.molecule.num_volumetric.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> vmd-python
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="animate.html">Animate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="atomsel.html">Atomsel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="axes.html">Axes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="color.html">Color</a></li>
+<li class="toctree-l1"><a class="reference internal" href="display.html">Display</a></li>
+<li class="toctree-l1"><a class="reference internal" href="evaltcl.html">Evaltcl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graphics.html">Graphics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="imd.html">IMD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="label.html">Label</a></li>
+<li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measure.html">Measure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="molecule.html">Molecule</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Molrep</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.addrep.html">vmd.molrep.addrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.delrep.html">vmd.molrep.delrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.get_autoupdate.html">vmd.molrep.get_autoupdate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.get_color.html">vmd.molrep.get_color</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.get_colorupdate.html">vmd.molrep.get_colorupdate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.get_material.html">vmd.molrep.get_material</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.get_repname.html">vmd.molrep.get_repname</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.get_scaleminmax.html">vmd.molrep.get_scaleminmax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.get_selection.html">vmd.molrep.get_selection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.get_smoothing.html">vmd.molrep.get_smoothing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.get_style.html">vmd.molrep.get_style</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.get_visible.html">vmd.molrep.get_visible</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.modrep.html">vmd.molrep.modrep</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.num.html">vmd.molrep.num</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.repindex.html">vmd.molrep.repindex</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.reset_scaleminmax.html">vmd.molrep.reset_scaleminmax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.set_autoupdate.html">vmd.molrep.set_autoupdate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.set_colorupdate.html">vmd.molrep.set_colorupdate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.set_scaleminmax.html">vmd.molrep.set_scaleminmax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.set_smoothing.html">vmd.molrep.set_smoothing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/generated/vmd.molrep.set_visible.html">vmd.molrep.set_visible</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mouse.html">Mouse</a></li>
+<li class="toctree-l1"><a class="reference internal" href="render.html">Render</a></li>
+<li class="toctree-l1"><a class="reference internal" href="selection.html">Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trans.html">Trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdcallbacks.html">VMD Callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdcallbacks.html#vmd-menu">VMD Menu</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdnumpy.html">VMD Numpy</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">vmd-python</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Molrep</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/molrep.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="id1">
+<h1>Molrep<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
+<p>Control graphical representations associated with a molecule.</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molrep.addrep.html#vmd.molrep.addrep" title="vmd.molrep.addrep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">addrep</span></code></a></td>
+<td>Add a representation to the molecule.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molrep.delrep.html#vmd.molrep.delrep" title="vmd.molrep.delrep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">delrep</span></code></a></td>
+<td>Delete a representation</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molrep.get_autoupdate.html#vmd.molrep.get_autoupdate" title="vmd.molrep.get_autoupdate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_autoupdate</span></code></a></td>
+<td>Get if representation automatically updates its atom selection</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molrep.get_color.html#vmd.molrep.get_color" title="vmd.molrep.get_color"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_color</span></code></a></td>
+<td>Get the coloring scheme associated with a representation</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molrep.get_colorupdate.html#vmd.molrep.get_colorupdate" title="vmd.molrep.get_colorupdate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_colorupdate</span></code></a></td>
+<td>Query if the representations color automatically updates</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molrep.get_material.html#vmd.molrep.get_material" title="vmd.molrep.get_material"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_material</span></code></a></td>
+<td>Get the material associated with a representation</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molrep.get_repname.html#vmd.molrep.get_repname" title="vmd.molrep.get_repname"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_repname</span></code></a></td>
+<td>Get the name of a representation</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molrep.get_scaleminmax.html#vmd.molrep.get_scaleminmax" title="vmd.molrep.get_scaleminmax"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_scaleminmax</span></code></a></td>
+<td>Get the minimum and maximum color scale values for a representation</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molrep.get_selection.html#vmd.molrep.get_selection" title="vmd.molrep.get_selection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_selection</span></code></a></td>
+<td>Get the atom selection associated with a representation</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molrep.get_smoothing.html#vmd.molrep.get_smoothing" title="vmd.molrep.get_smoothing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_smoothing</span></code></a></td>
+<td>Get the number of frames over which a representation is smoothed</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molrep.get_style.html#vmd.molrep.get_style" title="vmd.molrep.get_style"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_style</span></code></a></td>
+<td>Get the style associated with a representation</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molrep.get_visible.html#vmd.molrep.get_visible" title="vmd.molrep.get_visible"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_visible</span></code></a></td>
+<td>Query if a representation is visible</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molrep.modrep.html#vmd.molrep.modrep" title="vmd.molrep.modrep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">modrep</span></code></a></td>
+<td>Modify properties of a representation.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molrep.num.html#vmd.molrep.num" title="vmd.molrep.num"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num</span></code></a></td>
+<td>Get number of representations present for molecule</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molrep.repindex.html#vmd.molrep.repindex" title="vmd.molrep.repindex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">repindex</span></code></a></td>
+<td>Get the index of a representation from its name</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molrep.reset_scaleminmax.html#vmd.molrep.reset_scaleminmax" title="vmd.molrep.reset_scaleminmax"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset_scaleminmax</span></code></a></td>
+<td>Automatically set the color scale minimum and maximum values to span the input data</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molrep.set_autoupdate.html#vmd.molrep.set_autoupdate" title="vmd.molrep.set_autoupdate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_autoupdate</span></code></a></td>
+<td>Set if the representation should automatically update its atom selection when the frame is changed.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molrep.set_colorupdate.html#vmd.molrep.set_colorupdate" title="vmd.molrep.set_colorupdate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_colorupdate</span></code></a></td>
+<td>Sets if the representation’s color should automatically update when the frame is changed.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molrep.set_scaleminmax.html#vmd.molrep.set_scaleminmax" title="vmd.molrep.set_scaleminmax"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_scaleminmax</span></code></a></td>
+<td>Set the minimum and maximum color scale values for a representation</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.molrep.set_smoothing.html#vmd.molrep.set_smoothing" title="vmd.molrep.set_smoothing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_smoothing</span></code></a></td>
+<td>Sets the number of frames over which a representation is smoothed</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.molrep.set_visible.html#vmd.molrep.set_visible" title="vmd.molrep.set_visible"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_visible</span></code></a></td>
+<td>Set if a representation is visible</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="api/generated/vmd.molrep.addrep.html" class="btn btn-neutral float-right" title="vmd.molrep.addrep" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="api/generated/vmd.molecule.num_volumetric.html" class="btn btn-neutral" title="vmd.molecule.num_volumetric" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Robin Betz.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'3.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/language_data.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

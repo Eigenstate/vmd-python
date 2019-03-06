@@ -1,0 +1,6 @@
+vmd.molrep.num
+==============
+
+.. currentmodule:: vmd.molrep
+
+.. autofunction:: num

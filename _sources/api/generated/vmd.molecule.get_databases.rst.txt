@@ -1,0 +1,6 @@
+vmd.molecule.get\_databases
+===========================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: get_databases

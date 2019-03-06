@@ -1,0 +1,6 @@
+vmd.material.default
+====================
+
+.. currentmodule:: vmd.material
+
+.. autofunction:: default

@@ -1,0 +1,6 @@
+vmd.material.delete
+===================
+
+.. currentmodule:: vmd.material
+
+.. autofunction:: delete

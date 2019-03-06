@@ -1,0 +1,6 @@
+vmd.vmdmenu.location
+====================
+
+.. currentmodule:: vmd.vmdmenu
+
+.. autofunction:: location

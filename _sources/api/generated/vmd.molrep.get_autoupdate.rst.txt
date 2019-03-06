@@ -1,0 +1,6 @@
+vmd.molrep.get\_autoupdate
+==========================
+
+.. currentmodule:: vmd.molrep
+
+.. autofunction:: get_autoupdate

@@ -1,0 +1,6 @@
+vmd.vmdcallbacks.del\_callback
+==============================
+
+.. currentmodule:: vmd.vmdcallbacks
+
+.. autofunction:: del_callback

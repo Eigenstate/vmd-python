@@ -1,0 +1,6 @@
+vmd.molrep.delrep
+=================
+
+.. currentmodule:: vmd.molrep
+
+.. autofunction:: delrep

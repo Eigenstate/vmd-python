@@ -1,0 +1,6 @@
+vmd.vmdmenu.register
+====================
+
+.. currentmodule:: vmd.vmdmenu
+
+.. autofunction:: register

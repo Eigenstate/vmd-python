@@ -1,0 +1,6 @@
+vmd.topology.delallbonds
+========================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: delallbonds

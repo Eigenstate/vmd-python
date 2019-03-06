@@ -1,0 +1,6 @@
+vmd.trans.set\_rotation
+=======================
+
+.. currentmodule:: vmd.trans
+
+.. autofunction:: set_rotation

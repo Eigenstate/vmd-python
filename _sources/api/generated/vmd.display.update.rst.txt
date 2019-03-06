@@ -1,0 +1,6 @@
+vmd.display.update
+==================
+
+.. currentmodule:: vmd.display
+
+.. autofunction:: update

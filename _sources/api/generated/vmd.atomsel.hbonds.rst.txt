@@ -1,0 +1,6 @@
+vmd.atomsel.hbonds
+==================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.hbonds

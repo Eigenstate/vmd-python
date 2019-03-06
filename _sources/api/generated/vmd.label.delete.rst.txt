@@ -1,0 +1,6 @@
+vmd.label.delete
+================
+
+.. currentmodule:: vmd.label
+
+.. autofunction:: delete

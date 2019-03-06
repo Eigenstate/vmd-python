@@ -1,0 +1,6 @@
+vmd.molecule.get\_top
+=====================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: get_top

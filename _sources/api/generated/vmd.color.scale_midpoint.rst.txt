@@ -1,0 +1,6 @@
+vmd.color.scale\_midpoint
+=========================
+
+.. currentmodule:: vmd.color
+
+.. autofunction:: scale_midpoint

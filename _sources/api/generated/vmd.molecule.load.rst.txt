@@ -1,0 +1,6 @@
+vmd.molecule.load
+=================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: load

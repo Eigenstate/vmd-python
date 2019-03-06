@@ -1,0 +1,6 @@
+vmd.topology.addbond
+====================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: addbond

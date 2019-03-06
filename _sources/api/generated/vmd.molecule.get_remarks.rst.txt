@@ -1,0 +1,6 @@
+vmd.molecule.get\_remarks
+=========================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: get_remarks

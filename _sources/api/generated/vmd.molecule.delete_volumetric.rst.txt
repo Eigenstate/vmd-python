@@ -1,0 +1,6 @@
+vmd.molecule.delete\_volumetric
+===============================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: delete_volumetric

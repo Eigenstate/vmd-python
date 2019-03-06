@@ -1,0 +1,6 @@
+vmd.vmdnumpy.timestep
+=====================
+
+.. currentmodule:: vmd.vmdnumpy
+
+.. autofunction:: timestep

@@ -1,0 +1,6 @@
+vmd.trans.rotate\_scene
+=======================
+
+.. currentmodule:: vmd.trans
+
+.. autofunction:: rotate_scene

@@ -1,0 +1,6 @@
+vmd.color.set\_colors
+=====================
+
+.. currentmodule:: vmd.color
+
+.. autofunction:: set_colors

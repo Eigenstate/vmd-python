@@ -1,0 +1,6 @@
+vmd.trans.is\_fixed
+===================
+
+.. currentmodule:: vmd.trans
+
+.. autofunction:: is_fixed

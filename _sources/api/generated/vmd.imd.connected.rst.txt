@@ -1,0 +1,6 @@
+vmd.imd.connected
+=================
+
+.. currentmodule:: vmd.imd
+
+.. autofunction:: connected

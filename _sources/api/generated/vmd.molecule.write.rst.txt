@@ -1,0 +1,6 @@
+vmd.molecule.write
+==================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: write

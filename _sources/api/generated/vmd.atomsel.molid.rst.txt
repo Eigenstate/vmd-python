@@ -1,0 +1,6 @@
+vmd.atomsel.molid
+=================
+
+.. currentmodule:: vmd
+
+.. autoattribute:: atomsel.molid

@@ -1,0 +1,6 @@
+vmd.animate.loop
+================
+
+.. currentmodule:: vmd.animate
+
+.. autofunction:: loop

@@ -1,0 +1,6 @@
+vmd.molecule.ssrecalc
+=====================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: ssrecalc

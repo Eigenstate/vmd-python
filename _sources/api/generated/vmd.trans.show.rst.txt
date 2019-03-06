@@ -1,0 +1,6 @@
+vmd.trans.show
+==============
+
+.. currentmodule:: vmd.trans
+
+.. autofunction:: show

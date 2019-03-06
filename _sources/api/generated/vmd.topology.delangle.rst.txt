@@ -1,0 +1,6 @@
+vmd.topology.delangle
+=====================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: delangle

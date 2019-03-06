@@ -1,0 +1,6 @@
+vmd.animate.activate
+====================
+
+.. currentmodule:: vmd.animate
+
+.. autofunction:: activate

@@ -1,0 +1,6 @@
+vmd.atomsel.write
+=================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.write

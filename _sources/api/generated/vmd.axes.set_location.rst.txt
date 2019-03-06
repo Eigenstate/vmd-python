@@ -1,0 +1,6 @@
+vmd.axes.set\_location
+======================
+
+.. currentmodule:: vmd.axes
+
+.. autofunction:: set_location

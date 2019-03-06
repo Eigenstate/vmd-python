@@ -1,0 +1,344 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Animate &mdash; vmd-python 3.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="vmd-python 3.0.1 documentation" href="index.html"/>
+        <link rel="next" title="vmd.animate.activate" href="api/generated/vmd.animate.activate.html"/>
+        <link rel="prev" title="VMD-Python" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> vmd-python
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Animate</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#molecule-actions">Molecule actions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.activate.html">vmd.animate.activate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.is_active.html">vmd.animate.is_active</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#trajectory-actions">Trajectory actions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.forward.html">vmd.animate.forward</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.goto.html">vmd.animate.goto</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.loop.html">vmd.animate.loop</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.next.html">vmd.animate.next</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.once.html">vmd.animate.once</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.pause.html">vmd.animate.pause</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.prev.html">vmd.animate.prev</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.reverse.html">vmd.animate.reverse</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.rock.html">vmd.animate.rock</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.skip.html">vmd.animate.skip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.speed.html">vmd.animate.speed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/generated/vmd.animate.style.html">vmd.animate.style</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="atomsel.html">Atomsel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="axes.html">Axes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="color.html">Color</a></li>
+<li class="toctree-l1"><a class="reference internal" href="display.html">Display</a></li>
+<li class="toctree-l1"><a class="reference internal" href="evaltcl.html">Evaltcl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graphics.html">Graphics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="imd.html">IMD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="label.html">Label</a></li>
+<li class="toctree-l1"><a class="reference internal" href="material.html">Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="measure.html">Measure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="molecule.html">Molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="molrep.html">Molrep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mouse.html">Mouse</a></li>
+<li class="toctree-l1"><a class="reference internal" href="render.html">Render</a></li>
+<li class="toctree-l1"><a class="reference internal" href="selection.html">Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trans.html">Trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdcallbacks.html">VMD Callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdcallbacks.html#vmd-menu">VMD Menu</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vmdnumpy.html">VMD Numpy</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">vmd-python</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Animate</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/animate.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="animate">
+<span id="id1"></span><h1>Animate<a class="headerlink" href="#animate" title="Permalink to this headline">¶</a></h1>
+<p>Animate changes how trajectories are displayed in the view window.
+This module is pretty useless in vmd-python, but can be used to render
+movies programmatically.</p>
+<div class="section" id="molecule-actions">
+<h2>Molecule actions<a class="headerlink" href="#molecule-actions" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.animate.activate.html#vmd.animate.activate" title="vmd.animate.activate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">activate</span></code></a></td>
+<td>Set the active status of a molecule.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.animate.is_active.html#vmd.animate.is_active" title="vmd.animate.is_active"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_active</span></code></a></td>
+<td>Returns whether a given molecule is active (updated during animation)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="trajectory-actions">
+<h2>Trajectory actions<a class="headerlink" href="#trajectory-actions" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.animate.forward.html#vmd.animate.forward" title="vmd.animate.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a></td>
+<td>Start animating frames in forward order.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.animate.goto.html#vmd.animate.goto" title="vmd.animate.goto"><code class="xref py py-obj docutils literal notranslate"><span class="pre">goto</span></code></a></td>
+<td>Display a givenframe on the next display update</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.animate.loop.html#vmd.animate.loop" title="vmd.animate.loop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">loop</span></code></a></td>
+<td>Animate in a continuous loop.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.animate.next.html#vmd.animate.next" title="vmd.animate.next"><code class="xref py py-obj docutils literal notranslate"><span class="pre">next</span></code></a></td>
+<td>Animate to the next frame and stop.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.animate.once.html#vmd.animate.once" title="vmd.animate.once"><code class="xref py py-obj docutils literal notranslate"><span class="pre">once</span></code></a></td>
+<td>Animate once through all frames.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.animate.pause.html#vmd.animate.pause" title="vmd.animate.pause"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pause</span></code></a></td>
+<td>Pause the animation.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.animate.prev.html#vmd.animate.prev" title="vmd.animate.prev"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prev</span></code></a></td>
+<td>Animate to the previous frame and stop.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.animate.reverse.html#vmd.animate.reverse" title="vmd.animate.reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reverse</span></code></a></td>
+<td>Start animating frames in reverse order.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.animate.rock.html#vmd.animate.rock" title="vmd.animate.rock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rock</span></code></a></td>
+<td>Animate back and forth between first and last frames.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.animate.skip.html#vmd.animate.skip" title="vmd.animate.skip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">skip</span></code></a></td>
+<td>Set or get stride for animation frames.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="api/generated/vmd.animate.speed.html#vmd.animate.speed" title="vmd.animate.speed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">speed</span></code></a></td>
+<td>Set or get animation speed</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="api/generated/vmd.animate.style.html#vmd.animate.style" title="vmd.animate.style"><code class="xref py py-obj docutils literal notranslate"><span class="pre">style</span></code></a></td>
+<td>Returns current animation style</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="api/generated/vmd.animate.activate.html" class="btn btn-neutral float-right" title="vmd.animate.activate" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="VMD-Python" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Robin Betz.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'3.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/language_data.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

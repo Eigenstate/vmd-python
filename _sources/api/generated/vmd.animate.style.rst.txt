@@ -1,0 +1,6 @@
+vmd.animate.style
+=================
+
+.. currentmodule:: vmd.animate
+
+.. autofunction:: style

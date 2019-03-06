@@ -1,0 +1,6 @@
+vmd.animate.speed
+=================
+
+.. currentmodule:: vmd.animate
+
+.. autofunction:: speed

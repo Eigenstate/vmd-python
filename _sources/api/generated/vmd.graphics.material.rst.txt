@@ -1,0 +1,6 @@
+vmd.graphics.material
+=====================
+
+.. currentmodule:: vmd.graphics
+
+.. autofunction:: material

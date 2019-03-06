@@ -1,0 +1,6 @@
+vmd.material.rename
+===================
+
+.. currentmodule:: vmd.material
+
+.. autofunction:: rename

@@ -1,0 +1,6 @@
+vmd.molecule.get\_filenames
+===========================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: get_filenames

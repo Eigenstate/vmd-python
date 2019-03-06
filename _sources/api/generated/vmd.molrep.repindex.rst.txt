@@ -1,0 +1,6 @@
+vmd.molrep.repindex
+===================
+
+.. currentmodule:: vmd.molrep
+
+.. autofunction:: repindex

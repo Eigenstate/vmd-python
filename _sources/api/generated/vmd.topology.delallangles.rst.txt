@@ -1,0 +1,6 @@
+vmd.topology.delallangles
+=========================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: delallangles

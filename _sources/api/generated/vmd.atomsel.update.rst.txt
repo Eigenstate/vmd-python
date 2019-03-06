@@ -1,0 +1,6 @@
+vmd.atomsel.update
+==================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.update

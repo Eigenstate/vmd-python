@@ -1,0 +1,17 @@
+.. _evaltcl:
+.. currentmodule:: vmd
+.. highlight:: python
+
+Evaltcl
+-------
+
+Although the Python API is quite fully-featured, it does not currently expose
+all of the functionality available via the TCL interface. The ``evaltcl``
+method allows the execution of arbitrary TCL code to work around this problem
+for now.
+
+.. autosummary::
+    :toctree: api/generated/
+
+    evaltcl
+

@@ -1,0 +1,6 @@
+vmd.material.settings
+=====================
+
+.. currentmodule:: vmd.material
+
+.. autofunction:: settings

@@ -1,0 +1,6 @@
+vmd.vmdnumpy.positions
+======================
+
+.. currentmodule:: vmd.vmdnumpy
+
+.. autofunction:: positions

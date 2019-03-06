@@ -1,0 +1,6 @@
+vmd.atomsel.moveby
+==================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.moveby

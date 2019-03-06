@@ -1,0 +1,6 @@
+vmd.display.set
+===============
+
+.. currentmodule:: vmd.display
+
+.. autofunction:: set

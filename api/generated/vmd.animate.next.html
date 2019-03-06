@@ -1,0 +1,282 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>vmd.animate.next &mdash; vmd-python 3.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="vmd-python 3.0.1 documentation" href="../../index.html"/>
+        <link rel="up" title="Animate" href="../../animate.html"/>
+        <link rel="next" title="vmd.animate.once" href="vmd.animate.once.html"/>
+        <link rel="prev" title="vmd.animate.loop" href="vmd.animate.loop.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> vmd-python
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../animate.html">Animate</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../animate.html#molecule-actions">Molecule actions</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../animate.html#trajectory-actions">Trajectory actions</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="vmd.animate.forward.html">vmd.animate.forward</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vmd.animate.goto.html">vmd.animate.goto</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vmd.animate.loop.html">vmd.animate.loop</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">vmd.animate.next</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vmd.animate.once.html">vmd.animate.once</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vmd.animate.pause.html">vmd.animate.pause</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vmd.animate.prev.html">vmd.animate.prev</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vmd.animate.reverse.html">vmd.animate.reverse</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vmd.animate.rock.html">vmd.animate.rock</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vmd.animate.skip.html">vmd.animate.skip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vmd.animate.speed.html">vmd.animate.speed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vmd.animate.style.html">vmd.animate.style</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../atomsel.html">Atomsel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../axes.html">Axes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../color.html">Color</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../display.html">Display</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../evaltcl.html">Evaltcl</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../graphics.html">Graphics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../imd.html">IMD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../label.html">Label</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../material.html">Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../measure.html">Measure</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../molecule.html">Molecule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../molrep.html">Molrep</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../mouse.html">Mouse</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../render.html">Render</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../selection.html">Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../topology.html">Topology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../trans.html">Trans</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../vmdcallbacks.html">VMD Callbacks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../vmdcallbacks.html#vmd-menu">VMD Menu</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../vmdnumpy.html">VMD Numpy</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">vmd-python</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../animate.html">Animate</a> &raquo;</li>
+        
+      <li>vmd.animate.next</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/generated/vmd.animate.next.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="vmd-animate-next">
+<h1>vmd.animate.next<a class="headerlink" href="#vmd-animate-next" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="vmd.animate.next">
+<code class="descclassname">vmd.animate.</code><code class="descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#vmd.animate.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Animate to the next frame and stop.</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="vmd.animate.once.html" class="btn btn-neutral float-right" title="vmd.animate.once" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="vmd.animate.loop.html" class="btn btn-neutral" title="vmd.animate.loop" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Robin Betz.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'3.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="../../_static/language_data.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

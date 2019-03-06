@@ -1,0 +1,6 @@
+vmd.animate.forward
+===================
+
+.. currentmodule:: vmd.animate
+
+.. autofunction:: forward

@@ -1,0 +1,6 @@
+vmd.topology.impropertypes
+==========================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: impropertypes

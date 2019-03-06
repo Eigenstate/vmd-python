@@ -1,0 +1,6 @@
+vmd.topology.adddihedral
+========================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: adddihedral

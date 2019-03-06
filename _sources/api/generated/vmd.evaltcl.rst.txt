@@ -1,0 +1,6 @@
+vmd.evaltcl
+===========
+
+.. currentmodule:: vmd
+
+.. autofunction:: evaltcl

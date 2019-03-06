@@ -1,0 +1,6 @@
+vmd.atomsel.rgyr
+================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.rgyr

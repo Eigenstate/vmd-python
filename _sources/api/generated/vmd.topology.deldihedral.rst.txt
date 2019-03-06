@@ -1,0 +1,6 @@
+vmd.topology.deldihedral
+========================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: deldihedral

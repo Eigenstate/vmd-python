@@ -1,0 +1,6 @@
+vmd.selection.all\_macros
+=========================
+
+.. currentmodule:: vmd.selection
+
+.. autofunction:: all_macros

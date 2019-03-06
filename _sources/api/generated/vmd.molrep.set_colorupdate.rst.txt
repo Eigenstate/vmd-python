@@ -1,0 +1,6 @@
+vmd.molrep.set\_colorupdate
+===========================
+
+.. currentmodule:: vmd.molrep
+
+.. autofunction:: set_colorupdate

@@ -1,0 +1,6 @@
+vmd.measure.angle
+=================
+
+.. currentmodule:: vmd.measure
+
+.. autofunction:: angle

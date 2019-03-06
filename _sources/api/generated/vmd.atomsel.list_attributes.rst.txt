@@ -1,0 +1,6 @@
+vmd.atomsel.list\_attributes
+============================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.list_attributes

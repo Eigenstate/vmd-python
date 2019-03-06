@@ -1,0 +1,6 @@
+vmd.color.scale\_min
+====================
+
+.. currentmodule:: vmd.color
+
+.. autofunction:: scale_min

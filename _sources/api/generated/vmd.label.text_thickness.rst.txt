@@ -1,0 +1,6 @@
+vmd.label.text\_thickness
+=========================
+
+.. currentmodule:: vmd.label
+
+.. autofunction:: text_thickness

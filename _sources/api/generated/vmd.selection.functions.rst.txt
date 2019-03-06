@@ -1,0 +1,6 @@
+vmd.selection.functions
+=======================
+
+.. currentmodule:: vmd.selection
+
+.. autofunction:: functions

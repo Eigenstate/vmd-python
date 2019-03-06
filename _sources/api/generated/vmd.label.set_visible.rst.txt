@@ -1,0 +1,6 @@
+vmd.label.set\_visible
+======================
+
+.. currentmodule:: vmd.label
+
+.. autofunction:: set_visible

@@ -1,0 +1,6 @@
+vmd.trans.resetview
+===================
+
+.. currentmodule:: vmd.trans
+
+.. autofunction:: resetview

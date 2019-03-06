@@ -1,0 +1,6 @@
+vmd.topology.dihedrals
+======================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: dihedrals

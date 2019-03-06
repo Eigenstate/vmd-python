@@ -1,0 +1,6 @@
+vmd.animate.next
+================
+
+.. currentmodule:: vmd.animate
+
+.. autofunction:: next

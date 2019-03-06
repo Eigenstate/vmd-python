@@ -1,0 +1,6 @@
+vmd.color.set\_scale
+====================
+
+.. currentmodule:: vmd.color
+
+.. autofunction:: set_scale

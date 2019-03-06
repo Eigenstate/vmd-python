@@ -1,0 +1,6 @@
+vmd.graphics.line
+=================
+
+.. currentmodule:: vmd.graphics
+
+.. autofunction:: line

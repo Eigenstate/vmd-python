@@ -1,0 +1,6 @@
+vmd.topology.angles
+===================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: angles

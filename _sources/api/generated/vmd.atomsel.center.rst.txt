@@ -1,0 +1,6 @@
+vmd.atomsel.center
+==================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.center

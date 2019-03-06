@@ -1,0 +1,6 @@
+vmd.topology.addangle
+=====================
+
+.. currentmodule:: vmd.topology
+
+.. autofunction:: addangle

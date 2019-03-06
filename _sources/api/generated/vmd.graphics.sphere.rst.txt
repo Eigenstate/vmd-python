@@ -1,0 +1,6 @@
+vmd.graphics.sphere
+===================
+
+.. currentmodule:: vmd.graphics
+
+.. autofunction:: sphere

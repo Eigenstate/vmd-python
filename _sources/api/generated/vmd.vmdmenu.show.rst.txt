@@ -1,0 +1,6 @@
+vmd.vmdmenu.show
+================
+
+.. currentmodule:: vmd.vmdmenu
+
+.. autofunction:: show

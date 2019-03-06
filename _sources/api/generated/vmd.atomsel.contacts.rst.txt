@@ -1,0 +1,6 @@
+vmd.atomsel.contacts
+====================
+
+.. currentmodule:: vmd
+
+.. automethod:: atomsel.contacts

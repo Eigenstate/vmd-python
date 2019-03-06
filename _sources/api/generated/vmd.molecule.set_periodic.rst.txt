@@ -1,0 +1,6 @@
+vmd.molecule.set\_periodic
+==========================
+
+.. currentmodule:: vmd.molecule
+
+.. autofunction:: set_periodic

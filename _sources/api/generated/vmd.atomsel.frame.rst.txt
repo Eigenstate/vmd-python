@@ -1,0 +1,6 @@
+vmd.atomsel.frame
+=================
+
+.. currentmodule:: vmd
+
+.. autoattribute:: atomsel.frame
