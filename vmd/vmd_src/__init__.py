@@ -33,5 +33,9 @@ vmd.Label = imp.load_source("Label", os.path.join(os.environ["VMDDIR"],
 vmd.Material= imp.load_source("Material", os.path.join(os.environ["VMDDIR"],
                                                        "Material.py"))
 
+# Set version and author
+vmd.__version__ = __version__
+vmd.__author__ = __author__
+
 #==============================================================================
 
