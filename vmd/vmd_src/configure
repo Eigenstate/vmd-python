@@ -46,6 +46,7 @@ if ($ENV{VMDINSTALLLIBRARYDIR}) {
 # ---------------------------------------------------------------
 # LINUX         - compile on a Linux machine (x86 32-bit)
 # LINUXAMD64    - compile on a Linux machine (x86 64-bit AMD64 or EM64T)
+# LINUXPPC64    - compile on a Linux machine (64-bit PowerPC)
 # MACOSX        - compile on a MacOS-X PowerPC machine
 # MACOSXX86     - compile on a MacOS-X x86 machine, 32-bit ABI
 # MACOSXX86_64  - compile on a MacOS-X x86 machine, 64-bit ABI
@@ -150,7 +151,7 @@ if (!(-e "plugins")) {
 
 #################### Parse command line options   ###########
 # list of allowed architectures
-@archlist=('LINUX', 'LINUXAMD64', 'MACOSX', 'MACOSXX86', 'MACOSXX86_64', 'WIN32', 'WIN64');
+@archlist=('LINUX', 'LINUXAMD64', 'LINUXPPC64', 'MACOSX', 'MACOSXX86', 'MACOSXX86_64', 'WIN32', 'WIN64');
 
 if ($#ARGV == -1) {
     $text = `cat configure.options`;
@@ -1905,7 +1906,7 @@ if ($config_arch eq "LINUX") {
     $arch_shlibname   = "so";
     $arch_shcppopts   = "-fPIC";
     $arch_shldopts    = "";
-    $arch_opt_flag    .= "-m32 -Wno-deprecated -Wall -Wno-unknown-pragmas -O3";
+    $arch_opt_flag    .= "-m32 -fno-for-scope -Wno-deprecated -Wall -Wno-unknown-pragmas -O3";
     $arch_copts       .= "-m32 -Wall -Wno-unknown-pragmas -O3";
 
     if ($config_static) {
@@ -1962,7 +1963,7 @@ if ($config_arch eq "LINUXAMD64") {
       print "LP64 ABI is already the default on this platform.\n";
     }
 
-    $arch_opt_flag	.= " -m64 -Wno-deprecated -Wall -Wno-unknown-pragmas -ffast-math";
+    $arch_opt_flag	.= " -m64 -fno-for-scope -Wno-deprecated -Wall -Wno-unknown-pragmas -ffast-math";
     $arch_depend_flag   .= " -MM";
     $arch_copts       .= " -m64 -Wall -Wno-unknown-pragmas -ffast-math";
 
@@ -2014,6 +2015,39 @@ if ($config_arch eq "LINUXAMD64") {
     }
 }
 
+if ($config_arch eq "LINUXPPC64") {
+    $def_imageviewer="display %s";
+    if ($config_lp64) {
+      print "No LP64 ABI on this platform currently.\n";
+    }
+
+    $arch_depend_flag = "-MM";
+    $arch_opt_flag    = "-m64 -Wall -Wno-unknown-pragmas -O3 -ffast-math";
+    $arch_copts       = "-m64 -Wall -Wno-unknown-pragmas -O3 -ffast-math";
+
+    if ($config_static) {
+      $arch_lopts       = "-static"
+    } else {
+      $arch_lopts       = "-Wl,-rpath,/usr/X11R6/lib -Wl,-rpath,/usr/local/lib";
+    }
+
+    $opengl_dep_libs  = "-L/usr/X11R6/lib -lGL -lXext -lX11";
+    $mesa_libs        = "-lMesaGL -L/usr/X11R6/lib -lXext -lX11";
+    $arch_cppopts     = "";
+
+    # this is to make tcl happy
+    # also needed for plugins
+    $system_libs .= " -ldl";
+    
+    if ($config_shared) {
+      $arch_opt_flag   .= " -fPIC";
+      $arch_copts      .= " -fPIC";
+      $arch_nvccflags  .= " -Xcompiler -fPIC";
+      $arch_lopts      .= " -shared";
+      $arch_cppopts    .= " -DVMD_SHARED";
+    }
+
+}
 
 if ($config_arch eq "MACOSX") {
     $def_imageviewer="/usr/bin/open %s";

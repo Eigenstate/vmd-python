@@ -354,6 +354,8 @@ class VMDBuild(DistutilsBuild):
         if "Linux" in osys:
             if "x86_64" in mach:
                 target = "LINUXAMD64"
+            elif "ppc64" in mach:
+                target = "LINUXPPC64"
             else:
                 target = "LINUX"
         elif "Darwin" in osys:
