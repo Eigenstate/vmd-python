@@ -1,9 +1,10 @@
 
 from distutils import sysconfig
-from distutils.core import setup
+from setuptools import setup
 from distutils.util import convert_path
 from distutils.command.build import build as DistutilsBuild
-from distutils.cmd import Command
+from setuptools.command.install import install as SetuptoolsInstall
+from setuptools import Distribution, Command
 from subprocess import check_call, check_output
 from glob import glob
 import platform
@@ -13,27 +14,33 @@ packages = ['vmd']
 
 ###############################################################################
 
-class VMDBuild(DistutilsBuild):
-    user_options = [
+class VMDDistribution(Distribution):
+    custom_options = [
         ("debug", None, "Build with debug symbols"),
         ("egl", None, "Build with support for rendering to an offscreen "
                       "EGL buffer. Requires EGL and libOpenGL"),
     ]
+    global_options = Distribution.global_options + custom_options
+
+    def __init__(self, *args, **kwargs):
+        self.egl = False
+        self.debug = False
+        Distribution.__init__(self, *args, **kwargs)
+
+###############################################################################
+
+class VMDBuild(DistutilsBuild):
+    """ Build VMD library """
+
+    description = "Build vmd shared library"
+    user_options = []
 
     def initialize_options(self):
-        self.debug = False
-        self.egl = False
         DistutilsBuild.initialize_options(self)
 
     #==========================================================================
 
     def finalize_options(self):
-        if self.debug:
-            print("Building with debug symbols")
-            self.debug = True
-        if self.egl:
-            print("Building with EGL support")
-            self.egl = True
 
         # If compilers aren't set already, default to GCC
         if not os.environ.get("CC"):
@@ -60,10 +67,10 @@ class VMDBuild(DistutilsBuild):
     #==========================================================================
 
     def run(self):
+        self.compile_vmd()
+
         # Run original build code
         DistutilsBuild.run(self)
-        # Setup and run compilation script
-        self.execute(self.compile_vmd, [], msg="Compiling VMD")
 
     #==========================================================================
 
@@ -315,9 +322,15 @@ class VMDBuild(DistutilsBuild):
 
         # Set extra config variables if requested
         os.environ["VMDEXTRAFLAGS"] = ""
-        if self.debug:
+        if self.distribution.debug:
+            print("Building with debug symbols")
             os.environ["VMDEXTRAFLAGS"] += " DEBUG"
-        if self.egl:
+
+            asandir = self._find_library_dir("libasan")
+            os.environ["LDFLAGS"] += " -L%s" % asandir
+
+        if self.distribution.egl:
+            print("Building with EGL support")
             # Find OpenGL headers
             oglheaders = set([" -I%s" % self._find_include_dir("GL/gl.h"),
                               " -I%s" % self._find_include_dir("EGL/egl.h"),
@@ -332,12 +345,12 @@ class VMDBuild(DistutilsBuild):
 
         # Print a summary
         print("Building with:")
-        print("  CC: %s" % os.environ["CC"])
-        print("  CXX: %s" % os.environ["CXX"])
-        print("  LD: %s" % os.environ["LD"])
-        print("  CFLAGS: %s" % os.environ["CFLAGS"])
-        print("  CXXFLAGS: %s" % os.environ["CXXFLAGS"])
-        print("  LDFLAGS: %s" % os.environ["LDFLAGS"])
+        print("   CC: %s" % os.environ["CC"])
+        print("   CXX: %s" % os.environ["CXX"])
+        print("   LD: %s" % os.environ["LD"])
+        print("   CFLAGS: %s" % os.environ["CFLAGS"])
+        print("   CXXFLAGS: %s" % os.environ["CXXFLAGS"])
+        print("   LDFLAGS: %s" % os.environ["LDFLAGS"])
 
     #==========================================================================
 
@@ -377,6 +390,21 @@ class VMDBuild(DistutilsBuild):
 
 ###############################################################################
 
+class VMDInstall(SetuptoolsInstall):
+    """ Installs vmd """
+
+    def initialize_options(self):
+        SetuptoolsInstall.initialize_options(self)
+
+    def finalize_options(self):
+        SetuptoolsInstall.finalize_options(self)
+
+    def run(self):
+        self.run_command("build")
+        SetuptoolsInstall.run(self)
+
+###############################################################################
+
 class VMDTest(Command):
     user_options = [("pytest-args=", "a", "Arguments to pass to pytest")]
 
@@ -401,9 +429,11 @@ setup(name='vmd-python',
       url='http://github.com/Eigenstate/vmd-python',
       license='VMD License',
       packages=['vmd'],
-      package_data={'vmd' : ['vmd.so']},
+      package_data={'vmd' : ['libvmd.so']},
+      distclass=VMDDistribution,
       cmdclass={
           'build': VMDBuild,
+          'install': VMDInstall,
           'test': VMDTest,
       },
      )
