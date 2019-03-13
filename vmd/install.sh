@@ -65,10 +65,14 @@ cp "$vmd_src/vmd_src/__init__.py" "$VMDDIR"
 # Add additional info to __init__.py if necessary
 if [[ $VMDEXTRAFLAGS == *"DEBUG"* ]]; then
     echo "vmd._debug = True" >> "$VMDDIR/__init__.py"
+else
+    echo "vmd._debug = False" >> "$VMDDIR/__init__.py"
 fi
 
 if [[ $VMDEXTRAFLAGS == *"EGLPBUFFER"* ]]; then
     echo "vmd._egl = True" >> "$VMDDIR/__init__.py"
+else
+    echo "vmd._egl = False" >> "$VMDDIR/__init__.py"
 fi
 
 # Copy tests into build directory so they're accessible

@@ -562,13 +562,13 @@ $vulkan_defines     = "-DVMDOPENGL";
 # OpenGL libraries. Note that these options require -I and -L in front of
 # the include and library directory names
 $opengl_dep_dir         = "";
-$opengl_dep_include     = "";
+$opengl_dep_include     = $ENV{"OGLINC"};
 $opengl_dep_library     = "";
 if ($config_opengl_dispatch) {
   # version of OpenGL libs that can do dispatch, allowing use of 
   # EGL for window management, but full GL or GLES etc for drawing
   # as appropriate
-  $opengl_dep_libs        = "-lOpenGL";
+  $opengl_dep_libs        = $ENV{"OGLLIB"} . " -lOpenGL";
 } else {
   #$opengl_dep_libs        = "-lGL -lGLU";
   $opengl_dep_libs        = "-lGL";
@@ -636,7 +636,7 @@ $opengl_pbuffer_defines     = "-DVMDOPENGLPBUFFER -DVMDGLXPBUFFER";
 # EGL OpenGL Pbuffer off-screen graphics rendering context 
 #
 $egl_pbuffer_dir         = "";
-$egl_pbuffer_include     = "";
+$egl_pbuffer_include     = $ENV{"OGLINC"};
 $egl_pbuffer_library     = "";
 $egl_pbuffer_libs        = "-lEGL"; 
 $egl_pbuffer_defines     = "-DVMDOPENGLPBUFFER -DVMDEGLPBUFFER";
@@ -1073,6 +1073,21 @@ if ($config_opengl) {
 } else {
   $liboptix_defines     = "-DVMDLIBOPTIX ";
 }
+
+################ DEBUG
+# OPTIONAL COMPONENT: Debug output
+$debug_libs        = "-lasan";
+if ( $config_libpng && !$config_zlib) {
+  die "LIBPNG option requires ZLIB!";
+}
+$debug_defines     = "-DPYDEBUG";
+$debug_dir         = "";
+$debug_include     = "";
+$debug_library     = "";
+@debug_cc          = ();
+@debug_cu          = ();
+@debug_ccpp        = ();
+@debug_h           = ();
 
 # Standard builds
 # $liboptix_dir         = "/usr/local/encap/NVIDIA-OptiX-SDK-3.6.3-linux64";
@@ -1969,8 +1984,8 @@ if ($config_arch eq "LINUXAMD64") {
 
     if ($config_debug) {
       $arch_opt_flag .= " -g -Og";
-      $arch_copts    .= " -fsanitize=address -g -Og -DPYDEBUG";
-      $arch_lopts    .= " -lasan";
+      $arch_copts    .= " -fsanitize=address -g -Og";
+      $arch_cppopts    .= " -fsanitize=address -g -Og";
     } else {
       $arch_opt_flag  .= " -O3";
       $arch_copts    .= " -O3";
@@ -2416,6 +2431,7 @@ END_OF_IF
 
 $if_statements = '';
 
+$if_statements .= &create_config_option('debug');
 $if_statements .= &create_config_option('vulkan');
 $if_statements .= &create_config_option('opengl');
 $if_statements .= &create_config_option('opengl_pbuffer');

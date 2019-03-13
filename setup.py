@@ -61,6 +61,7 @@ class VMDBuild(DistutilsBuild):
             os.environ["LDFLAGS"] = ""
 
         self.libdirs = self._get_libdirs()
+        self.incdirs = self._get_incdirs()
 
         DistutilsBuild.finalize_options(self)
 
@@ -127,17 +128,10 @@ class VMDBuild(DistutilsBuild):
     #==========================================================================
 
     @staticmethod
-    def _find_include_dir(incfile, pydir=sysconfig.EXEC_PREFIX):
-        """
-        Finds the path containing an include file. Starts by searching
-        $INCLUDE, then whatever system include paths $CC looks in.
-        If it can't find the file, defaults to "$pydir/include"
-        """
+    def _get_incdirs(pydir=sysconfig.EXEC_PREFIX):
 
-        # Look in directories specified by $INCLUDE
-        searchdirs = [d for d in os.environ.get("INCLUDE", "").split(":")
-                      if os.path.isdir(d)]
         # Also look in the directories $CC does
+        searchdirs = []
         try:
             out = check_output(r"echo | %s -E -Wp,-v - 2>&1 | grep '^\s.*'"
                                % os.environ["CC"],
@@ -147,11 +141,26 @@ class VMDBuild(DistutilsBuild):
         except: pass
         searchdirs.insert(0, os.path.join(pydir, "include"))
 
+        # Also look in directories specified by $INCLUDE
+        searchdirs += [d for d in os.environ.get("INCLUDE", "").split(":")
+                       if os.path.isdir(d)]
+
+        return searchdirs
+
+    #==========================================================================
+
+    def _find_include_dir(self, incfile):
+        """
+        Finds the path containing an include file. Starts by searching
+        $INCLUDE, then whatever system include paths $CC looks in.
+        If it can't find the file, defaults to "$pydir/include"
+        """
+
         # Find the actual file
         incdir = ""
         try:
             out = check_output(["find", "-H"]
-                               + searchdirs
+                               + self.incdirs
                                + ["-maxdepth", "2",
                                   "-path", r"*/%s" % incfile],
                                close_fds=True,
@@ -161,7 +170,6 @@ class VMDBuild(DistutilsBuild):
         except: pass
 
         if not glob(os.path.join(incdir, incfile)): # Glob allows wildcards
-            incdir = os.path.join(pydir, "include", incfile)
             raise RuntimeError("Could not find include file '%s' in standard "
                   "include directories. Update $INCLUDE to include the "
                   "directory  containing this file, or make sure it is present "
@@ -269,11 +277,6 @@ class VMDBuild(DistutilsBuild):
             os.environ["LDFLAGS"] += " -headerpad_max_install_names"
             os.environ["LDFLAGS"] += " -Wl,-rpath,%s" % addir
 
-        addir = sysconfig.get_config_var("INCLUDEDIR")
-        if addir is None: addir = os.path.join(pydir, "include")
-        os.environ["CFLAGS"] += " -I%s" % addir
-        os.environ["CXXFLAGS"] += " -I%s" % addir
-
         # No reliable way to ask for actual available library, so try 8.5 first
         tcllibdir = self._find_library_dir("libtcl8.5", mandatory=False)
         os.environ["TCLLDFLAGS"] = "-ltcl8.5"
@@ -331,17 +334,28 @@ class VMDBuild(DistutilsBuild):
 
         if self.distribution.egl:
             print("Building with EGL support")
-            # Find OpenGL headers
-            oglheaders = set([" -I%s" % self._find_include_dir("GL/gl.h"),
-                              " -I%s" % self._find_include_dir("EGL/egl.h"),
-                              " -I%s" % self._find_include_dir("EGL/eglext.h")])
-            os.environ["CFLAGS"] += "".join(oglheaders)
-            os.environ["CXXFLAGS"] += "".join(oglheaders)
 
-            ogllib = self._find_library_dir("libOpenGL")
-            os.environ["LDFLAGS"] += " -L%s" % ogllib
+            # Find OpenGL headers
+            # The -idirafter option means search this include directory
+            # after all specified by -I, then all system defaults. This
+            # prevents us from pulling in system standard libraries when
+            # building for conda
+            oglheaders = set([" -idirafter%s" % self._find_include_dir("GL/gl.h"),
+                              " -idirafter%s" % self._find_include_dir("EGL/egl.h"),
+                              " -idirafter%s" % self._find_include_dir("EGL/eglext.h")])
+            os.environ["OGLINC"] = "".join(oglheaders)
+
+            ogllibs = set([" -L%s" % self._find_library_dir("libOpenGL"),
+                           " -L%s" % self._find_library_dir("libEGL")])
+            os.environ["OGLLIB"] = "".join(ogllibs)
 
             os.environ["VMDEXTRAFLAGS"] += " EGLPBUFFER"
+
+        # Add Python include directories
+        addir = sysconfig.get_config_var("INCLUDEDIR")
+        if addir is None: addir = os.path.join(pydir, "include")
+        os.environ["CFLAGS"] += " -I%s" % addir
+        os.environ["CXXFLAGS"] += " -I%s" % addir
 
         # Print a summary
         print("Building with:")
