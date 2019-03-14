@@ -329,8 +329,8 @@ class VMDBuild(DistutilsBuild):
             print("Building with debug symbols")
             os.environ["VMDEXTRAFLAGS"] += " DEBUG"
 
-            asandir = self._find_library_dir("libasan")
-            os.environ["LDFLAGS"] += " -L%s" % asandir
+            #asandir = self._find_library_dir("libasan")
+            #os.environ["LDFLAGS"] += " -L%s" % asandir
 
         if self.distribution.egl:
             print("Building with EGL support")
