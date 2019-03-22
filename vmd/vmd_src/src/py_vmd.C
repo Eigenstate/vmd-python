@@ -60,6 +60,7 @@ static PyObject *py_evaltcl(PyObject *self, PyObject *args, PyObject *kwargs)
   const char *cmd, *result;
   Tcl_Interp *interp;
   VMDApp *app;
+  int rc;
 
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s:vmd.evaltcl",
                                    (char**) kwnames, &cmd))
@@ -69,9 +70,10 @@ static PyObject *py_evaltcl(PyObject *self, PyObject *args, PyObject *kwargs)
     return NULL;
 
   interp = app->uiText->get_tcl_interp();
+  rc = Tcl_Eval(interp, cmd);
   result = Tcl_GetStringResult(interp);
 
-  if (Tcl_Eval(interp, cmd) != TCL_OK) {
+  if (rc != TCL_OK) {
     PyErr_SetString(PyExc_ValueError, result);
     return NULL;
   }
