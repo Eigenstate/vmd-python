@@ -1076,10 +1076,8 @@ if ($config_opengl) {
 
 ################ DEBUG
 # OPTIONAL COMPONENT: Debug output
-$debug_libs        = "-lasan";
-if ( $config_libpng && !$config_zlib) {
-  die "LIBPNG option requires ZLIB!";
-}
+#$debug_libs        = "-lasan";
+$debug_libs = "";
 $debug_defines     = "-DPYDEBUG";
 $debug_dir         = "";
 $debug_include     = "";
@@ -1984,8 +1982,8 @@ if ($config_arch eq "LINUXAMD64") {
 
     if ($config_debug) {
       $arch_opt_flag .= " -g -Og";
-      $arch_copts    .= " -fsanitize=address -g -Og";
-      $arch_cppopts    .= " -fsanitize=address -g -Og";
+      $arch_copts    .= " -g -Og";
+      $arch_cppopts    .= " -g -Og";
     } else {
       $arch_opt_flag  .= " -O3";
       $arch_copts    .= " -O3";
