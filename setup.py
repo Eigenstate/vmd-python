@@ -1,9 +1,10 @@
 
 from distutils import sysconfig
-from distutils.core import setup
+from setuptools import setup
 from distutils.util import convert_path
 from distutils.command.build import build as DistutilsBuild
-from distutils.cmd import Command
+from setuptools.command.install import install as SetuptoolsInstall
+from setuptools import Distribution, Command
 from subprocess import check_call, check_output
 from glob import glob
 import platform
@@ -13,27 +14,33 @@ packages = ['vmd']
 
 ###############################################################################
 
-class VMDBuild(DistutilsBuild):
-    user_options = [
+class VMDDistribution(Distribution):
+    custom_options = [
         ("debug", None, "Build with debug symbols"),
         ("egl", None, "Build with support for rendering to an offscreen "
                       "EGL buffer. Requires EGL and libOpenGL"),
     ]
+    global_options = Distribution.global_options + custom_options
+
+    def __init__(self, *args, **kwargs):
+        self.egl = False
+        self.debug = False
+        Distribution.__init__(self, *args, **kwargs)
+
+###############################################################################
+
+class VMDBuild(DistutilsBuild):
+    """ Build VMD library """
+
+    description = "Build vmd shared library"
+    user_options = []
 
     def initialize_options(self):
-        self.debug = False
-        self.egl = False
         DistutilsBuild.initialize_options(self)
 
     #==========================================================================
 
     def finalize_options(self):
-        if self.debug:
-            print("Building with debug symbols")
-            self.debug = True
-        if self.egl:
-            print("Building with EGL support")
-            self.egl = True
 
         # If compilers aren't set already, default to GCC
         if not os.environ.get("CC"):
@@ -54,16 +61,17 @@ class VMDBuild(DistutilsBuild):
             os.environ["LDFLAGS"] = ""
 
         self.libdirs = self._get_libdirs()
+        self.incdirs = self._get_incdirs()
 
         DistutilsBuild.finalize_options(self)
 
     #==========================================================================
 
     def run(self):
+        self.compile_vmd()
+
         # Run original build code
         DistutilsBuild.run(self)
-        # Setup and run compilation script
-        self.execute(self.compile_vmd, [], msg="Compiling VMD")
 
     #==========================================================================
 
@@ -120,17 +128,10 @@ class VMDBuild(DistutilsBuild):
     #==========================================================================
 
     @staticmethod
-    def _find_include_dir(incfile, pydir=sysconfig.EXEC_PREFIX):
-        """
-        Finds the path containing an include file. Starts by searching
-        $INCLUDE, then whatever system include paths $CC looks in.
-        If it can't find the file, defaults to "$pydir/include"
-        """
+    def _get_incdirs(pydir=sysconfig.EXEC_PREFIX):
 
-        # Look in directories specified by $INCLUDE
-        searchdirs = [d for d in os.environ.get("INCLUDE", "").split(":")
-                      if os.path.isdir(d)]
         # Also look in the directories $CC does
+        searchdirs = []
         try:
             out = check_output(r"echo | %s -E -Wp,-v - 2>&1 | grep '^\s.*'"
                                % os.environ["CC"],
@@ -140,11 +141,26 @@ class VMDBuild(DistutilsBuild):
         except: pass
         searchdirs.insert(0, os.path.join(pydir, "include"))
 
+        # Also look in directories specified by $INCLUDE
+        searchdirs += [d for d in os.environ.get("INCLUDE", "").split(":")
+                       if os.path.isdir(d)]
+
+        return searchdirs
+
+    #==========================================================================
+
+    def _find_include_dir(self, incfile):
+        """
+        Finds the path containing an include file. Starts by searching
+        $INCLUDE, then whatever system include paths $CC looks in.
+        If it can't find the file, defaults to "$pydir/include"
+        """
+
         # Find the actual file
         incdir = ""
         try:
             out = check_output(["find", "-H"]
-                               + searchdirs
+                               + self.incdirs
                                + ["-maxdepth", "2",
                                   "-path", r"*/%s" % incfile],
                                close_fds=True,
@@ -154,7 +170,6 @@ class VMDBuild(DistutilsBuild):
         except: pass
 
         if not glob(os.path.join(incdir, incfile)): # Glob allows wildcards
-            incdir = os.path.join(pydir, "include", incfile)
             raise RuntimeError("Could not find include file '%s' in standard "
                   "include directories. Update $INCLUDE to include the "
                   "directory  containing this file, or make sure it is present "
@@ -262,11 +277,6 @@ class VMDBuild(DistutilsBuild):
             os.environ["LDFLAGS"] += " -headerpad_max_install_names"
             os.environ["LDFLAGS"] += " -Wl,-rpath,%s" % addir
 
-        addir = sysconfig.get_config_var("INCLUDEDIR")
-        if addir is None: addir = os.path.join(pydir, "include")
-        os.environ["CFLAGS"] += " -I%s" % addir
-        os.environ["CXXFLAGS"] += " -I%s" % addir
-
         # No reliable way to ask for actual available library, so try 8.5 first
         tcllibdir = self._find_library_dir("libtcl8.5", mandatory=False)
         os.environ["TCLLDFLAGS"] = "-ltcl8.5"
@@ -315,29 +325,46 @@ class VMDBuild(DistutilsBuild):
 
         # Set extra config variables if requested
         os.environ["VMDEXTRAFLAGS"] = ""
-        if self.debug:
+        if self.distribution.debug:
+            print("Building with debug symbols")
             os.environ["VMDEXTRAFLAGS"] += " DEBUG"
-        if self.egl:
-            # Find OpenGL headers
-            oglheaders = set([" -I%s" % self._find_include_dir("GL/gl.h"),
-                              " -I%s" % self._find_include_dir("EGL/egl.h"),
-                              " -I%s" % self._find_include_dir("EGL/eglext.h")])
-            os.environ["CFLAGS"] += "".join(oglheaders)
-            os.environ["CXXFLAGS"] += "".join(oglheaders)
 
-            ogllib = self._find_library_dir("libOpenGL")
-            os.environ["LDFLAGS"] += " -L%s" % ogllib
+            #asandir = self._find_library_dir("libasan")
+            #os.environ["LDFLAGS"] += " -L%s" % asandir
+
+        if self.distribution.egl:
+            print("Building with EGL support")
+
+            # Find OpenGL headers
+            # The -idirafter option means search this include directory
+            # after all specified by -I, then all system defaults. This
+            # prevents us from pulling in system standard libraries when
+            # building for conda
+            oglheaders = set([" -idirafter%s" % self._find_include_dir("GL/gl.h"),
+                              " -idirafter%s" % self._find_include_dir("EGL/egl.h"),
+                              " -idirafter%s" % self._find_include_dir("EGL/eglext.h")])
+            os.environ["OGLINC"] = "".join(oglheaders)
+
+            ogllibs = set([" -L%s" % self._find_library_dir("libOpenGL"),
+                           " -L%s" % self._find_library_dir("libEGL")])
+            os.environ["OGLLIB"] = "".join(ogllibs)
 
             os.environ["VMDEXTRAFLAGS"] += " EGLPBUFFER"
 
+        # Add Python include directories
+        addir = sysconfig.get_config_var("INCLUDEDIR")
+        if addir is None: addir = os.path.join(pydir, "include")
+        os.environ["CFLAGS"] += " -I%s" % addir
+        os.environ["CXXFLAGS"] += " -I%s" % addir
+
         # Print a summary
         print("Building with:")
-        print("  CC: %s" % os.environ["CC"])
-        print("  CXX: %s" % os.environ["CXX"])
-        print("  LD: %s" % os.environ["LD"])
-        print("  CFLAGS: %s" % os.environ["CFLAGS"])
-        print("  CXXFLAGS: %s" % os.environ["CXXFLAGS"])
-        print("  LDFLAGS: %s" % os.environ["LDFLAGS"])
+        print("   CC: %s" % os.environ["CC"])
+        print("   CXX: %s" % os.environ["CXX"])
+        print("   LD: %s" % os.environ["LD"])
+        print("   CFLAGS: %s" % os.environ["CFLAGS"])
+        print("   CXXFLAGS: %s" % os.environ["CXXFLAGS"])
+        print("   LDFLAGS: %s" % os.environ["LDFLAGS"])
 
     #==========================================================================
 
@@ -377,6 +404,21 @@ class VMDBuild(DistutilsBuild):
 
 ###############################################################################
 
+class VMDInstall(SetuptoolsInstall):
+    """ Installs vmd """
+
+    def initialize_options(self):
+        SetuptoolsInstall.initialize_options(self)
+
+    def finalize_options(self):
+        SetuptoolsInstall.finalize_options(self)
+
+    def run(self):
+        self.run_command("build")
+        SetuptoolsInstall.run(self)
+
+###############################################################################
+
 class VMDTest(Command):
     user_options = [("pytest-args=", "a", "Arguments to pass to pytest")]
 
@@ -401,9 +443,11 @@ setup(name='vmd-python',
       url='http://github.com/Eigenstate/vmd-python',
       license='VMD License',
       packages=['vmd'],
-      package_data={'vmd' : ['vmd.so']},
+      package_data={'vmd' : ['libvmd.so']},
+      distclass=VMDDistribution,
       cmdclass={
           'build': VMDBuild,
+          'install': VMDInstall,
           'test': VMDTest,
       },
      )
