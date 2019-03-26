@@ -226,12 +226,19 @@ class VMDBuild(DistutilsBuild):
         whatever libpython is currently running. Some of this is inspired
         from scikit-build's function for doing this.
         """
+
+        # As libpython is linked statically on OSX, don't pass -lpython**
+        # as this will result in a segfault on import.
+        # Instead just satisfy the linker at build time
+        if "Darwin" in platform.system():
+            return "-undefined dynamic_lookup"
+
         # See if we can get it from sysconfig
         pylibname = sysconfig.get_config_var("LIBRARY") # "libpython3.6m.a"
         pylibdir = sysconfig.get_config_var("LIBDIR") # "~/miniconda/lib"
         pythonldflag = os.path.splitext(pylibname)[0] if pylibdir else None
 
-        suffix = ".dylib" if "Darwin" in platform.system() else ".so"
+        suffix = ".so"
 
         # Check a library with appropriate extension actually exists.
         # If not, try to find a libpython and use that
