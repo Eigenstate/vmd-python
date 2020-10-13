@@ -486,10 +486,10 @@ static PyObject* py_mol_write(PyObject *self, PyObject *args, PyObject *kwargs)
   // Handle legacy keywords beg, end, skip, but emit DeprecationWarning
   handle_legacy_keywords(kwargs);
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "iss|iiiiO!:molecule.write",
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "iss|iiiiO:molecule.write",
                                    (char**) kwlist, &molid, &type, &filename,
                                    &spec.first, &spec.last, &spec.stride, &spec.waitfor,
-                                   &Atomsel_Type, &selobj))
+                                   &selobj))
     return NULL;
 
   if (!(app = get_vmdapp()))
