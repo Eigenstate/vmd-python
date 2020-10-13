@@ -488,7 +488,7 @@ static PyObject* py_mol_write(PyObject *self, PyObject *args, PyObject *kwargs)
 
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "iss|iiiiO!:molecule.write",
                                    (char**) kwlist, &molid, &type, &filename,
-                                   &spec.first, &spec.last, &spec.stride, &spec.waitfor
+                                   &spec.first, &spec.last, &spec.stride, &spec.waitfor,
                                    &Atomsel_Type, &selobj))
     return NULL;
 
