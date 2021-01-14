@@ -460,14 +460,15 @@ static const char mol_write_doc[] =
 "    filename (str): Path to coordinate data\n"
 "    first (int): First frame to read. Defaults to 0 (first frame)\n"
 "    last (int): Last frame to read, or -1 for the end. Defaults to -1\n"
-"    stride (int): Frame stride. Defaults to 1 (read all frames)\n"
+"    stride (int): Frame stride. Defaults to 1 (write all frames)\n"
+"    waitfor (int): Number of frames to wait for before returning control. Defaults to -1 (wait for all frames)"
 "    selection (atomsel): Atom indices to write. Defaults to all atoms."
 "Returns:\n"
 "    (int): Number of frames written";
 static PyObject* py_mol_write(PyObject *self, PyObject *args, PyObject *kwargs)
 {
   const char *kwlist[] = {"molid", "filetype", "filename", "first", "last",
-                          "stride", "selection", NULL};
+                          "stride", "waitfor", "selection", NULL};
   PyObject *selobj = NULL;
   char *filename, *type;
   int numframes, molid;
@@ -485,10 +486,10 @@ static PyObject* py_mol_write(PyObject *self, PyObject *args, PyObject *kwargs)
   // Handle legacy keywords beg, end, skip, but emit DeprecationWarning
   handle_legacy_keywords(kwargs);
 
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "iss|iiiO!:molecule.write",
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "iss|iiiiO:molecule.write",
                                    (char**) kwlist, &molid, &type, &filename,
-                                   &spec.first, &spec.last, &spec.stride,
-                                   &Atomsel_Type, &selobj))
+                                   &spec.first, &spec.last, &spec.stride, &spec.waitfor,
+                                   &selobj))
     return NULL;
 
   if (!(app = get_vmdapp()))
