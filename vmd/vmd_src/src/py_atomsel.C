@@ -434,6 +434,12 @@ static int build_set_values(const void* list, int num_atoms, PyObject* val,
   // Determine if passed PyObject is an array
   is_array = (PySequence_Check(val) && !is_pystring(val)) ? 1 : 0;
 
+  //If it is an array, check to make sure it matches the length of the selection.
+  if (is_array && PySequence_Length(val) > 1 && PySequence_Length(val) != atomSel->selected ) {
+    PyErr_SetString(PyExc_ValueError, "sequence length does not match the number of selected atoms");
+    return 1;
+  }
+  
   for (i = 0; i < num_atoms; i++) {
     // Continue if atom is not part of selection
     if (!flgs[i])
