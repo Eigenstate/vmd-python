@@ -2139,7 +2139,7 @@ if ($config_arch eq "MACOSX") {
 }
 
 
-if ($config_arch eq "MACOSXX86" || $config_arch eq "MACOSXX86_64") {
+if ($config_arch eq "MACOSXX86" || $config_arch eq "MACOSXX86_64" || $config_arch eq "MACOSXARM64") {
     $def_imageviewer="/usr/bin/open %s";
 
     if ($config_lp64) {

@@ -21,7 +21,7 @@
 // only compile this file if we're building on MacOS X 
 // and when the target build is meant for an application bundle install
 // rather than a traditional X11/Unix style VMD install
-#if !defined(VMDNOMACBUNDLE) && (defined(ARCH_MACOSX) || defined(ARCH_MACOSXX86) || defined(ARCH_MACOSXX86_64))
+#if !defined(VMDNOMACBUNDLE) && (defined(ARCH_MACOSX) || defined(ARCH_MACOSXX86) || defined(ARCH_MACOSXX86_64) || defined(ARCH_MACOSXARM64))
 #include <Carbon/Carbon.h>    /* Carbon APIs for process management */
 #include <stdlib.h>
 #include <stdio.h>            
@@ -70,7 +70,7 @@ static char * vmd_get_vmddir(void) {
   bundledir = (char *) malloc(2048 * sizeof(UInt8));
   memset(bundledir, 0, 2048 * sizeof(UInt8));
 
-#if defined(ARCH_MACOSXX86_64)
+#if defined(ARCH_MACOSXX86_64) || defined(ARCH_MACOSXARM64)
   //
   // CoreFoundation/Cocoa-based application bundle path query code
   //
