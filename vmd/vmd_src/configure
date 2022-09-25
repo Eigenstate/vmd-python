@@ -151,7 +151,7 @@ if (!(-e "plugins")) {
 
 #################### Parse command line options   ###########
 # list of allowed architectures
-@archlist=('LINUX', 'LINUXAMD64', 'LINUXPPC64', 'MACOSX', 'MACOSXX86', 'MACOSXX86_64', 'WIN32', 'WIN64');
+@archlist=('LINUX', 'LINUXAMD64', 'LINUXPPC64', 'MACOSX', 'MACOSXX86', 'MACOSXX86_64', 'WIN32', 'WIN64', 'MACOSXARM64');
 
 if ($#ARGV == -1) {
     $text = `cat configure.options`;
