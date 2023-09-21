@@ -9,6 +9,7 @@ import numpy as np
 from pytest import approx
 from vmd import atomsel, molecule, selection
 
+
 def test_basic_getset(file_3frames):
 
     m = molecule.load("pdb", file_3frames)
@@ -28,7 +29,7 @@ def test_basic_getset(file_3frames):
 
     # Set something without a setter
     with pytest.raises(AttributeError):
-        sel.molid = m+1
+        sel.molid = m + 1
 
     # Invalid selection text
     with pytest.raises(ValueError):
@@ -147,7 +148,7 @@ def test_atomsel_bonds(file_3frames):
     sel = atomsel(selection="protein", molid=m, frame=1)
 
     bonds = sel.bonds
-    assert bonds[0] == [1,2]
+    assert bonds[0] == [1, 2]
 
     # Non sequence argument
     with pytest.raises(TypeError):
@@ -166,19 +167,19 @@ def test_atomsel_bonds(file_3frames):
         sel.bonds = [(2.8, 3.2)] * 10
 
     # Set using a list
-    bonds[0] = [2,4]
+    bonds[0] = [2, 4]
     sel.bonds = bonds
-    assert sel.bonds[0] == [2,4]
+    assert sel.bonds[0] == [2, 4]
 
     # Set using a tuple
-    bonds[1] = (2,3,8)
+    bonds[1] = (2, 3, 8)
     sel.bonds = bonds
-    assert sel.bonds[1] == [2,3,8]
+    assert sel.bonds[1] == [2, 3, 8]
 
     # Deleted molecule error
     molecule.delete(m)
     with pytest.raises(ValueError):
-        sel.bonds =  [0,0] * 10
+        sel.bonds = [0, 0] * 10
 
 
 def test_atomsel_minmax_center(file_3frames):
@@ -188,42 +189,46 @@ def test_atomsel_minmax_center(file_3frames):
     alasel = atomsel("resname ALA", molid=m)
 
     # Minmax without radii
-    assert sel.minmax() == (approx((2.497, 0.724, -0.890)),
-                            approx((6.009, 4.623, 2.131)))
-
+    assert sel.minmax() == (
+        approx((2.497, 0.724, -0.890)),
+        approx((6.009, 4.623, 2.131)),
+    )
 
     # Minmax with radii
-    sel.radius  = 10.0
-    assert sel.minmax(radii=True) == (approx((2.497-10., 0.724-10., -0.890-10.)),
-                                      approx((6.009+10., 4.623+10., 2.131+10.)))
+    sel.radius = 10.0
+    assert sel.minmax(radii=True) == (
+        approx((2.497 - 10.0, 0.724 - 10.0, -0.890 - 10.0)),
+        approx((6.009 + 10.0, 4.623 + 10.0, 2.131 + 10.0)),
+    )
 
     assert sel.center(weight=None) == approx((4.040, 2.801, 0.492), rel=1e-3)
-    assert sel.center(weight=[0.]*9+ [1.]) == atomsel("index 9", m).center()
+    assert sel.center(weight=[0.0] * 9 + [1.0]) == atomsel("index 9", m).center()
 
     # Wrong number of weights
     with pytest.raises(TypeError):
         sel.center(weight=3.0)
     with pytest.raises(ValueError):
-        sel.center([3.,2.])
-
+        sel.center([3.0, 2.0])
 
     sel = atomsel("all")
-    assert sel.centerperresidue() == [approx((4.040, 2.801, 0.492), rel=1e-3),
-                                      approx((7.260, 3.987, 0.000), rel=1e-3)]
-    assert sel.centerperresidue(weight=None)[0] == alasel.centerperresidue()[0]
-
+    assert sel.centerperresidue() == [
+        approx((4.040, 2.801, 0.492), rel=1e-3),
+        approx((7.260, 3.987, 0.000), rel=1e-3),
+    ]
+    assert sel.centerperresidue(weight=None)[0] == approx(
+        alasel.centerperresidue()[0], rel=1e-3
+    )
 
     # Centerperresidue with weights
     with pytest.raises(TypeError):
-        sel.centerperresidue(weight=[True]*len(sel))
+        sel.centerperresidue(weight=[True] * len(sel))
     with pytest.raises(TypeError):
         sel.centerperresidue(3)
     with pytest.raises(ValueError):
-        sel.centerperresidue([1.0,2.0])
+        sel.centerperresidue([1.0, 2.0])
 
-    weights = [1.0]*10 + [0.0]*6
-    assert sel.centerperresidue(weight=weights)[0] == approx(alasel.center(),
-                                                             rel=1e-3)
+    weights = [1.0] * 10 + [0.0] * 6
+    assert sel.centerperresidue(weight=weights)[0] == approx(alasel.center(), rel=1e-3)
     assert all([math.isnan(x) for x in sel.centerperresidue(weights)[1]])
     molecule.delete(m)
 
@@ -293,13 +298,13 @@ def test_atomsel_rmsd(file_3frames):
 
     # Weights cannot be all zero
     with pytest.raises(ValueError):
-        sel1.rmsd(sel2, [0.0]*len(sel1))
+        sel1.rmsd(sel2, [0.0] * len(sel1))
 
     # RMSDq - rotation invariant
     sel2.move(np.sin(60) * np.reshape(np.identity(4), (16,)))
     assert sel1.rmsdQCP(sel2) == approx(0.0, abs=1e-5)
 
-    weights = [2.0]*(len(sel1)-1) + [1.0]
+    weights = [2.0] * (len(sel1) - 1) + [1.0]
     assert sel1.rmsd(selection=sel2, weight=weights) == approx(4.0)
     assert sel1.rmsdQCP(sel2, weights) == approx(0.0, abs=1e-5)
 
@@ -309,8 +314,9 @@ def test_atomsel_rmsd(file_3frames):
     assert perres[0] == approx(sel1.rmsd(sel2))
     assert perres[1] == approx(4.0)
 
-    wpr = atomsel(molid=m1).rmsdperresidue(atomsel(molid=m2),
-                                           weight=[1.0]*10 + [0.0]*6)
+    wpr = atomsel(molid=m1).rmsdperresidue(
+        atomsel(molid=m2), weight=[1.0] * 10 + [0.0] * 6
+    )
     assert wpr[0] == approx(sel1.rmsd(sel2))
     assert np.isnan(wpr[1])
 
@@ -326,7 +332,6 @@ def test_atomsel_rmsd(file_3frames):
         sel1.rmsd(selection=sel2, weight=[1.0, 2.0])
     with pytest.raises(ValueError):
         sel1.rmsd(selection=sel2, weight=[True, True])
-
 
     # Operations on deleted molecule
     # Same code should catch this for rmsdQCP etc
@@ -379,13 +384,31 @@ def test_atomsel_fit_move(file_3nob):
     assert fit1[0] == approx(1.0, abs=1e-5)
 
     # Fit, with weights
-    fit0 = sel1.fit(selection=sel2, weight=[0.0] + [1.0]*(len(sel2)-1))
-    assert fit0 == approx((1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-                           1.0, 0.0, -2.0, 0.0, 0.0, 1.0))
+    fit0 = sel1.fit(selection=sel2, weight=[0.0] + [1.0] * (len(sel2) - 1))
+    assert fit0 == approx(
+        (
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            -2.0,
+            0.0,
+            0.0,
+            1.0,
+        )
+    )
 
     # Test selection invertible
-    fit2 = np.reshape(sel2.fit(sel1), (4,4))
-    assert np.linalg.inv(fit2) == approx(np.reshape(fit1, (4,4)))
+    fit2 = np.reshape(sel2.fit(sel1), (4, 4))
+    assert np.linalg.inv(fit2) == approx(np.reshape(fit1, (4, 4)))
 
     # Move
     sel1.move(fit1)
@@ -399,7 +422,7 @@ def test_atomsel_fit_move(file_3nob):
     # Operations on empty selection
     isel = atomsel("resname NOPE", m1)
     with pytest.raises(ValueError):
-        isel.moveby((1., 2., 3.))
+        isel.moveby((1.0, 2.0, 3.0))
 
     with pytest.raises(ValueError):
         isel.move(fit1)
@@ -413,7 +436,7 @@ def test_atomsel_fit_move(file_3nob):
 
     molecule.delete(m2)
     with pytest.raises(ValueError):
-        sel1.moveby((1,2,3))
+        sel1.moveby((1, 2, 3))
     with pytest.raises(ValueError):
         sel2.move(fit1)
 
@@ -425,7 +448,7 @@ def test_atomsel_contacts(file_3nob):
 
     s1 = atomsel("resname PRO", m1)
     s2 = atomsel("resname PRO", m2)
-    s1.moveby((5., 0., 0.))
+    s1.moveby((5.0, 0.0, 0.0))
 
     # Test empty selection
     print(len(atomsel("resname NOPE", m1)))
@@ -436,7 +459,7 @@ def test_atomsel_contacts(file_3nob):
 
     # Empty contacts beyond cutoff
     x = s1.contacts(selection=s2, cutoff=1.0)
-    assert x == [ [], [] ]
+    assert x == [[], []]
 
     # Indices should match for within cutoff
     x = s1.contacts(s2, 6.0)
@@ -446,8 +469,7 @@ def test_atomsel_contacts(file_3nob):
     assert set(x[0]) == set(s2.contacts(s1, 6.0)[0])
 
     # Atoms directly bonded should not come up
-    assert atomsel("index 601", m1).contacts(atomsel("index 602", m1), 10.0) \
-        == [[], []]
+    assert atomsel("index 601", m1).contacts(atomsel("index 602", m1), 10.0) == [[], []]
 
     # Test invalid cutoff
     with pytest.raises(ValueError):
@@ -472,10 +494,11 @@ def test_atomsel_hbonds(file_3frames, file_3nob):
     s2 = atomsel("protein", molid=m2, frame=0)
 
     # Test donor and acceptor
-    assert s1.hbonds(5.0, 180.0, atomsel("resid 2 and noh", m1)) \
-        ==  [ [0, 2, 4, 4, 4, 0, 2, 4, 4, 4],
-              [10, 10, 10, 10, 10, 12, 12, 12, 12, 12],
-              [1, 3, 5, 6, 7, 1, 3, 5, 6, 7] ]
+    assert s1.hbonds(5.0, 180.0, atomsel("resid 2 and noh", m1)) == [
+        [0, 2, 4, 4, 4, 0, 2, 4, 4, 4],
+        [10, 10, 10, 10, 10, 12, 12, 12, 12, 12],
+        [1, 3, 5, 6, 7, 1, 3, 5, 6, 7],
+    ]
 
     # Test no acceptor
     assert len(s2.hbonds(cutoff=4.0, maxangle=40.0)[0]) == 421
@@ -489,7 +512,7 @@ def test_atomsel_hbonds(file_3frames, file_3nob):
 
     # Test invalid acceptor
     with pytest.raises(TypeError):
-        s1.hbonds(1.0, 180.0, acceptor=[3,2,3])
+        s1.hbonds(1.0, 180.0, acceptor=[3, 2, 3])
 
     # Test empty coordinates
     with pytest.raises(ValueError):
@@ -503,11 +526,12 @@ def test_atomsel_hbonds(file_3frames, file_3nob):
     # Test on deleted molecule
     molecule.delete(m1)
     with pytest.raises(ValueError):
-        s1.hbonds(cutoff=5.0, maxangle=180.)
+        s1.hbonds(cutoff=5.0, maxangle=180.0)
 
     molecule.delete(m2)
     with pytest.raises(ValueError):
-        s2.hbonds(cutoff=5.0, maxangle=180.)
+        s2.hbonds(cutoff=5.0, maxangle=180.0)
+
 
 def test_atomsel_sasa(file_3frames):
 
@@ -533,7 +557,7 @@ def test_atomsel_sasa(file_3frames):
         s1.sasa(srad=1.0, points=[])
 
     with pytest.raises(TypeError):
-        s1.sasa(srad=1.0, points=(3,3))
+        s1.sasa(srad=1.0, points=(3, 3))
 
     # Test correct calculation
     assert s1.sasa(srad=1.0) == approx(176.46739)
@@ -542,7 +566,7 @@ def test_atomsel_sasa(file_3frames):
 
     # Using points object
     _, points = s1.sasa(0.5, points=True, samples=1)
-    assert len(points) == 3 # Samples is an upper bound
+    assert len(points) == 3  # Samples is an upper bound
     assert points[0] == approx((3.99603, 3.19342, 3.62426), rel=1e-3)
 
     # Test on deleted molecule
@@ -555,8 +579,10 @@ def test_atomsel_sasa(file_3frames):
 
     molecule.delete(m2)
 
-@pytest.mark.skipif(not getattr(atomsel, "mdff", False),
-                    reason="VMD not compiled with CUDA support")
+
+@pytest.mark.skipif(
+    not getattr(atomsel, "mdff", False), reason="VMD not compiled with CUDA support"
+)
 def test_atomsel_mdff(file_3frames):
 
     m1 = molecule.load("pdb", file_3frames)
@@ -577,6 +603,7 @@ def test_atomsel_mdff(file_3frames):
     molecule.delete(m1)
     with pytest.raies(ValueError):
         s1.mdffsim()
+
 
 # Test defining a macro with selection
 def test_atomsel_selection(file_3nob):
