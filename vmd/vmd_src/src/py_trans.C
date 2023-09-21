@@ -35,7 +35,7 @@ static PyObject *py_rotate(PyObject *self, PyObject *args, PyObject *kwargs)
   VMDApp *app;
   float angle;
   char *axis;
-  int len;
+  Py_ssize_t len;
 
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#f:trans.rotate_scene",
                                    (char**) kwlist, &axis, &len, &angle))

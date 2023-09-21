@@ -21,6 +21,9 @@
 #ifndef PY_COMMANDS_H
 #define PY_COMMANDS_H
 
+// Necessary for Python>=3.10 parsing of strings with length.
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 
 #if (PY_MAJOR_VERSION == 2) && (PY_MINOR_VERSION < 5)
