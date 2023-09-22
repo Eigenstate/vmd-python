@@ -509,6 +509,7 @@ static PyObject* py_mol_write(PyObject *self, PyObject *args, PyObject *kwargs)
 
   // Get list of atom indices from optional atop selection object
   if (selobj && selobj != Py_None) {
+
     AtomSel *sel = atomsel_AsAtomSel( selobj );
     if (!sel || sel->molid() != molid) {
       PyErr_SetString(PyExc_ValueError, "Atomsel must be valid and must "
