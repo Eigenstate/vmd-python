@@ -439,7 +439,7 @@ static int build_set_values(const void* list, int num_atoms, int num_selected, P
     PyErr_SetString(PyExc_ValueError, "sequence length does not match the number of selected atoms");
     return 1;
   }
-  
+
   for (i = 0; i < num_atoms; i++) {
     // Continue if atom is not part of selection
     if (!flgs[i])
@@ -520,7 +520,15 @@ static int atomsel_set(PyAtomSelObject *a, const char *name, PyObject *val)
   if (elem->returns_a == SymbolTableElement::IS_INT) {
     list = malloc(num_atoms * sizeof(int));
     if (build_set_values(list, num_atoms, atomSel->selected, val, flgs,
-                         sizeof(double), help_double))
+                         sizeof(int), help_int))
+        goto failure;
+    elem->set_keyword_int(&context, num_atoms, (int*) list, flgs);
+
+  // Float type
+  } else if (elem->returns_a == SymbolTableElement::IS_FLOAT) {
+      list = malloc(num_atoms * sizeof(double));
+      if (build_set_values(list, num_atoms, atomSel->selected, val, flgs,
+                            sizeof(double), help_double))
       goto failure;
 
     elem->set_keyword_double(&context, num_atoms, (double*) list, flgs);
