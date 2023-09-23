@@ -30,7 +30,7 @@ optional plugins not included in binary distributions:
 * Doesn't care which numpy you compile against
 * Support for Python 2 or Python 3
 
-### [Read the documentation!])(https://vmd.robinbetz.com)
+### [Read the documentation!](https://vmd.robinbetz.com)
 
 ### Included modules
 The following sub-modules are part of VMD. The import system

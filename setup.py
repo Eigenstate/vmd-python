@@ -234,18 +234,21 @@ class VMDBuild(DistutilsBuild):
             return "-undefined dynamic_lookup"
 
         # See if we can get it from sysconfig
+        pylibdir = pythonldflag = None
         pylibname = sysconfig.get_config_var("LIBRARY") # "libpython3.6m.a"
-        pylibdir = sysconfig.get_config_var("LIBDIR") # "~/miniconda/lib"
-        pythonldflag = os.path.splitext(pylibname)[0] if pylibdir else None
-
         suffix = ".so"
+        if pylibname is not None:
+            soname = os.path.splitext(pylibname)[0] + suffix
+            for libdirvar in ("LIBDIR", "LIBPL"):
+                libdir = sysconfig.get_config_var(libdirvar) # "~/miniconda/lib"
+                if os.path.isfile(os.path.join(libdir, soname)):
+                    pylibdir = libdir
+                    pythonldflag = os.path.splitext(soname)[0]
+                    break
 
         # Check a library with appropriate extension actually exists.
         # If not, try to find a libpython and use that
-        if pylibname is None or pylibdir is None or \
-                not os.path.isfile(os.path.join(pylibdir, pythonldflag)
-                                   + suffix):
-
+        if pylibname is None or pylibdir is None:
             print("Finding python location via fallback method...")
             pylibname = "libpython%s*" % sysconfig.get_python_version()
             candidate_libs = self._find_library_dir(pylibname)
@@ -445,7 +448,7 @@ class VMDTest(Command):
 ###############################################################################
 
 setup(name='vmd-python',
-      version='3.0.6',
+      version='3.1.2',
       description='Visual Molecular Dynamics Python module',
       author='Robin Betz',
       author_email='robin@robinbetz.com',

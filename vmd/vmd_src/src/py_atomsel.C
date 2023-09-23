@@ -423,7 +423,7 @@ static void help_charptr(void* p, PyObject *obj)
 }
 
 // Helper functions for set
-static int build_set_values(const void* list, int num_atoms, PyObject* val,
+static int build_set_values(const void* list, int num_atoms, int num_selected, PyObject* val,
                             int *flgs, int dtype_size,
                             void (*converter)(void*, PyObject*))
 {
@@ -433,6 +433,12 @@ static int build_set_values(const void* list, int num_atoms, PyObject* val,
 
   // Determine if passed PyObject is an array
   is_array = (PySequence_Check(val) && !is_pystring(val)) ? 1 : 0;
+
+  //If it is an array, check to make sure it matches the length of the selection.
+  if (is_array && PySequence_Length(val) > 1 && PySequence_Length(val) != num_selected) {
+    PyErr_SetString(PyExc_ValueError, "sequence length does not match the number of selected atoms");
+    return 1;
+  }
 
   for (i = 0; i < num_atoms; i++) {
     // Continue if atom is not part of selection
@@ -513,23 +519,23 @@ static int atomsel_set(PyAtomSelObject *a, const char *name, PyObject *val)
   // Integer type
   if (elem->returns_a == SymbolTableElement::IS_INT) {
     list = malloc(num_atoms * sizeof(int));
-    if (build_set_values(list, num_atoms, val, flgs, sizeof(int), help_int))
-      goto failure;
-
+    if (build_set_values(list, num_atoms, atomSel->selected, val, flgs,
+                         sizeof(int), help_int))
+        goto failure;
     elem->set_keyword_int(&context, num_atoms, (int*) list, flgs);
 
   // Float type
   } else if (elem->returns_a == SymbolTableElement::IS_FLOAT) {
-    list = malloc(num_atoms * sizeof(double));
-    if (build_set_values(list, num_atoms, val, flgs,
-                         sizeof(double), help_double))
+      list = malloc(num_atoms * sizeof(double));
+      if (build_set_values(list, num_atoms, atomSel->selected, val, flgs,
+                            sizeof(double), help_double))
       goto failure;
 
     elem->set_keyword_double(&context, num_atoms, (double*) list, flgs);
 
   } else if (elem->returns_a == SymbolTableElement::IS_STRING) {
     list = malloc(num_atoms * sizeof(char*));
-    if (build_set_values(list, num_atoms, val, flgs,
+    if (build_set_values(list, num_atoms, atomSel->selected, val, flgs,
                          sizeof(char*), help_charptr))
         goto failure;
 
