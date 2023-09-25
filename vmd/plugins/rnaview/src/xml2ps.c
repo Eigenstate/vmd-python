@@ -20,6 +20,7 @@ the chains.
 # include <time.h>
 # include "xml2ps.h"
 # include "nrutil.h"
+
 # define XBIG 1.0e+18   
 # define FALSE 0 
 # define TRUE 1
@@ -37,6 +38,7 @@ void read_sugar_syn(char *inpfile, long **sugar_syn);
 void get_sugar_syn(FILE *inp, char *value_ch);
 void get_chain_broken(long nres, double **a, double **b, long *chain_broken);
 
+void get_BDIR(char *BDIR, char *filename);
 
 
 FILE  *psfile; 

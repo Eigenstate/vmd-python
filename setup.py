@@ -398,6 +398,8 @@ class VMDBuild(DistutilsBuild):
         elif "Darwin" in osys:
             if "x86_64" in mach:
                 target = "MACOSXX86_64"
+            elif 'arm64' in mach:
+                target = "MACOSXARM64"
             elif "PowerPC" in mach:
                 target = "MACOSX"
             else:

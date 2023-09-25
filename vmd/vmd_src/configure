@@ -151,7 +151,7 @@ if (!(-e "plugins")) {
 
 #################### Parse command line options   ###########
 # list of allowed architectures
-@archlist=('LINUX', 'LINUXAMD64', 'LINUXPPC64', 'MACOSX', 'MACOSXX86', 'MACOSXX86_64', 'WIN32', 'WIN64');
+@archlist=('LINUX', 'LINUXAMD64', 'LINUXPPC64', 'MACOSX', 'MACOSXX86', 'MACOSXX86_64', 'WIN32', 'WIN64', 'MACOSXARM64');
 
 if ($#ARGV == -1) {
     $text = `cat configure.options`;
@@ -2139,7 +2139,7 @@ if ($config_arch eq "MACOSX") {
 }
 
 
-if ($config_arch eq "MACOSXX86" || $config_arch eq "MACOSXX86_64") {
+if ($config_arch eq "MACOSXX86" || $config_arch eq "MACOSXX86_64" || $config_arch eq "MACOSXARM64") {
     $def_imageviewer="/usr/bin/open %s";
 
     if ($config_lp64) {

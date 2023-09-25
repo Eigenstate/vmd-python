@@ -113,6 +113,25 @@ MACOSXX86_64:
 	"SHLD = $(CXX) -bundle" \
 	"TCLSHLD = $(CXX) -dynamiclib"
 
+MACOSXARM64:
+	$(MAKE) dynlibs staticlibs bins \
+	"ARCH = MACOSXARM64" \
+	"COPTO = -m64 -fPIC -o " \
+	"LOPTO = -m64 -fPIC $(LDFLAGS) -o " \
+	"CC = $(CC)" \
+	"CXX = $(CXX)" \
+	"DEF = -D" \
+	"CCFLAGS = $(CFLAGS) -m64 -Os -Wall -fPIC -dynamic" \
+	"CXXFLAGS = $(CXXFLAGS) -m64 -Os -Wall -fPIC -dynamic" \
+	"TCLLDFLAGS = $(TCLLDFLAGS)" \
+	"NETCDFLDFLAGS = $(NETCDFLDFLAGS)" \
+	"AR = $(AR)" \
+	"NM = $(NM) -p" \
+	"RANLIB = ranlib" \
+	"SHLD = $(CXX) -bundle" \
+	"TCLSHLD = $(CXX) -dynamiclib"
+
+
 WIN32:
 	$(MAKE) dynlibs win32staticlibs win32bins \
 	"ARCH = WIN32" \
