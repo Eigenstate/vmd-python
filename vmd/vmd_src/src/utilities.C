@@ -316,9 +316,22 @@ int vmd_getuid(void) {
 // This returns a pointer to x1
 float * cross_prod(float *x1, const float *x2, const float *x3)
 {
+  // If platform has fused multiply-add, use that with
+  // Kahan's method for difference of products to cancel error.
+#ifdef FP_FAST_FMA
+  double cd = x3[1] * x2[2]; // need double precision here.
+  x1[0] = fma(-x3[1], x2[2], cd) + fma(x2[1], x3[2], -cd);
+
+  cd = -x3[0] * x2[2];
+  x1[1] = fma(x3[0], x2[2], cd) + fma(-x2[0], x3[2], -cd);
+
+  cd = x3[0] * x2[1];
+  x1[2] = fma(-x3[0], x2[1], cd) + fma(x2[0], x3[1], -cd);
+#else
   x1[0] =  x2[1]*x3[2] - x3[1]*x2[2];
   x1[1] = -x2[0]*x3[2] + x3[0]*x2[2];
   x1[2] =  x2[0]*x3[1] - x3[0]*x2[1];
+#endif
   return x1;
 }
 
