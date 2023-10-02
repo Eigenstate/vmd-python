@@ -1,7 +1,8 @@
 # Tests covalently bonded ligand
 import inspect
-import pytest
 import os
+
+import pytest
 
 dir = os.path.dirname(__file__)
 
@@ -22,20 +23,20 @@ def test_caps_import():
 #==============================================================================
 
 def test_load_mae(file_rho):
-    from vmd import molecule, atomsel
+    from vmd import atomsel, molecule
     assert callable(atomsel)
 
     molecule.load('mae', file_rho)
-    chrg = set(atomsel().get('charge'))
+    chrg = set(atomsel().charge)
     assert chrg == set([0.0, 1.0, -1.0])
 
-    ins = set(atomsel().get('insertion'))
+    ins = set(atomsel().insertion)
     assert set(_.strip() for _ in ins) == set(['', 'A'])
 
 #==============================================================================
 
 def test_evaltcl(file_rho):
-    from vmd import evaltcl, atomsel, molecule
+    from vmd import atomsel, evaltcl, molecule
 
     molid = int(evaltcl("mol new"))
     assert molecule.get_top() == molid

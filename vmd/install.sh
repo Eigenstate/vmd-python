@@ -13,12 +13,6 @@ export VMDINSTALLBINDIR="$VMDDIR"
 export VMDINSTALLLIBRARYDIR="$VMDDIR"
 export PLUGINDIR="$VMDDIR/plugins"
 
-# Clean up previous installation
-if [[ -d $PLUGINDIR ]]; then
-    echo "Deleting previous plugin directory $PLUGINDIR"
-    rm -r $PLUGINDIR
-fi
-
 # Compile the plugins
 echo "Compiling plugins to $PLUGINDIR"
 mkdir -p $PLUGINDIR
@@ -57,7 +51,7 @@ cd $vmd_src/plugins
 make clean
 
 # Remove symlink so install doesn't freak out
-rm $vmd_src/vmd_src/plugins
+rm -f $vmd_src/vmd_src/plugins
 
 # Copy init.py file into build directory
 cp "$vmd_src/vmd_src/__init__.py" "$VMDDIR"

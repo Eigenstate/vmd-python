@@ -27,6 +27,7 @@
 
 from vmd import molecule, molrep
 
+
 class Molecule:
   """
   The Molecule class is a proxy for molecules loaded into VMD.  Most
@@ -91,7 +92,7 @@ class Molecule:
     if ind >= 0:
       filetype = filename[ind+1:]
     else:
-      if len(filename) is 4:
+      if len(filename) == 4:
         filetype = 'webpdb'
     return filetype
 

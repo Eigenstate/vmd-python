@@ -2168,6 +2168,9 @@ if ($config_arch eq "MACOSXX86" || $config_arch eq "MACOSXX86_64" || $config_arc
     } else {
       $arch_lopts       .= "";
     }
+    if ($config_shared) {
+      $arch_cppopts    .= " -DVMD_SHARED";
+    }
 
     # Mesa version uses X11 just like other Unix versions,
     # but the OpenGL version uses native MacOS X, no X11.

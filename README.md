@@ -1,7 +1,9 @@
 # vmd-python
 Installable VMD as a python module
 
-*NEW*: Version 3.0 has the following new features
+*NEW*: Support for new arm64 macs!
+
+Version 3.0 has the following new features
 
 * Atomselection attributes can be accessed or set more easily:
   `atomsel.get("x")` can be written as `atomsel.x`!
@@ -11,8 +13,6 @@ Installable VMD as a python module
 * The `selection` module lets you define custom atomselection macros
 * More rigorous reference counting / fewer memory leaks
 * Much prettier code
-
-*NEW*: Support for Python 3!!!
 
 ![CI status](https://img.shields.io/travis/Eigenstate/vmd-python.svg)
 ![Downloads](https://anaconda.org/rbetz/vmd-python/badges/downloads.svg)
@@ -105,7 +105,7 @@ The easiest way to install the module is by using the [Conda](https://conda.io/e
 Python package manager. Vmd-python is in the [conda forge](https://conda-forge.org/)
 channel:
 
-Simple binary installation with conda (currently linux-x86\_64 only)
+Simple binary installation with conda:
 
     conda install -c conda-forge vmd-python
 
@@ -136,21 +136,16 @@ and `libopengl0` packages. To build:
 
 Please file issues if you have problems with this!!
 
-### OSX support
-
-Users have reported that on OSX with Tcl/Tk 8.6 the module will
-segfault on import. Unfortunately I'm the only developer of this software and
-don't have access to a machine running OSX with which to debug the issue.
-
 ## Dependencies
 vmd-python has the following dependencies:
 
-    * python 2.7 or 3.6
+    * python>2.7 or>3.6
     * numpy
     * libnetcdf >= 4.3
     * expat
     * sqlite
-    * Tcl/Tk = 8.5 (8.6 will crash on OSX)
+    * Tcl/Tk
+    * importlib_resources
 
 To build on Debian, that's the following packages:
 
