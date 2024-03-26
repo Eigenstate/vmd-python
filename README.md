@@ -111,8 +111,7 @@ Simple binary installation with conda:
 
 For other architectures, you can build from source by cloning this repo:
 
-    python setup.py build
-    python setup.py install
+    python -m pip install .
 
 Installation can take a while since it compiles VMD from source.
 
@@ -140,6 +139,7 @@ Please file issues if you have problems with this!!
 vmd-python has the following dependencies:
 
     * python>2.7 or>3.6
+    * pip
     * numpy
     * libnetcdf >= 4.3
     * expat
@@ -152,7 +152,7 @@ To build on Debian, that's the following packages:
     * libsqlite3-dev
     * libexpat1-dev
     * libnetcdf-dev
-    * tcl8.5-dev
+    * tcl8.6-dev
     * libegl1-dev
     * libopengl0
 

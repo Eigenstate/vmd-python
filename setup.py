@@ -1,5 +1,5 @@
-
-from distutils import sysconfig
+import sys
+import sysconfig
 from setuptools import setup
 from distutils.util import convert_path
 from distutils.command.build import build as DistutilsBuild
@@ -80,7 +80,7 @@ class VMDBuild(DistutilsBuild):
         target = self.get_vmd_build_target()
         srcdir = convert_path(os.path.dirname(os.path.abspath(__file__)) + "/vmd")
         builddir = convert_path(os.path.abspath(self.build_lib + "/vmd"))
-        pydir = sysconfig.EXEC_PREFIX
+        pydir = sys.exec_prefix
 
         self.set_environment_variables(pydir)
 
@@ -96,7 +96,7 @@ class VMDBuild(DistutilsBuild):
     #==========================================================================
 
     @staticmethod
-    def _get_libdirs(pydir=sysconfig.EXEC_PREFIX):
+    def _get_libdirs(pydir=sys.exec_prefix):
         """
         Gets the list of directories to search for linking dynamic libraries.
         First starts with the python library directory, then $LD_LIBRARY_PATH
@@ -128,7 +128,7 @@ class VMDBuild(DistutilsBuild):
     #==========================================================================
 
     @staticmethod
-    def _get_incdirs(pydir=sysconfig.EXEC_PREFIX):
+    def _get_incdirs(pydir=sys.exec_prefix):
 
         # Also look in the directories $CC does
         searchdirs = []
@@ -180,7 +180,7 @@ class VMDBuild(DistutilsBuild):
 
     #==========================================================================
 
-    def _find_library_dir(self, libfile, pydir=sysconfig.EXEC_PREFIX,
+    def _find_library_dir(self, libfile, pydir=sys.exec_prefix,
                           mandatory=True):
         """
         Finds the directory containing a library file. Starts by searching
@@ -322,8 +322,8 @@ class VMDBuild(DistutilsBuild):
         os.environ["NUMPY_LIBRARY_DIR"] = numpy.get_include().replace("include",
                                                                       "lib")
 
-        os.environ["PYTHON_LIBRARY_DIR"] = sysconfig.get_python_lib()
-        os.environ["PYTHON_INCLUDE_DIR"] = sysconfig.get_python_inc()
+        os.environ["PYTHON_LIBRARY_DIR"] = sysconfig.get_path("stdlib")
+        os.environ["PYTHON_INCLUDE_DIR"] = sysconfig.get_path("include")
 
         # Get python linker flag, as it may be -l3.6m or -l3.6 depending on malloc
         # this python was built against
@@ -362,8 +362,7 @@ class VMDBuild(DistutilsBuild):
             os.environ["VMDEXTRAFLAGS"] += " EGLPBUFFER"
 
         # Add Python include directories
-        addir = sysconfig.get_config_var("INCLUDEDIR")
-        if addir is None: addir = os.path.join(pydir, "include")
+        addir = sysconfig.get_path("include")
         os.environ["CFLAGS"] += " -I%s" % addir
         os.environ["CXXFLAGS"] += " -I%s" % addir
 

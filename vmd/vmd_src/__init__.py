@@ -15,10 +15,10 @@ __author__ = "Robin Betz"
 import imp
 import os
 
-import importlib_resources
+import importlib.resources
 
 # Need to set VMDDIR environment variable for vmd.so to import
-vmdlib = importlib_resources.files(__name__) / "libvmd.so"
+vmdlib = importlib.resources.files(__name__) / "libvmd.so"
 os.environ["VMDDIR"] = os.path.split(vmdlib)[0]
 os.environ["VMDDISPLAYDEVICE"] = "OPENGLPBUFFER"  # For off screen rendering
 
