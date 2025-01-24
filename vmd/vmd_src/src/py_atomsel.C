@@ -35,11 +35,51 @@ typedef struct {
   VMDApp *app;
 } PyAtomSelObject;
 
+// Initialize atomsel as a modules so types can be accessed from it.
+static struct PyModuleDef module_def = {
+  PyModuleDef_HEAD_INIT,
+  "atomsel",
+  PyDoc_STR("atomsel module"),
+  -1,
+  NULL, // No methods.
+};
+
+
+#if PY_MAJOR_VERSION >= 3
+PyObject* get_type(const char *name) {
+  // Get the iterator type from the module.
+  PyObject *module = PyState_FindModule(&module_def);
+  if (!module) {
+    PyErr_SetString(PyExc_RuntimeError, "Module atomsel not found for type lookup");
+    return NULL;
+  }
+
+  PyObject *lookup_type = PyObject_GetAttrString(module, name);
+  if (!lookup_type) {
+    PyErr_SetString(PyExc_RuntimeError, "atomsel type not found");
+    return NULL;
+  }
+  return lookup_type;
+}
+#endif
+
+
+
 // Helper function to check if something is an atomsel type
 static int atomsel_Check(PyObject *obj) {
-  if (PyObject_TypeCheck(obj, &Atomsel_Type))
+  PyObject *atomsel_type = get_type("atomsel");
+#if PY_MAJOR_VERSION >= 3
+  if (PyObject_TypeCheck(obj, (PyTypeObject*) atomsel_type)) {
+      Py_XDECREF(atomsel_type);
+#else
+  if (PyObject_TypeCheck(obj, &Atomsel_Type)) {
+#endif
     return 1;
+  }
   PyErr_SetString(PyExc_TypeError, "expected atomsel");
+#if PY_MAJOR_VERSION >= 3
+  Py_XDECREF(atomsel_type);
+#endif
   return 0;
 }
 
@@ -81,18 +121,18 @@ static const char atomsel_doc[] =
 "    >>> print s1.rmsd(s2)\n";
 
 // __del__(self)
-static void atomsel_dealloc( PyAtomSelObject *obj ) {
-  delete obj->atomSel;
-  ((PyObject *)(obj))->ob_type->tp_free((PyObject *)obj);
+static void atomsel_dealloc(PyObject *obj ) {
+  delete ((PyAtomSelObject*) obj)->atomSel;
+  obj->ob_type->tp_free(obj); // ? Could just be PyObjectDelete?
 }
 
 // __repr__(self)
-static PyObject *atomsel_repr(PyAtomSelObject *obj) {
+static PyObject *atomsel_repr(PyObject *obj) {
   PyObject *result;
   AtomSel *sel;
   char *s;
 
-  sel = obj->atomSel;
+  sel = ((PyAtomSelObject*) obj)->atomSel;
   s = new char[strlen(sel->cmdStr) + 100];
 
   sprintf(s, "atomsel('%s', molid=%d, frame=%d)", sel->cmdStr, sel->molid(),
@@ -1144,9 +1184,17 @@ static float *parse_two_selections_return_weight(PyAtomSelObject *a,
     return NULL;
   }
 
+#if PY_MAJOR_VERSION >= 3
+  PyObject *atomsel_type = get_type("atomsel");
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|O", (char**) kwlist,
-                                   &Atomsel_Type, &other, &weightobj))
+                                   atomsel_type, &other, &weightobj)) {
+      Py_XDECREF(atomsel_type);
+#else
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|O", (char**) kwlist,
+                                   &Atomsel_Type, &other, &weightobj)) {
+#endif
     return NULL;
+  }
 
   weight = parse_weight(atomSel, weightobj);
   if (!weight)
@@ -1166,6 +1214,9 @@ static float *parse_two_selections_return_weight(PyAtomSelObject *a,
     delete [] weight;
     return NULL;
   }
+#if PY_MAJOR_VERSION >= 3
+  Py_XDECREF(atomsel_type);
+#endif
 
   *othersel = sel2;
   return weight;
@@ -1531,10 +1582,21 @@ static PyObject *contacts(PyAtomSelObject *a, PyObject *args, PyObject *kwargs)
   DrawMolecule *mol;
   float cutoff;
 
+#if PY_MAJOR_VERSION >= 3
+  PyObject *atomsel_type = get_type("atomsel");
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!f:atomsel.contacts",
+                                   (char**) kwlist, atomsel_type, &obj2,
+                                   &cutoff)) {
+    Py_XDECREF(atomsel_type);
+    return NULL;
+  }
+  Py_XDECREF(atomsel_type);
+#else
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!f:atomsel.contacts",
                                    (char**) kwlist, &Atomsel_Type, &obj2,
                                    &cutoff))
     return NULL;
+#endif
 
   if (!(mol = get_molecule(a))) {
     PyErr_SetString(PyExc_ValueError,
@@ -1650,10 +1712,21 @@ static PyObject *py_hbonds(PyAtomSelObject *a, PyObject *args, PyObject *kwargs)
   DrawMolecule *mol;
   const float *pos;
 
+#if PY_MAJOR_VERSION >= 3
+  PyObject *atomsel_type = get_type("atomsel");
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "dd|O!:atomsel.hbonds",
+                                   (char**) kwlist, &cutoff, &maxangle,
+                                   atomsel_type, &obj2)) {
+    Py_XDECREF(atomsel_type);
+    return NULL;
+  }
+  Py_XDECREF(atomsel_type);
+#else
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "dd|O!:atomsel.hbonds",
                                    (char**) kwlist, &cutoff, &maxangle,
                                    &Atomsel_Type, &obj2))
     return NULL;
+#endif
 
   if (!(mol = get_molecule(a))) {
     PyErr_SetString(PyExc_ValueError, "selection is on a deleted molecule");
@@ -1796,11 +1869,24 @@ static PyObject *sasa(PyAtomSelObject *a, PyObject *args, PyObject *kwargs)
   if (!(mol = get_molecule(a)))
     return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  PyObject *atomsel_type = get_type("atomsel");
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "f|iO&O!:atomsel.sasa",
+                                   (char**) kwlist, &srad, &samples,
+                                   convert_bool, &points, atomsel_type,
+                                   &restrictobj)) {
+    Py_XDECREF(atomsel_type);
+    return NULL;
+  }
+  Py_XDECREF(atomsel_type);
+
+#else
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "f|iO&O!:atomsel.sasa",
                                    (char**) kwlist, &srad, &samples,
                                    convert_bool, &points, &Atomsel_Type,
                                    &restrictobj))
     return NULL;
+#endif
 
   if (srad < 0) {
     PyErr_SetString(PyExc_ValueError, "srad must be non-negative.");
@@ -2050,7 +2136,7 @@ atomselection_length( PyObject *a ) {
 
 // for integer argument, return True or False if index in in selection
 static PyObject *
-atomselection_subscript( PyAtomSelObject * a, PyObject * keyobj ) {
+atomselection_subscript(PyObject* a_obj, PyObject* keyobj ) {
 #if PY_MAJOR_VERSION >= 3
   long ind = PyLong_AsLong(keyobj);
 #else
@@ -2058,6 +2144,7 @@ atomselection_subscript( PyAtomSelObject * a, PyObject * keyobj ) {
 #endif
   if (ind < 0 && PyErr_Occurred()) return NULL;
   PyObject *result = Py_False;
+  PyAtomSelObject *a = (PyAtomSelObject*) a_obj;
   if (ind >= 0 && ind < a->atomSel->num_atoms &&
       a->atomSel->on[ind]) {
     result = Py_True;
@@ -2065,12 +2152,6 @@ atomselection_subscript( PyAtomSelObject * a, PyObject * keyobj ) {
   Py_INCREF(result);
   return result;
 }
-
-static PyMappingMethods atomsel_mapping = {
-  atomselection_length,
-  (binaryfunc)atomselection_subscript,
-  0
-};
 
 /* Methods on selection instances */
 static PyMethodDef atomselection_methods[] = {
@@ -2111,7 +2192,8 @@ typedef struct {
 
 PyObject *atomsel_iter(PyObject *);
 
-PyObject *iter_next(atomsel_iterobject *it) {
+PyObject *iter_next(PyObject* it_obj) {
+  atomsel_iterobject *it = (atomsel_iterobject*) it_obj;
   for ( ; it->index < it->a->atomSel->num_atoms; ++it->index) {
     if (it->a->atomSel->on[it->index])
       return as_pyint(it->index++);
@@ -2119,8 +2201,8 @@ PyObject *iter_next(atomsel_iterobject *it) {
   return NULL;
 }
 
-void iter_dealloc(atomsel_iterobject *it) {
-  Py_XDECREF(it->a);
+void iter_dealloc(PyObject *it) {
+  Py_XDECREF(((atomsel_iterobject*) it)->a);
 }
 
 // Length
@@ -2134,57 +2216,46 @@ PyMethodDef iter_methods[] = {
 };
 
 #if PY_MAJOR_VERSION >= 3
-  PyTypeObject itertype = {
-    PyObject_HEAD_INIT(&PyType_Type)
-    "atomsel.iterator",
-    sizeof(atomsel_iterobject), 0, // basic, item size
-    (destructor)iter_dealloc, // dealloc
-    0, //tp_print
-    0, 0, // tp get and setattr
-    0, // tp_as_async
-    0, // tp_repr
-    0, 0, 0, // as number, sequence, mapping
-    0, 0, 0, // hash, call, str
-    PyObject_GenericGetAttr, 0, // getattro, setattro
-    0, // tp_as_buffer
-    Py_TPFLAGS_DEFAULT, // flags
-    0, // docstring
-    0, 0, 0, // traverse, clear, richcompare
-    0, // tp_weaklistoffset
-    PyObject_SelfIter, // tp_iter
-    (iternextfunc)iter_next, // tp_iternext
-    iter_methods, // tp_methods
-    0, 0, 0, // members, getset, base
+
+static PyType_Slot atomsel_iter_type_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(iter_dealloc)},
+    {Py_tp_iter, reinterpret_cast<void*>(PyObject_SelfIter)},
+    {Py_tp_iternext, reinterpret_cast<void*>(iter_next)},
+    {Py_tp_methods, reinterpret_cast<void*>(iter_methods)},
+    {0, NULL},
 };
 
-PyTypeObject Atomsel_Type = {
-    PyObject_HEAD_INIT(0)
-    "atomsel",
-    sizeof(PyAtomSelObject), 0, // basic, item size
-    (destructor)atomsel_dealloc, //dealloc
-    0, // tp_print
-    0, 0, // tp get and set attr
-    0, // tp_as_async
-    (reprfunc)atomsel_repr, // tp_repr
-    0, 0, &atomsel_mapping, // as number, sequence, mapping
-    0, 0, (reprfunc)atomsel_str, // hash, call, str
-    (getattrofunc) atomsel_getattro, // getattro
-    (setattrofunc) atomsel_setattro, // setattro
-    0, // tp_as_buffer
-    Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE, // flags
-    atomsel_doc, // docstring
-    0, 0, 0, // traverse, clear, richcompare
-    0, // tp_weaklistoffset
-    atomsel_iter, // tp_iter
-    0, // tp_iternext
-    atomselection_methods, // tp_methods,
-    0, atomsel_getset, 0, // members, getset, base
-    0, 0, 0, // tp_dict, descr_get, descr_set
-    0, 0, // dictoffset, init
-    PyType_GenericAlloc, // tp_alloc
-    atomsel_new, // tp_new
-    PyObject_Del, // tp_free
+static PyType_Spec atomsel_iter_spec = {
+    "atomsel.iterator",
+    sizeof(atomsel_iterobject),
+    0,
+    Py_TPFLAGS_DEFAULT,
+    atomsel_iter_type_slots,
 };
+
+static PyType_Slot atomsel_type_slots[] = {
+    {Py_tp_dealloc, reinterpret_cast<void*>(atomsel_dealloc)},
+    {Py_tp_repr, reinterpret_cast<void*>(atomsel_repr)},
+    {Py_mp_length, reinterpret_cast<void*>(atomselection_length)},
+    {Py_mp_subscript, reinterpret_cast<void*>(atomselection_subscript)},
+    {Py_tp_getattro, reinterpret_cast<void*>(atomsel_getattro)},
+    {Py_tp_setattro, reinterpret_cast<void*>(atomsel_setattro)},
+    {Py_tp_doc, reinterpret_cast<void*>(const_cast<char*>(atomsel_doc))},
+    {Py_tp_iter, reinterpret_cast<void*>(atomsel_iter)},
+    {Py_tp_methods, reinterpret_cast<void*>(atomselection_methods)},
+    {Py_tp_getset, reinterpret_cast<void*>(atomsel_getset)},
+    {Py_tp_new, reinterpret_cast<void*>(atomsel_new)},
+    {0, NULL}, // terminator
+};
+
+static PyType_Spec atomsel_type_spec = {
+    "atomsel.atomsel", // name
+    sizeof(PyAtomSelObject), // basic size
+    0, // itemsize
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, // flags
+    atomsel_type_slots,
+};
+
 
 #else
   PyTypeObject itertype = {
@@ -2265,9 +2336,17 @@ PyTypeObject Atomsel_Type = {
 };
 #endif
 
-// tp_iter for atomsel type
+// Atomsel iterator creation.
 PyObject *atomsel_iter(PyObject *self) {
-  atomsel_iterobject *iter = PyObject_New(atomsel_iterobject, &itertype);
+  atomsel_iterobject *iter = NULL;
+
+#if PY_MAJOR_VERSION >= 3
+  PyObject *iter_type = get_type("iterator");
+  iter = PyObject_New(atomsel_iterobject, (PyTypeObject*) iter_type);
+#else
+  iter = PyObject_New(atomsel_iterobject, &itertype);
+#endif
+  Py_XDECREF(iter_type);
   if (!iter)
     return NULL;
 
@@ -2276,23 +2355,40 @@ PyObject *atomsel_iter(PyObject *self) {
   return (PyObject *)iter;
 }
 
-// Atomsel is a type, not a module. So we just initialize the type
-// and return it.
 PyObject* initatomsel(void) {
-
 #if PY_MAJOR_VERSION >= 3
-  ((PyObject*)(&Atomsel_Type))->ob_type = &PyType_Type;
-#else
-  Atomsel_Type.ob_type = &PyType_Type;
-#endif
+  PyObject *module = PyModule_Create(&module_def);
 
+  // Initialize the atomsel type.
+  PyObject* atomsel_type = PyType_FromSpec(&atomsel_type_spec);
+  PyModule_AddType(module, (PyTypeObject*) atomsel_type); // Type is made ready interally.
+
+  // And the atomsel iterator type
+  PyObject *iter_type = PyType_FromSpec(&atomsel_iter_spec);
+  PyModule_AddType(module, (PyTypeObject*) iter_type);
+  if (PyErr_Occurred()) {
+      goto error;
+  }
+
+  PyState_AddModule(module, &module_def);
+
+  // Only return the type for now.
+  return atomsel_type;
+
+#else
+    // Atomsel is a type, not a module. So we just initialize the type
+    // and return it.
+  Atomsel_Type.ob_type = &PyType_Type;
   Py_INCREF((PyObject *)&Atomsel_Type);
 
   if (PyType_Ready(&Atomsel_Type) < 0) {
+      goto error;
+  }
+  return (PyObject*) &Atomsel_Type;
+#endif
+
+error:
     PyErr_SetString(PyExc_RuntimeError, "Problem initializing atomsel type");
     return NULL;
-  }
-
-  return (PyObject*) &Atomsel_Type;
 }
 

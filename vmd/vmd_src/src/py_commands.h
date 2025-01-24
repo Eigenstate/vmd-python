@@ -71,13 +71,14 @@ Timestep *parse_timestep(VMDApp *app, int molid, int frame);
 AtomSel * atomsel_AsAtomSel( PyObject *obj );
 
 // Atomsel type
-extern PyTypeObject Atomsel_Type;
 
 // VMD main initialization function, with no name mangling
 #if PY_MAJOR_VERSION >= 3
 extern "C" PyObject* PyInit_vmd();
+extern PyObject* get_type(const char *);
 #else
 extern "C" void initvmd();
+extern PyTypeObject Atomsel_Type;
 #endif
 
 extern PyObject* initanimate();
