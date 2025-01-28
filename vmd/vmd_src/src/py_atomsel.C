@@ -2236,6 +2236,7 @@ static PyType_Spec atomsel_iter_spec = {
 static PyType_Slot atomsel_type_slots[] = {
     {Py_tp_dealloc, reinterpret_cast<void*>(atomsel_dealloc)},
     {Py_tp_repr, reinterpret_cast<void*>(atomsel_repr)},
+    {Py_tp_str, reinterpret_cast<void*>(atomsel_str)},
     {Py_mp_length, reinterpret_cast<void*>(atomselection_length)},
     {Py_mp_subscript, reinterpret_cast<void*>(atomselection_subscript)},
     {Py_tp_getattro, reinterpret_cast<void*>(atomsel_getattro)},
