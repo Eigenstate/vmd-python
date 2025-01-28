@@ -210,7 +210,7 @@ PyObject* initselection() {
 #if PY_MAJOR_VERSION >= 3
   PyObject *m = PyModule_Create(&selectiondef);
   PyObject *atomsel_type = get_type("atomsel");
-  PyModule_AddObject(m, "selection", atomsel_type);
+  PyModule_AddObjectRef(m, "selection", atomsel_type);
   if (PyErr_Occurred()) {
       Py_XDECREF(atomsel_type);
       return NULL;

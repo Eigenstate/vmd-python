@@ -67,8 +67,8 @@ PyObject* get_type(const char *name) {
 
 // Helper function to check if something is an atomsel type
 static int atomsel_Check(PyObject *obj) {
-  PyObject *atomsel_type = get_type("atomsel");
 #if PY_MAJOR_VERSION >= 3
+  PyObject *atomsel_type = get_type("atomsel");
   if (PyObject_TypeCheck(obj, (PyTypeObject*) atomsel_type)) {
       Py_XDECREF(atomsel_type);
 #else
@@ -2259,6 +2259,12 @@ static PyType_Spec atomsel_type_spec = {
 
 
 #else
+  static PyMappingMethods atomsel_mapping = {
+    atomselection_length,
+    (binaryfunc)atomselection_subscript,
+    0
+  };
+
   PyTypeObject itertype = {
     PyObject_HEAD_INIT(&PyType_Type)
     0,
