@@ -81,7 +81,7 @@ ${ARCHDIR}/psfcheck.o : psfcheck.C psfcheck.h
 	${CXX} ${CXXFLAGS} ${INCDIR} -c ${SRCDIR}/psfcheck.C $(COPTO)${ARCHDIR}/psfcheck.o
 
 ${ARCHDIR}/psfcheck_wrap.C : psfcheck.i
-	swig -tcl8 -c++ -o psfcheck_wrap.C psfcheck.i
+	swig -tcl8 -c++ -o ${SRCDIR}/psfcheck_wrap.C ${SRCDIR}/psfcheck.i
 
 ${ARCHDIR}/psfcheck_wrap.o : psfcheck_wrap.C
 	${CXX} ${CXXFLAGS} ${TCLINC} ${INCDIR} -c ${SRCDIR}/psfcheck_wrap.C $(COPTO)${ARCHDIR}/psfcheck_wrap.o
