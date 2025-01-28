@@ -252,7 +252,7 @@ void GeometryMol::geom_set_name(void) {
   char namebuf2[256];
   char cellbuf[256];
   Molecule *mol;
-  register int i;
+  int i;
 
   if(items() < 1)
     return;
@@ -295,7 +295,7 @@ void GeometryMol::geom_set_name(void) {
 // sort the elements in the list, so that the lowest atom index is first
 // (but preserve the relative order, i.e. a-b-c or c-b-a)
 void GeometryMol::sort_items(void) {
-  register int i,j;
+  int i,j;
 
   // swap order if first component index > last component index
   if( (comIndex[0] > comIndex[items()- 1]) ||
@@ -414,7 +414,7 @@ const char *GeometryMol::unique_name(void) {
 
 // check whether the geometry value can still be calculated
 int GeometryMol::ok(void) {
-  register int i;
+  int i;
   
   for(i=0; i < numItems; i++)
     if(!check_mol(objIndex[i], comIndex[i]))

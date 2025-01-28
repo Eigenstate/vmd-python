@@ -535,7 +535,7 @@ int yyparse(void)
 int yyparse()
 #endif
 {
-	register YYSTYPE *yypvt = 0;	/* top of value stack for $vars */
+	YYSTYPE *yypvt = 0;	/* top of value stack for $vars */
 
 #if defined(__cplusplus) || defined(lint)
 /*
@@ -573,10 +573,10 @@ int yyparse()
 #endif
 
 	{
-		register YYSTYPE *yy_pv;	/* top of value stack */
-		register int *yy_ps;		/* top of state stack */
-		register int yy_state;		/* current state */
-		register int  yy_n;		/* internal state number info */
+		YYSTYPE *yy_pv;	/* top of value stack */
+		int *yy_ps;		/* top of state stack */
+		int yy_state;		/* current state */
+		int  yy_n;		/* internal state number info */
 	goto yystack;	/* moved from 6 lines above to here to please C++ */
 
 		/*
@@ -614,7 +614,7 @@ int yyparse()
 		*/
 		if ( yydebug )
 		{
-			register int yy_i;
+			int yy_i;
 
 			printf( "State %d, token ", yy_state );
 			if ( yychar == 0 )
@@ -698,7 +698,7 @@ int yyparse()
 #if YYDEBUG
 		if ( yydebug && yytmp )
 		{
-			register int yy_i;
+			int yy_i;
 
 			printf( "Received token " );
 			if ( yychar == 0 )
@@ -740,7 +740,7 @@ int yyparse()
 #if YYDEBUG
 			if ( yydebug && yytmp )
 			{
-				register int yy_i;
+				int yy_i;
 
 				printf( "Received token " );
 				if ( yychar == 0 )
@@ -767,7 +767,7 @@ int yyparse()
 			** look through exception table
 			*/
 			{
-				register YYCONST int *yyxi = yyexca;
+				YYCONST int *yyxi = yyexca;
 
 				while ( ( *yyxi != -1 ) ||
 					( yyxi[1] != yy_state ) )
@@ -853,7 +853,7 @@ int yyparse()
 				*/
 				if ( yydebug )
 				{
-					register int yy_i;
+					int yy_i;
 
 					printf( "Error recovery discards " );
 					if ( yychar == 0 )
@@ -913,7 +913,7 @@ int yyparse()
 		*/
 		{
 			/* length of production doubled with extra bit */
-			register int yy_len = yyr2[ yy_n ];
+			int yy_len = yyr2[ yy_n ];
 
 			if ( !( yy_len & 01 ) )
 			{
