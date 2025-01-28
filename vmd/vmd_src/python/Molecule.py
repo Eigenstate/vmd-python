@@ -91,7 +91,7 @@ class Molecule:
     if ind >= 0:
       filetype = filename[ind+1:]
     else:
-      if len(filename) is 4:
+      if len(flename) == 4:
         filetype = 'webpdb'
     return filetype
 
