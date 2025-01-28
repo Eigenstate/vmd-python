@@ -156,7 +156,6 @@ distrib:
 include Make-arch
 
 molfilelibs:
-	cd molfile_plugin; $(MAKE) dynlibs && cd .. || exit 1
 	cd molfile_plugin; $(MAKE) staticlibs && cd .. || exit 1
 
 win32molfilelibs:
