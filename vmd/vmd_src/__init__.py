@@ -9,7 +9,7 @@ Official VMD web page: http://www.ks.uiuc.edu/Research/vmd/
 
 """
 
-__version__ = "3.1.6"
+__version__ = "3.1.7"
 __author__ = "Robin Betz"
 
 import sys
