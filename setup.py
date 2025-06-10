@@ -310,11 +310,13 @@ class VMDBuild(DistutilsBuild):
         os.environ["EXPATINC"] = "-I%s" % self._find_include_dir("expat.h")
         os.environ["EXPATLDFLAGS"] = "-lexpat"
 
-        # Netcdf (for netcdfplugin)
+        # Netcdf (for netcdfplugin), built statically
         os.environ["NETCDFLIB"] = "-L%s" % self._find_library_dir("libnetcdf")
         os.environ["NETCDFINC"] = "-I%s" % self._find_include_dir("netcdf.h")
         os.environ["NETCDFLDFLAGS"] = "-lnetcdf"
-        os.environ["NETCDFDYNAMIC"] = "1"
+        # Variable must be unset in order to do static build.
+        if os.environ.get("NETCDFDYNAMIC"):
+            del os.environ["NETCDFDYNAMIC"]
 
         # Ask numpy where it is
         import numpy
