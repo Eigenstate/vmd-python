@@ -628,7 +628,7 @@ void nj_tree(char **tree_description, FILE *tree)
 #else /* ORIGINAL_NJ_TREE */
 
 void nj_tree(char **tree_description, FILE *tree) {
-	void fast_nj_tree();
+	void fast_nj_tree(char **tree_description, FILE *tree);
  
 	/*fprintf(stderr, "****** call fast_nj_tree() !!!! ******\n");*/
 	fast_nj_tree(tree_description, tree);
