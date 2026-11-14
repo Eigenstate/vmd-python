@@ -430,7 +430,9 @@ void rot_2_Yaxis (long num_residue,  double *z, long **seidx, double **xyz );
 
 void rot_mol (long num_residue,  char **AtomName,char **ResName, char *ChainID,
               long *ResSeq, double **xyz, long **seidx, long *RY);
-void process_3d_fig();
+void process_3d_fig(char *pdbfile, long num_residue, char *bseq, long **seidx,
+                    char **AtomName,char **ResName, char *ChainID,double **xyz,
+                    long num_pair_tot, char **pair_type, long **bs_pairs_tot);
 /*
 void process_2d_fig(long num_residue, char *bseq, long **seidx, long *RY,
                     char **AtomName, char **ResName, char *ChainID,
