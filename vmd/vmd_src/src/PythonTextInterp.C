@@ -90,7 +90,7 @@ static void call_callbacks(const char *type, PyObject *arglist) {
 
   for (int i=0; i<PyList_GET_SIZE(cblist); i++) {
     PyObject *obj = PyList_GET_ITEM(cblist, i);
-    PyObject *result = PyEval_CallObject(obj, arglist);
+    PyObject *result = PyObject_CallObject(obj, arglist);
     if (result == NULL) {
       PyErr_Print();
       PySequence_DelItem(cblist, i);
@@ -160,7 +160,10 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp) : app(vmdapp) {
   // Do emit DeprecationWarnings
 #if PY_MAJOR_VERSION >= 3
   PyImport_AppendInittab("vmd", PyInit_vmd);
+#if PY_VERSION_HEX < 0x030D0000
+  // Removed in Python 3.13 (use PyConfig.warnoptions instead)
   PySys_AddWarnOption(L"default");
+#endif
 #else
   PyImport_AppendInittab("vmd", initvmd);
   PySys_AddWarnOption((char*) "default");
