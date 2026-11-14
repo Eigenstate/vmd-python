@@ -381,9 +381,7 @@ L200:
 /* ---- ORDER AS EIGENVALUES. */
 /* ---- N - ORDER OF MATRICES A & R. */
 /* ---- MV = 0 TO COMPUTE EIGENVALUES & EIGENVECTORS. */
-/* Subroutine */ int eigen_(a, r, n, mv)
-doublereal *a, *r;
-integer *n, *mv;
+/* Subroutine */ int eigen_(doublereal *a, doublereal *r, integer *n, integer *mv)
 {
     /* System generated locals */
     integer i_1, i_2;
@@ -613,9 +611,7 @@ L165:
 S*/
 } /* eigen_ */
 
-/* Subroutine */ int esort_(a, r, n, mv)
-doublereal *a, *r;
-integer *n, *mv;
+/* Subroutine */ int esort_(doublereal *a, doublereal *r, integer *n, integer *mv)
 {
     /* System generated locals */
     integer i_1, i_2, i_3;

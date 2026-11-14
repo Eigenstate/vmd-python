@@ -714,9 +714,7 @@ int slow_scan(struct domain_loc qdomain, struct parameters *parms) {
    return 0;
 }
 
-int disp(domain,OUTPUT)
-struct domain_loc domain;
-FILE *OUTPUT;
+int disp(struct domain_loc domain, FILE *OUTPUT)
 {
 	int i/*,j,k*/;
 	fprintf(OUTPUT,"The first ten coordinates\n");

@@ -220,11 +220,7 @@ then check if the new score is > the old score.  If it is, then store the
 new path in the result and return 1.  If it isn't then do nothing, but return
 0.
 ----------------------------------------------------------------------------*/
-int present(new, result)
-     
-     struct path *new;
-     struct olist *result;
-     
+int present(struct path *new, struct olist *result)
 {
   int i;
   for (i = 0; i < result->len; ++i) {
@@ -243,12 +239,7 @@ int present(new, result)
 /**************************************************************************
 addsco
 --------------------------------------------------------------------------*/
-void addsco(new,result,total)
-     
-     struct path *new;
-     struct olist *result;
-     int *total;
-     
+void addsco(struct path *new, struct olist *result, int *total)
 {
   ++result->len;
   ++*total;
@@ -264,11 +255,7 @@ void addsco(new,result,total)
 /***************************************************************************
 ppath - print out the paths as stored in result array
 ---------------------------------------------------------------------------*/
-void ppath(result,lena)
-
-struct olist *result;
-int lena;
-
+void ppath(struct olist *result, int lena)
 {
   int i,j;
   
@@ -290,9 +277,7 @@ int lena;
 /***************************************************************************
 ppath2 - print out the paths as pointed to by sortarr
 ---------------------------------------------------------------------------*/
-void ppath2(sortarr,total)
-     struct path *sortarr;
-     int *total;
+void ppath2(struct path *sortarr, int *total)
 {
   int i;
   for(i=0; i < *total; ++i){
@@ -310,9 +295,7 @@ void ppath2(sortarr,total)
 /*************************************************************************
 ppath3 write out genplot file for the paths obtained
 -------------------------------------------------------------------------*/
-void  ppath3(sortarr,total,lena,lenb)
-     struct path *sortarr;
-     int *total,lena,lenb;
+void  ppath3(struct path *sortarr, int *total, int lena, int lenb)
 {
   int i;
   FILE *fp;
