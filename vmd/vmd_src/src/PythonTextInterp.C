@@ -161,7 +161,7 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp) : app(vmdapp) {
 #if PY_MAJOR_VERSION >= 3
   PyImport_AppendInittab("vmd", PyInit_vmd);
 #if PY_VERSION_HEX < 0x030D0000
-  // Removed in Python 3.13 (use PyConfig.warnoptions instead)
+  // Removed in Python 3.13; the filter is installed after Py_Initialize below
   PySys_AddWarnOption(L"default");
 #endif
 #else
@@ -170,6 +170,12 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp) : app(vmdapp) {
 #endif
 
   Py_Initialize();
+
+#if PY_VERSION_HEX >= 0x030D0000
+  // Equivalent of -W default, since PySys_AddWarnOption is gone in 3.13
+  if (PyRun_SimpleString("import warnings; warnings.simplefilter('default')"))
+    msgWarn << "Could not enable Python DeprecationWarnings" << sendmsg;
+#endif
 
   // Some modules (like Tk) assume that os.argv has been initialized
 #if PY_MAJOR_VERSION >= 3
