@@ -66,6 +66,7 @@
 */
 
 #include <stdio.h>
+#include <math.h>
 #include <f2c.h>
 
 /* Table of constant values */
@@ -99,9 +100,6 @@ int qkfit(doublereal *umat, doublereal *rtsum, doublereal *r, integer *entry_) {
     integer i_1;
     static doublereal equiv_7[9];
 
-    /* Builtin functions */
-    double sqrt(), d_sign(), atan(), cos();
-
     /* Local variables */
     static doublereal diff;
     static integer isig;
@@ -110,9 +108,9 @@ int qkfit(doublereal *umat, doublereal *rtsum, doublereal *r, integer *entry_) {
 #define b (equiv_7)
     static integer i, j, k;
     static doublereal s, t;
-    extern /* Subroutine */ int eigen_();
+    extern /* Subroutine */ int eigen_(doublereal *, doublereal *, integer *, integer *);
     static doublereal digav, theta, argsq, b1, b2;
-    extern /* Subroutine */ int esort_();
+    extern /* Subroutine */ int esort_(doublereal *, doublereal *, integer *, integer *);
     static doublereal cos3th, cc, b13, dd, b23;
     static integer ia;
     static doublereal b33, qq, rt;
@@ -383,16 +381,11 @@ L200:
 /* ---- ORDER AS EIGENVALUES. */
 /* ---- N - ORDER OF MATRICES A & R. */
 /* ---- MV = 0 TO COMPUTE EIGENVALUES & EIGENVECTORS. */
-/* Subroutine */ int eigen_(a, r, n, mv)
-doublereal *a, *r;
-integer *n, *mv;
+/* Subroutine */ int eigen_(doublereal *a, doublereal *r, integer *n, integer *mv)
 {
     /* System generated locals */
     integer i_1, i_2;
     doublereal d_1;
-
-    /* Builtin functions */
-    double sqrt();
 
     /* Local variables */
     static doublereal cosx, sinx, cosx2, sinx2;
@@ -618,9 +611,7 @@ L165:
 S*/
 } /* eigen_ */
 
-/* Subroutine */ int esort_(a, r, n, mv)
-doublereal *a, *r;
-integer *n, *mv;
+/* Subroutine */ int esort_(doublereal *a, doublereal *r, integer *n, integer *mv)
 {
     /* System generated locals */
     integer i_1, i_2, i_3;

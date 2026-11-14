@@ -33,7 +33,7 @@
 *****************************************************************************/
 #include <stamp.h>
 
-int comp();
+int comp(const void *left, const void *right);
 
 /*************************************************************************
 dosort:  Version 2:  create the sortarr array, then copy the values
@@ -91,8 +91,8 @@ struct path *dosort(struct olist *result, int *lena, int *total) {
 /*************************************************************************
 comp:  compare two scores in the sortarr array
 -------------------------------------------------------------------------*/
-int comp(left,right)
-     struct path *left, *right;
+int comp(const void *left, const void *right)
 {
-  return right->score - left->score;
+  const struct path *l = left, *r = right;
+  return r->score - l->score;
 }

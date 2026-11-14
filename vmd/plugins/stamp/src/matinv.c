@@ -106,8 +106,7 @@ int ludcmp(float **a, int n, int *indx, float *d)
 {
 	int i,imax=0,j,k;
 	float big,dum,sum,temp;
-	float *vv,*vector();
-	void free_vector();
+	float *vv;
 
 	vv=vector(1,n);
 	*d=1.0;

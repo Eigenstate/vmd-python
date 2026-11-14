@@ -90,7 +90,7 @@ static void call_callbacks(const char *type, PyObject *arglist) {
 
   for (int i=0; i<PyList_GET_SIZE(cblist); i++) {
     PyObject *obj = PyList_GET_ITEM(cblist, i);
-    PyObject *result = PyEval_CallObject(obj, arglist);
+    PyObject *result = PyObject_CallObject(obj, arglist);
     if (result == NULL) {
       PyErr_Print();
       PySequence_DelItem(cblist, i);
@@ -160,13 +160,22 @@ PythonTextInterp::PythonTextInterp(VMDApp *vmdapp) : app(vmdapp) {
   // Do emit DeprecationWarnings
 #if PY_MAJOR_VERSION >= 3
   PyImport_AppendInittab("vmd", PyInit_vmd);
+#if PY_VERSION_HEX < 0x030D0000
+  // Removed in Python 3.13; the filter is installed after Py_Initialize below
   PySys_AddWarnOption(L"default");
+#endif
 #else
   PyImport_AppendInittab("vmd", initvmd);
   PySys_AddWarnOption((char*) "default");
 #endif
 
   Py_Initialize();
+
+#if PY_VERSION_HEX >= 0x030D0000
+  // Equivalent of -W default, since PySys_AddWarnOption is gone in 3.13
+  if (PyRun_SimpleString("import warnings; warnings.simplefilter('default')"))
+    msgWarn << "Could not enable Python DeprecationWarnings" << sendmsg;
+#endif
 
   // Some modules (like Tk) assume that os.argv has been initialized
 #if PY_MAJOR_VERSION >= 3
