@@ -315,7 +315,7 @@ void  ppath3(sortarr,total,lena,lenb)
      int *total,lena,lenb;
 {
   int i;
-  FILE *fp, *fopen();
+  FILE *fp;
   fp = fopen("test.genplot","w");
   
   fprintf(fp,"!PAPER = A4H\n");
